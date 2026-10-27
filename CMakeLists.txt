@@ -24,6 +24,10 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+# Sin Wayland por ahora (Fase 1-2, Linux solo via X11): evita depender de
+# wayland-scanner/wayland-protocols, que no siempre estan instalados (p.ej.
+# el runner de GitHub Actions ni la imagen base de WSL2 Debian los traen).
+set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
 
 FetchContent_Declare(glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
