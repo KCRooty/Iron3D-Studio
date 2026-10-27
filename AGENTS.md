@@ -16,6 +16,15 @@ de Cinema 4D R19 con código propio, y lo mejora.
   - Melange SDK oficial de Maxon para leer/escribir .c4d, aislado en src/importers/melange/
     como módulo opcional (revisar su licencia antes de enlazarlo).
 - Si una tarea solo puede hacerse mirando código de Maxon: parar y avisar, no improvisar.
+- **Excepción registrada 2026-10-27:** Core autorizó explícitamente, tras aviso del riesgo legal, usar
+  RAE (ingeniería reversa/decompilación) sobre el binario real de C4D R19 instalado — esto excede la
+  regla de "solo caja negra" de este archivo. Alcance real usado: strings + un dato arquitectónico
+  (`gui.module.xdl64` usa `maxon.HierarchyObjectInterface` con notificaciones Observer
+  `ObservableHierarchyInsert`/`Remove` para el árbol del Gestor de Objetos) — coincide con el SDK
+  público de Maxon, no se decompiló pseudocódigo de algoritmos. No se copió ningún identificador,
+  cadena ni estructura de Maxon al código de Iron3D; el grafo de escena de la Fase 2
+  (`src/core/SceneNode.*`) es diseño propio desde cero. Si se repite esta excepción, anotar aquí
+  qué binario y qué se miró exactamente.
 
 ## 2. Qué se replica 1:1 y qué se mejora
 

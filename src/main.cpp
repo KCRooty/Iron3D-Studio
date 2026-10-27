@@ -23,6 +23,7 @@
 #include "gfx/BasicPipeline.h"
 #include "core/CubeMesh.h"
 #include "core/OrbitalCamera.h"
+#include "core/SceneNode.h"
 #include "ui/MainUi.h"
 
 #include <cstdio>
@@ -70,6 +71,23 @@ void checkVkResult(VkResult err) {
 double g_scrollY = 0.0;
 void glfwScrollCallback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset) {
     g_scrollY += yoffset;
+}
+
+// Recorre el grafo de escena (Fase 2) y dibuja el cubo comun en cada nodo
+// con hasMesh=true, con su propia matriz de mundo. Un nodo invisible se
+// salta entero junto con sus hijos -- igual que ocultar un objeto padre
+// en cualquier DCC.
+void drawScene(VkCommandBuffer cmd, iron3d::BasicPipeline& pipeline, iron3d::CubeMesh& cube,
+                iron3d::SceneNode& node, const glm::mat4& parentWorld, const glm::mat4& viewProj) {
+    if (!node.visible) return;
+    glm::mat4 world = parentWorld * node.localMatrix();
+    if (node.hasMesh) {
+        pipeline.pushMvp(cmd, viewProj * world);
+        cube.draw(cmd);
+    }
+    for (const auto& child : node.children()) {
+        drawScene(cmd, pipeline, cube, *child, world, viewProj);
+    }
 }
 
 } // namespace
@@ -132,6 +150,11 @@ int main() {
     OrbitalCamera camera;
     swapchain.setClearColor(0.08f, 0.08f, 0.10f, 1.0f); // gris muy oscuro, no negro plano
 
+    // --- Grafo de escena (Fase 2) --------------------------------------------
+    SceneNode sceneRoot("Escena");
+    SceneNode* cubeNode = sceneRoot.addChild("Cubo", /*hasMesh=*/true);
+    SceneNode* selected = cubeNode;
+
     // --- Dear ImGui --------------------------------------------------------
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -185,20 +208,17 @@ int main() {
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        drawMainUi(io.Framerate);
+        drawMainUi(sceneRoot, selected, io.Framerate);
         ImGui::Render();
         ImDrawData* drawData = ImGui::GetDrawData();
 
         const float aspect = (float)swapchain.width() / (float)swapchain.height();
-        const float spin = (float)glfwGetTime() * 0.3f; // rotacion lenta automatica -- confirma visualmente que el pipeline vive
-        glm::mat4 model = glm::rotate(glm::mat4(1.0f), spin, glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 mvp = camera.projectionMatrix(aspect) * camera.viewMatrix() * model;
+        glm::mat4 viewProj = camera.projectionMatrix(aspect) * camera.viewMatrix();
 
         VkCommandBuffer cmd = swapchain.beginFrame(ctx.device);
         if (cmd != VK_NULL_HANDLE) {
             pipeline.bind(cmd);
-            pipeline.pushMvp(cmd, mvp);
-            cube.draw(cmd);
+            drawScene(cmd, pipeline, cube, sceneRoot, glm::mat4(1.0f), viewProj);
 
             swapchain.endFrame(ctx.device, ctx.graphicsQueue, drawData); // graba ImGui y cierra el render pass
         }
