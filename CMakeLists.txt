@@ -76,6 +76,7 @@ add_executable(Iron3DStudio
     src/gfx/BasicPipeline.cpp
     src/core/CubeMesh.cpp
     src/core/OrbitalCamera.cpp
+    src/core/SceneNode.cpp
     src/ui/MainUi.cpp)
 
 target_include_directories(Iron3DStudio PRIVATE
