@@ -14,7 +14,10 @@ on:
 
 jobs:
   windows:
-    runs-on: windows-latest
+    # windows-latest puede apuntar a una imagen mas nueva sin VS2022 preinstalado
+    # (fallo real de esta sesion: "could not find any instance of Visual Studio").
+    # windows-2022 lo fija y garantiza el generador "Visual Studio 17 2022".
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
 
