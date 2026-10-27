@@ -5,7 +5,8 @@ código 100% propio, reimplementación clean-room — con evaluación en GPU (Vu
 compatibilidad con `.c4d`/`.lib4d` y plugins de R19.
 
 **Antes de tocar nada:** lee `AGENTS.md` (reglas clean-room, no negociables) y el
-Documento Maestro del proyecto en `V:\ObsidianVault\14-Iron3D-CoalMix\Iron3D_CoalMix_Documento_Maestro.md`.
+Documento Maestro del proyecto en `V:\ObsidianVault\14-Iron3D-CoalMix\Iron3D_CoalMix_Documento_Maestro_2026-10-27.pdf`
+(resumen en `estado.md` de esa misma carpeta).
 
 Estado: fase de diseño (2026-10-27). Sin código C++ todavía — ver `AGENTS.md` §5 para el
 stack y el checklist de "Tareas inmediatas" en el Documento Maestro §8.5.
