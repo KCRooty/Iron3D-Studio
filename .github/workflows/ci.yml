@@ -21,7 +21,9 @@ jobs:
       - name: Instalar Vulkan SDK (winget, ya viene en windows-latest)
         shell: pwsh
         run: |
-          winget install --id KhronosGroup.VulkanSDK -e --accept-package-agreements --accept-source-agreements --silent
+          # --source winget evita que winget consulte la fuente msstore, que en un
+          # runner nuevo pide aceptar un acuerdo interactivo y falla la instalacion entera.
+          winget install --id KhronosGroup.VulkanSDK -e --source winget --accept-package-agreements --accept-source-agreements --silent
           $sdkRoot = Get-ChildItem "C:\VulkanSDK" | Sort-Object Name -Descending | Select-Object -First 1
           echo "VULKAN_SDK=$($sdkRoot.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "$($sdkRoot.FullName)\Bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
