@@ -1,0 +1,17 @@
+[project]
+name = "iron3d-py2compat"
+version = "0.1.0"
+description = "Carga plugins Python 2.7 de Cinema 4D R19 en Python 3 sin embeber Python 2, traduciendo al vuelo con fissix."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT OR Apache-2.0" }
+dependencies = [
+    "fissix",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
