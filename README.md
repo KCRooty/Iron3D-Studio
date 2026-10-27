@@ -1,3 +1,5 @@
+<img src="assets/icon.png" alt="Iron3D Studio" width="96" height="96">
+
 # Iron3D Studio
 
 DCC 3D open source (Static Forge) que replica el flujo de trabajo de Cinema 4D R19 —
@@ -8,8 +10,10 @@ compatibilidad con `.c4d`/`.lib4d` y plugins de R19.
 Documento Maestro del proyecto en `V:\ObsidianVault\14-Iron3D-CoalMix\Iron3D_CoalMix_Documento_Maestro_2026-10-27.pdf`
 (resumen en `estado.md` de esa misma carpeta).
 
-Estado: fase de diseño (2026-10-27). Sin código C++ todavía — ver `AGENTS.md` §5 para el
-stack y el checklist de "Tareas inmediatas" en el Documento Maestro §8.5.
+Estado (2026-10-27): Fase 1 y Fase 2 (sin importación Melange) completadas y
+verificadas en vivo — ventana Vulkan + ImGui, cubo de prueba, cámara orbital estilo C4D
+y grafo de escena con Gestor de Objetos interactivo real. Ver `AGENTS.md` §5 para el
+stack y `estado.md` del vault para el detalle de cada fase.
 
 ## Estructura
 
