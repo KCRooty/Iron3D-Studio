@@ -12,6 +12,8 @@ PFNGLCLEARCOLORPROC glClearColor = nullptr;
 PFNGLCLEARPROC glClear = nullptr;
 PFNGLENABLEPROC glEnable = nullptr;
 PFNGLDISABLEPROC glDisable = nullptr;
+PFNGLDEPTHFUNCPROC glDepthFunc = nullptr;
+PFNGLDEPTHMASKPROC glDepthMask = nullptr;
 PFNGLDRAWARRAYSPROC glDrawArrays = nullptr;
 PFNGLDRAWELEMENTSPROC glDrawElements = nullptr;
 
@@ -71,6 +73,8 @@ bool loadOpenGLFunctions() {
     IRON3D_GL_LOAD(glClear);
     IRON3D_GL_LOAD(glEnable);
     IRON3D_GL_LOAD(glDisable);
+    IRON3D_GL_LOAD(glDepthFunc);
+    IRON3D_GL_LOAD(glDepthMask);
     IRON3D_GL_LOAD(glDrawArrays);
     IRON3D_GL_LOAD(glDrawElements);
 

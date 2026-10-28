@@ -100,9 +100,16 @@ void LitPipeline::create(VkDevice device, VkPhysicalDevice physicalDevice, VkRen
     VkPipelineMultisampleStateCreateInfo multisample{VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
     multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
+    // Buffer de profundidad real (Fase 5b, SwapchainWindow lo crea y lo anade
+    // al render pass) -- antes de esto la malla de escena se dibujaba sin
+    // resolver que superficie estaba mas cerca de la camara, asi que dos
+    // objetos solapados (p.ej. una Esfera creada como hijo de un Cubo en el
+    // mismo origen) salian con un renderizado roto. El gizmo (BasicPipeline)
+    // sigue sin profundidad a proposito -- ver su comentario.
     VkPipelineDepthStencilStateCreateInfo depthStencil{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
-    depthStencil.depthTestEnable = VK_FALSE;  // mismo corte que BasicPipeline: sin buffer de profundidad todavia
-    depthStencil.depthWriteEnable = VK_FALSE;
+    depthStencil.depthTestEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
 
     VkPipelineColorBlendAttachmentState blendAttachment{};
     blendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |

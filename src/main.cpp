@@ -253,13 +253,19 @@ int main() {
     }
 
     // --- Cierre ----------------------------------------------------------------
-    renderer->destroyMesh(cubeMesh);
-    renderer->destroyMesh(sphereMesh);
-    renderer->destroyMesh(planeMesh);
+    // No hace falta destroyMesh() aqui: renderer->shutdown() ya destruye todas
+    // las mallas que tiene registradas (y lo hace tras su propio
+    // vkDeviceWaitIdle en el backend Vulkan). Llamarlo antes, como se hacia,
+    // destruia los VkBuffer mientras el ultimo frame enviado a la GPU
+    // todavia los estaba usando -- validation error + crash en vez de cierre
+    // limpio.
     renderer->shutdown();
     renderer.reset();
 
-    ImGui_ImplGlfw_Shutdown();
+    // ImGui_ImplGlfw_Shutdown() NO va aqui: los dos backends (Vulkan y
+    // OpenGL) ya lo llaman dentro de su propio shutdown() -- llamarlo otra
+    // vez aqui era el "ya esta apagado" que hacia saltar el assert de ImGui
+    // al cerrar.
     ImGui::DestroyContext();
 
     glfwDestroyWindow(window);

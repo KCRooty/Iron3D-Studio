@@ -49,6 +49,27 @@ public:
 private:
     void resetSemaphorePool();
 
+    // Buffer de profundidad (Fase 5b): ImGui_ImplVulkanH_CreateOrResizeWindow
+    // crea por su cuenta un render pass y framebuffers SOLO de color -- no
+    // tiene forma de pedirle un attachment de profundidad. En vez de pelear
+    // con ese helper, se le deja crear su version (como hasta ahora) y justo
+    // despues se sustituyen wd_->RenderPass y cada wd_->Frames[i].Framebuffer
+    // por una version propia con un segundo attachment de profundidad -- el
+    // color attachment (formato/indice 0) no cambia, asi que sigue siendo
+    // "compatible" en el sentido de Vulkan con la pipeline que ya tiene
+    // creada Dear ImGui para componer su UI (no usa el attachment de
+    // profundidad, le da igual que exista). Imagen de profundidad unica
+    // (no una por imagen del swapchain): se limpia cada frame y nunca se
+    // guarda, no hace falta multi-buffering.
+    void createDepthImage(VkPhysicalDevice physicalDevice, VkDevice device);
+    void destroyDepthImage(VkDevice device);
+    void rebuildRenderPassWithDepth(VkDevice device);
+
+    VkFormat depthFormat_ = VK_FORMAT_UNDEFINED; // elegido una vez, reutilizado en cada resize
+    VkImage depthImage_ = VK_NULL_HANDLE;
+    VkDeviceMemory depthMemory_ = VK_NULL_HANDLE;
+    VkImageView depthView_ = VK_NULL_HANDLE;
+
     ImGui_ImplVulkanH_Window* wd_ = nullptr; // propiedad nuestra, ver .cpp
     bool swapChainRebuild_ = false;
     uint32_t minImageCount_ = 2;
