@@ -83,6 +83,7 @@ add_executable(Iron3DStudio
     src/core/OrbitalCamera.cpp
     src/core/SceneNode.cpp
     src/core/SceneSerializer.cpp
+    src/core/SceneHistory.cpp
     src/core/TransformGizmo.cpp
     src/core/GizmoMesh.cpp
     src/ui/MainUi.cpp)
