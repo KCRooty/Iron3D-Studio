@@ -9,11 +9,15 @@
 #include "core/SceneNode.h"
 #include "core/TransformGizmo.h"
 
+#include <filesystem>
+
 namespace iron3d {
 
-// `selected` se actualiza si el usuario hace clic en otro nodo o borra el seleccionado.
-// `gizmoMode` se actualiza desde la barra de herramientas (Mover/Rotar/Escalar) y los
-// atajos de teclado 1/2/3 -- el propio TransformGizmo lo usa para saber que dibujar.
-void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode, float framerate);
+// `selected` se actualiza si el usuario hace clic en otro nodo, borra el
+// seleccionado o carga una escena nueva encima. `gizmoMode` se actualiza
+// desde la barra de herramientas (Mover/Rotar/Escalar) y los atajos de
+// teclado 1/2/3. `scenesDir` es donde vive Guardar/Cargar escena (Fase 2c).
+void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
+                 const std::filesystem::path& scenesDir, float framerate);
 
 } // namespace iron3d

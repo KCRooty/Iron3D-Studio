@@ -17,13 +17,26 @@
 
 namespace iron3d {
 
+// Tipo de primitiva del nodo (Fase 2c): que malla comun dibuja el bucle
+// principal en este nodo, si alguna. `Light` no ilumina nada todavia (no hay
+// pipeline PBR hasta una fase posterior) -- es solo un icono organizativo de
+// tamano fijo, ver drawScene() en main.cpp.
+enum class PrimitiveType { None, Cube, Sphere, Plane, Light };
+const char* primitiveTypeName(PrimitiveType type); // nombre para la UI, en espanol
+
 class SceneNode {
 public:
-    explicit SceneNode(std::string name, bool hasMesh = false);
+    explicit SceneNode(std::string name, PrimitiveType primitive = PrimitiveType::None);
 
-    SceneNode* addChild(std::string name, bool hasMesh = false);
+    SceneNode* addChild(std::string name, PrimitiveType primitive = PrimitiveType::None);
     // Borra `child` de este nodo si es hijo directo suyo. Devuelve true si lo encontro.
     bool removeChild(SceneNode* child);
+    void clearChildren() { children_.clear(); }
+    // Mueve todos los hijos de `other` a este nodo (deja `other` sin hijos) y
+    // corrige su `parent_` -- usado por el cargador de escenas (SceneSerializer),
+    // que arma el arbol nuevo en un nodo temporal antes de aplicarlo de verdad
+    // a la raiz real (si el parseo falla a medias, la raiz real no se toca).
+    void adoptChildrenFrom(SceneNode& other);
 
     glm::mat4 localMatrix() const;
     // Acumula localMatrix() con la de todos los ancestros -- usado por el
@@ -43,7 +56,7 @@ public:
     glm::vec3 rotationDeg{0.0f, 0.0f, 0.0f}; // Euler XYZ en grados, solo para la UI
     glm::vec3 scale{1.0f, 1.0f, 1.0f};
     bool visible = true;
-    bool hasMesh = false; // si true, el bucle principal dibuja el cubo comun en este nodo
+    PrimitiveType primitive = PrimitiveType::None;
 
 private:
     int id_;

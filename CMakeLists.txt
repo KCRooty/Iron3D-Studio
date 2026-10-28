@@ -78,9 +78,11 @@ add_executable(Iron3DStudio
     src/gfx/VulkanContext.cpp
     src/gfx/SwapchainWindow.cpp
     src/gfx/BasicPipeline.cpp
-    src/core/CubeMesh.cpp
+    src/core/MeshData.cpp
+    src/core/PrimitiveMesh.cpp
     src/core/OrbitalCamera.cpp
     src/core/SceneNode.cpp
+    src/core/SceneSerializer.cpp
     src/core/TransformGizmo.cpp
     src/core/GizmoMesh.cpp
     src/ui/MainUi.cpp)

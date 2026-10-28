@@ -8,7 +8,7 @@
 
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
-#include "CubeMesh.h" // iron3d::Vertex (posicion + color)
+#include "Vertex.h"
 
 #include <vector>
 

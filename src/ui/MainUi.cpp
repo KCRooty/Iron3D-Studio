@@ -1,12 +1,27 @@
 #include "MainUi.h"
+#include "core/SceneSerializer.h"
 
 #include <imgui.h>
 
 #include <vector>
+#include <cstring>
 
 namespace iron3d {
 
 namespace {
+
+// Nombre por defecto al crear cada tipo de primitiva desde el menu contextual
+// del Gestor de Objetos -- igual de informativo que el nombre de clase de C4D
+// al arrastrar un primitivo nuevo (p.ej. "Cube", "Sphere").
+const char* defaultNameFor(PrimitiveType type) {
+    switch (type) {
+        case PrimitiveType::Cube: return "Cubo";
+        case PrimitiveType::Sphere: return "Esfera";
+        case PrimitiveType::Plane: return "Plano";
+        case PrimitiveType::Light: return "Luz";
+        case PrimitiveType::None: default: return "Nulo";
+    }
+}
 
 void drawNodeTree(SceneNode& node, SceneNode*& selected, SceneNode*& toDelete) {
     ImGui::PushID(node.id());
@@ -25,8 +40,16 @@ void drawNodeTree(SceneNode& node, SceneNode*& selected, SceneNode*& toDelete) {
     }
 
     SceneNode* pendingAddTo = nullptr;
+    PrimitiveType pendingAddType = PrimitiveType::None;
     if (ImGui::BeginPopupContextItem("ctx")) {
-        if (ImGui::MenuItem("Anadir hijo")) pendingAddTo = &node;
+        if (ImGui::BeginMenu("Anadir")) {
+            if (ImGui::MenuItem("Nulo (vacio)")) { pendingAddTo = &node; pendingAddType = PrimitiveType::None; }
+            if (ImGui::MenuItem("Cubo")) { pendingAddTo = &node; pendingAddType = PrimitiveType::Cube; }
+            if (ImGui::MenuItem("Esfera")) { pendingAddTo = &node; pendingAddType = PrimitiveType::Sphere; }
+            if (ImGui::MenuItem("Plano")) { pendingAddTo = &node; pendingAddType = PrimitiveType::Plane; }
+            if (ImGui::MenuItem("Luz")) { pendingAddTo = &node; pendingAddType = PrimitiveType::Light; }
+            ImGui::EndMenu();
+        }
         bool canDelete = node.parent() != nullptr; // la raiz de la escena no se borra
         if (ImGui::MenuItem("Eliminar", nullptr, false, canDelete)) toDelete = &node;
         ImGui::EndPopup();
@@ -42,7 +65,7 @@ void drawNodeTree(SceneNode& node, SceneNode*& selected, SceneNode*& toDelete) {
         ImGui::TreePop();
     }
 
-    if (pendingAddTo) pendingAddTo->addChild("Nuevo objeto");
+    if (pendingAddTo) pendingAddTo->addChild(defaultNameFor(pendingAddType), pendingAddType);
     ImGui::PopID();
 }
 
@@ -56,6 +79,7 @@ void drawAttributesPanel(SceneNode* selected) {
         if (ImGui::InputText("Nombre", nameBuf, sizeof(nameBuf))) {
             selected->setName(nameBuf);
         }
+        ImGui::TextDisabled("Tipo: %s", primitiveTypeName(selected->primitive));
         ImGui::Separator();
         ImGui::DragFloat3("Posicion", &selected->position.x, 0.05f);
         ImGui::DragFloat3("Rotacion", &selected->rotationDeg.x, 1.0f);
@@ -63,6 +87,50 @@ void drawAttributesPanel(SceneNode* selected) {
         ImGui::Separator();
         ImGui::Checkbox("Visible", &selected->visible);
         ImGui::TextDisabled("%zu hijo(s)", selected->children().size());
+    }
+    ImGui::End();
+}
+
+// Guardar/cargar escena a disco (Fase 2c, formato .iron -- ver SceneSerializer.h).
+// `root` se pasa por puntero crudo al estado persistente del panel en vez de
+// alla global para no acoplar esto a mas parametros de drawMainUi de los
+// necesarios; vive solo mientras el programa corre, no hay multi-ventana.
+void drawScenePanel(SceneNode& root, SceneNode*& selected, const std::filesystem::path& scenesDir) {
+    static char filenameBuf[128] = "escena";
+    static std::string statusMsg;
+    static bool statusIsError = false;
+
+    ImGui::Begin("Escena");
+    ImGui::InputText("Archivo", filenameBuf, sizeof(filenameBuf));
+    ImGui::TextDisabled(".iron en %s", scenesDir.string().c_str());
+
+    const std::filesystem::path path = scenesDir / (std::string(filenameBuf) + ".iron");
+
+    if (ImGui::Button("Guardar")) {
+        std::string err;
+        if (saveScene(path, root, &err)) {
+            statusMsg = "Guardado: " + path.filename().string();
+            statusIsError = false;
+        } else {
+            statusMsg = "Error al guardar: " + err;
+            statusIsError = true;
+        }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Cargar")) {
+        std::string err;
+        if (loadScene(path, root, &err)) {
+            selected = nullptr; // la escena entera cambio, cualquier puntero viejo es invalido
+            statusMsg = "Cargado: " + path.filename().string();
+            statusIsError = false;
+        } else {
+            statusMsg = "Error al cargar: " + err;
+            statusIsError = true;
+        }
+    }
+    if (!statusMsg.empty()) {
+        ImGui::TextColored(statusIsError ? ImVec4(0.95f, 0.35f, 0.35f, 1.0f) : ImVec4(0.4f, 0.9f, 0.4f, 1.0f),
+                            "%s", statusMsg.c_str());
     }
     ImGui::End();
 }
@@ -95,10 +163,12 @@ void drawGizmoToolbar(GizmoMode& mode) {
 
 } // namespace
 
-void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode, float framerate) {
+void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
+                 const std::filesystem::path& scenesDir, float framerate) {
     SceneNode* toDelete = nullptr;
 
     drawGizmoToolbar(gizmoMode);
+    drawScenePanel(root, selected, scenesDir);
 
     ImGui::Begin("Gestor de Objetos");
     drawNodeTree(root, selected, toDelete);
@@ -108,6 +178,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode, flo
     ImGui::BulletText("Alt + clic medio: panear");
     ImGui::BulletText("Alt + clic der / rueda: zoom");
     ImGui::BulletText("Clic en un eje del gizmo: mover/rotar/escalar");
+    ImGui::BulletText("Clic derecho en un nodo: anadir primitiva / eliminar");
     ImGui::Separator();
     ImGui::Text("%.1f FPS (%.2f ms/frame)", framerate, 1000.0f / framerate);
     ImGui::End();

@@ -1,35 +1,11 @@
-#include "CubeMesh.h"
-
+#include "PrimitiveMesh.h"
 #include "../gfx/VulkanContext.h"
 
-#include <array>
 #include <cstring>
 
 namespace iron3d {
 
 namespace {
-
-// 8 vertices, un color por esquina (sin normales -- Fase 1 es unlit).
-const std::array<Vertex, 8> kVertices = {{
-    {{-0.5f, -0.5f, -0.5f}, {0.9f, 0.2f, 0.2f}},
-    {{ 0.5f, -0.5f, -0.5f}, {0.2f, 0.9f, 0.2f}},
-    {{ 0.5f,  0.5f, -0.5f}, {0.2f, 0.2f, 0.9f}},
-    {{-0.5f,  0.5f, -0.5f}, {0.9f, 0.9f, 0.2f}},
-    {{-0.5f, -0.5f,  0.5f}, {0.9f, 0.2f, 0.9f}},
-    {{ 0.5f, -0.5f,  0.5f}, {0.2f, 0.9f, 0.9f}},
-    {{ 0.5f,  0.5f,  0.5f}, {0.95f, 0.95f, 0.95f}},
-    {{-0.5f,  0.5f,  0.5f}, {0.15f, 0.15f, 0.15f}},
-}};
-
-// 12 triangulos, CCW visto desde fuera (coherente con VK_CULL_MODE_BACK_BIT en BasicPipeline).
-const std::array<uint16_t, 36> kIndices = {{
-    0, 1, 2,  2, 3, 0,   // trasera  (-Z)
-    5, 4, 7,  7, 6, 5,   // frontal  (+Z)
-    4, 0, 3,  3, 7, 4,   // izquierda (-X)
-    1, 5, 6,  6, 2, 1,   // derecha   (+X)
-    3, 2, 6,  6, 7, 3,   // arriba    (+Y)
-    4, 5, 1,  1, 0, 4,   // abajo     (-Y)
-}};
 
 VkBuffer createHostVisibleBuffer(VmaAllocator allocator, VkDeviceSize size,
                                   VkBufferUsageFlags usage, VmaAllocation& outAllocation,
@@ -47,30 +23,30 @@ VkBuffer createHostVisibleBuffer(VmaAllocator allocator, VkDeviceSize size,
     VkBuffer buffer = VK_NULL_HANDLE;
     VmaAllocationInfo info{};
     vkCheck(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer, &outAllocation, &info),
-            "vmaCreateBuffer (CubeMesh)");
+            "vmaCreateBuffer (PrimitiveMesh)");
     std::memcpy(info.pMappedData, data, (size_t)size);
     return buffer;
 }
 
 } // namespace
 
-void CubeMesh::create(VkDevice /*device*/, VmaAllocator allocator) {
+void PrimitiveMesh::create(VkDevice /*device*/, VmaAllocator allocator, const MeshData& data) {
     vertexBuffer_ = createHostVisibleBuffer(
-        allocator, sizeof(kVertices), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        vertexAllocation_, kVertices.data());
+        allocator, sizeof(Vertex) * data.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        vertexAllocation_, data.vertices.data());
     indexBuffer_ = createHostVisibleBuffer(
-        allocator, sizeof(kIndices), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        indexAllocation_, kIndices.data());
-    indexCount_ = (uint32_t)kIndices.size();
+        allocator, sizeof(uint16_t) * data.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        indexAllocation_, data.indices.data());
+    indexCount_ = (uint32_t)data.indices.size();
 }
 
-void CubeMesh::destroy(VkDevice /*device*/, VmaAllocator allocator) {
+void PrimitiveMesh::destroy(VkDevice /*device*/, VmaAllocator allocator) {
     if (vertexBuffer_) vmaDestroyBuffer(allocator, vertexBuffer_, vertexAllocation_);
     if (indexBuffer_) vmaDestroyBuffer(allocator, indexBuffer_, indexAllocation_);
     vertexBuffer_ = indexBuffer_ = VK_NULL_HANDLE;
 }
 
-void CubeMesh::draw(VkCommandBuffer cmd) const {
+void PrimitiveMesh::draw(VkCommandBuffer cmd) const {
     VkDeviceSize offset = 0;
     vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer_, &offset);
     vkCmdBindIndexBuffer(cmd, indexBuffer_, 0, VK_INDEX_TYPE_UINT16);

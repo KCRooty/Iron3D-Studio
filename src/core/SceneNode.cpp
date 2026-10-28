@@ -11,14 +11,30 @@ int nextId() {
 }
 } // namespace
 
-SceneNode::SceneNode(std::string name, bool hasMesh_)
-    : hasMesh(hasMesh_), id_(nextId()), name_(std::move(name)) {}
+const char* primitiveTypeName(PrimitiveType type) {
+    switch (type) {
+        case PrimitiveType::Cube: return "Cubo";
+        case PrimitiveType::Sphere: return "Esfera";
+        case PrimitiveType::Plane: return "Plano";
+        case PrimitiveType::Light: return "Luz";
+        case PrimitiveType::None: default: return "Nulo (vacio)";
+    }
+}
 
-SceneNode* SceneNode::addChild(std::string name, bool hasMesh_) {
-    auto child = std::make_unique<SceneNode>(std::move(name), hasMesh_);
+SceneNode::SceneNode(std::string name, PrimitiveType primitive_)
+    : primitive(primitive_), id_(nextId()), name_(std::move(name)) {}
+
+SceneNode* SceneNode::addChild(std::string name, PrimitiveType primitive_) {
+    auto child = std::make_unique<SceneNode>(std::move(name), primitive_);
     child->parent_ = this;
     children_.push_back(std::move(child));
     return children_.back().get();
+}
+
+void SceneNode::adoptChildrenFrom(SceneNode& other) {
+    children_ = std::move(other.children_);
+    for (auto& child : children_) child->parent_ = this;
+    other.children_.clear();
 }
 
 bool SceneNode::removeChild(SceneNode* child) {
