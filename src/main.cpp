@@ -25,6 +25,7 @@
 #include "core/PrimitiveMesh.h"
 #include "core/OrbitalCamera.h"
 #include "core/SceneNode.h"
+#include "core/SceneHistory.h"
 #include "core/TransformGizmo.h"
 #include "core/GizmoMesh.h"
 #include "ui/MainUi.h"
@@ -208,6 +209,7 @@ int main() {
     SceneNode sceneRoot("Escena");
     SceneNode* cubeNode = sceneRoot.addChild("Cubo", PrimitiveType::Cube);
     SceneNode* selected = cubeNode;
+    SceneHistory history; // deshacer/rehacer (Fase 2d), ver SceneHistory.h
 
     // --- Carpeta de escenas (Fase 2c: guardar/cargar .iron) -------------------
     const std::filesystem::path scenesDir = exeDirectory() / "scenes";
@@ -281,7 +283,13 @@ int main() {
                 if (gizmo.isDragging()) {
                     gizmo.updateDrag(mouseRay);
                 } else {
-                    gizmo.beginDrag(mouseRay, selected, eye);
+                    // Snapshot ANTES de intentar el drag: si agarra un eje de
+                    // verdad (beginDrag devuelve true) se confirma como paso
+                    // de deshacer; si no agarra nada, se descarta sin mas.
+                    const std::string preDragSnap = history.snapshot(sceneRoot);
+                    if (gizmo.beginDrag(mouseRay, selected, eye)) {
+                        history.commit(preDragSnap);
+                    }
                 }
             } else {
                 gizmo.endDrag();
@@ -294,7 +302,7 @@ int main() {
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        drawMainUi(sceneRoot, selected, gizmo.mode, scenesDir, io.Framerate);
+        drawMainUi(sceneRoot, selected, gizmo.mode, scenesDir, history, io.Framerate);
         ImGui::Render();
         ImDrawData* drawData = ImGui::GetDrawData();
 

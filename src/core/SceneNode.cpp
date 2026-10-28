@@ -62,4 +62,20 @@ glm::mat4 SceneNode::worldMatrix() const {
     return parentWorldMatrix() * localMatrix();
 }
 
+namespace {
+SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) {
+    SceneNode* copy = parent.addChild(std::move(name), src.primitive);
+    copy->position = src.position;
+    copy->rotationDeg = src.rotationDeg;
+    copy->scale = src.scale;
+    copy->visible = src.visible;
+    for (const auto& child : src.children()) cloneInto(*copy, *child, child->name());
+    return copy;
+}
+} // namespace
+
+SceneNode* duplicateSubtree(SceneNode& parent, const SceneNode& src) {
+    return cloneInto(parent, src, src.name() + " copia");
+}
+
 } // namespace iron3d

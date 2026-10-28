@@ -121,26 +121,15 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err) {
 
 } // namespace
 
-bool saveScene(const std::filesystem::path& path, const SceneNode& root, std::string* outError) {
-    std::ofstream file(path, std::ios::binary);
-    if (!file) {
-        if (outError) *outError = "no se pudo crear el archivo";
-        return false;
-    }
-    file << "IRON3D_SCENE " << kFormatVersion << "\n";
-    writeNode(file, root, 0);
-    return true;
+std::string serializeScene(const SceneNode& root) {
+    std::ostringstream out;
+    out << "IRON3D_SCENE " << kFormatVersion << "\n";
+    writeNode(out, root, 0);
+    return out.str();
 }
 
-bool loadScene(const std::filesystem::path& path, SceneNode& root, std::string* outError) {
-    std::ifstream file(path, std::ios::binary);
-    if (!file) {
-        if (outError) *outError = "no se pudo abrir el archivo";
-        return false;
-    }
-    std::ostringstream buf;
-    buf << file.rdbuf();
-    const std::vector<std::string> tokens = tokenize(buf.str());
+bool deserializeScene(const std::string& text, SceneNode& root, std::string* outError) {
+    const std::vector<std::string> tokens = tokenize(text);
 
     if (tokens.size() < 2 || tokens[0] != "IRON3D_SCENE") {
         if (outError) *outError = "cabecera invalida (se esperaba 'IRON3D_SCENE <version>')";
@@ -164,6 +153,27 @@ bool loadScene(const std::filesystem::path& path, SceneNode& root, std::string* 
     root.clearChildren();
     root.adoptChildrenFrom(temp);
     return true;
+}
+
+bool saveScene(const std::filesystem::path& path, const SceneNode& root, std::string* outError) {
+    std::ofstream file(path, std::ios::binary);
+    if (!file) {
+        if (outError) *outError = "no se pudo crear el archivo";
+        return false;
+    }
+    file << serializeScene(root);
+    return true;
+}
+
+bool loadScene(const std::filesystem::path& path, SceneNode& root, std::string* outError) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+        if (outError) *outError = "no se pudo abrir el archivo";
+        return false;
+    }
+    std::ostringstream buf;
+    buf << file.rdbuf();
+    return deserializeScene(buf.str(), root, outError);
 }
 
 } // namespace iron3d

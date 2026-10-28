@@ -65,4 +65,11 @@ private:
     std::vector<std::unique_ptr<SceneNode>> children_;
 };
 
+// Clona `src` (con toda su jerarquia) como hijo nuevo de `parent` -- usado
+// por "Duplicar" en el Gestor de Objetos (Fase 2d). Devuelve el nodo raiz de
+// la copia (el de nivel superior, ya seleccionable). Los hijos clonados
+// conservan su nombre tal cual; solo el nodo de nivel superior lleva el
+// sufijo " copia", para distinguirlo del original en la lista.
+SceneNode* duplicateSubtree(SceneNode& parent, const SceneNode& src);
+
 } // namespace iron3d

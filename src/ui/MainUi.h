@@ -6,6 +6,7 @@
 // posicion/rotacion/escala del nodo seleccionado. Materiales y Timeline
 // siguen pendientes de fases posteriores.
 
+#include "core/SceneHistory.h"
 #include "core/SceneNode.h"
 #include "core/TransformGizmo.h"
 
@@ -13,11 +14,14 @@
 
 namespace iron3d {
 
-// `selected` se actualiza si el usuario hace clic en otro nodo, borra el
-// seleccionado o carga una escena nueva encima. `gizmoMode` se actualiza
-// desde la barra de herramientas (Mover/Rotar/Escalar) y los atajos de
-// teclado 1/2/3. `scenesDir` es donde vive Guardar/Cargar escena (Fase 2c).
+// `selected` se actualiza si el usuario hace clic en otro nodo, lo duplica,
+// borra el seleccionado o carga/deshace/rehace una escena entera encima.
+// `gizmoMode` se actualiza desde la barra de herramientas (Mover/Rotar/
+// Escalar) y los atajos de teclado 1/2/3. `scenesDir` es donde vive
+// Guardar/Cargar escena (Fase 2c). `history` es la pila de deshacer/rehacer
+// (Fase 2d, Ctrl+Z/Ctrl+Y) y tambien registra los cambios hechos fuera de
+// esta funcion (p.ej. el arrastre del gizmo en main.cpp).
 void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
-                 const std::filesystem::path& scenesDir, float framerate);
+                 const std::filesystem::path& scenesDir, SceneHistory& history, float framerate);
 
 } // namespace iron3d
