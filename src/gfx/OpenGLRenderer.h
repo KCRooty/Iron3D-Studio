@@ -7,10 +7,12 @@
 // defecto y glfwSwapBuffers presenta, asi que no hace falta fingir que
 // existe un "command buffer": cada drawMesh/drawGizmo graba directamente.
 //
-// Un solo shader program (mismo GLSL logico que shaders/basic.vert/.frag,
-// solo que con un uniform en vez de un push constant de Vulkan) para malla
-// y gizmo: GL no necesita una "pipeline" separada por topologia/cullMode
-// como Vulkan, eso es solo el parametro `mode` de glDraw*.
+// Dos shader programs: `program_` (sin iluminar, mismo GLSL logico que
+// shaders/basic.vert/.frag) para el gizmo, y `litProgram_` (Fase 5: Phong
+// basico) para la malla de escena -- GL no necesita una "pipeline" separada
+// por topologia/cullMode como Vulkan, eso es solo el parametro `mode` de
+// glDraw*, asi que la unica razon para dos programs es que iluminan
+// distinto.
 
 #include "IRenderer.h"
 #include "gl/GLLoader.h"
@@ -32,7 +34,9 @@ public:
     void destroyMesh(MeshHandle handle) override;
 
     bool beginFrame() override;
-    void drawMesh(MeshHandle mesh, const glm::mat4& mvp) override;
+    void setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS) override;
+    void drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
+                  const Material& material) override;
     void drawGizmo(const std::vector<Vertex>& lineVerts, const std::vector<Vertex>& triVerts,
                     const glm::mat4& viewProj) override;
     void endFrame() override;
@@ -48,8 +52,17 @@ private:
     void createGizmoBuffers();
 
     GLFWwindow* window_ = nullptr;
-    gl::GLuint program_ = 0;
+    gl::GLuint program_ = 0;       // gizmo, sin iluminar (mismo de siempre)
     gl::GLint uMvpLocation_ = -1;
+
+    // Programa con iluminacion basica (Fase 5), solo para drawMesh.
+    gl::GLuint litProgram_ = 0;
+    gl::GLint uLitModelLoc_ = -1, uLitMvpLoc_ = -1;
+    gl::GLint uLitLightPosLoc_ = -1, uLitEyePosLoc_ = -1;
+    gl::GLint uLitDiffuseLoc_ = -1, uLitSpecularLoc_ = -1, uLitShininessLoc_ = -1;
+    glm::vec3 lightPosWS_{0.0f};
+    glm::vec3 eyePosWS_{0.0f};
+
     float clearColor_[4] = {0.0f, 0.0f, 0.0f, 1.0f};
     int width_ = 0, height_ = 0;
 

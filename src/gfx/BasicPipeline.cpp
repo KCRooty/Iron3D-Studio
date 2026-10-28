@@ -1,5 +1,6 @@
 #include "BasicPipeline.h"
 #include "VulkanContext.h"
+#include "core/Vertex.h"
 
 #include <fstream>
 #include <vector>
@@ -50,7 +51,10 @@ void BasicPipeline::create(VkDevice device, VkRenderPass renderPass, const std::
 
     VkVertexInputBindingDescription binding{};
     binding.binding = 0;
-    binding.stride = sizeof(float) * 6; // vec3 posicion + vec3 color
+    // sizeof(Vertex), no "sizeof(float)*6": el struct real tiene tambien la
+    // normal (Fase 5) aunque este shader no la lea -- el stride tiene que
+    // coincidir con el layout del buffer, no con lo que el shader usa.
+    binding.stride = sizeof(Vertex);
     binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     VkVertexInputAttributeDescription attrs[2]{};

@@ -24,6 +24,7 @@
 #include "core/TransformGizmo.h"
 #include "core/Paths.h"
 #include "core/Preferences.h"
+#include "core/Material.h"
 #include "ui/MainUi.h"
 
 #include <cstdio>
@@ -42,35 +43,54 @@ void glfwScrollCallback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffs
     g_scrollY += yoffset;
 }
 
+// Recorre el grafo de escena (Fase 2) buscando la primera Luz (Fase 5): su
+// posicion en mundo es la que usa drawScene() para iluminar todo lo demas.
+// Solo una luz activa por ahora -- Phong basico, no hace falta mas.
+bool findFirstLightWorldPos(iron3d::SceneNode& node, const glm::mat4& parentWorld, glm::vec3& outPos) {
+    if (!node.visible) return false;
+    const glm::mat4 world = parentWorld * node.localMatrix();
+    if (node.primitive == iron3d::PrimitiveType::Light) {
+        outPos = glm::vec3(world * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+        return true;
+    }
+    for (const auto& child : node.children()) {
+        if (findFirstLightWorldPos(*child, world, outPos)) return true;
+    }
+    return false;
+}
+
 // Recorre el grafo de escena (Fase 2) y dibuja la malla comun que le toque a
-// cada nodo segun su `primitive`, con su propia matriz de mundo. Un nodo
-// invisible se salta entero junto con sus hijos -- igual que ocultar un
-// objeto padre en cualquier DCC.
+// cada nodo segun su `primitive`, con su propia matriz de mundo e
+// iluminacion (Fase 5: material del nodo, o el gris por defecto si no tiene
+// uno asignado). Un nodo invisible se salta entero junto con sus hijos --
+// igual que ocultar un objeto padre en cualquier DCC.
 void drawScene(iron3d::IRenderer& renderer, iron3d::MeshHandle cubeMesh, iron3d::MeshHandle sphereMesh,
-               iron3d::MeshHandle planeMesh, iron3d::SceneNode& node,
-               const glm::mat4& parentWorld, const glm::mat4& viewProj) {
+               iron3d::MeshHandle planeMesh, const std::vector<iron3d::Material>& materials,
+               iron3d::SceneNode& node, const glm::mat4& parentWorld, const glm::mat4& viewProj) {
     if (!node.visible) return;
     glm::mat4 world = parentWorld * node.localMatrix();
+    const iron3d::Material& material = iron3d::materialOrDefault(materials, node.materialIndex);
 
     using iron3d::PrimitiveType;
     switch (node.primitive) {
         case PrimitiveType::Cube:
-            renderer.drawMesh(cubeMesh, viewProj * world);
+            renderer.drawMesh(cubeMesh, world, viewProj * world, material);
             break;
         case PrimitiveType::Sphere:
-            renderer.drawMesh(sphereMesh, viewProj * world);
+            renderer.drawMesh(sphereMesh, world, viewProj * world, material);
             break;
         case PrimitiveType::Plane:
-            renderer.drawMesh(planeMesh, viewProj * world);
+            renderer.drawMesh(planeMesh, world, viewProj * world, material);
             break;
         case PrimitiveType::Light: {
             // Icono de tamano fijo, ignora la escala del nodo a proposito --
-            // una luz no es geometria escalable, es un marcador (no ilumina
-            // nada todavia, ver comentario en SceneNode.h).
+            // una luz no es geometria escalable, es un marcador. Ahora SI se
+            // ilumina de verdad (es geometria normal a ojos del renderer),
+            // lo cual de paso hace que se vea donde esta la luz.
             const glm::mat4 iconWorld = parentWorld *
                 glm::translate(glm::mat4(1.0f), node.position) *
                 glm::scale(glm::mat4(1.0f), glm::vec3(0.12f));
-            renderer.drawMesh(sphereMesh, viewProj * iconWorld);
+            renderer.drawMesh(sphereMesh, iconWorld, viewProj * iconWorld, material);
             break;
         }
         case PrimitiveType::None:
@@ -79,7 +99,7 @@ void drawScene(iron3d::IRenderer& renderer, iron3d::MeshHandle cubeMesh, iron3d:
     }
 
     for (const auto& child : node.children()) {
-        drawScene(renderer, cubeMesh, sphereMesh, planeMesh, *child, world, viewProj);
+        drawScene(renderer, cubeMesh, sphereMesh, planeMesh, materials, *child, world, viewProj);
     }
 }
 
@@ -141,7 +161,8 @@ int main() {
     SceneNode sceneRoot("Escena");
     SceneNode* cubeNode = sceneRoot.addChild("Cubo", PrimitiveType::Cube);
     SceneNode* selected = cubeNode;
-    SceneHistory history; // deshacer/rehacer (Fase 2d), ver SceneHistory.h
+    std::vector<Material> materials; // biblioteca de materiales (Fase 5), ver core/Material.h
+    SceneHistory history(materials); // deshacer/rehacer (Fase 2d), ver SceneHistory.h
 
     // --- Carpeta de escenas (Fase 2c: guardar/cargar .iron) -------------------
     const std::filesystem::path scenesDir = exeDirectory() / "scenes";
@@ -207,13 +228,21 @@ int main() {
         renderer->imguiNewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        drawMainUi(sceneRoot, selected, gizmo.mode, scenesDir, history, io.Framerate, backend, prefs, prefsPath);
+        drawMainUi(sceneRoot, selected, gizmo.mode, scenesDir, history, io.Framerate, backend, prefs, prefsPath,
+                   materials);
         ImGui::Render();
 
         gizmo.buildGeometry(selected, eye, gizmoLineVerts, gizmoTriVerts);
 
         if (renderer->beginFrame()) {
-            drawScene(*renderer, cubeMesh, sphereMesh, planeMesh, sceneRoot, glm::mat4(1.0f), viewProj);
+            // Luz de la escena (Fase 5): la primera que haya en el grafo; si no
+            // hay ninguna, foco de camara de respaldo (headlamp) para que una
+            // escena nueva sin Luz no se quede a oscuras.
+            glm::vec3 lightPos = eye;
+            findFirstLightWorldPos(sceneRoot, glm::mat4(1.0f), lightPos);
+            renderer->setLighting(lightPos, eye);
+
+            drawScene(*renderer, cubeMesh, sphereMesh, planeMesh, materials, sceneRoot, glm::mat4(1.0f), viewProj);
 
             // Gizmo encima de la escena (ningun buffer de profundidad todavia en
             // Fase 1-2, asi que "despues" ya implica "por encima").

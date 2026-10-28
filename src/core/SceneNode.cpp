@@ -69,6 +69,7 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
     copy->rotationDeg = src.rotationDeg;
     copy->scale = src.scale;
     copy->visible = src.visible;
+    copy->materialIndex = src.materialIndex;
     for (const auto& child : src.children()) cloneInto(*copy, *child, child->name());
     return copy;
 }

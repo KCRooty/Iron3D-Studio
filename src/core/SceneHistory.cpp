@@ -4,7 +4,7 @@
 namespace iron3d {
 
 std::string SceneHistory::snapshot(const SceneNode& root) const {
-    return serializeScene(root);
+    return serializeScene(root, materials_);
 }
 
 void SceneHistory::commit(std::string preChangeSnapshot) {
@@ -22,7 +22,7 @@ bool SceneHistory::undo(SceneNode& root) {
     const std::string prev = std::move(undoStack_.back());
     undoStack_.pop_back();
     std::string err;
-    return deserializeScene(prev, root, &err);
+    return deserializeScene(prev, root, materials_, &err);
 }
 
 bool SceneHistory::redo(SceneNode& root) {
@@ -34,7 +34,7 @@ bool SceneHistory::redo(SceneNode& root) {
     const std::string next = std::move(redoStack_.back());
     redoStack_.pop_back();
     std::string err;
-    return deserializeScene(next, root, &err);
+    return deserializeScene(next, root, materials_, &err);
 }
 
 } // namespace iron3d

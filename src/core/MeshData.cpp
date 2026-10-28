@@ -6,35 +6,45 @@
 
 namespace iron3d {
 
+// Cubo con normales de cara planas (Fase 5): 24 vertices (4 por cara) en vez
+// de los 8 de esquina compartida de antes -- una esquina de cubo ve 3 caras
+// con normales distintas, asi que no se puede iluminar bien compartiendo
+// vertices entre caras. Mismo "tamano 1 unidad" y mismo color por cara que
+// antes (ya no se ve directamente con iluminacion real, pero se deja como
+// tinte visible en el pipeline sin luz / por si se quiere comparar).
 MeshData makeCubeMesh() {
     MeshData mesh;
-    // Mismos 8 vertices/12 triangulos del cubo original de la Fase 1 (un
-    // color por esquina, CCW visto desde fuera para VK_CULL_MODE_BACK_BIT).
-    mesh.vertices = {
-        {{-0.5f, -0.5f, -0.5f}, {0.9f, 0.2f, 0.2f}},
-        {{ 0.5f, -0.5f, -0.5f}, {0.2f, 0.9f, 0.2f}},
-        {{ 0.5f,  0.5f, -0.5f}, {0.2f, 0.2f, 0.9f}},
-        {{-0.5f,  0.5f, -0.5f}, {0.9f, 0.9f, 0.2f}},
-        {{-0.5f, -0.5f,  0.5f}, {0.9f, 0.2f, 0.9f}},
-        {{ 0.5f, -0.5f,  0.5f}, {0.2f, 0.9f, 0.9f}},
-        {{ 0.5f,  0.5f,  0.5f}, {0.95f, 0.95f, 0.95f}},
-        {{-0.5f,  0.5f,  0.5f}, {0.15f, 0.15f, 0.15f}},
+    const float h = 0.5f;
+
+    struct Face { glm::vec3 normal; glm::vec3 corners[4]; glm::vec3 color; };
+    const Face faces[6] = {
+        {{ 0, 0, -1}, {{-h,-h,-h}, { h,-h,-h}, { h, h,-h}, {-h, h,-h}}, {0.9f, 0.2f, 0.2f}}, // -Z trasera
+        {{ 0, 0,  1}, {{-h,-h, h}, { h,-h, h}, { h, h, h}, {-h, h, h}}, {0.2f, 0.9f, 0.9f}}, // +Z frontal
+        {{-1, 0,  0}, {{-h,-h, h}, {-h,-h,-h}, {-h, h,-h}, {-h, h, h}}, {0.9f, 0.2f, 0.9f}}, // -X izquierda
+        {{ 1, 0,  0}, {{ h,-h,-h}, { h,-h, h}, { h, h, h}, { h, h,-h}}, {0.2f, 0.9f, 0.2f}}, // +X derecha
+        {{ 0, 1,  0}, {{-h, h,-h}, { h, h,-h}, { h, h, h}, {-h, h, h}}, {0.95f, 0.95f, 0.95f}}, // +Y arriba
+        {{ 0,-1,  0}, {{-h,-h, h}, { h,-h, h}, { h,-h,-h}, {-h,-h,-h}}, {0.15f, 0.15f, 0.15f}}, // -Y abajo
     };
-    mesh.indices = {
-        0, 1, 2,  2, 3, 0,   // trasera  (-Z)
-        5, 4, 7,  7, 6, 5,   // frontal  (+Z)
-        4, 0, 3,  3, 7, 4,   // izquierda (-X)
-        1, 5, 6,  6, 2, 1,   // derecha   (+X)
-        3, 2, 6,  6, 7, 3,   // arriba    (+Y)
-        4, 5, 1,  1, 0, 4,   // abajo     (-Y)
-    };
+
+    for (const Face& f : faces) {
+        const uint16_t base = (uint16_t)mesh.vertices.size();
+        for (const glm::vec3& corner : f.corners) {
+            mesh.vertices.push_back({corner, f.color, f.normal});
+        }
+        // CCW visto desde fuera (coherente con el orden de esquinas de cada cara).
+        mesh.indices.insert(mesh.indices.end(), {
+            (uint16_t)(base + 0), (uint16_t)(base + 1), (uint16_t)(base + 2),
+            (uint16_t)(base + 2), (uint16_t)(base + 3), (uint16_t)(base + 0),
+        });
+    }
     return mesh;
 }
 
-// Esfera UV de radio 0.5 (mismo "tamano por defecto 1 unidad" que el cubo).
-// Color = direccion desde el centro mapeada a RGB -- visualizacion de
-// normales clasica, da el mismo aspecto arcoiris que el cubo sin necesitar
-// iluminacion real todavia.
+// Esfera UV de radio 0.5: la normal es la propia direccion desde el centro
+// (una esfera centrada en el origen es el caso facil, normal == posicion
+// normalizada). El color ya no representa la normal -- antes era la unica
+// forma de "ver" la direccion sin iluminacion real; ahora que la hay, se deja
+// un tinte neutro, el aspecto final lo da el material + la luz.
 MeshData makeSphereMesh(int rings, int segments) {
     MeshData mesh;
     const float radius = 0.5f;
@@ -49,8 +59,7 @@ MeshData makeSphereMesh(int rings, int segments) {
             const float u = (float)seg / (float)segments;
             const float theta = u * glm::two_pi<float>();
             const glm::vec3 dir(ringRadius * std::cos(theta), y, ringRadius * std::sin(theta));
-            const glm::vec3 color = dir * 0.5f + glm::vec3(0.5f);
-            mesh.vertices.push_back({dir * radius, color});
+            mesh.vertices.push_back({dir * radius, glm::vec3(0.8f), dir});
         }
     }
 
@@ -68,18 +77,19 @@ MeshData makeSphereMesh(int rings, int segments) {
     return mesh;
 }
 
-// Plano 1x1 en el eje XZ (el plano "de suelo" por defecto de C4D), visible
-// desde ambas caras porque el gizmo/objetos lo usan como referencia de
-// escena -- sin cull (el pipeline que lo dibuja ya tiene cullMode=BACK,
-// asi que de momento solo se ve desde +Y; documentado, suficiente para un
-// primitivo de referencia en esta fase).
+// Plano 1x1 en el eje XZ (el plano "de suelo" por defecto de C4D), normal
+// hacia +Y -- visible desde ambas caras porque el pipeline que lo dibuja
+// tiene cullMode=NONE, asi que de momento no importa que una cara "trasera"
+// tenga la normal invertida de cara a la camara (documentado, suficiente
+// para un primitivo de referencia en esta fase).
 MeshData makePlaneMesh() {
     MeshData mesh;
+    const glm::vec3 up(0.0f, 1.0f, 0.0f);
     mesh.vertices = {
-        {{-0.5f, 0.0f, -0.5f}, {0.3f, 0.5f, 0.3f}},
-        {{ 0.5f, 0.0f, -0.5f}, {0.3f, 0.6f, 0.4f}},
-        {{ 0.5f, 0.0f,  0.5f}, {0.4f, 0.6f, 0.3f}},
-        {{-0.5f, 0.0f,  0.5f}, {0.3f, 0.55f, 0.35f}},
+        {{-0.5f, 0.0f, -0.5f}, {0.3f, 0.5f, 0.3f}, up},
+        {{ 0.5f, 0.0f, -0.5f}, {0.3f, 0.6f, 0.4f}, up},
+        {{ 0.5f, 0.0f,  0.5f}, {0.4f, 0.6f, 0.3f}, up},
+        {{-0.5f, 0.0f,  0.5f}, {0.3f, 0.55f, 0.35f}, up},
     };
     mesh.indices = {0, 2, 1, 2, 0, 3};
     return mesh;

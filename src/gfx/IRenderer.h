@@ -12,6 +12,7 @@
 
 #include "core/MeshData.h"
 #include "core/Vertex.h"
+#include "core/Material.h"
 
 #include <glm/glm.hpp>
 
@@ -61,9 +62,20 @@ public:
 
     // true si hay que dibujar este frame; false si hay que saltarselo
     // (minimizada, swapchain fuera de fecha en Vulkan...) -- en ese caso no
-    // llamar a drawMesh/drawGizmo/endFrame.
+    // llamar a setLighting/drawMesh/drawGizmo/endFrame.
     virtual bool beginFrame() = 0;
-    virtual void drawMesh(MeshHandle mesh, const glm::mat4& mvp) = 0;
+
+    // Estado de iluminacion de ESTE frame (Fase 5): una sola luz puntual +
+    // un termino ambiente fijo, nada de PBR/sombras todavia -- lo minimo
+    // para que la "Luz" de la escena (o el foco de camara de respaldo si no
+    // hay ninguna, ver main.cpp) ilumine algo de verdad. Llamar una vez por
+    // frame, antes de cualquier drawMesh.
+    virtual void setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS) = 0;
+    // `model` es la matriz de mundo del nodo (para posicion/normal en espacio
+    // de mundo); `mvp` ya trae la proyeccion*vista*mundo para gl_Position --
+    // se pasan ambas en vez de reconstruir una desde la otra en el shader.
+    virtual void drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
+                           const Material& material) = 0;
     // Vertices ya en espacio de mundo (ver TransformGizmo::buildGeometry):
     // el backend se encarga de subirlos a un buffer dinamico cada frame.
     virtual void drawGizmo(const std::vector<Vertex>& lineVerts, const std::vector<Vertex>& triVerts,

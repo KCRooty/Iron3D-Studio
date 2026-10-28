@@ -98,7 +98,19 @@ void stubTab(const char* label) {
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("Todavia no implementado");
 }
 
-void drawAttributesPanel(SceneNode* selected, SceneNode& sceneRoot, SceneHistory& history) {
+// Reasigna materialIndex en todo el arbol tras borrar el material `removed`
+// de la biblioteca: los que apuntaban a `removed` vuelven a -1 (sin
+// material), los que apuntaban a uno posterior bajan un puesto (la lista se
+// compacto con std::vector::erase). Recorrido recursivo, mismo patron que
+// drawNodeTree/duplicateSubtree.
+void fixupMaterialIndicesAfterRemoval(SceneNode& node, int removed) {
+    if (node.materialIndex == removed) node.materialIndex = -1;
+    else if (node.materialIndex > removed) node.materialIndex -= 1;
+    for (const auto& child : node.children()) fixupMaterialIndicesAfterRemoval(*child, removed);
+}
+
+void drawAttributesPanel(SceneNode* selected, SceneNode& sceneRoot, SceneHistory& history,
+                          std::vector<Material>& materials) {
     ImGui::Begin("Atributos", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
     if (ImGui::BeginTabBar("##attrTabs")) {
         if (ImGui::BeginTabItem("Objeto")) {
@@ -138,6 +150,31 @@ void drawAttributesPanel(SceneNode* selected, SceneNode& sceneRoot, SceneHistory
                 ImGui::Checkbox("Visible", &selected->visible);
                 trackEdit();
                 ImGui::TextDisabled("%zu hijo(s)", selected->children().size());
+                ImGui::Separator();
+
+                // Asignacion de material (Fase 5): el equivalente a un
+                // TextureTag de C4D, pero como campo del propio nodo en vez
+                // de un tag aparte -- la biblioteca vive en la pestana
+                // "Textura" del panel Crear, esto solo elige cual usa.
+                const char* currentMatName = selected->materialIndex >= 0 &&
+                                                      (size_t)selected->materialIndex < materials.size()
+                                                  ? materials[(size_t)selected->materialIndex].name.c_str()
+                                                  : "Ninguno (gris)";
+                if (ImGui::BeginCombo("Material", currentMatName)) {
+                    const bool noneSelected = selected->materialIndex < 0;
+                    if (ImGui::Selectable("Ninguno (gris)", noneSelected)) {
+                        history.commitBefore(sceneRoot);
+                        selected->materialIndex = -1;
+                    }
+                    for (size_t i = 0; i < materials.size(); ++i) {
+                        const bool isSelected = selected->materialIndex == (int)i;
+                        if (ImGui::Selectable(materials[i].name.c_str(), isSelected)) {
+                            history.commitBefore(sceneRoot);
+                            selected->materialIndex = (int)i;
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
             }
             ImGui::EndTabItem();
         }
@@ -152,7 +189,7 @@ void drawAttributesPanel(SceneNode* selected, SceneNode& sceneRoot, SceneHistory
 // "layout C4D"), no un panel siempre acoplado -- `open` es el bool del menu,
 // ImGui lo pone a false solo si se cierra con la X.
 void drawScenePanel(SceneNode& root, SceneNode*& selected, const std::filesystem::path& scenesDir,
-                     SceneHistory& history, bool* open) {
+                     SceneHistory& history, std::vector<Material>& materials, bool* open) {
     if (!*open) return;
     static char filenameBuf[128] = "escena";
     static std::string statusMsg;
@@ -166,7 +203,7 @@ void drawScenePanel(SceneNode& root, SceneNode*& selected, const std::filesystem
 
     if (ImGui::Button("Guardar")) {
         std::string err;
-        if (saveScene(path, root, &err)) {
+        if (saveScene(path, root, materials, &err)) {
             statusMsg = "Guardado: " + path.filename().string();
             statusIsError = false;
         } else {
@@ -177,7 +214,7 @@ void drawScenePanel(SceneNode& root, SceneNode*& selected, const std::filesystem
     ImGui::SameLine();
     if (ImGui::Button("Cargar")) {
         std::string err;
-        if (loadScene(path, root, &err)) {
+        if (loadScene(path, root, materials, &err)) {
             selected = nullptr; // la escena entera cambio, cualquier puntero viejo es invalido
             history.reset(); // un deshacer no debe saltar a una escena que ya no existe
             statusMsg = "Cargado: " + path.filename().string();
@@ -336,11 +373,58 @@ void drawIconToolbar(GizmoMode& mode, SceneNode& root, SceneNode*& selected, Sce
 }
 
 // Panel "Crear" (esquina inferior izquierda, igual que las pestanas Crear/
-// Editar/Funcion/Textura de C4D): aqui solo Crear tiene contenido real --
-// anade la primitiva como hijo del nodo seleccionado, o de la raiz si no hay
-// seleccion. Los otros tres son huecos del layout sin funcionalidad todavia.
+// Editar/Funcion/Textura de C4D): Crear anade la primitiva como hijo del
+// nodo seleccionado (o de la raiz si no hay seleccion); Textura (Fase 5) es
+// el gestor de materiales real (ver drawMaterialsTab). Editar/Funcion siguen
+// siendo huecos del layout sin funcionalidad todavia.
+// Pestana "Textura" (Fase 5): gestor de materiales real -- lista + Nuevo/
+// Eliminar + edicion de color/especular/brillo del seleccionado. La propia
+// lista NO pasa por SceneHistory directamente (ver comentario de
+// SceneHistory.h), pero como el constructor le dio una referencia a
+// `materials`, cualquier commitBefore/commit de OTRO cambio (mover un nodo,
+// etc.) captura igualmente el estado de la lista en ese momento -- undo/redo
+// no se desincroniza aunque no se llame aqui explicitamente.
+void drawMaterialsTab(SceneNode& root, std::vector<Material>& materials) {
+    static int selectedMat = -1;
+
+    if (ImGui::Button("Nuevo material")) {
+        Material m;
+        m.name = "Material " + std::to_string(materials.size() + 1);
+        materials.push_back(m);
+        selectedMat = (int)materials.size() - 1;
+    }
+    ImGui::SameLine();
+    if (selectedMat < 0 || (size_t)selectedMat >= materials.size()) ImGui::BeginDisabled();
+    if (ImGui::Button("Eliminar")) {
+        fixupMaterialIndicesAfterRemoval(root, selectedMat);
+        materials.erase(materials.begin() + selectedMat);
+        selectedMat = -1;
+    }
+    if (selectedMat < 0 || (size_t)selectedMat >= materials.size()) ImGui::EndDisabled();
+
+    ImGui::BeginChild("##matList", ImVec2(0, 80), true);
+    for (size_t i = 0; i < materials.size(); ++i) {
+        ImGui::PushID((int)i);
+        if (ImGui::Selectable(materials[i].name.c_str(), selectedMat == (int)i)) selectedMat = (int)i;
+        ImGui::PopID();
+    }
+    ImGui::EndChild();
+
+    if (selectedMat < 0 || (size_t)selectedMat >= materials.size()) {
+        ImGui::TextDisabled("Ningun material seleccionado.");
+        return;
+    }
+    Material& m = materials[(size_t)selectedMat];
+    char nameBuf[128];
+    std::snprintf(nameBuf, sizeof(nameBuf), "%s", m.name.c_str());
+    if (ImGui::InputText("Nombre##mat", nameBuf, sizeof(nameBuf))) m.name = nameBuf;
+    ImGui::ColorEdit3("Difuso", &m.diffuse.x);
+    ImGui::SliderFloat("Especular", &m.specular, 0.0f, 1.0f);
+    ImGui::SliderFloat("Brillo", &m.shininess, 1.0f, 128.0f);
+}
+
 void drawCreatePanel(SceneNode& root, SceneNode*& selected, SceneHistory& history,
-                      const ImVec2& pos, const ImVec2& size) {
+                      std::vector<Material>& materials, const ImVec2& pos, const ImVec2& size) {
     ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
     ImGui::SetNextWindowSize(size, ImGuiCond_Always);
     ImGui::Begin("Crear", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
@@ -363,7 +447,10 @@ void drawCreatePanel(SceneNode& root, SceneNode*& selected, SceneHistory& histor
         }
         stubTab("Editar");
         stubTab("Funcion");
-        stubTab("Textura");
+        if (ImGui::BeginTabItem("Textura")) {
+            drawMaterialsTab(root, materials);
+            ImGui::EndTabItem();
+        }
         ImGui::EndTabBar();
     }
     ImGui::End();
@@ -403,7 +490,8 @@ void drawStatusBar(float framerate, const ImVec2& pos, const ImVec2& size) {
 
 void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
                  const std::filesystem::path& scenesDir, SceneHistory& history, float framerate,
-                 RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath) {
+                 RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath,
+                 std::vector<Material>& materials) {
     SceneNode* toDelete = nullptr;
 
     handleGlobalShortcuts(gizmoMode, root, selected, history);
@@ -433,7 +521,8 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     drawIconToolbar(gizmoMode, root, selected, history, activeBackend,
                      ImVec2(vp->Pos.x, vp->Pos.y + menuBarH), ImVec2(vp->Size.x, toolbarH));
     drawStatusBar(framerate, ImVec2(vp->Pos.x, vp->Pos.y + vp->Size.y - statusH), ImVec2(vp->Size.x, statusH));
-    drawCreatePanel(root, selected, history, ImVec2(vp->Pos.x, contentBottom - createH), ImVec2(createW, createH));
+    drawCreatePanel(root, selected, history, materials, ImVec2(vp->Pos.x, contentBottom - createH),
+                     ImVec2(createW, createH));
 
     ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + vp->Size.x - rightW, contentTop), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(rightW, objectsH), ImGuiCond_Always);
@@ -444,9 +533,9 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
 
     ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + vp->Size.x - rightW, contentTop + objectsH), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(rightW, contentH - objectsH), ImGuiCond_Always);
-    drawAttributesPanel(selected, root, history);
+    drawAttributesPanel(selected, root, history, materials);
 
-    drawScenePanel(root, selected, scenesDir, history, &g_showScenePanel);
+    drawScenePanel(root, selected, scenesDir, history, materials, &g_showScenePanel);
     drawPreferencesPanel(activeBackend, prefs, prefsPath, &g_showPreferencesPanel);
 
     if (toDelete && toDelete->parent()) {
