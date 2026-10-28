@@ -220,14 +220,41 @@ void drawToolsToolbar(GizmoMode& mode, SceneNode& root, SceneNode*& selected, Sc
     ImGui::End();
 }
 
+// Eleccion de backend de render (Fase 3c): solo guarda en disco, nunca
+// cambia el renderer en caliente -- `activeBackend` (el que ya esta
+// corriendo) se muestra aparte para que quede claro por que elegir otro no
+// hace nada hasta reiniciar, igual que Cinema 4D con su API de render.
+void drawPreferencesPanel(RendererBackend activeBackend, Preferences& prefs,
+                           const std::filesystem::path& prefsPath) {
+    static std::string statusMsg;
+
+    ImGui::Begin("Preferencias");
+    ImGui::Text("Backend activo esta sesion: %s", activeBackend == RendererBackend::Vulkan ? "Vulkan" : "OpenGL");
+    ImGui::Separator();
+    ImGui::TextUnformatted("Backend de render (se aplica al reiniciar):");
+    int backendIdx = (prefs.renderBackend == RendererBackend::Vulkan) ? 0 : 1;
+    if (ImGui::RadioButton("Vulkan", backendIdx == 0)) prefs.renderBackend = RendererBackend::Vulkan;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("OpenGL", backendIdx == 1)) prefs.renderBackend = RendererBackend::OpenGL;
+
+    if (ImGui::Button("Guardar")) {
+        statusMsg = savePreferences(prefsPath, prefs) ? "Guardado. Reinicia Iron3D Studio para aplicarlo."
+                                                        : "Error al guardar las preferencias.";
+    }
+    if (!statusMsg.empty()) ImGui::TextUnformatted(statusMsg.c_str());
+    ImGui::End();
+}
+
 } // namespace
 
 void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
-                 const std::filesystem::path& scenesDir, SceneHistory& history, float framerate) {
+                 const std::filesystem::path& scenesDir, SceneHistory& history, float framerate,
+                 RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath) {
     SceneNode* toDelete = nullptr;
 
     drawToolsToolbar(gizmoMode, root, selected, history);
     drawScenePanel(root, selected, scenesDir, history);
+    drawPreferencesPanel(activeBackend, prefs, prefsPath);
 
     ImGui::Begin("Gestor de Objetos");
     drawNodeTree(root, selected, toDelete, root, history);
