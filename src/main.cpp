@@ -168,7 +168,7 @@ int main() {
 
         const float aspect = (float)fbWidth / (float)fbHeight;
         const glm::mat4 view = camera.viewMatrix();
-        const glm::mat4 proj = camera.projectionMatrix(aspect);
+        const glm::mat4 proj = camera.projectionMatrix(aspect, renderer->needsProjectionYFlip());
         const glm::vec3 eye = camera.eyePosition();
         const glm::mat4 viewProj = proj * view;
 

@@ -51,6 +51,10 @@ public:
     virtual void resizeIfNeeded(int fbWidth, int fbHeight) = 0;
     virtual void setClearColor(float r, float g, float b, float a) = 0;
 
+    // true para Vulkan (+Y hacia abajo en espacio de recorte), false para
+    // OpenGL -- ver OrbitalCamera::projectionMatrix().
+    virtual bool needsProjectionYFlip() const = 0;
+
     // Malla estatica subida una vez (cubo/esfera/plano -- ver PrimitiveMesh).
     virtual MeshHandle createMesh(const MeshData& data) = 0;
     virtual void destroyMesh(MeshHandle handle) = 0;

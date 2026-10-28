@@ -27,6 +27,7 @@ public:
 
     void resizeIfNeeded(int fbWidth, int fbHeight) override;
     void setClearColor(float r, float g, float b, float a) override;
+    bool needsProjectionYFlip() const override { return true; }
 
     MeshHandle createMesh(const MeshData& data) override;
     void destroyMesh(MeshHandle handle) override;

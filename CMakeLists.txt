@@ -59,7 +59,8 @@ add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
     ${imgui_SOURCE_DIR}/imgui_demo.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp)
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp)
 target_include_directories(imgui PUBLIC
     ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends)
@@ -80,6 +81,8 @@ add_executable(Iron3DStudio
     src/gfx/BasicPipeline.cpp
     src/gfx/IRenderer.cpp
     src/gfx/VulkanRenderer.cpp
+    src/gfx/OpenGLRenderer.cpp
+    src/gfx/gl/GLLoader.cpp
     src/core/MeshData.cpp
     src/core/PrimitiveMesh.cpp
     src/core/OrbitalCamera.cpp
