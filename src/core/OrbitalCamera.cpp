@@ -50,12 +50,15 @@ void OrbitalCamera::handleInput(GLFWwindow* window, double mouseX, double mouseY
     }
 }
 
-glm::mat4 OrbitalCamera::viewMatrix() const {
-    const glm::vec3 eye = target_ + glm::vec3(
+glm::vec3 OrbitalCamera::eyePosition() const {
+    return target_ + glm::vec3(
         distance_ * std::cos(pitch_) * std::sin(yaw_),
         distance_ * std::sin(pitch_),
         distance_ * std::cos(pitch_) * std::cos(yaw_));
-    return glm::lookAt(eye, target_, glm::vec3(0.0f, 1.0f, 0.0f));
+}
+
+glm::mat4 OrbitalCamera::viewMatrix() const {
+    return glm::lookAt(eyePosition(), target_, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
 glm::mat4 OrbitalCamera::projectionMatrix(float aspectRatio) const {

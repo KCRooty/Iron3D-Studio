@@ -24,6 +24,8 @@
 #include "core/CubeMesh.h"
 #include "core/OrbitalCamera.h"
 #include "core/SceneNode.h"
+#include "core/TransformGizmo.h"
+#include "core/GizmoMesh.h"
 #include "ui/MainUi.h"
 
 #include <cstdio>
@@ -147,6 +149,21 @@ int main() {
     BasicPipeline pipeline;
     pipeline.create(ctx.device, swapchain.renderPass(), exeDirectory() / "shaders");
 
+    // Gizmo de transformacion (Fase 2b): mismos shaders basic.vert/.frag que el
+    // cubo, dos pipelines extra solo por el cambio de topologia/cull que Vulkan
+    // exige fijar en el objeto de pipeline (no es estado dinamico aqui).
+    BasicPipeline gizmoLinePipeline;
+    gizmoLinePipeline.create(ctx.device, swapchain.renderPass(), exeDirectory() / "shaders",
+                              VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+    BasicPipeline gizmoTriPipeline;
+    gizmoTriPipeline.create(ctx.device, swapchain.renderPass(), exeDirectory() / "shaders",
+                             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_CULL_MODE_NONE);
+
+    GizmoMesh gizmoMesh;
+    gizmoMesh.create(allocator);
+    TransformGizmo gizmo;
+    std::vector<Vertex> gizmoLineVerts, gizmoTriVerts;
+
     OrbitalCamera camera;
     swapchain.setClearColor(0.08f, 0.08f, 0.10f, 1.0f); // gris muy oscuro, no negro plano
 
@@ -198,6 +215,8 @@ int main() {
 
         double mouseX = 0.0, mouseY = 0.0;
         glfwGetCursorPos(window, &mouseX, &mouseY);
+        const bool altHeld = glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
+                              glfwGetKey(window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
         if (!io.WantCaptureMouse) {
             camera.handleInput(window, mouseX, mouseY, g_scrollY);
         } else {
@@ -205,20 +224,55 @@ int main() {
         }
         g_scrollY = 0.0;
 
+        const float aspect = (float)swapchain.width() / (float)swapchain.height();
+        const glm::mat4 view = camera.viewMatrix();
+        const glm::mat4 proj = camera.projectionMatrix(aspect);
+        const glm::vec3 eye = camera.eyePosition();
+        const glm::mat4 viewProj = proj * view;
+
+        // Picking/arrastre del gizmo: solo si el raton no esta sobre un panel de
+        // ImGui y no se esta orbitando con Alt (misma condicion que la camara,
+        // para que nunca compitan por el mismo clic).
+        const bool leftDown = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+        if (!io.WantCaptureMouse && !altHeld) {
+            const Ray mouseRay = TransformGizmo::screenRay(mouseX, mouseY, fbWidth, fbHeight, view, proj, eye);
+            if (leftDown) {
+                if (gizmo.isDragging()) {
+                    gizmo.updateDrag(mouseRay);
+                } else {
+                    gizmo.beginDrag(mouseRay, selected, eye);
+                }
+            } else {
+                gizmo.endDrag();
+                gizmo.updateHover(mouseRay, selected, eye);
+            }
+        } else {
+            gizmo.endDrag();
+        }
+
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        drawMainUi(sceneRoot, selected, io.Framerate);
+        drawMainUi(sceneRoot, selected, gizmo.mode, io.Framerate);
         ImGui::Render();
         ImDrawData* drawData = ImGui::GetDrawData();
 
-        const float aspect = (float)swapchain.width() / (float)swapchain.height();
-        glm::mat4 viewProj = camera.projectionMatrix(aspect) * camera.viewMatrix();
+        gizmo.buildGeometry(selected, eye, gizmoLineVerts, gizmoTriVerts);
+        gizmoMesh.upload(gizmoLineVerts, gizmoTriVerts);
 
         VkCommandBuffer cmd = swapchain.beginFrame(ctx.device);
         if (cmd != VK_NULL_HANDLE) {
             pipeline.bind(cmd);
             drawScene(cmd, pipeline, cube, sceneRoot, glm::mat4(1.0f), viewProj);
+
+            // Gizmo encima de la escena (ningun buffer de profundidad todavia en
+            // Fase 1-2, asi que "despues" ya implica "por encima").
+            gizmoTriPipeline.bind(cmd);
+            gizmoTriPipeline.pushMvp(cmd, viewProj); // vertices del gizmo ya en espacio de mundo
+            gizmoMesh.drawTriangles(cmd);
+            gizmoLinePipeline.bind(cmd);
+            gizmoLinePipeline.pushMvp(cmd, viewProj);
+            gizmoMesh.drawLines(cmd);
 
             swapchain.endFrame(ctx.device, ctx.graphicsQueue, drawData); // graba ImGui y cierra el render pass
         }
@@ -227,6 +281,9 @@ int main() {
     // --- Cierre ----------------------------------------------------------------
     vkCheck(vkDeviceWaitIdle(ctx.device), "vkDeviceWaitIdle");
 
+    gizmoMesh.destroy(allocator);
+    gizmoLinePipeline.destroy(ctx.device);
+    gizmoTriPipeline.destroy(ctx.device);
     pipeline.destroy(ctx.device);
     cube.destroy(ctx.device, allocator);
     vmaDestroyAllocator(allocator);

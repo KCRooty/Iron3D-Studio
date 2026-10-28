@@ -81,6 +81,8 @@ add_executable(Iron3DStudio
     src/core/CubeMesh.cpp
     src/core/OrbitalCamera.cpp
     src/core/SceneNode.cpp
+    src/core/TransformGizmo.cpp
+    src/core/GizmoMesh.cpp
     src/ui/MainUi.cpp)
 
 target_include_directories(Iron3DStudio PRIVATE

@@ -33,7 +33,8 @@ VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code
 
 } // namespace
 
-void BasicPipeline::create(VkDevice device, VkRenderPass renderPass, const std::filesystem::path& shaderDir) {
+void BasicPipeline::create(VkDevice device, VkRenderPass renderPass, const std::filesystem::path& shaderDir,
+                            VkPrimitiveTopology topology, VkCullModeFlags cullMode) {
     VkShaderModule vert = createShaderModule(device, readFile(shaderDir / "basic.vert.spv"));
     VkShaderModule frag = createShaderModule(device, readFile(shaderDir / "basic.frag.spv"));
 
@@ -63,7 +64,7 @@ void BasicPipeline::create(VkDevice device, VkRenderPass renderPass, const std::
     vertexInput.pVertexAttributeDescriptions = attrs;
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.topology = topology;
 
     VkPipelineViewportStateCreateInfo viewportState{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
     viewportState.viewportCount = 1;
@@ -71,7 +72,7 @@ void BasicPipeline::create(VkDevice device, VkRenderPass renderPass, const std::
 
     VkPipelineRasterizationStateCreateInfo raster{VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
     raster.polygonMode = VK_POLYGON_MODE_FILL;
-    raster.cullMode = VK_CULL_MODE_BACK_BIT;
+    raster.cullMode = cullMode;
     raster.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     raster.lineWidth = 1.0f;
 
