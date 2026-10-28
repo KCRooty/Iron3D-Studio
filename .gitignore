@@ -4,6 +4,7 @@ cmake-build-*/
 *.obj
 *.exe
 *.pdb
+installer/output/
 __pycache__/
 *.pyc
 .pytest_cache/

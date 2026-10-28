@@ -1,0 +1,11 @@
+IRON3D_SCENE 1
+NODE name="Escena" primitive=none px=0 py=0 pz=0 rx=0 ry=0 rz=0 sx=1 sy=1 sz=1 visible=1 {
+  NODE name="Suelo" primitive=plane px=0 py=-1 pz=0 rx=0 ry=0 rz=0 sx=4 sy=1 sz=4 visible=1 {
+  }
+  NODE name="Cubo" primitive=cube px=-1.2 py=0 pz=0 rx=0 ry=25 rz=0 sx=1 sy=1 sz=1 visible=1 {
+  }
+  NODE name="Esfera" primitive=sphere px=1.2 py=0 pz=0 rx=0 ry=0 rz=0 sx=1 sy=1 sz=1 visible=1 {
+  }
+  NODE name="Luz" primitive=light px=0 py=2.5 pz=1.5 rx=0 ry=0 rz=0 sx=1 sy=1 sz=1 visible=1 {
+  }
+}
