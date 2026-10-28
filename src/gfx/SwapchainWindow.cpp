@@ -43,6 +43,7 @@ void SwapchainWindow::init(VkInstance instance, VkPhysicalDevice physicalDevice,
 
     ImGui_ImplVulkanH_CreateOrResizeWindow(instance, physicalDevice, device, wd_, queueFamily,
                                             nullptr, width, height, minImageCount_);
+    resetSemaphorePool();
 }
 
 void SwapchainWindow::destroy(VkInstance instance, VkDevice device) {
@@ -62,15 +63,35 @@ void SwapchainWindow::resizeIfNeeded(VkInstance instance, VkPhysicalDevice physi
                                             nullptr, fbWidth, fbHeight, minImageCount_);
     wd_->FrameIndex = 0;
     swapChainRebuild_ = false;
+    resetSemaphorePool();
+}
+
+void SwapchainWindow::resetSemaphorePool() {
+    imageSemaphoreSlot_.assign(wd_->ImageCount, -1);
+    freeSemaphores_.clear();
+    for (uint32_t i = 0; i < wd_->SemaphoreCount; ++i) freeSemaphores_.push_back(i);
+    currentSemaphoreSlot_ = 0;
 }
 
 VkCommandBuffer SwapchainWindow::beginFrame(VkDevice device) {
     if (isMinimized()) return VK_NULL_HANDLE;
 
-    VkSemaphore imageAcquired = wd_->FrameSemaphores[wd_->SemaphoreIndex].ImageAcquiredSemaphore;
+    // No usamos wd_->SemaphoreIndex (rotacion ciega, igual que el ejemplo de
+    // ImGui): ese contador avanza sin relacion con que imagen real se acabo
+    // adquiriendo, asi que el fence-wait de abajo (indexado por FrameIndex,
+    // la imagen real) no demuestra nada sobre si ESE semaforo es seguro de
+    // reusar -- es justo el hueco que describe la guia de Vulkan del aviso
+    // de validacion (swapchain_semaphore_reuse). En vez de eso, pedimos un
+    // semaforo libre del pool (hay SemaphoreCount = ImageCount+1, ImGui ya
+    // reserva ese colchon) y solo lo devolvemos al pool cuando el fence de
+    // la imagen que lo uso la ULTIMA vez ya se esperase aqui mismo.
+    uint32_t acquireSlot = freeSemaphores_.back();
+    freeSemaphores_.pop_back();
+    VkSemaphore imageAcquired = wd_->FrameSemaphores[acquireSlot].ImageAcquiredSemaphore;
     VkResult err = vkAcquireNextImageKHR(device, wd_->Swapchain, UINT64_MAX, imageAcquired,
                                           VK_NULL_HANDLE, &wd_->FrameIndex);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
+        freeSemaphores_.push_back(acquireSlot);
         swapChainRebuild_ = true;
         return VK_NULL_HANDLE;
     }
@@ -80,6 +101,14 @@ VkCommandBuffer SwapchainWindow::beginFrame(VkDevice device) {
     checkVk(vkWaitForFences(device, 1, &fd->Fence, VK_TRUE, UINT64_MAX));
     checkVk(vkResetFences(device, 1, &fd->Fence));
     checkVk(vkResetCommandPool(device, fd->CommandPool, 0));
+
+    // Aqui ya es seguro: el fence que acabamos de esperar es el de la ultima
+    // vez que se dibujo esta misma imagen, asi que el semaforo que tenia
+    // asignado entonces ya termino de usarse y puede volver al pool.
+    int previousSlot = imageSemaphoreSlot_[wd_->FrameIndex];
+    if (previousSlot >= 0) freeSemaphores_.push_back((uint32_t)previousSlot);
+    imageSemaphoreSlot_[wd_->FrameIndex] = (int)acquireSlot;
+    currentSemaphoreSlot_ = acquireSlot;
 
     VkCommandBufferBeginInfo beginInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -111,8 +140,8 @@ void SwapchainWindow::endFrame(VkDevice /*device*/, VkQueue queue, ImDrawData* i
     }
     vkCmdEndRenderPass(fd->CommandBuffer);
 
-    VkSemaphore imageAcquired = wd_->FrameSemaphores[wd_->SemaphoreIndex].ImageAcquiredSemaphore;
-    VkSemaphore renderComplete = wd_->FrameSemaphores[wd_->SemaphoreIndex].RenderCompleteSemaphore;
+    VkSemaphore imageAcquired = wd_->FrameSemaphores[currentSemaphoreSlot_].ImageAcquiredSemaphore;
+    VkSemaphore renderComplete = wd_->FrameSemaphores[currentSemaphoreSlot_].RenderCompleteSemaphore;
     VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
     VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
@@ -141,7 +170,6 @@ void SwapchainWindow::endFrame(VkDevice /*device*/, VkQueue queue, ImDrawData* i
         return;
     }
     checkVk(err);
-    wd_->SemaphoreIndex = (wd_->SemaphoreIndex + 1) % wd_->SemaphoreCount;
 }
 
 void SwapchainWindow::setClearColor(float r, float g, float b, float a) {
