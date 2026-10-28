@@ -19,7 +19,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-#include "CubeMesh.h" // iron3d::Vertex
+#include "Vertex.h"
 
 namespace iron3d {
 

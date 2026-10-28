@@ -21,7 +21,8 @@
 #include "gfx/VulkanContext.h"
 #include "gfx/SwapchainWindow.h"
 #include "gfx/BasicPipeline.h"
-#include "core/CubeMesh.h"
+#include "core/MeshData.h"
+#include "core/PrimitiveMesh.h"
 #include "core/OrbitalCamera.h"
 #include "core/SceneNode.h"
 #include "core/TransformGizmo.h"
@@ -75,20 +76,49 @@ void glfwScrollCallback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffs
     g_scrollY += yoffset;
 }
 
-// Recorre el grafo de escena (Fase 2) y dibuja el cubo comun en cada nodo
-// con hasMesh=true, con su propia matriz de mundo. Un nodo invisible se
-// salta entero junto con sus hijos -- igual que ocultar un objeto padre
-// en cualquier DCC.
-void drawScene(VkCommandBuffer cmd, iron3d::BasicPipeline& pipeline, iron3d::CubeMesh& cube,
-                iron3d::SceneNode& node, const glm::mat4& parentWorld, const glm::mat4& viewProj) {
+// Recorre el grafo de escena (Fase 2) y dibuja la malla comun que le toque a
+// cada nodo segun su `primitive`, con su propia matriz de mundo. Un nodo
+// invisible se salta entero junto con sus hijos -- igual que ocultar un
+// objeto padre en cualquier DCC.
+void drawScene(VkCommandBuffer cmd, iron3d::BasicPipeline& pipeline,
+                iron3d::PrimitiveMesh& cubeMesh, iron3d::PrimitiveMesh& sphereMesh,
+                iron3d::PrimitiveMesh& planeMesh, iron3d::SceneNode& node,
+                const glm::mat4& parentWorld, const glm::mat4& viewProj) {
     if (!node.visible) return;
     glm::mat4 world = parentWorld * node.localMatrix();
-    if (node.hasMesh) {
-        pipeline.pushMvp(cmd, viewProj * world);
-        cube.draw(cmd);
+
+    using iron3d::PrimitiveType;
+    switch (node.primitive) {
+        case PrimitiveType::Cube:
+            pipeline.pushMvp(cmd, viewProj * world);
+            cubeMesh.draw(cmd);
+            break;
+        case PrimitiveType::Sphere:
+            pipeline.pushMvp(cmd, viewProj * world);
+            sphereMesh.draw(cmd);
+            break;
+        case PrimitiveType::Plane:
+            pipeline.pushMvp(cmd, viewProj * world);
+            planeMesh.draw(cmd);
+            break;
+        case PrimitiveType::Light: {
+            // Icono de tamano fijo, ignora la escala del nodo a proposito --
+            // una luz no es geometria escalable, es un marcador (no ilumina
+            // nada todavia, ver comentario en SceneNode.h).
+            const glm::mat4 iconWorld = parentWorld *
+                glm::translate(glm::mat4(1.0f), node.position) *
+                glm::scale(glm::mat4(1.0f), glm::vec3(0.12f));
+            pipeline.pushMvp(cmd, viewProj * iconWorld);
+            sphereMesh.draw(cmd);
+            break;
+        }
+        case PrimitiveType::None:
+        default:
+            break;
     }
+
     for (const auto& child : node.children()) {
-        drawScene(cmd, pipeline, cube, *child, world, viewProj);
+        drawScene(cmd, pipeline, cubeMesh, sphereMesh, planeMesh, *child, world, viewProj);
     }
 }
 
@@ -143,11 +173,18 @@ int main() {
     vkCheck(vmaCreateAllocator(&allocatorInfo, &allocator), "vmaCreateAllocator");
 
     // --- Geometria y pipeline --------------------------------------------------
-    CubeMesh cube;
-    cube.create(ctx.device, allocator);
+    // cullMode=NONE (en vez del BACK_BIT por defecto): con varias primitivas
+    // nuevas (esfera, plano) no vale la pena re-verificar a mano el orden de
+    // vertices de cada una contra VK_CULL_MODE_BACK_BIT -- a esta escala
+    // (un puñado de objetos pequenos) el coste de no cullear es cero.
+    PrimitiveMesh cubeMesh, sphereMesh, planeMesh;
+    cubeMesh.create(ctx.device, allocator, makeCubeMesh());
+    sphereMesh.create(ctx.device, allocator, makeSphereMesh());
+    planeMesh.create(ctx.device, allocator, makePlaneMesh());
 
     BasicPipeline pipeline;
-    pipeline.create(ctx.device, swapchain.renderPass(), exeDirectory() / "shaders");
+    pipeline.create(ctx.device, swapchain.renderPass(), exeDirectory() / "shaders",
+                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_CULL_MODE_NONE);
 
     // Gizmo de transformacion (Fase 2b): mismos shaders basic.vert/.frag que el
     // cubo, dos pipelines extra solo por el cambio de topologia/cull que Vulkan
@@ -169,8 +206,12 @@ int main() {
 
     // --- Grafo de escena (Fase 2) --------------------------------------------
     SceneNode sceneRoot("Escena");
-    SceneNode* cubeNode = sceneRoot.addChild("Cubo", /*hasMesh=*/true);
+    SceneNode* cubeNode = sceneRoot.addChild("Cubo", PrimitiveType::Cube);
     SceneNode* selected = cubeNode;
+
+    // --- Carpeta de escenas (Fase 2c: guardar/cargar .iron) -------------------
+    const std::filesystem::path scenesDir = exeDirectory() / "scenes";
+    std::filesystem::create_directories(scenesDir);
 
     // --- Dear ImGui --------------------------------------------------------
     IMGUI_CHECKVERSION();
@@ -253,7 +294,7 @@ int main() {
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        drawMainUi(sceneRoot, selected, gizmo.mode, io.Framerate);
+        drawMainUi(sceneRoot, selected, gizmo.mode, scenesDir, io.Framerate);
         ImGui::Render();
         ImDrawData* drawData = ImGui::GetDrawData();
 
@@ -263,7 +304,7 @@ int main() {
         VkCommandBuffer cmd = swapchain.beginFrame(ctx.device);
         if (cmd != VK_NULL_HANDLE) {
             pipeline.bind(cmd);
-            drawScene(cmd, pipeline, cube, sceneRoot, glm::mat4(1.0f), viewProj);
+            drawScene(cmd, pipeline, cubeMesh, sphereMesh, planeMesh, sceneRoot, glm::mat4(1.0f), viewProj);
 
             // Gizmo encima de la escena (ningun buffer de profundidad todavia en
             // Fase 1-2, asi que "despues" ya implica "por encima").
@@ -285,7 +326,9 @@ int main() {
     gizmoLinePipeline.destroy(ctx.device);
     gizmoTriPipeline.destroy(ctx.device);
     pipeline.destroy(ctx.device);
-    cube.destroy(ctx.device, allocator);
+    cubeMesh.destroy(ctx.device, allocator);
+    sphereMesh.destroy(ctx.device, allocator);
+    planeMesh.destroy(ctx.device, allocator);
     vmaDestroyAllocator(allocator);
 
     ImGui_ImplVulkan_Shutdown();
