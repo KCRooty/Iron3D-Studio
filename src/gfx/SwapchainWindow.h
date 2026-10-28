@@ -8,6 +8,7 @@
 // Iron3D DENTRO del mismo render pass, antes de componer la UI de ImGui encima.
 
 #include <vulkan/vulkan.h>
+#include <vector>
 
 struct ImDrawData;
 struct ImGui_ImplVulkanH_Window;
@@ -46,9 +47,19 @@ public:
     ImGui_ImplVulkanH_Window* raw() { return wd_; }
 
 private:
+    void resetSemaphorePool();
+
     ImGui_ImplVulkanH_Window* wd_ = nullptr; // propiedad nuestra, ver .cpp
     bool swapChainRebuild_ = false;
     uint32_t minImageCount_ = 2;
+
+    // Reciclado de semaforos de "imagen adquirida" indexado por imagen real
+    // (no por un contador rotatorio independiente -- ver SwapchainWindow.cpp
+    // para el porque, es la causa del aviso de validacion de reuso de
+    // semaforos que daba la Fase 1).
+    std::vector<int> imageSemaphoreSlot_;    // tamano ImageCount; -1 = sin asignar aun
+    std::vector<uint32_t> freeSemaphores_;   // pila de indices libres en wd_->FrameSemaphores
+    uint32_t currentSemaphoreSlot_ = 0;      // slot usado por el frame en curso (begin -> end)
 };
 
 } // namespace iron3d
