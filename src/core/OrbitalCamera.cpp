@@ -61,10 +61,10 @@ glm::mat4 OrbitalCamera::viewMatrix() const {
     return glm::lookAt(eyePosition(), target_, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
-glm::mat4 OrbitalCamera::projectionMatrix(float aspectRatio) const {
+glm::mat4 OrbitalCamera::projectionMatrix(float aspectRatio, bool flipY) const {
     glm::mat4 proj = glm::perspective(glm::radians(50.0f), aspectRatio, 0.05f, 100.0f);
     // Vulkan: +Y apunta hacia abajo en el espacio de recorte (al reves que GL).
-    proj[1][1] *= -1.0f;
+    if (flipY) proj[1][1] *= -1.0f;
     return proj;
 }
 

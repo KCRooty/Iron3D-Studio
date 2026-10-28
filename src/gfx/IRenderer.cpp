@@ -1,11 +1,9 @@
 #include "IRenderer.h"
 #include "VulkanRenderer.h"
+#include "OpenGLRenderer.h"
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-
-#include <cstdio>
-#include <cstdlib>
 
 namespace iron3d {
 
@@ -30,9 +28,7 @@ std::unique_ptr<IRenderer> createRenderer(RendererBackend backend) {
     if (backend == RendererBackend::Vulkan) {
         return std::make_unique<VulkanRenderer>();
     }
-    // Fase 3b, todavia no implementado en este commit.
-    std::fprintf(stderr, "[Iron3D] Backend OpenGL: pendiente (Fase 3b).\n");
-    std::abort();
+    return std::make_unique<OpenGLRenderer>();
 }
 
 } // namespace iron3d

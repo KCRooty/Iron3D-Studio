@@ -17,7 +17,12 @@ public:
     void resetMouseDelta(double mouseX, double mouseY);
 
     glm::mat4 viewMatrix() const;
-    glm::mat4 projectionMatrix(float aspectRatio) const;
+    // `flipY`: Vulkan tiene +Y hacia abajo en espacio de recorte (al reves
+    // que OpenGL) -- GLM genera la matriz para la convencion de GL, asi que
+    // Vulkan necesita invertir el signo. Por defecto true (el unico backend
+    // hasta la Fase 3b); IRenderer::needsProjectionYFlip() dice que pasar
+    // segun el backend activo.
+    glm::mat4 projectionMatrix(float aspectRatio, bool flipY = true) const;
     glm::vec3 eyePosition() const;
 
 private:
