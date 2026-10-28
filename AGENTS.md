@@ -66,6 +66,6 @@ Windows (MSVC/Clang-cl) y Linux (GCC/Clang) con paridad; CI falla si uno de los 
 
 ## 7. Licencia
 
-MIT OR Apache-2.0 (dual, por decidir con el primer commit). Las dependencias deben ser compatibles.
+Dual MIT OR Apache-2.0 (ver `LICENSE-MIT`/`LICENSE-APACHE` en la raíz). Las dependencias deben ser compatibles.
 Revisar la licencia de Cineware SDK antes de enlazarlo (puede obligar a aislarlo como módulo
 descargable aparte en vez de incluirlo en el repo).

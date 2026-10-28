@@ -42,4 +42,5 @@ assets/             Presets .ilib, iconos y temas propios
 
 ## Licencia
 
-MIT OR Apache-2.0 (por confirmar antes del primer commit público).
+Dual MIT OR Apache-2.0, a tu elección -- ver [`LICENSE-MIT`](LICENSE-MIT) y
+[`LICENSE-APACHE`](LICENSE-APACHE).
