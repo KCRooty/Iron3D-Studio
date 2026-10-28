@@ -12,7 +12,14 @@ namespace iron3d {
 
 class BasicPipeline {
 public:
-    void create(VkDevice device, VkRenderPass renderPass, const std::filesystem::path& shaderDir);
+    // `topology` por defecto TRIANGLE_LIST (el cubo); el gizmo de transformacion
+    // (Fase 2b) crea dos instancias mas sobre el mismo shader/vertex layout
+    // (posicion+color) y push constant MVP: LINE_LIST para los ejes y
+    // TRIANGLE_LIST con `cullMode=NONE` para las puntas solidas (conos/cubos),
+    // cuyo orden de vertices no se verifico a mano contra VK_CULL_MODE_BACK_BIT.
+    void create(VkDevice device, VkRenderPass renderPass, const std::filesystem::path& shaderDir,
+                VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                VkCullModeFlags cullMode = VK_CULL_MODE_BACK_BIT);
     void destroy(VkDevice device);
 
     void bind(VkCommandBuffer cmd) const;

@@ -67,10 +67,38 @@ void drawAttributesPanel(SceneNode* selected) {
     ImGui::End();
 }
 
+// Barra de herramientas del gizmo (mover/rotar/escalar), con atajos 1/2/3 --
+// numeros simples en vez de W/E/R de otros DCC porque el proyecto no tiene
+// ninguna convencion de teclado propia todavia fijada por el Documento Maestro.
+void drawGizmoToolbar(GizmoMode& mode) {
+    ImGuiIO& io = ImGui::GetIO();
+    if (!io.WantCaptureKeyboard) {
+        if (ImGui::IsKeyPressed(ImGuiKey_1)) mode = GizmoMode::Translate;
+        if (ImGui::IsKeyPressed(ImGuiKey_2)) mode = GizmoMode::Rotate;
+        if (ImGui::IsKeyPressed(ImGuiKey_3)) mode = GizmoMode::Scale;
+    }
+
+    ImGui::Begin("Herramientas");
+    auto modeButton = [&](const char* label, GizmoMode m) {
+        bool active = (mode == m);
+        if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+        if (ImGui::Button(label)) mode = m;
+        if (active) ImGui::PopStyleColor();
+    };
+    modeButton("Mover (1)", GizmoMode::Translate);
+    ImGui::SameLine();
+    modeButton("Rotar (2)", GizmoMode::Rotate);
+    ImGui::SameLine();
+    modeButton("Escalar (3)", GizmoMode::Scale);
+    ImGui::End();
+}
+
 } // namespace
 
-void drawMainUi(SceneNode& root, SceneNode*& selected, float framerate) {
+void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode, float framerate) {
     SceneNode* toDelete = nullptr;
+
+    drawGizmoToolbar(gizmoMode);
 
     ImGui::Begin("Gestor de Objetos");
     drawNodeTree(root, selected, toDelete);
@@ -79,6 +107,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, float framerate) {
     ImGui::BulletText("Alt + clic izq: orbitar");
     ImGui::BulletText("Alt + clic medio: panear");
     ImGui::BulletText("Alt + clic der / rueda: zoom");
+    ImGui::BulletText("Clic en un eje del gizmo: mover/rotar/escalar");
     ImGui::Separator();
     ImGui::Text("%.1f FPS (%.2f ms/frame)", framerate, 1000.0f / framerate);
     ImGui::End();

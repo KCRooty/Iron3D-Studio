@@ -38,4 +38,12 @@ glm::mat4 SceneNode::localMatrix() const {
     return t * rz * ry * rx * s;
 }
 
+glm::mat4 SceneNode::parentWorldMatrix() const {
+    return parent_ ? parent_->worldMatrix() : glm::mat4(1.0f);
+}
+
+glm::mat4 SceneNode::worldMatrix() const {
+    return parentWorldMatrix() * localMatrix();
+}
+
 } // namespace iron3d

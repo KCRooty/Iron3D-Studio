@@ -7,10 +7,13 @@
 // siguen pendientes de fases posteriores.
 
 #include "core/SceneNode.h"
+#include "core/TransformGizmo.h"
 
 namespace iron3d {
 
 // `selected` se actualiza si el usuario hace clic en otro nodo o borra el seleccionado.
-void drawMainUi(SceneNode& root, SceneNode*& selected, float framerate);
+// `gizmoMode` se actualiza desde la barra de herramientas (Mover/Rotar/Escalar) y los
+// atajos de teclado 1/2/3 -- el propio TransformGizmo lo usa para saber que dibujar.
+void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode, float framerate);
 
 } // namespace iron3d

@@ -26,6 +26,11 @@ public:
     bool removeChild(SceneNode* child);
 
     glm::mat4 localMatrix() const;
+    // Acumula localMatrix() con la de todos los ancestros -- usado por el
+    // gizmo de transformacion (Fase 2b) para saber donde dibujarse en mundo
+    // aunque el nodo este anidado bajo otros con su propia transformacion.
+    glm::mat4 worldMatrix() const;
+    glm::mat4 parentWorldMatrix() const;
 
     int id() const { return id_; }
     const std::string& name() const { return name_; }

@@ -18,6 +18,7 @@ public:
 
     glm::mat4 viewMatrix() const;
     glm::mat4 projectionMatrix(float aspectRatio) const;
+    glm::vec3 eyePosition() const;
 
 private:
     glm::vec3 target_{0.0f, 0.0f, 0.0f};
