@@ -161,6 +161,16 @@ void OpenGLRenderer::init(GLFWwindow* window, int width, int height) {
     // vertices de cada primitiva.
     gl::glDisable(gl::GL_CULL_FACE);
 
+    // Buffer de profundidad (Fase 5b): GLFW ya reserva uno de serie en el
+    // framebuffer por defecto (GLFW_DEPTH_BITS=24, nunca lo hemos hintado a
+    // 0), solo hacia falta activarlo -- antes de esto, dos objetos que se
+    // solaparan en espacio (p.ej. una Esfera creada como hijo de un Cubo en
+    // el mismo origen) se dibujaban en el orden de llamada sin resolver que
+    // superficie estaba mas cerca de la camara, dando un renderizado roto
+    // ("como un teseracto"). Igual que en VulkanRenderer/LitPipeline.
+    gl::glEnable(gl::GL_DEPTH_TEST);
+    gl::glDepthFunc(gl::GL_LESS);
+
     gl::GLuint vert = compileShader(gl::GL_VERTEX_SHADER, kVertexSrc);
     gl::GLuint frag = compileShader(gl::GL_FRAGMENT_SHADER, kFragmentSrc);
     program_ = linkProgram(vert, frag);
@@ -271,7 +281,7 @@ bool OpenGLRenderer::beginFrame() {
     if (width_ <= 0 || height_ <= 0) return false;
     gl::glViewport(0, 0, width_, height_);
     gl::glClearColor(clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]);
-    gl::glClear(gl::GL_COLOR_BUFFER_BIT);
+    gl::glClear(gl::GL_COLOR_BUFFER_BIT | gl::GL_DEPTH_BUFFER_BIT);
     return true;
 }
 
@@ -297,6 +307,12 @@ void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
 
 void OpenGLRenderer::drawGizmo(const std::vector<Vertex>& lineVerts, const std::vector<Vertex>& triVerts,
                                 const glm::mat4& viewProj) {
+    // El gizmo se dibuja SIEMPRE encima de la escena, sin que la geometria lo
+    // pueda tapar -- igual que los handles de transformacion de cualquier DCC
+    // (C4D incluido). Con el buffer de profundidad ya activo para drawMesh(),
+    // hay que desactivarlo aqui a proposito; se reactiva al final para que el
+    // siguiente beginFrame()/drawMesh() lo encuentre como lo dejo init().
+    gl::glDisable(gl::GL_DEPTH_TEST);
     gl::glUseProgram(program_);
     gl::glUniformMatrix4fv(uMvpLocation_, 1, gl::GL_FALSE_, &viewProj[0][0]); // vertices ya en espacio de mundo
 
@@ -314,6 +330,8 @@ void OpenGLRenderer::drawGizmo(const std::vector<Vertex>& lineVerts, const std::
         gl::glBufferSubData(gl::GL_ARRAY_BUFFER, 0, (gl::GLsizeiptr)(n * sizeof(Vertex)), lineVerts.data());
         gl::glDrawArrays(gl::GL_LINES, 0, (gl::GLsizei)n);
     }
+
+    gl::glEnable(gl::GL_DEPTH_TEST);
 }
 
 void OpenGLRenderer::endFrame() {

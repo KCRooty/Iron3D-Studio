@@ -83,8 +83,13 @@ void BasicPipeline::create(VkDevice device, VkRenderPass renderPass, const std::
     VkPipelineMultisampleStateCreateInfo multisample{VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
     multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
+    // A proposito (Fase 5b en adelante, antes era "no hay buffer todavia"):
+    // esta pipeline es la del gizmo de transformacion, que debe verse SIEMPRE
+    // encima de la escena sin que la geometria lo tape -- igual que los
+    // handles de cualquier DCC (C4D incluido). LitPipeline si usa el buffer
+    // de profundidad real que crea SwapchainWindow.
     VkPipelineDepthStencilStateCreateInfo depthStencil{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
-    depthStencil.depthTestEnable = VK_FALSE;  // Fase 1: sin buffer de profundidad todavia
+    depthStencil.depthTestEnable = VK_FALSE;
     depthStencil.depthWriteEnable = VK_FALSE;
 
     VkPipelineColorBlendAttachmentState blendAttachment{};

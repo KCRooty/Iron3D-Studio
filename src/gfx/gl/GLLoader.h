@@ -35,6 +35,8 @@ using GLsizeiptr = ptrdiff_t;
 constexpr GLenum GL_FALSE_ = 0;
 constexpr GLenum GL_TRUE_ = 1;
 constexpr GLenum GL_COLOR_BUFFER_BIT = 0x00004000;
+constexpr GLenum GL_DEPTH_BUFFER_BIT = 0x00000100;
+constexpr GLenum GL_LESS = 0x0201;
 constexpr GLenum GL_TRIANGLES = 0x0004;
 constexpr GLenum GL_LINES = 0x0001;
 constexpr GLenum GL_FLOAT = 0x1406;
@@ -57,6 +59,8 @@ using PFNGLCLEARCOLORPROC = void (*)(GLfloat, GLfloat, GLfloat, GLfloat);
 using PFNGLCLEARPROC = void (*)(GLbitfield);
 using PFNGLENABLEPROC = void (*)(GLenum);
 using PFNGLDISABLEPROC = void (*)(GLenum);
+using PFNGLDEPTHFUNCPROC = void (*)(GLenum);
+using PFNGLDEPTHMASKPROC = void (*)(GLboolean);
 using PFNGLDRAWARRAYSPROC = void (*)(GLenum, GLint, GLsizei);
 using PFNGLDRAWELEMENTSPROC = void (*)(GLenum, GLsizei, GLenum, const void*);
 
@@ -100,6 +104,8 @@ extern PFNGLCLEARCOLORPROC glClearColor;
 extern PFNGLCLEARPROC glClear;
 extern PFNGLENABLEPROC glEnable;
 extern PFNGLDISABLEPROC glDisable;
+extern PFNGLDEPTHFUNCPROC glDepthFunc;
+extern PFNGLDEPTHMASKPROC glDepthMask;
 extern PFNGLDRAWARRAYSPROC glDrawArrays;
 extern PFNGLDRAWELEMENTSPROC glDrawElements;
 
