@@ -92,6 +92,7 @@ add_executable(Iron3DStudio
     src/core/TransformGizmo.cpp
     src/core/GizmoMesh.cpp
     src/core/Paths.cpp
+    src/core/Preferences.cpp
     src/ui/MainUi.cpp)
 
 target_include_directories(Iron3DStudio PRIVATE

@@ -23,6 +23,7 @@
 #include "core/SceneHistory.h"
 #include "core/TransformGizmo.h"
 #include "core/Paths.h"
+#include "core/Preferences.h"
 #include "ui/MainUi.h"
 
 #include <cstdio>
@@ -87,9 +88,14 @@ void drawScene(iron3d::IRenderer& renderer, iron3d::MeshHandle cubeMesh, iron3d:
 int main() {
     using namespace iron3d;
 
-    // --- Preferencias (Fase 3): que backend usar -- ver core/Preferences.h.
-    // Por ahora fijo a Vulkan hasta que la Fase 3b (OpenGL) este lista.
-    RendererBackend backend = RendererBackend::Vulkan;
+    // --- Preferencias (Fase 3c): que backend usar -- ver core/Preferences.h.
+    // Se lee ANTES de crear la ventana (el backend decide los hints de
+    // GLFW); el archivo vive junto al ejecutable, igual que la carpeta
+    // scenes/. Si no existe o no parsea, loadPreferences devuelve el default
+    // (Vulkan) sin tocar nada.
+    const std::filesystem::path prefsPath = exeDirectory() / "preferences.cfg";
+    Preferences prefs = loadPreferences(prefsPath);
+    RendererBackend backend = prefs.renderBackend;
 
     glfwSetErrorCallback(glfwErrorCallback);
     if (!glfwInit()) {
@@ -201,7 +207,7 @@ int main() {
         renderer->imguiNewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        drawMainUi(sceneRoot, selected, gizmo.mode, scenesDir, history, io.Framerate);
+        drawMainUi(sceneRoot, selected, gizmo.mode, scenesDir, history, io.Framerate, backend, prefs, prefsPath);
         ImGui::Render();
 
         gizmo.buildGeometry(selected, eye, gizmoLineVerts, gizmoTriVerts);
