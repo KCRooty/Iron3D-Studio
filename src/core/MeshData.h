@@ -1,8 +1,8 @@
 #pragma once
 
 // Datos de malla en CPU (Fase 2c: mas primitivas que el cubo de la Fase 1)
-// para subir a PrimitiveMesh. Sin normales/UV todavia -- mismo nivel que el
-// cubo original, solo color por vertice.
+// para subir a PrimitiveMesh. Con normales desde la Fase 5 (iluminacion
+// basica); sin UV/texturas todavia.
 
 #include "Vertex.h"
 

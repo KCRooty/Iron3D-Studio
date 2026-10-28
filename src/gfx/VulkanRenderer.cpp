@@ -50,8 +50,8 @@ void VulkanRenderer::init(GLFWwindow* window, int width, int height) {
     // decision en el commit de la Fase 2c (no vale la pena verificar a mano
     // el orden de vertices de cada primitiva nueva).
     const std::filesystem::path shaderDir = exeDirectory() / "shaders";
-    meshPipeline_.create(ctx_.device, swapchain_.renderPass(), shaderDir,
-                          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_CULL_MODE_NONE);
+    litPipeline_.create(ctx_.device, ctx_.physicalDevice, swapchain_.renderPass(), shaderDir,
+                         VK_CULL_MODE_NONE);
     gizmoLinePipeline_.create(ctx_.device, swapchain_.renderPass(), shaderDir,
                                VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
     gizmoTriPipeline_.create(ctx_.device, swapchain_.renderPass(), shaderDir,
@@ -84,7 +84,7 @@ void VulkanRenderer::shutdown() {
     gizmoMesh_.destroy(allocator_);
     gizmoLinePipeline_.destroy(ctx_.device);
     gizmoTriPipeline_.destroy(ctx_.device);
-    meshPipeline_.destroy(ctx_.device);
+    litPipeline_.destroy(ctx_.device);
     for (auto& mesh : meshes_) mesh.destroy(ctx_.device, allocator_);
     meshes_.clear();
     vmaDestroyAllocator(allocator_);
@@ -123,13 +123,19 @@ bool VulkanRenderer::beginFrame() {
     return currentCmd_ != VK_NULL_HANDLE;
 }
 
-void VulkanRenderer::drawMesh(MeshHandle mesh, const glm::mat4& mvp) {
+void VulkanRenderer::setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS) {
+    lightPosWS_ = lightPosWS;
+    eyePosWS_ = eyePosWS;
+}
+
+void VulkanRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
+                               const Material& material) {
     if (mesh >= meshes_.size()) return;
     // Rebind siempre (no asume que nada mas dejo la pipeline comun activa):
     // drawGizmo cambia de pipeline, asi que el orden de llamadas no puede
     // importar.
-    meshPipeline_.bind(currentCmd_);
-    meshPipeline_.pushMvp(currentCmd_, mvp);
+    litPipeline_.bind(currentCmd_);
+    litPipeline_.pushConstants(currentCmd_, model, mvp, lightPosWS_, eyePosWS_, material);
     meshes_[mesh].draw(currentCmd_);
 }
 

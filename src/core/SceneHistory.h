@@ -11,8 +11,17 @@
 // cargar un .iron): cualquier SceneNode* que el llamador tuviera guardado
 // (como el nodo seleccionado) queda invalido tras un undo/redo -- hay que
 // limpiar la seleccion despues, igual que ya hace el panel de Cargar escena.
+//
+// Fase 5 (materiales): el constructor toma una referencia a la lista de
+// materiales de la escena y la reenvia internamente a serializeScene/
+// deserializeScene en cada snapshot/undo/redo -- asi un snapshot captura
+// nodo+material consistentemente (sin arrastre de indices si la lista de
+// materiales cambia entre dos snapshots) SIN tener que anadir un parametro
+// nuevo en los ~15 sitios que ya llaman a snapshot()/commitBefore()/undo()/
+// redo(): solo el constructor cambia.
 
 #include "SceneNode.h"
+#include "Material.h"
 
 #include <string>
 #include <vector>
@@ -21,15 +30,18 @@ namespace iron3d {
 
 class SceneHistory {
 public:
+    explicit SceneHistory(std::vector<Material>& materials) : materials_(materials) {}
+
     void reset() {
         undoStack_.clear();
         redoStack_.clear();
     }
 
-    // Snapshot de `root` tal cual esta AHORA, sin tocar ninguna pila -- para
-    // ediciones que duran varios frames (arrastrar un campo, escribir un
-    // nombre): se toma uno al activarse el campo y se guarda aparte hasta
-    // que el campo se suelta, momento en el que se pasa a commit().
+    // Snapshot de `root` (+ materiales) tal cual estan AHORA, sin tocar
+    // ninguna pila -- para ediciones que duran varios frames (arrastrar un
+    // campo, escribir un nombre): se toma uno al activarse el campo y se
+    // guarda aparte hasta que el campo se suelta, momento en el que se pasa
+    // a commit().
     std::string snapshot(const SceneNode& root) const;
 
     // Empuja un snapshot ya tomado (de ANTES del cambio) a la pila de
@@ -44,12 +56,13 @@ public:
     bool canUndo() const { return !undoStack_.empty(); }
     bool canRedo() const { return !redoStack_.empty(); }
 
-    // Reconstruye `root` con el snapshot anterior/siguiente. Devuelve false
-    // (sin tocar `root`) si no hay nada que deshacer/rehacer.
+    // Reconstruye `root` (+ materiales) con el snapshot anterior/siguiente.
+    // Devuelve false (sin tocar nada) si no hay nada que deshacer/rehacer.
     bool undo(SceneNode& root);
     bool redo(SceneNode& root);
 
 private:
+    std::vector<Material>& materials_;
     std::vector<std::string> undoStack_;
     std::vector<std::string> redoStack_;
     static constexpr size_t kMaxDepth = 100; // suficiente para una sesion de edicion normal

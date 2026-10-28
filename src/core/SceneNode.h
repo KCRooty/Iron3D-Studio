@@ -57,6 +57,9 @@ public:
     glm::vec3 scale{1.0f, 1.0f, 1.0f};
     bool visible = true;
     PrimitiveType primitive = PrimitiveType::None;
+    // Indice en el std::vector<Material> global (ver core/Material.h); -1 =
+    // sin material asignado (usa Material::defaultMaterial() al dibujar).
+    int materialIndex = -1;
 
 private:
     int id_;

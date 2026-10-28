@@ -3,15 +3,17 @@
 // Paneles ImGui de la Fase 2 (Documento Maestro §8.1 punto 2): Gestor de
 // Objetos interactivo de verdad sobre el grafo de escena (arbol con
 // seleccion, visibilidad, anadir/eliminar) + panel de Atributos con la
-// posicion/rotacion/escala del nodo seleccionado. Materiales y Timeline
-// siguen pendientes de fases posteriores.
+// posicion/rotacion/escala del nodo seleccionado. Materiales (Fase 5): pestana
+// "Textura" real + combo de asignacion en Atributos. Timeline sigue pendiente.
 
+#include "core/Material.h"
 #include "core/Preferences.h"
 #include "core/SceneHistory.h"
 #include "core/SceneNode.h"
 #include "core/TransformGizmo.h"
 
 #include <filesystem>
+#include <vector>
 
 namespace iron3d {
 
@@ -25,9 +27,12 @@ namespace iron3d {
 // el backend con el que YA se arranco esta sesion (de solo lectura, para
 // mostrar contraste); `prefs`/`prefsPath` son las preferencias en disco
 // (Fase 3c) -- cambiar el backend ahi solo tiene efecto al reiniciar, igual
-// que en Cinema 4D.
+// que en Cinema 4D. `materials` (Fase 5) es la biblioteca global de la
+// escena -- editable desde la pestana "Textura" del panel Crear, y asignable
+// a un nodo desde Atributos > Objeto.
 void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
                  const std::filesystem::path& scenesDir, SceneHistory& history, float framerate,
-                 RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath);
+                 RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath,
+                 std::vector<Material>& materials);
 
 } // namespace iron3d

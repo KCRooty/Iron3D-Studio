@@ -93,6 +93,8 @@ add_executable(Iron3DStudio
     src/core/GizmoMesh.cpp
     src/core/Paths.cpp
     src/core/Preferences.cpp
+    src/core/Material.cpp
+    src/gfx/LitPipeline.cpp
     src/ui/MainUi.cpp)
 
 target_include_directories(Iron3DStudio PRIVATE
@@ -133,7 +135,9 @@ endif()
 
 set(SHADER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/basic.vert
-    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/basic.frag)
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/basic.frag
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/lit.vert
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/lit.frag)
 
 add_custom_command(TARGET Iron3DStudio POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:Iron3DStudio>/shaders"

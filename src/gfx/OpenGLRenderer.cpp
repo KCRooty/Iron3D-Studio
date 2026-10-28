@@ -39,6 +39,55 @@ void main() {
 }
 )GLSL";
 
+// Mismo GLSL logico que shaders/lit.vert/.frag (ver LitPipeline.cpp): Phong
+// basico, ambiente fijo + una luz blanca puntual, sin texturas/sombras.
+// Uniforms en vez de push constants -- OpenGL no tiene ese concepto, y
+// tampoco el limite de 128/176 bytes que obligo a empaquetar todo en vec4
+// en el lado Vulkan, asi que aqui cada dato va suelto y mas legible. La
+// intensidad ambiente (0.15, hardcodeada abajo) es el mismo valor que
+// kAmbientStrength en LitPipeline.cpp (Vulkan).
+
+const char* kLitVertexSrc = R"GLSL(#version 330 core
+layout(location = 0) in vec3 inPosition;
+layout(location = 1) in vec3 inNormal;
+uniform mat4 uModel;
+uniform mat4 uMvp;
+out vec3 fragNormalWS;
+out vec3 fragPosWS;
+void main() {
+    vec4 worldPos = uModel * vec4(inPosition, 1.0);
+    gl_Position = uMvp * vec4(inPosition, 1.0);
+    fragNormalWS = normalize(mat3(uModel) * inNormal);
+    fragPosWS = worldPos.xyz;
+}
+)GLSL";
+
+const char* kLitFragmentSrc = R"GLSL(#version 330 core
+in vec3 fragNormalWS;
+in vec3 fragPosWS;
+uniform vec3 uLightPos;
+uniform vec3 uEyePos;
+uniform vec3 uMaterialDiffuse;
+uniform float uMaterialSpecular;
+uniform float uMaterialShininess;
+out vec4 outColor;
+void main() {
+    vec3 N = normalize(fragNormalWS);
+    vec3 L = normalize(uLightPos - fragPosWS);
+    vec3 V = normalize(uEyePos - fragPosWS);
+    vec3 R = reflect(-L, N);
+    const vec3 lightColor = vec3(1.0);
+
+    vec3 ambient = 0.15 * uMaterialDiffuse;
+    float diff = max(dot(N, L), 0.0);
+    vec3 diffuse = diff * uMaterialDiffuse * lightColor;
+    float spec = (diff > 0.0) ? pow(max(dot(R, V), 0.0), max(uMaterialShininess, 1.0)) : 0.0;
+    vec3 specular = uMaterialSpecular * spec * lightColor;
+
+    outColor = vec4(ambient + diffuse + specular, 1.0);
+}
+)GLSL";
+
 gl::GLuint compileShader(gl::GLenum type, const char* src) {
     gl::GLuint shader = gl::glCreateShader(type);
     gl::glShaderSource(shader, 1, &src, nullptr);
@@ -84,6 +133,17 @@ void setupVertexAttribs() {
                                (const void*)offsetof(Vertex, color));
 }
 
+// Mismo Vertex, pero para litProgram_: location 0 = posicion, location 1 =
+// normal (el color no se usa, lo da el material -- ver kLitVertexSrc).
+void setupLitVertexAttribs() {
+    gl::glEnableVertexAttribArray(0);
+    gl::glVertexAttribPointer(0, 3, gl::GL_FLOAT, gl::GL_FALSE_, (gl::GLsizei)sizeof(Vertex),
+                               (const void*)offsetof(Vertex, position));
+    gl::glEnableVertexAttribArray(1);
+    gl::glVertexAttribPointer(1, 3, gl::GL_FLOAT, gl::GL_FALSE_, (gl::GLsizei)sizeof(Vertex),
+                               (const void*)offsetof(Vertex, normal));
+}
+
 } // namespace
 
 void OpenGLRenderer::init(GLFWwindow* window, int width, int height) {
@@ -108,6 +168,19 @@ void OpenGLRenderer::init(GLFWwindow* window, int width, int height) {
     gl::glDeleteShader(frag);
     uMvpLocation_ = gl::glGetUniformLocation(program_, "uMvp");
 
+    gl::GLuint litVert = compileShader(gl::GL_VERTEX_SHADER, kLitVertexSrc);
+    gl::GLuint litFrag = compileShader(gl::GL_FRAGMENT_SHADER, kLitFragmentSrc);
+    litProgram_ = linkProgram(litVert, litFrag);
+    gl::glDeleteShader(litVert);
+    gl::glDeleteShader(litFrag);
+    uLitModelLoc_ = gl::glGetUniformLocation(litProgram_, "uModel");
+    uLitMvpLoc_ = gl::glGetUniformLocation(litProgram_, "uMvp");
+    uLitLightPosLoc_ = gl::glGetUniformLocation(litProgram_, "uLightPos");
+    uLitEyePosLoc_ = gl::glGetUniformLocation(litProgram_, "uEyePos");
+    uLitDiffuseLoc_ = gl::glGetUniformLocation(litProgram_, "uMaterialDiffuse");
+    uLitSpecularLoc_ = gl::glGetUniformLocation(litProgram_, "uMaterialSpecular");
+    uLitShininessLoc_ = gl::glGetUniformLocation(litProgram_, "uMaterialShininess");
+
     createGizmoBuffers();
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -130,6 +203,7 @@ void OpenGLRenderer::shutdown() {
     gl::glDeleteVertexArrays(1, &gizmoTriVao_);
     gl::glDeleteBuffers(1, &gizmoTriVbo_);
     gl::glDeleteProgram(program_);
+    gl::glDeleteProgram(litProgram_);
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -176,7 +250,7 @@ MeshHandle OpenGLRenderer::createMesh(const MeshData& data) {
     gl::glBufferData(gl::GL_ELEMENT_ARRAY_BUFFER, (gl::GLsizeiptr)(data.indices.size() * sizeof(uint16_t)),
                       data.indices.data(), gl::GL_STATIC_DRAW);
 
-    setupVertexAttribs();
+    setupLitVertexAttribs();
     res.indexCount = (gl::GLsizei)data.indices.size();
 
     meshes_.push_back(res);
@@ -201,10 +275,22 @@ bool OpenGLRenderer::beginFrame() {
     return true;
 }
 
-void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& mvp) {
+void OpenGLRenderer::setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS) {
+    lightPosWS_ = lightPosWS;
+    eyePosWS_ = eyePosWS;
+}
+
+void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
+                               const Material& material) {
     if (mesh >= meshes_.size() || meshes_[mesh].vao == 0) return;
-    gl::glUseProgram(program_);
-    gl::glUniformMatrix4fv(uMvpLocation_, 1, gl::GL_FALSE_, &mvp[0][0]);
+    gl::glUseProgram(litProgram_);
+    gl::glUniformMatrix4fv(uLitModelLoc_, 1, gl::GL_FALSE_, &model[0][0]);
+    gl::glUniformMatrix4fv(uLitMvpLoc_, 1, gl::GL_FALSE_, &mvp[0][0]);
+    gl::glUniform3fv(uLitLightPosLoc_, 1, &lightPosWS_.x);
+    gl::glUniform3fv(uLitEyePosLoc_, 1, &eyePosWS_.x);
+    gl::glUniform3fv(uLitDiffuseLoc_, 1, &material.diffuse.x);
+    gl::glUniform1f(uLitSpecularLoc_, material.specular);
+    gl::glUniform1f(uLitShininessLoc_, material.shininess);
     gl::glBindVertexArray(meshes_[mesh].vao);
     gl::glDrawElements(gl::GL_TRIANGLES, meshes_[mesh].indexCount, gl::GL_UNSIGNED_SHORT, nullptr);
 }

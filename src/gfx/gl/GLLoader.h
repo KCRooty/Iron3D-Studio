@@ -90,6 +90,8 @@ using PFNGLUSEPROGRAMPROC = void (*)(GLuint);
 
 using PFNGLGETUNIFORMLOCATIONPROC = GLint (*)(GLuint, const GLchar*);
 using PFNGLUNIFORMMATRIX4FVPROC = void (*)(GLint, GLsizei, GLboolean, const GLfloat*);
+using PFNGLUNIFORM3FVPROC = void (*)(GLint, GLsizei, const GLfloat*);
+using PFNGLUNIFORM1FPROC = void (*)(GLint, GLfloat);
 
 // --- Variables globales (una por funcion, mismo nombre que en OpenGL de
 // verdad -- el codigo que las llama se lee como OpenGL normal) -------------
@@ -131,6 +133,8 @@ extern PFNGLUSEPROGRAMPROC glUseProgram;
 
 extern PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
 extern PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
+extern PFNGLUNIFORM3FVPROC glUniform3fv;
+extern PFNGLUNIFORM1FPROC glUniform1f;
 
 // Rellena todos los punteros de arriba via glfwGetProcAddress -- llamar
 // DESPUES de glfwMakeContextCurrent(window). Devuelve false (con un mensaje

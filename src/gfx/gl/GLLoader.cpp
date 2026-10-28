@@ -45,6 +45,8 @@ PFNGLUSEPROGRAMPROC glUseProgram = nullptr;
 
 PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = nullptr;
 PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv = nullptr;
+PFNGLUNIFORM3FVPROC glUniform3fv = nullptr;
+PFNGLUNIFORM1FPROC glUniform1f = nullptr;
 
 namespace {
 // Carga un puntero y avisa por stderr si falta -- no aborta aqui mismo para
@@ -102,6 +104,8 @@ bool loadOpenGLFunctions() {
 
     IRON3D_GL_LOAD(glGetUniformLocation);
     IRON3D_GL_LOAD(glUniformMatrix4fv);
+    IRON3D_GL_LOAD(glUniform3fv);
+    IRON3D_GL_LOAD(glUniform1f);
 #undef IRON3D_GL_LOAD
     return ok;
 }
