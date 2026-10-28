@@ -13,8 +13,10 @@ de Cinema 4D R19 con código propio, y lo mejora.
 - Permitido como referencia:
   - Uso del programa, grabaciones de pantalla, documentación pública y manuales.
   - Observación entrada → salida (el "oráculo", ver §4).
-  - Melange SDK oficial de Maxon para leer/escribir .c4d, aislado en src/importers/melange/
-    como módulo opcional (revisar su licencia antes de enlazarlo).
+  - Cineware SDK oficial de Maxon (antes "Melange SDK", renombrado por Maxon en 2019 --
+    mismo SDK, nombre nuevo) para leer/escribir .c4d, aislado en src/importers/cineware/
+    como módulo opcional (revisar su licencia antes de enlazarlo; el SDK en si lee Y
+    escribe .c4d, no es solo lector).
 - Si una tarea solo puede hacerse mirando código de Maxon: parar y avisar, no improvisar.
 - **Excepción registrada 2026-10-27:** Core autorizó explícitamente, tras aviso del riesgo legal, usar
   RAE (ingeniería reversa/decompilación) sobre el binario real de C4D R19 instalado — esto excede la
@@ -65,5 +67,5 @@ Windows (MSVC/Clang-cl) y Linux (GCC/Clang) con paridad; CI falla si uno de los 
 ## 7. Licencia
 
 MIT OR Apache-2.0 (dual, por decidir con el primer commit). Las dependencias deben ser compatibles.
-Revisar la licencia de Melange antes de enlazarlo (puede obligar a aislarlo como módulo descargable
-aparte en vez de incluirlo en el repo).
+Revisar la licencia de Cineware SDK antes de enlazarlo (puede obligar a aislarlo como módulo
+descargable aparte en vez de incluirlo en el repo).

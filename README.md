@@ -10,10 +10,10 @@ compatibilidad con `.c4d`/`.lib4d` y plugins de R19.
 Documento Maestro del proyecto en `V:\ObsidianVault\14-Iron3D-CoalMix\Iron3D_CoalMix_Documento_Maestro_2026-10-27.pdf`
 (resumen en `estado.md` de esa misma carpeta).
 
-Estado (2026-10-27): Fase 1 y Fase 2 (sin importación Melange) completadas y
-verificadas en vivo — ventana Vulkan + ImGui, cubo de prueba, cámara orbital estilo C4D
-y grafo de escena con Gestor de Objetos interactivo real. Ver `AGENTS.md` §5 para el
-stack y `estado.md` del vault para el detalle de cada fase.
+Estado (2026-10-28): Fase 1 y Fase 2 (grafo de escena + Gestor de Objetos + gizmo de
+transformación mover/rotar/escalar, sin importación Cineware) completadas y verificadas
+en vivo — ventana Vulkan + ImGui, cubo de prueba, cámara orbital estilo C4D. Ver
+`AGENTS.md` §5 para el stack y `estado.md` del vault para el detalle de cada fase.
 
 ## Estructura
 
@@ -26,7 +26,8 @@ src/
   sdk/              Iron3D SDK (API C++ de plugins)
   python/           CPython embebido + módulo `iron` (pybind11)
   importers/
-    melange/        Lector/escritor .c4d (módulo opcional, revisar licencia)
+    cineware/       Lector/escritor .c4d (Cineware SDK de Maxon, antes "Melange" --
+                    renombrado 2019; módulo opcional, revisar licencia)
     lib4d/          Parser de .lib4d -> .ilib
     c4d_compat/     Módulo `c4d` + ABI .cdl64 (fase tardía)
 tools/
