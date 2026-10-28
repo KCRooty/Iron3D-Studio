@@ -3,6 +3,7 @@
 
 #include <imgui.h>
 
+#include <algorithm>
 #include <vector>
 #include <cstring>
 
@@ -10,9 +11,16 @@ namespace iron3d {
 
 namespace {
 
+// Visibilidad de las "ventanas de dialogo" (Escena, Preferencias): en C4D de
+// verdad no son paneles acoplados sino dialogos que abres desde un menu
+// (Archivo > Guardar, Edicion > Preferencias) -- aqui igual, controlado por
+// drawMenuBar() y leido por el resto de drawMainUi() en el mismo frame.
+bool g_showScenePanel = false;
+bool g_showPreferencesPanel = false;
+
 // Nombre por defecto al crear cada tipo de primitiva desde el menu contextual
-// del Gestor de Objetos -- igual de informativo que el nombre de clase de C4D
-// al arrastrar un primitivo nuevo (p.ej. "Cube", "Sphere").
+// del Gestor de Objetos o el panel Crear -- igual de informativo que el
+// nombre de clase de C4D al arrastrar un primitivo nuevo (p.ej. "Cube").
 const char* defaultNameFor(PrimitiveType type) {
     switch (type) {
         case PrimitiveType::Cube: return "Cubo";
@@ -79,59 +87,78 @@ void drawNodeTree(SceneNode& node, SceneNode*& selected, SceneNode*& toDelete,
     ImGui::PopID();
 }
 
-void drawAttributesPanel(SceneNode* selected, SceneNode& sceneRoot, SceneHistory& history) {
-    ImGui::Begin("Atributos");
-    if (!selected) {
-        ImGui::TextDisabled("Ningun objeto seleccionado.");
-    } else {
-        // Patron activar/confirmar de ImGui para deshacer: un campo se puede
-        // editar durante varios frames seguidos (arrastrar, escribir), asi
-        // que el "antes" se toma solo al primer frame en que el campo se
-        // activa -- `preWidgetSnap` es el estado justo antes de que CUALQUIER
-        // campo de este panel toque nada este frame, capturado antes de
-        // dibujar el primero -- y se empuja a la pila una sola vez, al
-        // soltar el campo. Nunca uno por frame/tecla, o la pila se llenaria
-        // de ruido.
-        const std::string preWidgetSnap = history.snapshot(sceneRoot);
-        static std::string pendingSnap;
-        auto trackEdit = [&]() {
-            if (ImGui::IsItemActivated()) pendingSnap = preWidgetSnap;
-            if (ImGui::IsItemDeactivatedAfterEdit()) history.commit(pendingSnap);
-        };
+// Pestana con estilo de tab pero sin contenido propio, para los huecos del
+// layout estilo C4D que todavia no tienen funcionalidad real detras
+// (Etiquetas, Editar/Funcion/Textura) -- se ve en su sitio sin fingir que
+// hace algo. BeginDisabled la atenua y le quita el clic.
+void stubTab(const char* label) {
+    ImGui::BeginDisabled();
+    ImGui::TabItemButton(label);
+    ImGui::EndDisabled();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Todavia no implementado");
+}
 
-        char nameBuf[128];
-        std::snprintf(nameBuf, sizeof(nameBuf), "%s", selected->name().c_str());
-        if (ImGui::InputText("Nombre", nameBuf, sizeof(nameBuf))) {
-            selected->setName(nameBuf);
+void drawAttributesPanel(SceneNode* selected, SceneNode& sceneRoot, SceneHistory& history) {
+    ImGui::Begin("Atributos", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    if (ImGui::BeginTabBar("##attrTabs")) {
+        if (ImGui::BeginTabItem("Objeto")) {
+            if (!selected) {
+                ImGui::TextDisabled("Ningun objeto seleccionado.");
+            } else {
+                // Patron activar/confirmar de ImGui para deshacer: un campo se puede
+                // editar durante varios frames seguidos (arrastrar, escribir), asi
+                // que el "antes" se toma solo al primer frame en que el campo se
+                // activa -- `preWidgetSnap` es el estado justo antes de que CUALQUIER
+                // campo de este panel toque nada este frame, capturado antes de
+                // dibujar el primero -- y se empuja a la pila una sola vez, al
+                // soltar el campo. Nunca uno por frame/tecla, o la pila se llenaria
+                // de ruido.
+                const std::string preWidgetSnap = history.snapshot(sceneRoot);
+                static std::string pendingSnap;
+                auto trackEdit = [&]() {
+                    if (ImGui::IsItemActivated()) pendingSnap = preWidgetSnap;
+                    if (ImGui::IsItemDeactivatedAfterEdit()) history.commit(pendingSnap);
+                };
+
+                char nameBuf[128];
+                std::snprintf(nameBuf, sizeof(nameBuf), "%s", selected->name().c_str());
+                if (ImGui::InputText("Nombre", nameBuf, sizeof(nameBuf))) {
+                    selected->setName(nameBuf);
+                }
+                trackEdit();
+                ImGui::TextDisabled("Tipo: %s", primitiveTypeName(selected->primitive));
+                ImGui::Separator();
+                ImGui::DragFloat3("Posicion", &selected->position.x, 0.05f);
+                trackEdit();
+                ImGui::DragFloat3("Rotacion", &selected->rotationDeg.x, 1.0f);
+                trackEdit();
+                ImGui::DragFloat3("Escala", &selected->scale.x, 0.05f, 0.01f, 100.0f);
+                trackEdit();
+                ImGui::Separator();
+                ImGui::Checkbox("Visible", &selected->visible);
+                trackEdit();
+                ImGui::TextDisabled("%zu hijo(s)", selected->children().size());
+            }
+            ImGui::EndTabItem();
         }
-        trackEdit();
-        ImGui::TextDisabled("Tipo: %s", primitiveTypeName(selected->primitive));
-        ImGui::Separator();
-        ImGui::DragFloat3("Posicion", &selected->position.x, 0.05f);
-        trackEdit();
-        ImGui::DragFloat3("Rotacion", &selected->rotationDeg.x, 1.0f);
-        trackEdit();
-        ImGui::DragFloat3("Escala", &selected->scale.x, 0.05f, 0.01f, 100.0f);
-        trackEdit();
-        ImGui::Separator();
-        ImGui::Checkbox("Visible", &selected->visible);
-        trackEdit();
-        ImGui::TextDisabled("%zu hijo(s)", selected->children().size());
+        stubTab("Etiquetas");
+        ImGui::EndTabBar();
     }
     ImGui::End();
 }
 
-// Guardar/cargar escena a disco (Fase 2c, formato .iron -- ver SceneSerializer.h).
-// `root` se pasa por puntero crudo al estado persistente del panel en vez de
-// alla global para no acoplar esto a mas parametros de drawMainUi de los
-// necesarios; vive solo mientras el programa corre, no hay multi-ventana.
+// Guardar/cargar escena a disco (Fase 2c, formato .iron -- ver
+// SceneSerializer.h). Ahora es un dialogo que se abre desde Archivo (Fase
+// "layout C4D"), no un panel siempre acoplado -- `open` es el bool del menu,
+// ImGui lo pone a false solo si se cierra con la X.
 void drawScenePanel(SceneNode& root, SceneNode*& selected, const std::filesystem::path& scenesDir,
-                     SceneHistory& history) {
+                     SceneHistory& history, bool* open) {
+    if (!*open) return;
     static char filenameBuf[128] = "escena";
     static std::string statusMsg;
     static bool statusIsError = false;
 
-    ImGui::Begin("Escena");
+    ImGui::Begin("Escena", open);
     ImGui::InputText("Archivo", filenameBuf, sizeof(filenameBuf));
     ImGui::TextDisabled(".iron en %s", scenesDir.string().c_str());
 
@@ -167,68 +194,15 @@ void drawScenePanel(SceneNode& root, SceneNode*& selected, const std::filesystem
     ImGui::End();
 }
 
-// Barra de herramientas: modo del gizmo (mover/rotar/escalar, atajos 1/2/3 --
-// numeros simples en vez de W/E/R de otros DCC porque el proyecto no tiene
-// ninguna convencion de teclado propia todavia fijada por el Documento
-// Maestro) + deshacer/rehacer/duplicar (Fase 2d, Ctrl+Z/Ctrl+Y o Ctrl+Shift+Z/
-// Ctrl+D). Un undo/redo reconstruye el arbol entero (ver SceneHistory), asi
-// que cualquier seleccion vieja queda invalida y se limpia aqui mismo.
-void drawToolsToolbar(GizmoMode& mode, SceneNode& root, SceneNode*& selected, SceneHistory& history) {
-    ImGuiIO& io = ImGui::GetIO();
-    if (!io.WantCaptureKeyboard) {
-        if (ImGui::IsKeyPressed(ImGuiKey_1)) mode = GizmoMode::Translate;
-        if (ImGui::IsKeyPressed(ImGuiKey_2)) mode = GizmoMode::Rotate;
-        if (ImGui::IsKeyPressed(ImGuiKey_3)) mode = GizmoMode::Scale;
-
-        if (io.KeyCtrl && !io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z)) {
-            if (history.undo(root)) selected = nullptr;
-        }
-        if (io.KeyCtrl && ((io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z)) || ImGui::IsKeyPressed(ImGuiKey_Y))) {
-            if (history.redo(root)) selected = nullptr;
-        }
-        if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D) && selected && selected->parent()) {
-            history.commitBefore(root);
-            selected = duplicateSubtree(*selected->parent(), *selected);
-        }
-    }
-
-    ImGui::Begin("Herramientas");
-    auto modeButton = [&](const char* label, GizmoMode m) {
-        bool active = (mode == m);
-        if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-        if (ImGui::Button(label)) mode = m;
-        if (active) ImGui::PopStyleColor();
-    };
-    modeButton("Mover (1)", GizmoMode::Translate);
-    ImGui::SameLine();
-    modeButton("Rotar (2)", GizmoMode::Rotate);
-    ImGui::SameLine();
-    modeButton("Escalar (3)", GizmoMode::Scale);
-
-    ImGui::Separator();
-    if (!history.canUndo()) ImGui::BeginDisabled();
-    if (ImGui::Button("Deshacer (Ctrl+Z)")) {
-        if (history.undo(root)) selected = nullptr;
-    }
-    if (!history.canUndo()) ImGui::EndDisabled();
-    ImGui::SameLine();
-    if (!history.canRedo()) ImGui::BeginDisabled();
-    if (ImGui::Button("Rehacer (Ctrl+Y)")) {
-        if (history.redo(root)) selected = nullptr;
-    }
-    if (!history.canRedo()) ImGui::EndDisabled();
-    ImGui::End();
-}
-
 // Eleccion de backend de render (Fase 3c): solo guarda en disco, nunca
-// cambia el renderer en caliente -- `activeBackend` (el que ya esta
-// corriendo) se muestra aparte para que quede claro por que elegir otro no
-// hace nada hasta reiniciar, igual que Cinema 4D con su API de render.
+// cambia el renderer en caliente. Dialogo (Edicion > Preferencias), igual
+// que Escena.
 void drawPreferencesPanel(RendererBackend activeBackend, Preferences& prefs,
-                           const std::filesystem::path& prefsPath) {
+                           const std::filesystem::path& prefsPath, bool* open) {
+    if (!*open) return;
     static std::string statusMsg;
 
-    ImGui::Begin("Preferencias");
+    ImGui::Begin("Preferencias", open);
     ImGui::Text("Backend activo esta sesion: %s", activeBackend == RendererBackend::Vulkan ? "Vulkan" : "OpenGL");
     ImGui::Separator();
     ImGui::TextUnformatted("Backend de render (se aplica al reiniciar):");
@@ -245,6 +219,186 @@ void drawPreferencesPanel(RendererBackend activeBackend, Preferences& prefs,
     ImGui::End();
 }
 
+// Atajos de teclado globales (Fase 2d/2e): no dependen de ninguna ventana
+// concreta, se comprueban una vez por frame antes de dibujar nada. Un
+// undo/redo reconstruye el arbol entero (ver SceneHistory), asi que
+// cualquier seleccion vieja queda invalida y se limpia aqui mismo.
+void handleGlobalShortcuts(GizmoMode& mode, SceneNode& root, SceneNode*& selected, SceneHistory& history) {
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureKeyboard) return;
+
+    if (ImGui::IsKeyPressed(ImGuiKey_1)) mode = GizmoMode::Translate;
+    if (ImGui::IsKeyPressed(ImGuiKey_2)) mode = GizmoMode::Rotate;
+    if (ImGui::IsKeyPressed(ImGuiKey_3)) mode = GizmoMode::Scale;
+
+    if (io.KeyCtrl && !io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z)) {
+        if (history.undo(root)) selected = nullptr;
+    }
+    if (io.KeyCtrl && ((io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z)) || ImGui::IsKeyPressed(ImGuiKey_Y))) {
+        if (history.redo(root)) selected = nullptr;
+    }
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D) && selected && selected->parent()) {
+        history.commitBefore(root);
+        selected = duplicateSubtree(*selected->parent(), *selected);
+    }
+}
+
+// Menu superior (Archivo/Edicion), como cualquier DCC de verdad: Guardar/
+// Cargar escena y Preferencias dejan de ser paneles siempre visibles y pasan
+// a ser dialogos que abres desde aqui -- Deshacer/Rehacer tambien viven en
+// Edicion ademas de en la barra de iconos, igual que en C4D.
+void drawMenuBar(SceneNode& root, SceneNode*& selected, SceneHistory& history) {
+    if (!ImGui::BeginMainMenuBar()) return;
+    if (ImGui::BeginMenu("Archivo")) {
+        if (ImGui::MenuItem("Guardar / cargar escena...")) g_showScenePanel = true;
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Edicion")) {
+        if (ImGui::MenuItem("Deshacer", "Ctrl+Z", false, history.canUndo())) {
+            if (history.undo(root)) selected = nullptr;
+        }
+        if (ImGui::MenuItem("Rehacer", "Ctrl+Y", false, history.canRedo())) {
+            if (history.redo(root)) selected = nullptr;
+        }
+        ImGui::Separator();
+        if (ImGui::MenuItem("Preferencias...")) g_showPreferencesPanel = true;
+        ImGui::EndMenu();
+    }
+    ImGui::EndMainMenuBar();
+}
+
+// Barra de iconos (estilo C4D: fila fija bajo el menu, todo el ancho). Sin
+// fuente de iconos propia todavia -- se usan etiquetas cortas + tooltip con
+// el nombre completo en vez de anadir una dependencia nueva solo por esto.
+void drawIconToolbar(GizmoMode& mode, SceneNode& root, SceneNode*& selected, SceneHistory& history,
+                      RendererBackend activeBackend, const ImVec2& pos, const ImVec2& size) {
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(size, ImGuiCond_Always);
+    ImGui::Begin("##toolbar", nullptr,
+                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
+                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+
+    auto modeButton = [&](const char* label, const char* tip, GizmoMode m) {
+        bool active = (mode == m);
+        if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+        if (ImGui::Button(label)) mode = m;
+        if (active) ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tip);
+    };
+    modeButton("Mov", "Mover (1)", GizmoMode::Translate);
+    ImGui::SameLine();
+    modeButton("Rot", "Rotar (2)", GizmoMode::Rotate);
+    ImGui::SameLine();
+    modeButton("Esc", "Escalar (3)", GizmoMode::Scale);
+
+    ImGui::SameLine();
+    ImGui::Separator();
+    ImGui::SameLine();
+
+    if (!history.canUndo()) ImGui::BeginDisabled();
+    if (ImGui::Button("Deshacer")) {
+        if (history.undo(root)) selected = nullptr;
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Deshacer (Ctrl+Z)");
+    if (!history.canUndo()) ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (!history.canRedo()) ImGui::BeginDisabled();
+    if (ImGui::Button("Rehacer")) {
+        if (history.redo(root)) selected = nullptr;
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Rehacer (Ctrl+Y)");
+    if (!history.canRedo()) ImGui::EndDisabled();
+
+    ImGui::SameLine();
+    ImGui::Separator();
+    ImGui::SameLine();
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered()) {
+        ImGui::BeginTooltip();
+        ImGui::TextUnformatted("Navegacion (estilo C4D):");
+        ImGui::BulletText("Alt + clic izq: orbitar");
+        ImGui::BulletText("Alt + clic medio: panear");
+        ImGui::BulletText("Alt + clic der / rueda: zoom");
+        ImGui::BulletText("Clic en un eje del gizmo: mover/rotar/escalar");
+        ImGui::BulletText("Clic derecho en un nodo: anadir primitiva / duplicar / eliminar");
+        ImGui::BulletText("Ctrl+Z / Ctrl+Y: deshacer / rehacer -- Ctrl+D: duplicar seleccionado");
+        ImGui::EndTooltip();
+    }
+
+    // Lectura rapida del backend activo -- a la derecha, igual de util que
+    // el indicador de API de render en la barra de C4D.
+    const char* backendLabel = activeBackend == RendererBackend::Vulkan ? "Vulkan" : "OpenGL";
+    const float labelWidth = ImGui::CalcTextSize(backendLabel).x;
+    ImGui::SameLine(ImGui::GetWindowWidth() - labelWidth - ImGui::GetStyle().WindowPadding.x);
+    ImGui::TextDisabled("%s", backendLabel);
+
+    ImGui::End();
+}
+
+// Panel "Crear" (esquina inferior izquierda, igual que las pestanas Crear/
+// Editar/Funcion/Textura de C4D): aqui solo Crear tiene contenido real --
+// anade la primitiva como hijo del nodo seleccionado, o de la raiz si no hay
+// seleccion. Los otros tres son huecos del layout sin funcionalidad todavia.
+void drawCreatePanel(SceneNode& root, SceneNode*& selected, SceneHistory& history,
+                      const ImVec2& pos, const ImVec2& size) {
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(size, ImGuiCond_Always);
+    ImGui::Begin("Crear", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+
+    if (ImGui::BeginTabBar("##createTabs")) {
+        if (ImGui::BeginTabItem("Crear")) {
+            SceneNode* target = selected ? selected : &root;
+            auto createButton = [&](const char* label, PrimitiveType type) {
+                if (ImGui::Button(label, ImVec2(-1, 0))) {
+                    history.commitBefore(root);
+                    selected = target->addChild(defaultNameFor(type), type);
+                }
+            };
+            createButton("Cubo", PrimitiveType::Cube);
+            createButton("Esfera", PrimitiveType::Sphere);
+            createButton("Plano", PrimitiveType::Plane);
+            createButton("Luz", PrimitiveType::Light);
+            createButton("Nulo", PrimitiveType::None);
+            ImGui::EndTabItem();
+        }
+        stubTab("Editar");
+        stubTab("Funcion");
+        stubTab("Textura");
+        ImGui::EndTabBar();
+    }
+    ImGui::End();
+}
+
+// Franja de estado inferior (FPS + "linea de tiempo"): Iron3D no tiene
+// animacion todavia, asi que los controles de reproduccion se muestran
+// deshabilitados en vez de fingir que funcionan -- hueco del layout fiel a
+// C4D, honesto sobre lo que hace de verdad.
+void drawStatusBar(float framerate, const ImVec2& pos, const ImVec2& size) {
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(size, ImGuiCond_Always);
+    ImGui::Begin("##status", nullptr,
+                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
+                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+
+    ImGui::Text("%.1f FPS (%.2f ms/frame)", framerate, 1000.0f / framerate);
+    ImGui::SameLine();
+    ImGui::Separator();
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled();
+    ImGui::Button("|<");
+    ImGui::SameLine();
+    ImGui::Button(">");
+    ImGui::SameLine();
+    ImGui::Button(">|");
+    ImGui::SameLine();
+    ImGui::TextUnformatted("Fotograma 0/0");
+    ImGui::EndDisabled();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Animacion: todavia no implementada");
+
+    ImGui::End();
+}
+
 } // namespace
 
 void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
@@ -252,25 +406,48 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
                  RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath) {
     SceneNode* toDelete = nullptr;
 
-    drawToolsToolbar(gizmoMode, root, selected, history);
-    drawScenePanel(root, selected, scenesDir, history);
-    drawPreferencesPanel(activeBackend, prefs, prefsPath);
+    handleGlobalShortcuts(gizmoMode, root, selected, history);
+    drawMenuBar(root, selected, history);
 
-    ImGui::Begin("Gestor de Objetos");
+    // Layout fijo estilo C4D: toda la medida sale del viewport principal
+    // cada frame, asi que se adapta solo al redimensionar la ventana (igual
+    // que el resto de la app, ver resizeIfNeeded en main.cpp).
+    ImGuiViewport* vp = ImGui::GetMainViewport();
+    const float menuBarH = ImGui::GetFrameHeight();
+    const float toolbarH = 34.0f;
+    const float statusH = 30.0f;
+    const float rightW = std::min(std::max(vp->Size.x * 0.24f, 300.0f), 380.0f);
+    // 300px minimo: con menos, las 4 pestanas (Crear/Editar/Funcion/Textura)
+    // se amontonan y se solapan visualmente -- visto al comprobarlo en vivo.
+    const float createW = std::min(std::max(vp->Size.x * 0.22f, 300.0f), 380.0f);
+    // 210px: pestana + 5 botones de primitiva (Cubo/Esfera/Plano/Luz/Nulo)
+    // completos sin tener que hacer scroll -- con 150 el ultimo quedaba
+    // cortado, visto al comprobarlo en vivo.
+    const float createH = 210.0f;
+
+    const float contentTop = vp->Pos.y + menuBarH + toolbarH;
+    const float contentBottom = vp->Pos.y + vp->Size.y - statusH;
+    const float contentH = contentBottom - contentTop;
+    const float objectsH = contentH * 0.45f;
+
+    drawIconToolbar(gizmoMode, root, selected, history, activeBackend,
+                     ImVec2(vp->Pos.x, vp->Pos.y + menuBarH), ImVec2(vp->Size.x, toolbarH));
+    drawStatusBar(framerate, ImVec2(vp->Pos.x, vp->Pos.y + vp->Size.y - statusH), ImVec2(vp->Size.x, statusH));
+    drawCreatePanel(root, selected, history, ImVec2(vp->Pos.x, contentBottom - createH), ImVec2(createW, createH));
+
+    ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + vp->Size.x - rightW, contentTop), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(rightW, objectsH), ImGuiCond_Always);
+    ImGui::Begin("Gestor de Objetos", nullptr,
+                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
     drawNodeTree(root, selected, toDelete, root, history);
-    ImGui::Separator();
-    ImGui::TextUnformatted("Navegacion (estilo C4D):");
-    ImGui::BulletText("Alt + clic izq: orbitar");
-    ImGui::BulletText("Alt + clic medio: panear");
-    ImGui::BulletText("Alt + clic der / rueda: zoom");
-    ImGui::BulletText("Clic en un eje del gizmo: mover/rotar/escalar");
-    ImGui::BulletText("Clic derecho en un nodo: anadir primitiva / duplicar / eliminar");
-    ImGui::BulletText("Ctrl+Z / Ctrl+Y: deshacer / rehacer -- Ctrl+D: duplicar seleccionado");
-    ImGui::Separator();
-    ImGui::Text("%.1f FPS (%.2f ms/frame)", framerate, 1000.0f / framerate);
     ImGui::End();
 
+    ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + vp->Size.x - rightW, contentTop + objectsH), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(rightW, contentH - objectsH), ImGuiCond_Always);
     drawAttributesPanel(selected, root, history);
+
+    drawScenePanel(root, selected, scenesDir, history, &g_showScenePanel);
+    drawPreferencesPanel(activeBackend, prefs, prefsPath, &g_showPreferencesPanel);
 
     if (toDelete && toDelete->parent()) {
         history.commitBefore(root);
