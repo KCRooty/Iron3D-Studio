@@ -3,7 +3,7 @@
 namespace iron3d {
 
 const Material& Material::defaultMaterial() {
-    static const Material kDefault{"Sin material", {0.7f, 0.7f, 0.7f}, 0.3f, 32.0f};
+    static const Material kDefault{"Sin material", {0.7f, 0.7f, 0.7f}, 0.2f, 64.0f};
     return kDefault;
 }
 

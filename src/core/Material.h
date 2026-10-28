@@ -24,8 +24,8 @@ namespace iron3d {
 struct Material {
     std::string name = "Material";
     glm::vec3 diffuse{0.7f, 0.7f, 0.7f};
-    float specular = 0.3f;    // intensidad especular, 0..1
-    float shininess = 32.0f;  // exponente Phong -- mas alto, brillo mas concentrado
+    float specular = 0.2f;    // intensidad especular, 0..1
+    float shininess = 64.0f;  // exponente Phong -- mas alto, brillo mas concentrado
 
     // Gris neutro usado cuando un nodo no tiene material asignado
     // (materialIndex == -1) o cuando el indice ya no es valido (p.ej. tras
