@@ -2,6 +2,8 @@
 
 # Iron3D Studio
 
+**Página del proyecto:** [staticforge.me/i3ds.html](https://staticforge.me/i3ds.html)
+
 DCC 3D open source (Static Forge) que replica el flujo de trabajo de Cinema 4D R19 —
 código 100% propio, reimplementación clean-room — con evaluación en GPU (Vulkan),
 compatibilidad con `.c4d`/`.lib4d` y plugins de R19.
