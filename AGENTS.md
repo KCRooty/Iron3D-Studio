@@ -1,6 +1,6 @@
 # AGENTS.md — Iron3D Studio
 
-Reglas obligatorias para cualquier agente (Claude Code, etc.) o colaborador humano.
+Reglas obligatorias para cualquier agente de IA o colaborador humano.
 Iron3D Studio es un DCC 3D open source de Static Forge que replica el flujo de trabajo
 de Cinema 4D R19 con código propio, y lo mejora.
 
