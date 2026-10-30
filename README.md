@@ -4,6 +4,16 @@
 
 **Página del proyecto:** [staticforge.me/i3ds.html](https://staticforge.me/i3ds.html)
 
+## Capturas
+
+![Interfaz de Iron3D Studio](docs/screenshots/01-interfaz.png)
+
+*El espacio de trabajo: menús, barras de herramientas, visor 3D, Gestor de Objetos, Atributos, Línea de Tiempo y Gestor de Coordenadas. Todos los iconos están dibujados en código.*
+
+![Selección múltiple con el eje en el centro](docs/screenshots/02-seleccion-multiple.png)
+
+*Selección múltiple (Mayús+clic en el visor, Ctrl+clic en el Gestor de Objetos): contorno naranja en todo lo seleccionado y el eje de transformación en el centro del conjunto.*
+
 DCC 3D open source (Static Forge) que replica el flujo de trabajo de Cinema 4D R19 —
 código 100% propio, reimplementación clean-room — con evaluación en GPU (Vulkan),
 compatibilidad con `.c4d`/`.lib4d` y plugins de R19.
