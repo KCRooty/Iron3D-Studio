@@ -1,26 +1,113 @@
 #include "MainUi.h"
+#include "C4DIcons.h"
+#include "UiPreset.h"
+#include "UiTheme.h"
 #include "core/SceneSerializer.h"
 
 #include <imgui.h>
+#include <imgui_internal.h> // MenuItemEx / BeginMenuEx (iconos en los menus)
+
+#include <glm/glm.hpp>
 
 #include <algorithm>
-#include <vector>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
 #include <cstring>
+#include <string>
+#include <unordered_set>
+#include <vector>
 
 namespace iron3d {
 
 namespace {
 
-// Visibilidad de las "ventanas de dialogo" (Escena, Preferencias): en C4D de
-// verdad no son paneles acoplados sino dialogos que abres desde un menu
-// (Archivo > Guardar, Edicion > Preferencias) -- aqui igual, controlado por
-// drawMenuBar() y leido por el resto de drawMainUi() en el mismo frame.
-bool g_showScenePanel = false;
-bool g_showPreferencesPanel = false;
+using icons::Icon;
 
-// Nombre por defecto al crear cada tipo de primitiva desde el menu contextual
-// del Gestor de Objetos o el panel Crear -- igual de informativo que el
-// nombre de clase de C4D al arrastrar un primitivo nuevo (p.ej. "Cube").
+// --- Paleta (c4d_ui_reference_visual.md SS2) ---------------------------------
+// Ya no son constexpr: applyTheme() las recalcula a partir de UiTheme (ver
+// UiTheme.h/.cpp) cada vez que Core cambia un color en Preferencias >
+// Interfaz. Los valores de abajo son el default C4D, por si applyTheme()
+// no llega a llamarse antes de que algo pinte (no deberia pasar).
+ImU32 kAmber = IM_COL32(224, 148, 46, 255);
+ImU32 kToolBlue = IM_COL32(80, 144, 208, 150);
+ImU32 kTabActive = IM_COL32(141, 167, 204, 255);  // pestaña activa (8DA7CC), texto negro
+ImU32 kSelOrange = IM_COL32(255, 170, 24, 255);   // selección (FFAA18): nombre y contorno
+ImU32 kHoverRow = IM_COL32(255, 255, 255, 14);
+ImU32 kTextCol = IM_COL32(216, 216, 216, 255);
+ImU32 kTextDim = IM_COL32(128, 128, 128, 255);
+ImU32 kBorderDark = IM_COL32(30, 30, 30, 255);
+ImU32 kBorderLight = IM_COL32(80, 80, 80, 255);
+ImU32 kSectionBg = IM_COL32(50, 50, 50, 255);
+ImU32 kStatusBg = IM_COL32(26, 26, 26, 255);
+ImU32 kRulerBg = IM_COL32(52, 52, 52, 255);
+ImU32 kPlayhead = IM_COL32(86, 170, 96, 255);
+// Cromo que antes era literal (pestanas verticales, asa de los paneles,
+// franja de iconos): ahora sigue al fondo de paneles del preset.
+ImU32 kTabOn = IM_COL32(78, 78, 78, 255);
+ImU32 kTabOff = IM_COL32(52, 52, 52, 255);
+ImU32 kGrip = IM_COL32(120, 120, 120, 255);
+ImU32 kIconGutter = IM_COL32(48, 48, 48, 255);
+
+// Preset de interfaz activo (applyPreset): disposicion y nombres de paneles.
+UiPreset g_preset;
+const PanelNames* g_names = nullptr;
+const PanelNames& names() { return g_names ? *g_names : panelNames(Arrangement::C4D); }
+bool isC4DArrangement() { return g_preset.layout.arrangement == Arrangement::C4D; }
+
+// 1 unidad de Iron3D = 200 cm: el Cubo por defecto mide 1 unidad de lado y en
+// C4D un Cubo nuevo mide 200 cm, asi los numeros que se ven coinciden.
+constexpr float kCmPerUnit = 200.0f;
+
+ImFont* g_fontBold = nullptr;
+
+enum class AttrFocus { Object, Material, Tag, Project };
+
+struct UiState {
+    bool showScene = false;
+    bool sceneLoadMode = false;
+    bool showPrefs = false;
+    bool showMatEditor = false;
+    bool showAbout = false;
+
+    AttrFocus focus = AttrFocus::Object;
+    int lastSelectedId = -1;
+    int selectedMat = -1;
+    int matEditorChannel = 0;
+
+    int renamingNodeId = -1;
+    int renamingMat = -1;
+    char renameBuf[128] = {};
+    bool renameFocus = false;
+
+    std::unordered_set<int> collapsed;
+    // Seleccion multiple (ids): Mayus+clic en el visor, Ctrl+clic en el Gestor
+    // de Objetos. `selected` sigue siendo el objeto activo (el de Atributos y
+    // el gizmo); este conjunto siempre lo contiene mientras haya seleccion.
+    std::unordered_set<int> selIds;
+    unsigned objMask[3] = {1u << 2, 1u << 2, 1u << 2}; // geometria, luz, nulo: "Objeto"/"General"
+    unsigned matMask = 1u << 1;                          // material: "Color"
+    unsigned tagMask = 1u << 1;                          // etiqueta: "Etiqueta"
+    int clipboardNodeId = -1;
+
+    // Proyecto / Linea de Tiempo (seccion 15 de la referencia: FPS 30, 0F-90F).
+    int fps = 30;
+    int minFrame = 0, maxFrame = 90;
+    int previewMin = 0, previewMax = 90;
+    float frame = 0.0f;
+    int playDir = 0; // 0 parado, 1 adelante, -1 atras
+    bool loop = true;
+
+    int coordSpace = 0; // Objeto (Rel)
+    int coordSizeMode = 0; // 0 Tamano, 1 Escala
+    int layoutPreset = 0;
+
+    std::string hint; // texto de ayuda del elemento bajo el raton (barra de estado)
+};
+UiState g;
+
+// --- Utilidades -----------------------------------------------------------------
+
 const char* defaultNameFor(PrimitiveType type) {
     switch (type) {
         case PrimitiveType::Cube: return "Cubo";
@@ -31,518 +118,3247 @@ const char* defaultNameFor(PrimitiveType type) {
     }
 }
 
-void drawNodeTree(SceneNode& node, SceneNode*& selected, SceneNode*& toDelete,
-                   SceneNode& sceneRoot, SceneHistory& history) {
-    ImGui::PushID(node.id());
-
-    bool isLeaf = node.children().empty();
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick |
-                                ImGuiTreeNodeFlags_SpanAvailWidth;
-    if (&node == selected) flags |= ImGuiTreeNodeFlags_Selected;
-    if (isLeaf) flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-
-    ImGui::Checkbox("##vis", &node.visible);
-    ImGui::SameLine();
-    bool opened = ImGui::TreeNodeEx(node.name().c_str(), flags);
-    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-        selected = &node;
+Icon iconFor(PrimitiveType type) {
+    switch (type) {
+        case PrimitiveType::Cube: return Icon::Cube;
+        case PrimitiveType::Sphere: return Icon::Sphere;
+        case PrimitiveType::Plane: return Icon::Plane;
+        case PrimitiveType::Light: return Icon::Light;
+        case PrimitiveType::None: default: return Icon::Null;
     }
-
-    SceneNode* pendingAddTo = nullptr;
-    PrimitiveType pendingAddType = PrimitiveType::None;
-    SceneNode* pendingDuplicate = nullptr;
-    if (ImGui::BeginPopupContextItem("ctx")) {
-        if (ImGui::BeginMenu("Anadir")) {
-            if (ImGui::MenuItem("Nulo (vacio)")) { pendingAddTo = &node; pendingAddType = PrimitiveType::None; }
-            if (ImGui::MenuItem("Cubo")) { pendingAddTo = &node; pendingAddType = PrimitiveType::Cube; }
-            if (ImGui::MenuItem("Esfera")) { pendingAddTo = &node; pendingAddType = PrimitiveType::Sphere; }
-            if (ImGui::MenuItem("Plano")) { pendingAddTo = &node; pendingAddType = PrimitiveType::Plane; }
-            if (ImGui::MenuItem("Luz")) { pendingAddTo = &node; pendingAddType = PrimitiveType::Light; }
-            ImGui::EndMenu();
-        }
-        bool canDelete = node.parent() != nullptr; // la raiz de la escena no se borra ni se duplica
-        if (ImGui::MenuItem("Duplicar", "Ctrl+D", false, canDelete)) pendingDuplicate = &node;
-        if (ImGui::MenuItem("Eliminar", nullptr, false, canDelete)) toDelete = &node;
-        ImGui::EndPopup();
-    }
-
-    if (opened && !isLeaf) {
-        // Copia de los punteros hijos ANTES de recursar: anadir/eliminar se aplica
-        // despues de este bucle, nunca durante, para no invalidar el vector en marcha.
-        std::vector<SceneNode*> childPtrs;
-        childPtrs.reserve(node.children().size());
-        for (const auto& c : node.children()) childPtrs.push_back(c.get());
-        for (SceneNode* c : childPtrs) drawNodeTree(*c, selected, toDelete, sceneRoot, history);
-        ImGui::TreePop();
-    }
-
-    if (pendingAddTo) {
-        history.commitBefore(sceneRoot);
-        pendingAddTo->addChild(defaultNameFor(pendingAddType), pendingAddType);
-    }
-    if (pendingDuplicate && pendingDuplicate->parent()) {
-        history.commitBefore(sceneRoot);
-        selected = duplicateSubtree(*pendingDuplicate->parent(), *pendingDuplicate);
-    }
-    ImGui::PopID();
 }
 
-// Pestana con estilo de tab pero sin contenido propio, para los huecos del
-// layout estilo C4D que todavia no tienen funcionalidad real detras
-// (Etiquetas, Editar/Funcion/Textura) -- se ve en su sitio sin fingir que
-// hace algo. BeginDisabled la atenua y le quita el clic.
-void stubTab(const char* label) {
-    ImGui::BeginDisabled();
-    ImGui::TabItemButton(label);
-    ImGui::EndDisabled();
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Todavia no implementado");
+bool hasGeometry(PrimitiveType t) {
+    return t == PrimitiveType::Cube || t == PrimitiveType::Sphere || t == PrimitiveType::Plane;
 }
 
-// Reasigna materialIndex en todo el arbol tras borrar el material `removed`
-// de la biblioteca: los que apuntaban a `removed` vuelven a -1 (sin
-// material), los que apuntaban a uno posterior bajan un puesto (la lista se
-// compacto con std::vector::erase). Recorrido recursivo, mismo patron que
-// drawNodeTree/duplicateSubtree.
+// Medida base de cada primitiva en cm (antes de escalar), para el modo
+// "Tamano" del Gestor de Coordenadas.
+glm::vec3 baseSizeCm(PrimitiveType t) {
+    switch (t) {
+        case PrimitiveType::Cube:
+        case PrimitiveType::Sphere: return glm::vec3(kCmPerUnit);
+        case PrimitiveType::Plane: return glm::vec3(kCmPerUnit, 0.0f, kCmPerUnit);
+        default: return glm::vec3(0.0f);
+    }
+}
+
+void setHint(const char* text) {
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) g.hint = text;
+}
+
 void fixupMaterialIndicesAfterRemoval(SceneNode& node, int removed) {
     if (node.materialIndex == removed) node.materialIndex = -1;
     else if (node.materialIndex > removed) node.materialIndex -= 1;
     for (const auto& child : node.children()) fixupMaterialIndicesAfterRemoval(*child, removed);
 }
 
-void drawAttributesPanel(SceneNode* selected, SceneNode& sceneRoot, SceneHistory& history,
-                          std::vector<Material>& materials) {
-    ImGui::Begin("Atributos", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-    if (ImGui::BeginTabBar("##attrTabs")) {
-        if (ImGui::BeginTabItem("Objeto")) {
-            if (!selected) {
-                ImGui::TextDisabled("Ningun objeto seleccionado.");
+bool materialUsed(const SceneNode& node, int index) {
+    if (node.materialIndex == index) return true;
+    for (const auto& c : node.children())
+        if (materialUsed(*c, index)) return true;
+    return false;
+}
+
+void collectUsers(SceneNode& node, int index, std::vector<SceneNode*>& out) {
+    if (node.materialIndex == index) out.push_back(&node);
+    for (const auto& c : node.children()) collectUsers(*c, index, out);
+}
+
+// --- Seleccion multiple -------------------------------------------------------
+// Recoge los nodos seleccionados (los del conjunto g.selIds) en orden de arbol.
+void collectSelected(SceneNode& node, std::vector<SceneNode*>& out) {
+    for (const auto& c : node.children()) {
+        if (g.selIds.count(c->id())) out.push_back(c.get());
+        collectSelected(*c, out);
+    }
+}
+
+// Primer nodo de la seleccion (nuevo objeto activo al quitar el anterior).
+SceneNode* firstSelected(SceneNode& root) {
+    std::vector<SceneNode*> v;
+    collectSelected(root, v);
+    return v.empty() ? nullptr : v.front();
+}
+
+SceneNode* findById(SceneNode& node, int id) {
+    if (node.id() == id) return &node;
+    for (const auto& c : node.children())
+        if (SceneNode* f = findById(*c, id)) return f;
+    return nullptr;
+}
+
+// Esfera envolvente aproximada (mundo) de un nodo y sus hijos, para Encuadrar.
+void accumulateBounds(const SceneNode& node, glm::vec3& mn, glm::vec3& mx, bool& any) {
+    if (node.primitive != PrimitiveType::None) {
+        const glm::mat4 w = node.worldMatrix();
+        for (int i = 0; i < 8; ++i) {
+            const glm::vec3 corner((i & 1) ? 0.5f : -0.5f, (i & 2) ? 0.5f : -0.5f, (i & 4) ? 0.5f : -0.5f);
+            const glm::vec3 p = glm::vec3(w * glm::vec4(corner, 1.0f));
+            mn = any ? glm::min(mn, p) : p;
+            mx = any ? glm::max(mx, p) : p;
+            any = true;
+        }
+    }
+    for (const auto& c : node.children()) accumulateBounds(*c, mn, mx, any);
+}
+
+void frameNodes(OrbitalCamera& camera, const SceneNode& node, bool includeSelf) {
+    glm::vec3 mn(0.0f), mx(0.0f);
+    bool any = false;
+    if (includeSelf) accumulateBounds(node, mn, mx, any);
+    else
+        for (const auto& c : node.children()) accumulateBounds(*c, mn, mx, any);
+    if (!any) {
+        camera.resetView();
+        return;
+    }
+    camera.frame((mn + mx) * 0.5f, std::max(0.25f, glm::length(mx - mn) * 0.5f));
+}
+
+// --- Widgets propios -----------------------------------------------------------
+
+enum class BtnResult { None, Click, Palette };
+
+// Tooltip al estilo C4D: primera linea = titulo (blanco), el resto =
+// descripcion y atajo en gris claro.
+void richTooltip(const char* text) {
+    const char* nl = std::strchr(text, '\n');
+    ImGui::BeginTooltip();
+    if (!nl) {
+        ImGui::TextUnformatted(text);
+    } else {
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
+        ImGui::TextUnformatted(text, nl);
+        ImGui::PopStyleColor();
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(190, 190, 190, 255));
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 26.0f);
+        ImGui::TextUnformatted(nl + 1);
+        ImGui::PopTextWrapPos();
+        ImGui::PopStyleColor();
+    }
+    ImGui::EndTooltip();
+}
+
+// Boton de icono estilo barra de C4D. Con `palette`, mantener pulsado (o clic
+// derecho) despliega la paleta del grupo en vez de crear el objeto por defecto,
+// igual que los iconos con triangulito de C4D.
+BtnResult iconButton(const char* id, Icon icon, float size, bool active, bool enabled, const char* tooltip,
+                     const char* hint, bool palette = false) {
+    ImGui::PushID(id);
+    const ImVec2 pos = ImGui::GetCursorScreenPos();
+    ImGui::InvisibleButton("##btn", ImVec2(size, size));
+    const bool hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled);
+    const bool held = ImGui::IsItemActive();
+    BtnResult result = BtnResult::None;
+    static bool paletteFired = false;
+    if (enabled) {
+        if (palette && held && ImGui::GetIO().MouseDownDuration[0] > 0.35f && !paletteFired) {
+            paletteFired = true;
+            result = BtnResult::Palette;
+        }
+        if (palette && hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) result = BtnResult::Palette;
+        if (ImGui::IsItemDeactivated()) {
+            if (hovered && !paletteFired) result = BtnResult::Click;
+            paletteFired = false;
+        }
+    }
+
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 max(pos.x + size, pos.y + size);
+    if (active) {
+        dl->AddRectFilled(pos, max, kToolBlue, 2.0f);
+        dl->AddRect(pos, max, kAmber, 2.0f, 0, 1.0f);
+    } else if (enabled && held) {
+        dl->AddRectFilled(pos, max, IM_COL32(0, 0, 0, 60), 2.0f);
+    } else if (enabled && hovered) {
+        dl->AddRectFilled(pos, max, IM_COL32(255, 255, 255, 24), 2.0f);
+    }
+    const float pad = size * 0.14f;
+    icons::draw(dl, icon, ImVec2(pos.x + pad, pos.y + pad), size - 2 * pad, enabled);
+    if (palette) {
+        dl->AddTriangleFilled(ImVec2(max.x - 2, max.y - 7), ImVec2(max.x - 2, max.y - 2), ImVec2(max.x - 7, max.y - 2),
+                              enabled ? IM_COL32(220, 220, 220, 255) : IM_COL32(120, 120, 120, 255));
+    }
+    if (hovered && tooltip) richTooltip(tooltip);
+    if (hovered && hint) g.hint = hint;
+    ImGui::PopID();
+    return result;
+}
+
+void toolbarSeparator(bool vertical, float extent) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    if (vertical) {
+        dl->AddLine(ImVec2(p.x + 3, p.y + 3), ImVec2(p.x + 3, p.y + extent - 3), kBorderDark);
+        dl->AddLine(ImVec2(p.x + 4, p.y + 3), ImVec2(p.x + 4, p.y + extent - 3), kBorderLight);
+        ImGui::Dummy(ImVec2(8, extent));
+    } else {
+        dl->AddLine(ImVec2(p.x + 3, p.y + 3), ImVec2(p.x + extent - 3, p.y + 3), kBorderDark);
+        dl->AddLine(ImVec2(p.x + 3, p.y + 4), ImVec2(p.x + extent - 3, p.y + 4), kBorderLight);
+        ImGui::Dummy(ImVec2(extent, 8));
+    }
+}
+
+// Asa de arrastre de 6 puntos en la esquina de cada panel (seccion 12).
+// Con un preset que no es el de C4D, a la derecha del asa va una "ficha" con
+// el nombre del editor (como el selector de editor de Blender o la pestana de
+// cada panel en Maya/Max/SFM), porque esos presets no llevan pestanas
+// verticales que digan que panel es cada uno.
+void panelGrip(const char* chip = nullptr) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const float h = ImGui::GetFrameHeight();
+    for (int y = 0; y < 3; ++y)
+        for (int x = 0; x < 2; ++x)
+            dl->AddRectFilled(ImVec2(p.x + 2 + x * 4, p.y + h * 0.5f - 5 + y * 4),
+                              ImVec2(p.x + 4 + x * 4, p.y + h * 0.5f - 3 + y * 4), kGrip);
+    ImGui::Dummy(ImVec2(12, h * 0.6f));
+    if (!chip || isC4DArrangement()) return;
+    ImGui::SameLine(0, 2);
+    const ImVec2 c = ImGui::GetCursorScreenPos();
+    const ImVec2 ts = ImGui::CalcTextSize(chip);
+    const float ch = h - 4.0f;
+    const ImVec2 a(c.x, p.y + (h - ch) * 0.5f), b(c.x + ts.x + 14.0f, a.y + ch);
+    dl->AddRectFilled(a, b, kTabOn, ImGui::GetStyle().FrameRounding);
+    dl->AddRect(a, b, kBorderDark, ImGui::GetStyle().FrameRounding);
+    dl->AddText(ImVec2(a.x + 7, a.y + (ch - ts.y) * 0.5f), kTextCol, chip);
+    ImGui::Dummy(ImVec2(b.x - a.x + 4, h * 0.6f));
+}
+
+// Hueco reservado a la izquierda de cada entrada de menu para el icono
+// (MenuItemEx lo mide con CalcTextSize, por eso son espacios).
+constexpr const char* kIconGutterText = "      ";
+
+struct MenuIconSlot {
+    ImDrawList* dl;
+    ImVec2 pos;
+    float lh;
+    MenuIconSlot() : dl(ImGui::GetWindowDrawList()), pos(ImGui::GetCursorScreenPos()), lh(ImGui::GetTextLineHeight()) {}
+    void draw(Icon icon, bool enabled) const {
+        const float s = std::min(16.0f, lh + 1.0f);
+        icons::draw(dl, icon, ImVec2(pos.x + 1, pos.y + (lh - s) * 0.5f), s, enabled);
+    }
+};
+
+// MenuItem con icono propio en la franja izquierda, como los menus de C4D R19.
+bool iconMenuItem(Icon icon, const char* label, const char* shortcut = nullptr, bool selected = false,
+                  bool enabled = true) {
+    const MenuIconSlot slot;
+    const bool r = ImGui::MenuItemEx(label, kIconGutterText, shortcut, selected, enabled);
+    slot.draw(icon, enabled);
+    return r;
+}
+bool iconMenuItem(Icon icon, const char* label, const char* shortcut, bool* p_selected, bool enabled = true) {
+    const MenuIconSlot slot;
+    const bool r = ImGui::MenuItemEx(label, kIconGutterText, shortcut, p_selected ? *p_selected : false, enabled);
+    if (r && p_selected) *p_selected = !*p_selected;
+    slot.draw(icon, enabled);
+    return r;
+}
+
+// Submenu con icono. Si se abre, la ventana actual pasa a ser el popup, asi
+// que el icono se pinta en la lista de dibujo de la ventana padre, guardada
+// antes de la llamada (encima del resaltado de la cabecera).
+bool iconBeginMenu(Icon icon, const char* label, bool enabled = true) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 pos = ImGui::GetCursorScreenPos();
+    const float lh = ImGui::GetTextLineHeight();
+    const bool open = ImGui::BeginMenuEx(label, kIconGutterText, enabled);
+    const float s = std::min(16.0f, lh + 1.0f);
+    icons::draw(dl, icon, ImVec2(pos.x + 1, pos.y + (lh - s) * 0.5f), s, enabled);
+    return open;
+}
+
+constexpr ImGuiWindowFlags kPanelFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove |
+                                         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
+                                         ImGuiWindowFlags_NoSavedSettings |
+                                         ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+bool beginPanel(const char* name, ImVec2 pos, ImVec2 size, ImGuiWindowFlags extra = 0) {
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(size, ImGuiCond_Always);
+    return ImGui::Begin(name, nullptr, kPanelFlags | extra);
+}
+
+// icons::materialBall sigue tomando specular/shininess (preview 2D barato,
+// sin relacion con el shader PBR de verdad) -- aqui se aproxima a partir de
+// metallic/roughness solo para que la bolita de preview no se quede
+// desincronizada del material real tras el cambio a PBR (2026-10-30, ver
+// ROADMAP_RENDER.md). Mismo criterio que el fallback de OpenGLRenderer.
+void materialBallSpecShininess(const Material& m, float& outSpecular, float& outShininess) {
+    outSpecular = 0.2f + 0.8f * m.metallic;
+    outShininess = 96.0f - 92.0f * m.roughness;
+}
+
+// Fila de propiedad del Gestor de Atributos: circulo de animacion + etiqueta
+// con puntos guia hasta la columna de valores ("Nombre . . . . . [   ]").
+float g_labelW = 150.0f;
+void propLabel(const char* label, bool animatable = true) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const float h = ImGui::GetFrameHeight();
+    if (animatable) dl->AddCircle(ImVec2(p.x + 6, p.y + h * 0.5f), 3.5f, IM_COL32(140, 140, 140, 255), 12, 1.0f);
+    const ImVec2 ts = ImGui::CalcTextSize(label);
+    const float x = p.x + 14;
+    // Recorta la etiqueta a su columna (en dos columnas no debe pisar el campo).
+    dl->PushClipRect(p, ImVec2(p.x + g_labelW - 4.0f, p.y + h), true);
+    dl->AddText(ImVec2(x, p.y + (h - ts.y) * 0.5f), kTextCol, label);
+    dl->PopClipRect();
+    if (ts.x + 18.0f > g_labelW && ImGui::IsMouseHoveringRect(p, ImVec2(p.x + g_labelW, p.y + h)))
+        ImGui::SetTooltip("%s", label);
+    for (float d = x + ts.x + 5.0f; d < p.x + g_labelW - 6.0f; d += 4.0f)
+        dl->AddRectFilled(ImVec2(d, p.y + h * 0.5f + 3), ImVec2(d + 1, p.y + h * 0.5f + 4), IM_COL32(110, 110, 110, 255));
+    ImGui::Dummy(ImVec2(g_labelW, h));
+    ImGui::SameLine(0, 0);
+}
+
+float fieldWidth(float preferred = 170.0f) { return std::min(preferred, ImGui::GetContentRegionAvail().x - 4.0f); }
+
+void sectionHeader(const char* title) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const float w = ImGui::GetContentRegionAvail().x;
+    const float h = ImGui::GetTextLineHeight() + 6;
+    dl->AddRectFilled(p, ImVec2(p.x + w, p.y + h), kSectionBg);
+    dl->AddLine(ImVec2(p.x, p.y + h), ImVec2(p.x + w, p.y + h), kBorderDark);
+    if (g_fontBold) ImGui::PushFont(g_fontBold);
+    dl->AddText(ImVec2(p.x + 6, p.y + 3), kTextCol, title);
+    if (g_fontBold) ImGui::PopFont();
+    ImGui::Dummy(ImVec2(w, h + 2));
+}
+
+void roFloat(const char* label, float value, const char* fmt, bool animatable = true) {
+    propLabel(label, animatable);
+    ImGui::BeginDisabled();
+    ImGui::SetNextItemWidth(fieldWidth());
+    ImGui::PushID(label);
+    ImGui::DragFloat("##v", &value, 1.0f, 0.0f, 0.0f, fmt);
+    ImGui::PopID();
+    ImGui::EndDisabled();
+    setHint("Parámetro todavía no implementado en Iron3D");
+}
+
+void roCombo(const char* label, const char* value, bool animatable = false) {
+    propLabel(label, animatable);
+    ImGui::BeginDisabled();
+    ImGui::SetNextItemWidth(fieldWidth());
+    ImGui::PushID(label);
+    if (ImGui::BeginCombo("##v", value)) ImGui::EndCombo();
+    ImGui::PopID();
+    ImGui::EndDisabled();
+    setHint("Parámetro todavía no implementado en Iron3D");
+}
+
+void roCheck(const char* label, bool value, bool animatable = true) {
+    propLabel(label, animatable);
+    ImGui::BeginDisabled();
+    ImGui::PushID(label);
+    ImGui::Checkbox("##v", &value);
+    ImGui::PopID();
+    ImGui::EndDisabled();
+    setHint("Parámetro todavía no implementado en Iron3D");
+}
+
+// Fila de "pestanas" del Gestor de Atributos: en C4D son botones conmutables,
+// clic = solo esa, Mayus+clic = anade/quita (se ven varias a la vez).
+void attrTabRow(const char* const* names, int count, unsigned& mask) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const float avail = ImGui::GetContentRegionAvail().x;
+    float x = 0.0f;
+    for (int i = 0; i < count; ++i) {
+        const ImVec2 ts = ImGui::CalcTextSize(names[i]);
+        const float w = ts.x + 14.0f;
+        if (i > 0) {
+            if (x + w > avail) x = 0.0f;
+            else ImGui::SameLine(0, 2);
+        }
+        const ImVec2 p = ImGui::GetCursorScreenPos();
+        ImGui::PushID(i);
+        if (ImGui::InvisibleButton("##tab", ImVec2(w, ts.y + 6))) {
+            if (ImGui::GetIO().KeyShift) {
+                mask ^= (1u << i);
+                if (mask == 0) mask = 1u << i;
             } else {
-                // Patron activar/confirmar de ImGui para deshacer: un campo se puede
-                // editar durante varios frames seguidos (arrastrar, escribir), asi
-                // que el "antes" se toma solo al primer frame en que el campo se
-                // activa -- `preWidgetSnap` es el estado justo antes de que CUALQUIER
-                // campo de este panel toque nada este frame, capturado antes de
-                // dibujar el primero -- y se empuja a la pila una sola vez, al
-                // soltar el campo. Nunca uno por frame/tecla, o la pila se llenaria
-                // de ruido.
-                const std::string preWidgetSnap = history.snapshot(sceneRoot);
-                static std::string pendingSnap;
-                auto trackEdit = [&]() {
-                    if (ImGui::IsItemActivated()) pendingSnap = preWidgetSnap;
-                    if (ImGui::IsItemDeactivatedAfterEdit()) history.commit(pendingSnap);
-                };
-
-                char nameBuf[128];
-                std::snprintf(nameBuf, sizeof(nameBuf), "%s", selected->name().c_str());
-                if (ImGui::InputText("Nombre", nameBuf, sizeof(nameBuf))) {
-                    selected->setName(nameBuf);
-                }
-                trackEdit();
-                ImGui::TextDisabled("Tipo: %s", primitiveTypeName(selected->primitive));
-                ImGui::Separator();
-                ImGui::DragFloat3("Posicion", &selected->position.x, 0.05f);
-                trackEdit();
-                ImGui::DragFloat3("Rotacion", &selected->rotationDeg.x, 1.0f);
-                trackEdit();
-                ImGui::DragFloat3("Escala", &selected->scale.x, 0.05f, 0.01f, 100.0f);
-                trackEdit();
-                ImGui::Separator();
-                ImGui::Checkbox("Visible", &selected->visible);
-                trackEdit();
-                ImGui::TextDisabled("%zu hijo(s)", selected->children().size());
-                ImGui::Separator();
-
-                // Asignacion de material (Fase 5): el equivalente a un
-                // TextureTag de C4D, pero como campo del propio nodo en vez
-                // de un tag aparte -- la biblioteca vive en la pestana
-                // "Textura" del panel Crear, esto solo elige cual usa.
-                const char* currentMatName = selected->materialIndex >= 0 &&
-                                                      (size_t)selected->materialIndex < materials.size()
-                                                  ? materials[(size_t)selected->materialIndex].name.c_str()
-                                                  : "Ninguno (gris)";
-                if (ImGui::BeginCombo("Material", currentMatName)) {
-                    const bool noneSelected = selected->materialIndex < 0;
-                    if (ImGui::Selectable("Ninguno (gris)", noneSelected)) {
-                        history.commitBefore(sceneRoot);
-                        selected->materialIndex = -1;
-                    }
-                    for (size_t i = 0; i < materials.size(); ++i) {
-                        const bool isSelected = selected->materialIndex == (int)i;
-                        if (ImGui::Selectable(materials[i].name.c_str(), isSelected)) {
-                            history.commitBefore(sceneRoot);
-                            selected->materialIndex = (int)i;
-                        }
-                    }
-                    ImGui::EndCombo();
-                }
+                mask = 1u << i;
             }
-            ImGui::EndTabItem();
         }
-        stubTab("Etiquetas");
-        ImGui::EndTabBar();
+        const bool on = (mask >> i) & 1u;
+        const bool hov = ImGui::IsItemHovered();
+        const ImVec2 q(p.x + w, p.y + ts.y + 6);
+        dl->AddRectFilled(p, q, on ? kTabActive : (hov ? IM_COL32(78, 78, 78, 255) : IM_COL32(64, 64, 64, 255)), 2.0f);
+        dl->AddText(ImVec2(p.x + 7, p.y + 3), on ? IM_COL32(0, 0, 0, 255) : kTextCol, names[i]);
+        if (hov) g.hint = "Clic: mostrar esta página. Mayús+Clic: mostrar varias a la vez.";
+        ImGui::PopID();
+        x += w + 2;
     }
-    ImGui::End();
+    ImGui::Dummy(ImVec2(1, 2));
 }
 
-// Guardar/cargar escena a disco (Fase 2c, formato .iron -- ver
-// SceneSerializer.h). Ahora es un dialogo que se abre desde Archivo (Fase
-// "layout C4D"), no un panel siempre acoplado -- `open` es el bool del menu,
-// ImGui lo pone a false solo si se cierra con la X.
-void drawScenePanel(SceneNode& root, SceneNode*& selected, const std::filesystem::path& scenesDir,
-                     SceneHistory& history, std::vector<Material>& materials, bool* open) {
-    if (!*open) return;
-    static char filenameBuf[128] = "escena";
-    static std::string statusMsg;
-    static bool statusIsError = false;
+bool tabOn(unsigned mask, int i) { return (mask >> i) & 1u; }
 
-    ImGui::Begin("Escena", open);
-    ImGui::InputText("Archivo", filenameBuf, sizeof(filenameBuf));
-    ImGui::TextDisabled(".iron en %s", scenesDir.string().c_str());
-
-    const std::filesystem::path path = scenesDir / (std::string(filenameBuf) + ".iron");
-
-    if (ImGui::Button("Guardar")) {
-        std::string err;
-        if (saveScene(path, root, materials, &err)) {
-            statusMsg = "Guardado: " + path.filename().string();
-            statusIsError = false;
-        } else {
-            statusMsg = "Error al guardar: " + err;
-            statusIsError = true;
-        }
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Cargar")) {
-        std::string err;
-        if (loadScene(path, root, materials, &err)) {
-            selected = nullptr; // la escena entera cambio, cualquier puntero viejo es invalido
-            history.reset(); // un deshacer no debe saltar a una escena que ya no existe
-            statusMsg = "Cargado: " + path.filename().string();
-            statusIsError = false;
-        } else {
-            statusMsg = "Error al cargar: " + err;
-            statusIsError = true;
-        }
-    }
-    if (!statusMsg.empty()) {
-        ImGui::TextColored(statusIsError ? ImVec4(0.95f, 0.35f, 0.35f, 1.0f) : ImVec4(0.4f, 0.9f, 0.4f, 1.0f),
-                            "%s", statusMsg.c_str());
-    }
-    ImGui::End();
+// --- Undo para widgets editados durante varios frames ------------------------
+// Snapshot al activarse el widget (antes de que el cambio se aplique) y
+// commit al soltarlo: un solo paso de deshacer por edicion, nunca uno por frame.
+std::string g_pendingSnap;
+void trackEdit(SceneHistory& history, const SceneNode& root) {
+    if (ImGui::IsItemActivated()) g_pendingSnap = history.snapshot(root);
+    if (ImGui::IsItemDeactivatedAfterEdit()) history.commit(g_pendingSnap);
 }
 
-// Eleccion de backend de render (Fase 3c): solo guarda en disco, nunca
-// cambia el renderer en caliente. Dialogo (Edicion > Preferencias), igual
-// que Escena.
-void drawPreferencesPanel(RendererBackend activeBackend, Preferences& prefs,
-                           const std::filesystem::path& prefsPath, bool* open) {
-    if (!*open) return;
-    static std::string statusMsg;
+// --- Creacion de objetos -----------------------------------------------------------
 
-    ImGui::Begin("Preferencias", open);
-    ImGui::Text("Backend activo esta sesion: %s", activeBackend == RendererBackend::Vulkan ? "Vulkan" : "OpenGL");
-    ImGui::Separator();
-    ImGui::TextUnformatted("Backend de render (se aplica al reiniciar):");
-    int backendIdx = (prefs.renderBackend == RendererBackend::Vulkan) ? 0 : 1;
-    if (ImGui::RadioButton("Vulkan", backendIdx == 0)) prefs.renderBackend = RendererBackend::Vulkan;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("OpenGL", backendIdx == 1)) prefs.renderBackend = RendererBackend::OpenGL;
-
-    if (ImGui::Button("Guardar")) {
-        statusMsg = savePreferences(prefsPath, prefs) ? "Guardado. Reinicia Iron3D Studio para aplicarlo."
-                                                        : "Error al guardar las preferencias.";
-    }
-    if (!statusMsg.empty()) ImGui::TextUnformatted(statusMsg.c_str());
-    ImGui::End();
+// Seccion 18.6: Alt+clic crea el objeto como hijo del seleccionado; un clic
+// normal lo crea en la raiz de la escena. Siempre queda seleccionado.
+SceneNode* createObject(SceneNode& root, SceneNode*& selected, SceneHistory& history, PrimitiveType type) {
+    SceneNode* parent = &root;
+    if (ImGui::GetIO().KeyAlt && selected) parent = selected;
+    history.commitBefore(root);
+    selected = parent->addChild(defaultNameFor(type), type);    g.focus = AttrFocus::Object;
+    if (parent != &root) g.collapsed.erase(parent->id());
+    return selected;
 }
 
-// Atajos de teclado globales (Fase 2d/2e): no dependen de ninguna ventana
-// concreta, se comprueban una vez por frame antes de dibujar nada. Un
-// undo/redo reconstruye el arbol entero (ver SceneHistory), asi que
-// cualquier seleccion vieja queda invalida y se limpia aqui mismo.
-void handleGlobalShortcuts(GizmoMode& mode, SceneNode& root, SceneNode*& selected, SceneHistory& history) {
+void newScene(SceneNode& root, SceneNode*& selected, SceneHistory& history, std::vector<Material>& materials) {
+    history.commitBefore(root); // Ctrl+Z recupera la escena anterior
+    root.clearChildren();
+    materials.clear();
+    selected = nullptr;
+    g.selectedMat = -1;
+    g.focus = AttrFocus::Object;
+    g.frame = (float)g.minFrame;
+}
+
+void deleteSelected(SceneNode& root, SceneNode*& selected, SceneHistory& history) {
+    if (!selected || !selected->parent()) return;
+    history.commitBefore(root);
+    // Borra toda la seleccion, no solo el objeto activo.
+    std::vector<SceneNode*> doomed;
+    collectSelected(root, doomed);
+    if (doomed.empty()) doomed.push_back(selected);
+    for (SceneNode* n : doomed)
+        if (n->parent()) n->parent()->removeChild(n);
+    g.selIds.clear();
+    selected = nullptr;
+}
+
+void newMaterial(std::vector<Material>& materials) {
+    Material m;
+    m.name = materials.empty() ? "Mat" : "Mat." + std::to_string(materials.size());
+    materials.push_back(m);
+    g.selectedMat = (int)materials.size() - 1;
+    g.focus = AttrFocus::Material;
+}
+
+// --- Paletas de objetos (seccion 3 y 18.1 de la referencia) --------------------
+
+struct PaletteItem {
+    const char* name;
+    Icon icon;
+    PrimitiveType type; // None + !functional = deshabilitado
+    bool functional;
+};
+
+void drawPalette(const char* id, const PaletteItem* items, int count, int columns, SceneNode& root,
+                 SceneNode*& selected, SceneHistory& history) {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4, 2));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 1));
+    if (!ImGui::BeginPopup(id)) {
+        ImGui::PopStyleVar(2);
+        return;
+    }
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    // Tira rayada de arriba (la de "arrancar" la paleta en C4D): solo estetica.
+    {
+        const ImVec2 p = ImGui::GetCursorScreenPos();
+        const float w = std::max(ImGui::GetContentRegionAvail().x, 120.0f);
+        dl->AddRectFilled(p, ImVec2(p.x + w, p.y + 7), kTabOff);
+        for (float x = p.x + 2; x < p.x + w - 2; x += 4)
+            dl->AddLine(ImVec2(x, p.y + 6), ImVec2(x + 4, p.y + 1), kGrip);
+        ImGui::Dummy(ImVec2(w, 8));
+    }
+    constexpr float kItemW = 168.0f, kItemH = 22.0f, kGutterW = 23.0f;
+    if (ImGui::BeginTable("##pal", columns, ImGuiTableFlags_SizingFixedFit)) {
+        for (int i = 0; i < count; ++i) {
+            ImGui::TableNextColumn();
+            const PaletteItem& it = items[i];
+            ImGui::PushID(i);
+            if (!it.functional) ImGui::BeginDisabled();
+            const ImVec2 p = ImGui::GetCursorScreenPos();
+            if (ImGui::Selectable("##it", false, 0, ImVec2(kItemW, kItemH))) {
+                createObject(root, selected, history, it.type);
+                ImGui::CloseCurrentPopup();
+            }
+            const bool hov = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled);
+            // Franja oscura detras del icono, como la columna de iconos de R19.
+            dl->AddRectFilled(p, ImVec2(p.x + kGutterW, p.y + kItemH), hov && it.functional ? kTabOn : kIconGutter);
+            icons::draw(dl, it.icon, ImVec2(p.x + 2.5f, p.y + 2), 18, it.functional);
+            dl->AddText(ImVec2(p.x + kGutterW + 5, p.y + 3), it.functional ? kTextCol : kTextDim, it.name);
+            if (!it.functional) ImGui::EndDisabled();
+            if (hov) {
+                if (it.functional) ImGui::SetTooltip("%s\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)", it.name, it.name);
+                else ImGui::SetTooltip("%s\nTodavía no implementado en Iron3D", it.name);
+            }
+            ImGui::PopID();
+        }
+        ImGui::EndTable();
+    }
+    ImGui::EndPopup();
+    ImGui::PopStyleVar(2);
+}
+
+constexpr PrimitiveType kNone = PrimitiveType::None;
+
+// Orden de cada paleta = el de las paletas de Cinema 4D R19 (fila a fila).
+// Polygono Vacio no esta en la paleta de R19: solo en Crear > Objeto.
+const PaletteItem kPrimitives[] = {
+    {"Nulo", Icon::Null, kNone, true},
+    {"Polígono Vacío", Icon::EmptyPolygon, kNone, false},
+    {"Guía", Icon::Guide, kNone, false},
+    {"Cono", Icon::Cone, kNone, false},
+    {"Cubo", Icon::Cube, PrimitiveType::Cube, true},
+    {"Cilindro", Icon::Cylinder, kNone, false},
+    {"Disco", Icon::Disc, kNone, false},
+    {"Plano", Icon::Plane, PrimitiveType::Plane, true},
+    {"Polígono", Icon::Polygon, kNone, false},
+    {"Esfera", Icon::Sphere, PrimitiveType::Sphere, true},
+    {"Toroide", Icon::Torus, kNone, false},
+    {"Cápsula", Icon::Capsule, kNone, false},
+    {"Tanque de Petróleo", Icon::OilTank, kNone, false},
+    {"Tubo", Icon::Tube, kNone, false},
+    {"Pirámide", Icon::Pyramid, kNone, false},
+    {"Platónico", Icon::Platonic, kNone, false},
+    {"Figura", Icon::Figure, kNone, false},
+    {"Terreno Fractal", Icon::Landscape, kNone, false},
+    {"Relieve", Icon::Relief, kNone, false},
+};
+
+const PaletteItem kSplines[] = {
+    {"Lápiz", Icon::SplPen, kNone, false},
+    {"Dibujo", Icon::SplSketch, kNone, false},
+    {"Suavizado Spline", Icon::SplSmooth, kNone, false},
+    {"Spline Arco", Icon::SplArcTool, kNone, false},
+    {"Arco", Icon::SplArc, kNone, false},
+    {"Círculo", Icon::SplCircle, kNone, false},
+    {"Hélice", Icon::SplHelix, kNone, false},
+    {"n-Lados", Icon::SplNSide, kNone, false},
+    {"Rectángulo", Icon::SplRectangle, kNone, false},
+    {"Estrella", Icon::SplStar, kNone, false},
+    {"Texto", Icon::SplText, kNone, false},
+    {"Vectorizador", Icon::SplVectorizer, kNone, false},
+    {"4-Lados", Icon::SplFourSide, kNone, false},
+    {"Cisoide", Icon::SplCissoid, kNone, false},
+    {"Rueda Dentada", Icon::SplCog, kNone, false},
+    {"Cicloide", Icon::SplCycloid, kNone, false},
+    {"Fórmula", Icon::SplFormula, kNone, false},
+    {"Flor", Icon::SplFlower, kNone, false},
+    {"Perfil", Icon::SplProfile, kNone, false},
+    {"Sustraer Spline", Icon::SplSubtract, kNone, false},
+    {"Unión de Splines", Icon::SplUnion, kNone, false},
+    {"Spline Y", Icon::SplAnd, kNone, false},
+    {"Spline O", Icon::SplOr, kNone, false},
+    {"Intersección de Splines", Icon::SplIntersect, kNone, false},
+};
+
+const PaletteItem kGenerators[] = {
+    {"Subdivisión Superficie", Icon::GenSubdiv, kNone, false},
+    {"Extrusión", Icon::GenExtrude, kNone, false},
+    {"Torno", Icon::GenLathe, kNone, false},
+    {"Forro", Icon::GenLoft, kNone, false},
+    {"Recorrido", Icon::GenSweep, kNone, false},
+    {"Bezier", Icon::GenBezier, kNone, false},
+};
+
+// Grupo "Modelado" de la barra de R19 (icono de Matriz).
+const PaletteItem kModeling[] = {
+    {"Matriz", Icon::ModArray, kNone, false},
+    {"Formación de Átomos", Icon::ModAtomArray, kNone, false},
+    {"Booleano", Icon::ModBoole, kNone, false},
+    {"Máscara de Spline", Icon::ModSplineMask, kNone, false},
+    {"Conector", Icon::ModConnect, kNone, false},
+    {"Simetría", Icon::ModSymmetry, kNone, false},
+    {"Generador Python", Icon::ModPython, kNone, false},
+    {"LOD", Icon::ModLod, kNone, false},
+    {"Reducción de Polígonos", Icon::ModPolyReduction, kNone, false},
+    {"Instancia", Icon::ModInstance, kNone, false},
+    {"Metaball", Icon::ModMetaball, kNone, false},
+};
+
+const PaletteItem kMoGraph[] = {
+    {"Clonador", Icon::MoCloner, kNone, false},
+    {"Matriz", Icon::MoMatrix, kNone, false},
+    {"Fractura", Icon::MoFracture, kNone, false},
+    {"Fractura Voronoi", Icon::MoVoronoi, kNone, false},
+    {"MoInstance", Icon::MoInstance, kNone, false},
+    {"MoText", Icon::MoText, kNone, false},
+    {"Trazador", Icon::MoTracer, kNone, false},
+    {"MoSpline", Icon::MoSpline, kNone, false},
+    {"MoExtrude", Icon::MoExtrude, kNone, false},
+    {"PolyFX", Icon::MoPolyFx, kNone, false},
+};
+
+const PaletteItem kDeformers[] = {
+    {"Doblar", Icon::DefBend, kNone, false},
+    {"Hinchar", Icon::DefBulge, kNone, false},
+    {"Sesgar", Icon::DefShear, kNone, false},
+    {"Afilar", Icon::DefTaper, kNone, false},
+    {"Enroscar", Icon::DefTwist, kNone, false},
+    {"FFD", Icon::DefFfd, kNone, false},
+    {"Malla", Icon::DefMesh, kNone, false},
+    {"Aplastar y Estirar", Icon::DefSquash, kNone, false},
+    {"Derretir", Icon::DefMelt, kNone, false},
+    {"Explosión", Icon::DefExplosion, kNone, false},
+    {"FX Explosión", Icon::DefExplosionFx, kNone, false},
+    {"Romper", Icon::DefShatter, kNone, false},
+    {"Corrección", Icon::DefCorrection, kNone, false},
+    {"Jiggle", Icon::DefJiggle, kNone, false},
+    {"Morph", Icon::DefMorph, kNone, false},
+    {"Cubrir", Icon::DefShrinkWrap, kNone, false},
+    {"Esferizar", Icon::DefSpherify, kNone, false},
+    {"Superficie", Icon::DefSurface, kNone, false},
+    {"Envoltura", Icon::DefWrap, kNone, false},
+    {"Spline", Icon::DefSpline, kNone, false},
+    {"Rail de Splines", Icon::DefSplineRail, kNone, false},
+    {"Envolver Spline", Icon::DefSplineWrap, kNone, false},
+    {"Cámara", Icon::DefCamera, kNone, false},
+    {"Colisión", Icon::DefCollision, kNone, false},
+    {"Desplazador", Icon::DefDisplacer, kNone, false},
+    {"Fórmula", Icon::DefFormula, kNone, false},
+    {"Viento", Icon::DefWind, kNone, false},
+    {"Suavizado", Icon::DefSmoothing, kNone, false},
+    {"Bisel", Icon::DefBevel, kNone, false},
+};
+
+const PaletteItem kScene[] = {
+    {"Suelo", Icon::Floor, kNone, false},
+    {"Cielo", Icon::SceSky, kNone, false},
+    {"Entorno", Icon::SceEnvironment, kNone, false},
+    {"Primer Plano", Icon::SceForeground, kNone, false},
+    {"Fondo", Icon::SceBackground, kNone, false},
+    {"Escenario", Icon::SceStage, kNone, false},
+    {"Cielo Físico", Icon::ScePhysicalSky, kNone, false},
+    {"Herramienta de Nubes", Icon::SceCloudTool, kNone, false},
+    {"Grupo de Nubes", Icon::SceCloudGroup, kNone, false},
+    {"Nube", Icon::SceCloud, kNone, false},
+    {"Unir Nubes", Icon::SceCloudJoin, kNone, false},
+    {"Césped", Icon::SceGrass, kNone, false},
+};
+
+const PaletteItem kCameras[] = {
+    {"Cámara", Icon::Camera, kNone, false},
+    {"Cámara Objetivo", Icon::CamTarget, kNone, false},
+    {"Cámara Estéreo", Icon::CamStereo, kNone, false},
+    {"Cámara de Movimiento", Icon::CamMotion, kNone, false},
+    {"Morph de Cámara", Icon::CamMorph, kNone, false},
+    {"Grúa", Icon::CamCrane, kNone, false},
+};
+
+const PaletteItem kLights[] = {
+    {"Luz", Icon::Light, PrimitiveType::Light, true},
+    {"Luz Objetivo", Icon::LgtTarget, kNone, false},
+    {"Foco", Icon::LgtSpot, kNone, false},
+    {"Luz IES", Icon::LgtIes, kNone, false},
+    {"Luz Infinita", Icon::LgtInfinite, kNone, false},
+    {"Luz de Área", Icon::LgtArea, kNone, false},
+    {"Luz Solar", Icon::LgtSun, kNone, false},
+    {"Luz PBR", Icon::LgtPbr, kNone, false},
+    {"Herramienta de Iluminación", Icon::LgtTool, kNone, false},
+};
+
+template <size_t N>
+int countOf(const PaletteItem (&)[N]) { return (int)N; }
+
+// --- Atajos de teclado ---------------------------------------------------------------
+
+void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneHistory& history,
+                     std::vector<Material>& materials, OrbitalCamera& camera, ViewportState& vp) {
     ImGuiIO& io = ImGui::GetIO();
-    if (io.WantCaptureKeyboard) return;
+    if (io.WantTextInput) return;
+    const bool ctrl = io.KeyCtrl, shift = io.KeyShift;
+    auto pressed = [](ImGuiKey k) { return ImGui::IsKeyPressed(k, false); };
 
-    if (ImGui::IsKeyPressed(ImGuiKey_1)) mode = GizmoMode::Translate;
-    if (ImGui::IsKeyPressed(ImGuiKey_2)) mode = GizmoMode::Rotate;
-    if (ImGui::IsKeyPressed(ImGuiKey_3)) mode = GizmoMode::Scale;
-
-    if (io.KeyCtrl && !io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z)) {
-        if (history.undo(root)) selected = nullptr;
-    }
-    if (io.KeyCtrl && ((io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z)) || ImGui::IsKeyPressed(ImGuiKey_Y))) {
-        if (history.redo(root)) selected = nullptr;
-    }
-    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D) && selected && selected->parent()) {
-        history.commitBefore(root);
-        selected = duplicateSubtree(*selected->parent(), *selected);
-    }
-}
-
-// Menu superior (Archivo/Edicion), como cualquier DCC de verdad: Guardar/
-// Cargar escena y Preferencias dejan de ser paneles siempre visibles y pasan
-// a ser dialogos que abres desde aqui -- Deshacer/Rehacer tambien viven en
-// Edicion ademas de en la barra de iconos, igual que en C4D.
-void drawMenuBar(SceneNode& root, SceneNode*& selected, SceneHistory& history) {
-    if (!ImGui::BeginMainMenuBar()) return;
-    if (ImGui::BeginMenu("Archivo")) {
-        if (ImGui::MenuItem("Guardar / cargar escena...")) g_showScenePanel = true;
-        ImGui::EndMenu();
-    }
-    if (ImGui::BeginMenu("Edicion")) {
-        if (ImGui::MenuItem("Deshacer", "Ctrl+Z", false, history.canUndo())) {
+    if (!ctrl) {
+        if (pressed(ImGuiKey_E)) { mode = GizmoMode::Translate; vp.selectTool = false; }
+        if (pressed(ImGuiKey_R)) { mode = GizmoMode::Rotate; vp.selectTool = false; }
+        if (pressed(ImGuiKey_T)) { mode = GizmoMode::Scale; vp.selectTool = false; }
+        if (pressed(ImGuiKey_9)) vp.selectTool = true;
+        if (pressed(ImGuiKey_H)) {
+            if (shift) camera.resetView();
+            else frameNodes(camera, root, false);
+        }
+        if (pressed(ImGuiKey_O) && selected) frameNodes(camera, *selected, true);
+        if (pressed(ImGuiKey_Delete) || pressed(ImGuiKey_Backspace)) {
+            if (g.focus == AttrFocus::Material && g.selectedMat >= 0 && (size_t)g.selectedMat < materials.size()) {
+                history.commitBefore(root);
+                fixupMaterialIndicesAfterRemoval(root, g.selectedMat);
+                materials.erase(materials.begin() + g.selectedMat);
+                g.selectedMat = -1;
+            } else {
+                deleteSelected(root, selected, history);
+            }
+        }
+        if (pressed(ImGuiKey_F8)) g.playDir = g.playDir == 1 ? 0 : 1;
+        if (pressed(ImGuiKey_F6)) g.playDir = g.playDir == -1 ? 0 : -1;
+        if (pressed(ImGuiKey_F7)) g.playDir = 0;
+        if (pressed(ImGuiKey_G)) g.frame = shift ? (float)g.maxFrame : std::min((float)g.maxFrame, std::floor(g.frame) + 1);
+        if (pressed(ImGuiKey_F)) g.frame = shift ? (float)g.minFrame : std::max((float)g.minFrame, std::ceil(g.frame) - 1);
+        if (pressed(ImGuiKey_Escape)) selected = nullptr;
+    } else {
+        if (pressed(ImGuiKey_Z) && !shift) {
             if (history.undo(root)) selected = nullptr;
         }
-        if (ImGui::MenuItem("Rehacer", "Ctrl+Y", false, history.canRedo())) {
+        if (pressed(ImGuiKey_Y) || (pressed(ImGuiKey_Z) && shift)) {
             if (history.redo(root)) selected = nullptr;
         }
+        if (pressed(ImGuiKey_C) && selected) g.clipboardNodeId = selected->id();
+        if (pressed(ImGuiKey_V)) {
+            SceneNode* src = g.clipboardNodeId >= 0 ? findById(root, g.clipboardNodeId) : nullptr;
+            if (src && src->parent()) {
+                history.commitBefore(root);
+                selected = duplicateSubtree(*src->parent(), *src);
+            }
+        }
+        if (pressed(ImGuiKey_R)) vp.renderView = true;
+        if (pressed(ImGuiKey_N)) newScene(root, selected, history, materials);
+        if (pressed(ImGuiKey_O)) { g.showScene = true; g.sceneLoadMode = true; }
+        if (pressed(ImGuiKey_S)) { g.showScene = true; g.sceneLoadMode = false; }
+        if (pressed(ImGuiKey_E)) g.showPrefs = true;
+        if (pressed(ImGuiKey_D)) { g.focus = AttrFocus::Project; }
+    }
+}
+
+// --- Menu principal ------------------------------------------------------------------
+
+void disabledItems(std::initializer_list<std::pair<const char*, const char*>> items) {
+    for (const auto& it : items) {
+        if (!it.first) ImGui::Separator();
+        else ImGui::MenuItem(it.first, it.second, false, false);
+    }
+}
+
+void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneHistory& history,
+                  std::vector<Material>& materials, OrbitalCamera& camera, ViewportState& vp) {
+    if (!ImGui::BeginMainMenuBar()) return;
+
+    if (ImGui::BeginMenu("Archivo")) {
+        if (iconMenuItem(Icon::MnuNew, "Nuevo", "Ctrl+N")) newScene(root, selected, history, materials);
+        if (iconMenuItem(Icon::MnuOpen, "Abrir...", "Ctrl+O")) { g.showScene = true; g.sceneLoadMode = true; }
+        disabledItems({{"Fusionar...", "Ctrl+Mayús+O"}, {"Volver a Archivo Guardado...", ""}, {nullptr, nullptr},
+                       {"Cerrar", "Ctrl+F4"}, {"Cerrar Todos", "Ctrl+Mayús+F4"}, {nullptr, nullptr}});
+        if (iconMenuItem(Icon::MnuSave, "Guardar", "Ctrl+S")) { g.showScene = true; g.sceneLoadMode = false; }
+        if (iconMenuItem(Icon::MnuSaveAs, "Guardar como...", "Ctrl+Mayús+S")) { g.showScene = true; g.sceneLoadMode = false; }
+        disabledItems({{"Guardar incrementalmente...", ""}, {"Guardar Todo", ""},
+                       {"Guardar Proyecto con su Contenido...", ""}, {"Guardar Objetos Seleccionados como...", ""},
+                       {nullptr, nullptr}});
+        if (iconBeginMenu(Icon::MnuExport, "Exportar")) {
+            disabledItems({{"Wavefront (*.obj)", ""}, {"FBX (*.fbx)", ""}, {"Alembic (*.abc)", ""},
+                           {"STL (*.stl)", ""}, {"Collada 1.4 (*.dae)", ""}});
+            ImGui::EndMenu();
+        }
+        ImGui::BeginMenuEx("Archivos recientes", kIconGutterText, false);
         ImGui::Separator();
-        if (ImGui::MenuItem("Preferencias...")) g_showPreferencesPanel = true;
+        if (iconMenuItem(Icon::MnuExit, "Salir", "Alt+F4")) vp.requestQuit = true;
         ImGui::EndMenu();
     }
+
+    if (ImGui::BeginMenu("Edición")) {
+        if (iconMenuItem(Icon::Undo, "Deshacer", "Ctrl+Z", false, history.canUndo()))
+            if (history.undo(root)) selected = nullptr;
+        if (iconMenuItem(Icon::Redo, "Rehacer", "Ctrl+Y", false, history.canRedo()))
+            if (history.redo(root)) selected = nullptr;
+        ImGui::Separator();
+        iconMenuItem(Icon::MnuCut, "Cortar", "Ctrl+X", false, false);
+        if (iconMenuItem(Icon::MnuCopy, "Copiar", "Ctrl+C", false, selected != nullptr)) g.clipboardNodeId = selected->id();
+        if (iconMenuItem(Icon::MnuPaste, "Pegar", "Ctrl+V", false, g.clipboardNodeId >= 0)) {
+            SceneNode* src = findById(root, g.clipboardNodeId);
+            if (src && src->parent()) {
+                history.commitBefore(root);
+                selected = duplicateSubtree(*src->parent(), *src);
+            }
+        }
+        if (iconMenuItem(Icon::MnuDelete, "Eliminar", "Supr", false, selected != nullptr)) deleteSelected(root, selected, history);
+        ImGui::Separator();
+        iconMenuItem(Icon::MnuSelectAll, "Seleccionar Todo", "Ctrl+A", false, false);
+        if (iconMenuItem(Icon::MnuDeselect, "Deseleccionar Todo", "Esc", false, selected != nullptr)) selected = nullptr;
+        ImGui::Separator();
+        if (iconMenuItem(Icon::MnuProject, "Configuración del Proyecto...", "Ctrl+D")) g.focus = AttrFocus::Project;
+        ImGui::MenuItemEx("Escalar Proyecto...", kIconGutterText, "", false, false);
+        if (iconMenuItem(Icon::MnuPrefs, "Preferencias...", "Ctrl+E")) g.showPrefs = true;
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Crear")) {
+        if (iconBeginMenu(Icon::Cube, "Objeto")) {
+            for (const auto& it : kPrimitives)
+                if (iconMenuItem(it.icon, it.name, nullptr, false, it.functional)) createObject(root, selected, history, it.type);
+            ImGui::EndMenu();
+        }
+        auto stubMenu = [](Icon icon, const char* name, const PaletteItem* items, int n) {
+            if (iconBeginMenu(icon, name)) {
+                for (int i = 0; i < n; ++i) iconMenuItem(items[i].icon, items[i].name, nullptr, false, false);
+                ImGui::EndMenu();
+            }
+        };
+        stubMenu(Icon::Spline, "Spline", kSplines, countOf(kSplines));
+        stubMenu(Icon::Nurbs, "Generadores", kGenerators, countOf(kGenerators));
+        stubMenu(Icon::ModArray, "Modelado", kModeling, countOf(kModeling));
+        stubMenu(Icon::Cloner, "MoGraph", kMoGraph, countOf(kMoGraph));
+        stubMenu(Icon::Deformer, "Deformador", kDeformers, countOf(kDeformers));
+        stubMenu(Icon::Floor, "Escena", kScene, countOf(kScene));
+        ImGui::BeginMenuEx("Física", kIconGutterText, false);
+        stubMenu(Icon::Camera, "Cámara", kCameras, countOf(kCameras));
+        if (iconBeginMenu(Icon::Light, "Luz")) {
+            for (const auto& it : kLights)
+                if (iconMenuItem(it.icon, it.name, nullptr, false, it.functional)) createObject(root, selected, history, it.type);
+            ImGui::EndMenu();
+        }
+        if (iconBeginMenu(Icon::MnuNewMaterial, "Materiales")) {
+            if (iconMenuItem(Icon::MnuNewMaterial, "Nuevo Material")) newMaterial(materials);
+            iconMenuItem(Icon::MnuNewPbrMaterial, "Nuevo Material PBR", "", false, false);
+            iconMenuItem(Icon::MnuLoadMaterial, "Cargar Materiales...", "", false, false);
+            ImGui::EndMenu();
+        }
+        ImGui::BeginMenuEx("Etiqueta", kIconGutterText, false);
+        ImGui::BeginMenuEx("Sonido", kIconGutterText, false);
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Selección")) {
+        ImGui::BeginMenuEx("Filtro de Selección", kIconGutterText, false);
+        if (iconMenuItem(Icon::LiveSelect, "Selección en Vivo", "9", vp.selectTool)) vp.selectTool = true;
+        iconMenuItem(Icon::MnuRectSelect, "Selección Rectangular", "0", false, false);
+        iconMenuItem(Icon::MnuLassoSelect, "Selección Lazo", "8", false, false);
+        iconMenuItem(Icon::MnuPolySelect, "Selección de Polígono", "", false, false);
+        ImGui::Separator();
+        iconMenuItem(Icon::MnuLoop, "Selección de Bucle", "U~L", false, false);
+        for (const auto& it : std::initializer_list<std::pair<const char*, const char*>>{
+                 {"Selección de Anillo", "U~B"}, {"Selección Contorno", "U~Q"}, {"Rellenar Selección", "U~F"}})
+            ImGui::MenuItemEx(it.first, kIconGutterText, it.second, false, false);
+        ImGui::Separator();
+        iconMenuItem(Icon::MnuSelectAll, "Seleccionar Todo", "Ctrl+A", false, false);
+        if (iconMenuItem(Icon::MnuDeselect, "Deseleccionar Todo", "Esc", false, selected != nullptr)) selected = nullptr;
+        for (const auto& it : std::initializer_list<std::pair<const char*, const char*>>{
+                 {"Invertir Selección", "U~I"}, {"Seleccionar Conectados", "U~W"},
+                 {"Aumentar Selección", "U~Y"}, {"Reducir Selección", "U~K"}})
+            ImGui::MenuItemEx(it.first, kIconGutterText, it.second, false, false);
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Herramientas")) {
+        if (iconMenuItem(Icon::Move, "Mover", "E", !vp.selectTool && mode == GizmoMode::Translate)) { mode = GizmoMode::Translate; vp.selectTool = false; }
+        if (iconMenuItem(Icon::Scale, "Escalar", "T", !vp.selectTool && mode == GizmoMode::Scale)) { mode = GizmoMode::Scale; vp.selectTool = false; }
+        if (iconMenuItem(Icon::Rotate, "Rotar", "R", !vp.selectTool && mode == GizmoMode::Rotate)) { mode = GizmoMode::Rotate; vp.selectTool = false; }
+        ImGui::Separator();
+        iconMenuItem(Icon::AxisX, "Eje X / Encabezado", "X", false, false);
+        iconMenuItem(Icon::AxisY, "Eje Y / Inclinación", "Y", false, false);
+        iconMenuItem(Icon::AxisZ, "Eje Z / Alabeo", "Z", false, false);
+        iconMenuItem(Icon::CoordSystem, "Sistema de Coordenadas", "W", false, false);
+        ImGui::Separator();
+        ImGui::MenuItemEx("Medir y Construir", kIconGutterText, "", false, false);
+        ImGui::MenuItemEx("Desplazamiento", kIconGutterText, "", false, false);
+        ImGui::BeginMenuEx("Organizar Objetos", kIconGutterText, false);
+        ImGui::BeginMenuEx("Centrar", kIconGutterText, false);
+        ImGui::EndMenu();
+    }
+
+    auto stubTop = [](const char* name, std::initializer_list<std::pair<const char*, const char*>> items) {
+        if (ImGui::BeginMenu(name)) {
+            disabledItems(items);
+            ImGui::EndMenu();
+        }
+    };
+    stubTop("Malla", {{"Hacer Editable", "C"}, {"Estado Actual a Objeto", ""}, {"Conectar Objetos", ""},
+                      {nullptr, nullptr}, {"Cuchillo", "K~K"}, {"Extrusión", "D"}, {"Extrusión Interna", "I"},
+                      {"Bisel", "M~S"}, {"Puente", "M~B"}, {"Soldar", "M~Q"}, {"Pincel", "M~C"},
+                      {"Planchar", "M~G"}, {nullptr, nullptr}, {"Invertir Normales", "U~R"},
+                      {"Alinear Normales", "U~A"}});
+    stubTop("Fijación", {{"Activar Fijación", "Mayús+S"}, {nullptr, nullptr}, {"Fijación 2D", ""},
+                         {"Fijación 2.5D", ""}, {"Fijación 3D", ""}, {nullptr, nullptr}, {"Plano de Trabajo", ""}});
+
+    if (ImGui::BeginMenu("Animación")) {
+        iconMenuItem(Icon::Record, "Grabar Objetos Activos", "F9", false, false);
+        iconMenuItem(Icon::AutoKey, "Fotogramas Clave Automáticos", "Ctrl+F9", false, false);
+        ImGui::Separator();
+        if (iconMenuItem(Icon::Play, "Reproducir Hacia Delante", "F8", g.playDir == 1)) g.playDir = g.playDir == 1 ? 0 : 1;
+        if (iconMenuItem(Icon::PlayBack, "Reproducir Hacia Atrás", "F6", g.playDir == -1)) g.playDir = g.playDir == -1 ? 0 : -1;
+        if (iconMenuItem(Icon::Pause, "Parar", "F7")) g.playDir = 0;
+        ImGui::Separator();
+        if (iconMenuItem(Icon::ToStart, "Ir al Inicio", "Mayús+F")) g.frame = (float)g.minFrame;
+        if (iconMenuItem(Icon::ToEnd, "Ir al Final", "Mayús+G")) g.frame = (float)g.maxFrame;
+        if (iconMenuItem(Icon::StepFwd, "Fotograma Siguiente", "G")) g.frame = std::min((float)g.maxFrame, std::floor(g.frame) + 1);
+        if (iconMenuItem(Icon::StepBack, "Fotograma Anterior", "F")) g.frame = std::max((float)g.minFrame, std::ceil(g.frame) - 1);
+        ImGui::Separator();
+        iconMenuItem(Icon::MnuLoop, "Repetir (Loop)", nullptr, &g.loop);
+        ImGui::EndMenu();
+    }
+    stubTop("Simulación", {{"Partículas", ""}, {"Thinking Particles", ""}, {"Dinámicas", ""}, {"Cloth", ""},
+                           {"Hair", ""}});
+    if (ImGui::BeginMenu("Render")) {
+        if (iconMenuItem(Icon::RenderView, "Renderizar Vista Activa", "Ctrl+R")) vp.renderView = true;
+        iconMenuItem(Icon::MnuRenderRegion, "Renderizar Región", "Alt+R", false, false);
+        ImGui::MenuItemEx("Renderizar Seleccionados en Visor de Imágenes", kIconGutterText, "", false, false);
+        iconMenuItem(Icon::RenderPicture, "Renderizar en Visor de Imágenes", "Mayús+R", false, false);
+        iconMenuItem(Icon::MnuInteractiveRegion, "Región de Render Interactivo", "Alt+R", false, false);
+        iconMenuItem(Icon::MnuMakePreview, "Crear Previsualización...", "Alt+B", false, false);
+        ImGui::Separator();
+        ImGui::MenuItemEx("Añadir a la Cola de Render...", kIconGutterText, "", false, false);
+        iconMenuItem(Icon::MnuRenderQueue, "Cola de Render...", "", false, false);
+        ImGui::Separator();
+        iconMenuItem(Icon::RenderSettings, "Editar Configuración de Render...", "Ctrl+B", false, false);
+        iconMenuItem(Icon::MnuPictureViewer, "Visor de Imágenes...", "", false, false);
+        ImGui::EndMenu();
+    }
+    stubTop("Esculpir", {{"Subdividir", ""}, {"Reducir", ""}, {nullptr, nullptr}, {"Tirar", ""}, {"Suavizar", ""},
+                         {"Inflar", ""}, {"Aplanar", ""}, {"Pellizcar", ""}, {"Amasar", ""}});
+    stubTop("Motion Tracker", {{"Motion Tracker", ""}, {"Rastreador de Objetos", ""}});
+    stubTop("MoGraph", {{"Ocultar Seleccionado", ""}, {"Intercambiar Clonador-Matriz", ""}, {"Selección MoGraph", ""},
+                        {"Pincel Pesos MoGraph", ""}, {nullptr, nullptr}, {"Clonador", ""}, {"Matriz", ""},
+                        {"Fractura", ""}, {"Fractura Voronoi", ""}, {"MoText", ""}, {"PolyFX", ""}});
+    stubTop("Character", {{"Junta", ""}, {"Herramienta de Junta", ""}, {"Pintar Pesos", ""}, {"Etiqueta IK", ""},
+                          {"Construcción de Personaje", ""}});
+    stubTop("Línea de Trabajo", {{"Sketch and Toon", ""}, {"Hair", ""}});
+    stubTop("Plugins", {{"Ningún plugin cargado", ""}, {nullptr, nullptr}, {"Buscar Plugins...", ""}});
+    stubTop("Script", {{"Gestor de Scripts...", ""}, {"Consola...", "Mayús+F10"}, {nullptr, nullptr},
+                       {"Ejecutar Script...", ""}});
+
+    if (ImGui::BeginMenu("Ventana")) {
+        // Los nombres siguen al preset (Esquema / Outliner / Scene Explorer...).
+        const PanelNames& n = names();
+        iconMenuItem(Icon::MnuObjManager, n.objects, "Mayús+F1", true, false);
+        iconMenuItem(Icon::MnuMatManager, n.materials, "Mayús+F2", true, false);
+        iconMenuItem(Icon::MnuTimeline, n.timeline, "Mayús+F3", true, false);
+        iconMenuItem(Icon::MnuAttributes, n.attributes, "Mayús+F5", true, false);
+        iconMenuItem(Icon::MnuCoords, n.coords, "Mayús+F7", true, false);
+        ImGui::Separator();
+        if (iconMenuItem(Icon::MnuMatEditor, "Editor de Material...", nullptr, g.showMatEditor)) g.showMatEditor = !g.showMatEditor;
+        iconMenuItem(Icon::MnuContentBrowser, "Navegador de Contenido", "Mayús+F8", false, false);
+        iconMenuItem(Icon::MnuLayers, "Gestor de Capas", "Mayús+F4", false, false);
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Ayuda")) {
+        iconMenuItem(Icon::MnuHelp, "Mostrar Ayuda...", "F1", false, false);
+        ImGui::Separator();
+        if (iconMenuItem(Icon::MnuAbout, "Acerca de Iron3D Studio...")) g.showAbout = true;
+        ImGui::EndMenu();
+    }
+
+    // Selector de "Entorno" a la derecha (seccion 13): de momento solo el de
+    // Arranque existe en Iron3D. La etiqueta sigue al preset ("Espacio de
+    // trabajo:" en Blender, "Workspace:" en Maya...).
+    static const char* kLayouts[] = {"Arranque", "Animar", "Modelado", "BP - UV Edit", "Esculpir", "Visualizar"};
+    const char* layoutLabel = names().layoutLabel;
+    const float comboW = 140.0f;
+    const float labelW = ImGui::CalcTextSize(layoutLabel).x;
+    ImGui::SameLine(ImGui::GetWindowWidth() - comboW - labelW - 24.0f);
+    ImGui::TextUnformatted(layoutLabel);
+    ImGui::SetNextItemWidth(comboW);
+    if (ImGui::BeginCombo("##layout", kLayouts[g.layoutPreset])) {
+        for (int i = 0; i < IM_ARRAYSIZE(kLayouts); ++i) {
+            if (i > 0) ImGui::BeginDisabled();
+            if (ImGui::Selectable(kLayouts[i], g.layoutPreset == i)) g.layoutPreset = i;
+            if (i > 0) ImGui::EndDisabled();
+        }
+        ImGui::EndCombo();
+    }
+    (void)camera;
     ImGui::EndMainMenuBar();
 }
 
-// Barra de iconos (estilo C4D: fila fija bajo el menu, todo el ancho). Sin
-// fuente de iconos propia todavia -- se usan etiquetas cortas + tooltip con
-// el nombre completo en vez de anadir una dependencia nueva solo por esto.
-void drawIconToolbar(GizmoMode& mode, SceneNode& root, SceneNode*& selected, SceneHistory& history,
-                      RendererBackend activeBackend, const ImVec2& pos, const ImVec2& size) {
-    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
-    ImGui::SetNextWindowSize(size, ImGuiCond_Always);
-    ImGui::Begin("##toolbar", nullptr,
-                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
-                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+// --- Barra de iconos superior (seccion 3) -------------------------------------------
 
-    auto modeButton = [&](const char* label, const char* tip, GizmoMode m) {
-        bool active = (mode == m);
-        if (active) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-        if (ImGui::Button(label)) mode = m;
-        if (active) ImGui::PopStyleColor();
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tip);
-    };
-    modeButton("Mov", "Mover (1)", GizmoMode::Translate);
-    ImGui::SameLine();
-    modeButton("Rot", "Rotar (2)", GizmoMode::Rotate);
-    ImGui::SameLine();
-    modeButton("Esc", "Escalar (3)", GizmoMode::Scale);
+void drawTopToolbar(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneHistory& history,
+                    ViewportState& vp, ImVec2 pos, ImVec2 size) {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6, 3));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 0));
+    beginPanel("##toptoolbar", pos, size, ImGuiWindowFlags_NoScrollbar);
+    const float b = size.y - 6.0f;
 
-    ImGui::SameLine();
-    ImGui::Separator();
-    ImGui::SameLine();
-
-    if (!history.canUndo()) ImGui::BeginDisabled();
-    if (ImGui::Button("Deshacer")) {
+    const bool couldUndo = history.canUndo();
+    if (iconButton("undo", Icon::Undo, b, false, couldUndo, "Deshacer [Ctrl+Z]", "Deshacer la última acción.") == BtnResult::Click)
         if (history.undo(root)) selected = nullptr;
-    }
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Deshacer (Ctrl+Z)");
-    if (!history.canUndo()) ImGui::EndDisabled();
     ImGui::SameLine();
-    if (!history.canRedo()) ImGui::BeginDisabled();
-    if (ImGui::Button("Rehacer")) {
+    const bool couldRedo = history.canRedo();
+    if (iconButton("redo", Icon::Redo, b, false, couldRedo, "Rehacer [Ctrl+Y]", "Rehacer la última acción deshecha.") == BtnResult::Click)
         if (history.redo(root)) selected = nullptr;
-    }
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Rehacer (Ctrl+Y)");
-    if (!history.canRedo()) ImGui::EndDisabled();
-
     ImGui::SameLine();
-    ImGui::Separator();
+    toolbarSeparator(true, b);
     ImGui::SameLine();
-    ImGui::TextDisabled("(?)");
-    if (ImGui::IsItemHovered()) {
-        ImGui::BeginTooltip();
-        ImGui::TextUnformatted("Navegacion (estilo C4D):");
-        ImGui::BulletText("Alt + clic izq: orbitar");
-        ImGui::BulletText("Alt + clic medio: panear");
-        ImGui::BulletText("Alt + clic der / rueda: zoom");
-        ImGui::BulletText("Clic en un eje del gizmo: mover/rotar/escalar");
-        ImGui::BulletText("Clic derecho en un nodo: anadir primitiva / duplicar / eliminar");
-        ImGui::BulletText("Ctrl+Z / Ctrl+Y: deshacer / rehacer -- Ctrl+D: duplicar seleccionado");
-        ImGui::EndTooltip();
+
+    if (iconButton("live", Icon::LiveSelect, b, vp.selectTool, true, "Selección en Vivo [Atajo de Teclado 9]",
+                   "Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.") == BtnResult::Click)
+        vp.selectTool = true;
+    ImGui::SameLine();
+    struct ToolDef { const char* id; Icon icon; GizmoMode m; const char* tip; const char* hint; };
+    const ToolDef tools[] = {
+        {"move", Icon::Move, GizmoMode::Translate, "Herramienta de Mover [Atajo de Teclado E]",
+         "Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar."},
+        {"scale", Icon::Scale, GizmoMode::Scale, "Herramienta de Escalar [Atajo de Teclado T]",
+         "Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar."},
+        {"rotate", Icon::Rotate, GizmoMode::Rotate, "Herramienta de Rotar [Atajo de Teclado R]",
+         "Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar."},
+    };
+    for (const auto& t : tools) {
+        if (iconButton(t.id, t.icon, b, !vp.selectTool && mode == t.m, true, t.tip, t.hint) == BtnResult::Click) {
+            mode = t.m;
+            vp.selectTool = false;
+        }
+        ImGui::SameLine();
     }
+    toolbarSeparator(true, b);
+    ImGui::SameLine();
 
-    // Lectura rapida del backend activo -- a la derecha, igual de util que
-    // el indicador de API de render en la barra de C4D.
-    const char* backendLabel = activeBackend == RendererBackend::Vulkan ? "Vulkan" : "OpenGL";
-    const float labelWidth = ImGui::CalcTextSize(backendLabel).x;
-    ImGui::SameLine(ImGui::GetWindowWidth() - labelWidth - ImGui::GetStyle().WindowPadding.x);
-    ImGui::TextDisabled("%s", backendLabel);
+    // Bloqueo de ejes y sistema de coordenadas: activos por defecto en C4D,
+    // todavia sin efecto en el gizmo de Iron3D.
+    iconButton("ax", Icon::AxisX, b, true, false, "Eje X / Encabezado [X]\n(todavía no implementado)", "Bloqueo de eje X: todavía no implementado.");
+    ImGui::SameLine();
+    iconButton("ay", Icon::AxisY, b, true, false, "Eje Y / Inclinación [Y]\n(todavía no implementado)", "Bloqueo de eje Y: todavía no implementado.");
+    ImGui::SameLine();
+    iconButton("az", Icon::AxisZ, b, true, false, "Eje Z / Alabeo [Z]\n(todavía no implementado)", "Bloqueo de eje Z: todavía no implementado.");
+    ImGui::SameLine();
+    iconButton("coord", Icon::CoordSystem, b, false, false, "Usar Sistema de Coordenadas de Mundo/Objeto [W]\n(todavía no implementado)", "Sistema de coordenadas: todavía no implementado.");
+    ImGui::SameLine();
+    toolbarSeparator(true, b);
+    ImGui::SameLine();
 
+    if (iconButton("rview", Icon::RenderView, b, false, true,
+                   "Renderizar Vista Activa\nRenderiza la vista activa en el propio visor.\n[Atajo de Teclado Ctrl+R]",
+                   "Renderiza la vista activa en el propio visor.") == BtnResult::Click)
+        vp.renderView = true;
+    ImGui::SameLine();
+    iconButton("rpv", Icon::RenderPicture, b, false, false, "Renderizar en Visor de Imágenes [Mayús+R]\n(todavía no implementado)", "Render: todavía no implementado en Iron3D.");
+    ImGui::SameLine();
+    iconButton("rset", Icon::RenderSettings, b, false, false, "Editar Configuración de Render... [Ctrl+B]\n(todavía no implementado)", "Render: todavía no implementado en Iron3D.");
+    ImGui::SameLine();
+    toolbarSeparator(true, b);
+    ImGui::SameLine();
+
+    struct GroupDef { const char* id; Icon icon; const char* popup; const PaletteItem* items; int count; int cols;
+                      PrimitiveType defType; bool defOk; const char* tip; };
+    const GroupDef groups[] = {
+        {"gcube", Icon::Cube, "##palPrim", kPrimitives, countOf(kPrimitives), 4, PrimitiveType::Cube, true,
+         "Cubo  (mantener pulsado: más objetos)"},
+        {"gspline", Icon::Spline, "##palSpline", kSplines, countOf(kSplines), 3, PrimitiveType::None, false,
+         "Lápiz  (mantener pulsado: más splines)"},
+        {"gnurbs", Icon::Nurbs, "##palGen", kGenerators, countOf(kGenerators), 2, PrimitiveType::None, false,
+         "Subdivisión Superficie  (mantener pulsado: generadores)"},
+        {"gmodel", Icon::ModArray, "##palModel", kModeling, countOf(kModeling), 2, PrimitiveType::None, false,
+         "Matriz  (mantener pulsado: modelado)"},
+        {"gdeform", Icon::Deformer, "##palDef", kDeformers, countOf(kDeformers), 4, PrimitiveType::None, false,
+         "Doblar  (mantener pulsado: deformadores)"},
+        {"gscene", Icon::Floor, "##palScene", kScene, countOf(kScene), 3, PrimitiveType::None, false,
+         "Suelo  (mantener pulsado: escena)"},
+        {"gcam", Icon::Camera, "##palCam", kCameras, countOf(kCameras), 1, PrimitiveType::None, false,
+         "Cámara  (mantener pulsado: más cámaras)"},
+        {"glight", Icon::Light, "##palLight", kLights, countOf(kLights), 3, PrimitiveType::Light, true,
+         "Luz  (mantener pulsado: más luces)"},
+    };
+    for (const auto& gr : groups) {
+        const BtnResult r = iconButton(gr.id, gr.icon, b, false, true, gr.tip,
+                                       "Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado.",
+                                       true);
+        const ImVec2 under(ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y + 2);
+        if (r == BtnResult::Click) {
+            if (gr.defOk) createObject(root, selected, history, gr.defType);
+            else ImGui::OpenPopup(gr.popup);
+        }
+        if (r == BtnResult::Palette) ImGui::OpenPopup(gr.popup);
+        ImGui::SetNextWindowPos(under, ImGuiCond_Appearing);
+        drawPalette(gr.popup, gr.items, gr.count, gr.cols, root, selected, history);
+        ImGui::SameLine();
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+}
+
+// --- Barra de modos izquierda (seccion 4) ------------------------------------------
+
+void drawLeftToolbar(ImVec2 pos, ImVec2 size) {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(3, 4));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 2));
+    beginPanel("##lefttoolbar", pos, size, ImGuiWindowFlags_NoScrollbar);
+    const float b = size.x - 6.0f;
+    iconButton("mkedit", Icon::MakeEditable, b, false, false, "Hacer Editable [C]\n(todavía no implementado)", "Hacer Editable: todavía no implementado.");
+    toolbarSeparator(false, b);
+    iconButton("model", Icon::ModelMode, b, true, true, "Usar Modo Modelo", "Modo Modelo: se editan objetos enteros (el único modo disponible por ahora).");
+    iconButton("texmode", Icon::TextureMode, b, false, false, "Usar Modo Textura\n(todavía no implementado)", "Modo Textura: todavía no implementado.");
+    iconButton("axmode", Icon::AxisMode, b, false, false, "Activar Eje [L]\n(todavía no implementado)", "Modo Eje: todavía no implementado.");
+    toolbarSeparator(false, b);
+    iconButton("pts", Icon::Points, b, false, false, "Usar Modo Puntos\n(necesita malla editable)", "Modo Puntos: Iron3D todavía no tiene mallas editables.");
+    iconButton("edg", Icon::Edges, b, false, false, "Usar Modo Aristas\n(necesita malla editable)", "Modo Aristas: Iron3D todavía no tiene mallas editables.");
+    iconButton("pol", Icon::Polygons, b, false, false, "Usar Modo Polígonos\n(necesita malla editable)", "Modo Polígonos: Iron3D todavía no tiene mallas editables.");
+    toolbarSeparator(false, b);
+    iconButton("tweak", Icon::Tweak, b, false, false, "Modo Ajuste\n(todavía no implementado)", "Modo Ajuste: todavía no implementado.");
+    iconButton("solo", Icon::Solo, b, false, false, "Vista Solo\n(todavía no implementado)", "Vista Solo: todavía no implementado.");
+    toolbarSeparator(false, b);
+    iconButton("snap", Icon::Snap, b, false, false, "Activar Fijación [Mayús+S]\n(todavía no implementado)", "Fijación: todavía no implementado.");
+    iconButton("wplane", Icon::Workplane, b, false, false, "Plano de Trabajo\n(todavía no implementado)", "Plano de Trabajo: todavía no implementado.");
+    iconButton("wlock", Icon::Locked, b, false, false, "Bloquear Plano de Trabajo\n(todavía no implementado)", "Bloquear Plano de Trabajo: todavía no implementado.");
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+}
+
+// --- Visor: menu propio + overlays (secciones 11, 12 y 16) --------------------------
+
+void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& camera, ViewportState& vp,
+                        ImVec2 pos, ImVec2 size) {
+    beginPanel("##vpheader", pos, size, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar);
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("Vista")) {
+            ImGui::MenuItem("Usar como Cámara de Render", nullptr, false, false);
+            ImGui::Separator();
+            disabledItems({{"Deshacer Vista", "Ctrl+Mayús+Z"}, {"Rehacer Vista", "Ctrl+Mayús+Y"}, {nullptr, nullptr}});
+            if (ImGui::MenuItem("Encuadrar Todo", "Alt+H")) frameNodes(camera, root, false);
+            if (ImGui::MenuItem("Encuadrar Geometría", "H")) frameNodes(camera, root, false);
+            if (ImGui::MenuItem("Encuadrar Elementos Activos", "O", false, selected != nullptr))
+                frameNodes(camera, *selected, true);
+            if (ImGui::MenuItem("Encuadre por Defecto", "Mayús+H")) camera.resetView();
+            ImGui::Separator();
+            ImGui::MenuItem("Redibujar", "A", false, false);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Cámaras")) {
+            ImGui::BeginMenu("Navegación", false);
+            if (ImGui::BeginMenu("Usar Cámara")) {
+                ImGui::MenuItem("Cámara del Editor", nullptr, true);
+                ImGui::EndMenu();
+            }
+            ImGui::Separator();
+            ImGui::MenuItem("Perspectiva", nullptr, true);
+            disabledItems({{"Paralela", ""}, {"Izquierda", ""}, {"Derecha", ""}, {"Frontal", ""}, {"Trasera", ""},
+                           {"Superior", ""}, {"Inferior", ""}, {nullptr, nullptr}, {"Axonométrica", ""}});
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Mostrar")) {
+            ImGui::MenuItem("Sombreado Gouraud", "N~A", true);
+            disabledItems({{"Sombreado Gouraud (Líneas)", "N~B"}, {"Sombreado Rápido", "N~C"},
+                           {"Sombreado Rápido (Líneas)", "N~D"}, {"Sombreado Constante", "N~E"},
+                           {"Sombreado Constante (Líneas)", "N~F"}, {"Líneas Ocultas", "N~G"}, {"Líneas", "N~H"},
+                           {nullptr, nullptr}, {"Alambre", "N~I"}, {"Isoparms", "N~J"}, {"Caja", "N~K"},
+                           {"Esqueleto", "N~L"}});
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Opciones")) {
+            ImGui::BeginMenu("Nivel de Detalle", false);
+            disabledItems({{nullptr, nullptr}, {"Estereoscópico", ""}, {"Sombreado de Flujo de Trabajo Lineal", ""},
+                           {nullptr, nullptr}, {"OpenGL Mejorado", ""}, {"Ruidos", ""}, {"Post Efectos", ""},
+                           {"Sombras", ""}, {"Transparencia", ""}, {"Reflexiones", ""}, {"SSAO", ""},
+                           {"Teselación", ""}, {"Profundidad de Campo", ""}, {nullptr, nullptr},
+                           {"Ocultar Caras Posteriores", "N~P"}, {"Usar Edición de Isolíneas", "Alt+A"},
+                           {"Color de Capa", ""}, {"Normales de Polígonos", ""}, {"Normales de Vértices", ""},
+                           {nullptr, nullptr}, {"Etiquetas", "N~O"}, {"Texturas", "N~Q"}, {"Rayos X", "N~R"},
+                           {nullptr, nullptr}, {"Luz por Defecto...", ""}, {"Configurar...", "Mayús+V"},
+                           {"Configurar Todo...", "Alt+V"}});
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Filtrar")) {
+            ImGui::MenuItem("Cuadrícula", nullptr, &vp.showGrid);
+            ImGui::Separator();
+            // El resto de filtros todavia no tienen efecto: se ven activos
+            // (como en C4D por defecto) pero no se pueden cambiar.
+            for (const char* f : {"Nulo", "Polígono", "Spline", "Generador", "Subdivisión Superficie", "Deformador",
+                                  "Cámara", "Luz", "Entorno", "Partícula", "Otro"})
+                ImGui::MenuItem(f, nullptr, true, false);
+            ImGui::Separator();
+            for (const char* f : {"Horizonte", "Ejes Globales", "Cajas Delimitadoras", "HUD", "Resaltar Componente",
+                                  "Ejes", "Guías", "Resaltar Objeto", "Cruz Navegación"})
+                ImGui::MenuItem(f, nullptr, true, false);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Paneles")) {
+            if (ImGui::BeginMenu("Disposición")) {
+                ImGui::MenuItem("Vista Simple", nullptr, true);
+                disabledItems({{"2 Vistas Apiladas", ""}, {"2 Vistas Lado a Lado", ""}, {"4 Vistas", ""}});
+                ImGui::EndMenu();
+            }
+            ImGui::Separator();
+            ImGui::MenuItem("Vista 1", "F1", true);
+            disabledItems({{"Vista 2", "F2"}, {"Vista 3", "F3"}, {"Vista 4", "F4"}, {"Todas las Vistas", "F5"}});
+            ImGui::EndMenu();
+        }
+        ImGui::BeginMenu("ProRender", false);
+
+        // Iconos de navegacion de la esquina: arrastrar sobre ellos mueve la
+        // camara igual que Alt+clic (como en C4D).
+        const float ib = ImGui::GetFrameHeight() - 2.0f;
+        ImGui::SameLine(ImGui::GetWindowWidth() - 4 * (ib + 3) - 10);
+        ImGuiIO& io = ImGui::GetIO();
+        struct NavDef { const char* id; Icon icon; int op; const char* tip; };
+        const NavDef navs[] = {
+            {"npan", Icon::NavPan, 0, "Mover Cámara (arrastrar)"},
+            {"nzoom", Icon::NavZoom, 1, "Zoom de Cámara (arrastrar)"},
+            {"nrot", Icon::NavRotate, 2, "Rotar Cámara (arrastrar)"},
+            {"nlay", Icon::NavLayout, 3, "Cambiar Vista (todavía no implementado)"},
+        };
+        for (const auto& n : navs) {
+            iconButton(n.id, n.icon, ib, false, n.op != 3, n.tip, n.op == 3 ? "Multi-vista: todavía no implementado." : "Arrastre sobre el icono para navegar por la vista.");
+            if (ImGui::IsItemActive() && n.op != 3) {
+                if (n.op == 0) camera.pan(io.MouseDelta.x, io.MouseDelta.y);
+                if (n.op == 1) camera.dolly(io.MouseDelta.y - io.MouseDelta.x);
+                if (n.op == 2) camera.orbit(io.MouseDelta.x, io.MouseDelta.y);
+            }
+            ImGui::SameLine(0, 3);
+        }
+        ImGui::EndMenuBar();
+    }
     ImGui::End();
 }
 
-// Panel "Crear" (esquina inferior izquierda, igual que las pestanas Crear/
-// Editar/Funcion/Textura de C4D): Crear anade la primitiva como hijo del
-// nodo seleccionado (o de la raiz si no hay seleccion); Textura (Fase 5) es
-// el gestor de materiales real (ver drawMaterialsTab). Editar/Funcion siguen
-// siendo huecos del layout sin funcionalidad todavia.
-// Pestana "Textura" (Fase 5): gestor de materiales real -- lista + Nuevo/
-// Eliminar + edicion de color/especular/brillo del seleccionado. La propia
-// lista NO pasa por SceneHistory directamente (ver comentario de
-// SceneHistory.h), pero como el constructor le dio una referencia a
-// `materials`, cualquier commitBefore/commit de OTRO cambio (mover un nodo,
-// etc.) captura igualmente el estado de la lista en ese momento -- undo/redo
-// no se desincroniza aunque no se llame aqui explicitamente.
-void drawMaterialsTab(SceneNode& root, std::vector<Material>& materials) {
-    static int selectedMat = -1;
+// Contorno naranja del objeto seleccionado (como en C4D: solo la silueta, sin
+// aristas interiores). Las primitivas son convexas, asi que la silueta es la
+// envolvente convexa de sus puntos proyectados a pantalla.
+bool nodeEditorVisible(const SceneNode* n) {
+    std::vector<const SceneNode*> chain;
+    for (; n; n = n->parent()) chain.push_back(n);
+    bool vis = true;
+    for (auto it = chain.rbegin(); it != chain.rend(); ++it) vis = resolveVisibility((*it)->editorVis, vis);
+    return vis;
+}
 
-    if (ImGui::Button("Nuevo material")) {
-        Material m;
-        m.name = "Material " + std::to_string(materials.size() + 1);
-        materials.push_back(m);
-        selectedMat = (int)materials.size() - 1;
+void drawSelectionOutline(ImDrawList* dl, const SceneNode* sel, const OrbitalCamera& camera, const ViewportState& vp) {
+    if (!sel || vp.w < 2.0f || vp.h < 2.0f || !nodeEditorVisible(sel)) return;
+    std::vector<glm::vec3> local;
+    switch (sel->primitive) {
+        case PrimitiveType::Cube:
+            for (int i = 0; i < 8; ++i)
+                local.emplace_back(i & 1 ? 0.5f : -0.5f, i & 2 ? 0.5f : -0.5f, i & 4 ? 0.5f : -0.5f);
+            break;
+        case PrimitiveType::Plane:
+            for (int i = 0; i < 4; ++i) local.emplace_back(i & 1 ? 0.5f : -0.5f, 0.0f, i & 2 ? 0.5f : -0.5f);
+            break;
+        case PrimitiveType::Sphere:
+            for (int la = 0; la <= 16; ++la) {
+                const float th = 3.14159265f * la / 16.0f;
+                for (int lo = 0; lo < 32; ++lo) {
+                    const float ph = 6.2831853f * lo / 32.0f;
+                    local.emplace_back(0.5f * std::sin(th) * std::cos(ph), 0.5f * std::cos(th),
+                                       0.5f * std::sin(th) * std::sin(ph));
+                }
+            }
+            break;
+        default:
+            return;
     }
-    ImGui::SameLine();
-    if (selectedMat < 0 || (size_t)selectedMat >= materials.size()) ImGui::BeginDisabled();
-    if (ImGui::Button("Eliminar")) {
-        fixupMaterialIndicesAfterRemoval(root, selectedMat);
-        materials.erase(materials.begin() + selectedMat);
-        selectedMat = -1;
+    const glm::mat4 mvp = camera.projectionMatrix(vp.w / vp.h, false) * camera.viewMatrix() * sel->worldMatrix();
+    std::vector<ImVec2> pts;
+    pts.reserve(local.size());
+    for (const auto& l : local) {
+        const glm::vec4 c = mvp * glm::vec4(l, 1.0f);
+        if (c.w <= 0.06f) return; // parte detras de la camara: sin contorno fiable
+        pts.emplace_back(vp.x + (c.x / c.w * 0.5f + 0.5f) * vp.w, vp.y + (0.5f - c.y / c.w * 0.5f) * vp.h);
     }
-    if (selectedMat < 0 || (size_t)selectedMat >= materials.size()) ImGui::EndDisabled();
+    // Envolvente convexa (cadena monotona de Andrew).
+    std::sort(pts.begin(), pts.end(), [](const ImVec2& l, const ImVec2& r) { return l.x < r.x || (l.x == r.x && l.y < r.y); });
+    auto cross = [](const ImVec2& o, const ImVec2& p, const ImVec2& q) {
+        return (p.x - o.x) * (q.y - o.y) - (p.y - o.y) * (q.x - o.x);
+    };
+    std::vector<ImVec2> hull(pts.size() * 2);
+    size_t k = 0;
+    for (size_t i = 0; i < pts.size(); ++i) {
+        while (k >= 2 && cross(hull[k - 2], hull[k - 1], pts[i]) <= 0) --k;
+        hull[k++] = pts[i];
+    }
+    for (size_t i = pts.size() - 1, t = k + 1; i > 0; --i) {
+        while (k >= t && cross(hull[k - 2], hull[k - 1], pts[i - 1]) <= 0) --k;
+        hull[k++] = pts[i - 1];
+    }
+    if (k < 3) return;
+    dl->AddPolyline(hull.data(), (int)k - 1, kSelOrange, ImDrawFlags_Closed, 1.5f);
+}
 
-    ImGui::BeginChild("##matList", ImVec2(0, 80), true);
-    for (size_t i = 0; i < materials.size(); ++i) {
-        ImGui::PushID((int)i);
-        if (ImGui::Selectable(materials[i].name.c_str(), selectedMat == (int)i)) selectedMat = (int)i;
+// Contorna todos los objetos de la seleccion, no solo el activo.
+void outlineSelected(ImDrawList* dl, const SceneNode& node, const OrbitalCamera& camera, const ViewportState& vp) {
+    for (const auto& c : node.children()) {
+        if (g.selIds.count(c->id())) drawSelectionOutline(dl, c.get(), camera, vp);
+        outlineSelected(dl, *c, camera, vp);
+    }
+}
+
+void drawViewportOverlay(const OrbitalCamera& camera, const ViewportState& vp, const SceneNode& root) {
+    ImDrawList* dl = ImGui::GetBackgroundDrawList();
+    const ImVec2 a(vp.x, vp.y), b(vp.x + vp.w, vp.y + vp.h);
+    dl->PushClipRect(a, b, true);
+    if (!vp.renderView) outlineSelected(dl, root, camera, vp);
+    dl->AddText(ImVec2(a.x + 8, a.y + 5), IM_COL32(230, 230, 230, 255), names().viewport);
+
+    // Triedro de ejes (esquina inf-izq, seccion 12): rotacion de la vista sin traslacion.
+    const glm::mat3 rot(camera.viewMatrix());
+    const ImVec2 o(a.x + 42, b.y - 38);
+    struct Ax { glm::vec3 d; ImU32 col; const char* lbl; };
+    Ax axes[3] = {{rot * glm::vec3(1, 0, 0), IM_COL32(225, 60, 55, 255), "X"},
+                  {rot * glm::vec3(0, 1, 0), IM_COL32(80, 190, 70, 255), "Y"},
+                  {rot * glm::vec3(0, 0, 1), IM_COL32(70, 110, 230, 255), "Z"}};
+    std::sort(std::begin(axes), std::end(axes), [](const Ax& l, const Ax& r) { return l.d.z < r.d.z; });
+    for (const auto& ax : axes) {
+        const ImVec2 e(o.x + ax.d.x * 26.0f, o.y - ax.d.y * 26.0f);
+        dl->AddLine(o, e, ax.col, 2.0f);
+        dl->AddText(ImVec2(e.x + (ax.d.x >= 0 ? 3 : -11), e.y - 8), ax.col, ax.lbl);
+    }
+
+    const char* gridTxt = "Espaciado Cuadrícula : 100 cm";
+    const ImVec2 ts = ImGui::CalcTextSize(gridTxt);
+    if (vp.showGrid && !vp.renderView)
+        dl->AddText(ImVec2(b.x - ts.x - 10, b.y - ts.y - 6), IM_COL32(220, 220, 220, 255), gridTxt);
+    dl->PopClipRect();
+    dl->AddRect(ImVec2(a.x - 1, a.y - 1), ImVec2(b.x + 1, b.y + 1), kBorderDark);
+}
+
+// --- Gestor de Objetos (seccion 7) --------------------------------------------------
+
+struct TreeRow {
+    SceneNode* node;
+    int depth;
+};
+
+void collectRows(SceneNode& node, int depth, std::vector<TreeRow>& out) {
+    for (const auto& c : node.children()) {
+        out.push_back({c.get(), depth});
+        if (!c->children().empty() && !g.collapsed.count(c->id())) collectRows(*c, depth + 1, out);
+    }
+}
+
+void addChildMenu(SceneNode& root, SceneNode* parent, SceneNode*& selected, SceneHistory& history) {
+    for (const auto& it : kPrimitives) {
+        if (!it.functional) continue;
+        if (ImGui::MenuItem(it.name)) {
+            history.commitBefore(root);
+            selected = parent->addChild(defaultNameFor(it.type), it.type);
+            g.collapsed.erase(parent->id());
+            g.focus = AttrFocus::Object;
+        }
+    }
+    if (ImGui::MenuItem("Luz")) {
+        history.commitBefore(root);
+        selected = parent->addChild("Luz", PrimitiveType::Light);
+        g.collapsed.erase(parent->id());
+    }
+}
+
+void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& history,
+                       std::vector<Material>& materials, ImVec2 pos, ImVec2 size) {
+    beginPanel("##objmgr", pos, size, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar);
+    if (ImGui::BeginMenuBar()) {
+        panelGrip(names().objects);
+        if (ImGui::BeginMenu("Archivo")) {
+            disabledItems({{"Fusionar Objetos...", ""}, {"Guardar Objetos Seleccionados como...", ""}});
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Editar")) {
+            if (ImGui::MenuItem("Eliminar", "Supr", false, selected != nullptr)) deleteSelected(root, selected, history);
+            if (ImGui::MenuItem("Expandir Todo")) g.collapsed.clear();
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Ver")) {
+            disabledItems({{"Modo Árbol", ""}, {"Modo Lista", ""}, {nullptr, nullptr}, {"Mostrar Etiquetas", ""}});
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Objetos")) {
+            if (ImGui::BeginMenu("Añadir")) {
+                addChildMenu(root, &root, selected, history);
+                ImGui::EndMenu();
+            }
+            if (ImGui::MenuItem("Duplicar", nullptr, false, selected != nullptr)) {
+                history.commitBefore(root);
+                selected = duplicateSubtree(*selected->parent(), *selected);
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Etiquetas")) {
+            const bool canTag = selected && hasGeometry(selected->primitive) && !materials.empty();
+            if (ImGui::BeginMenu("Etiqueta de Textura", canTag)) {
+                for (size_t i = 0; i < materials.size(); ++i)
+                    if (ImGui::MenuItem(materials[i].name.c_str())) {
+                        history.commitBefore(root);
+                        selected->materialIndex = (int)i;
+                    }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::BeginMenu("Favoritos", false);
+        const float ib = ImGui::GetFrameHeight() - 4.0f;
+        ImGui::SameLine(ImGui::GetWindowWidth() - 2 * (ib + 4) - 8);
+        iconButton("omsearch", Icon::Search, ib, false, false, "Buscar (todavía no implementado)", nullptr);
+        ImGui::SameLine(0, 4);
+        iconButton("omfilter", Icon::Filter, ib, false, false, "Filtrar (todavía no implementado)", nullptr);
+        ImGui::EndMenuBar();
+    }
+
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+    ImGui::BeginChild("##omtree", ImVec2(0, 0), ImGuiChildFlags_None);
+    std::vector<TreeRow> rows;
+    collectRows(root, 0, rows);
+
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const float rowH = 20.0f;
+    const float fullW = ImGui::GetContentRegionAvail().x;
+    const float tagsW = 46.0f;
+    const float flagsW = 34.0f;
+    SceneNode* pendingDelete = nullptr;
+    SceneNode* pendingDuplicate = nullptr;
+
+    for (size_t r = 0; r < rows.size(); ++r) {
+        SceneNode* node = rows[r].node;
+        const int depth = rows[r].depth;
+        ImGui::PushID(node->id());
+        const ImVec2 p = ImGui::GetCursorScreenPos();
+        const ImVec2 q(p.x + fullW, p.y + rowH);
+
+        ImGui::SetNextItemAllowOverlap();
+        ImGui::InvisibleButton("##row", ImVec2(fullW, rowH), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
+        const bool rowHovered = ImGui::IsItemHovered();
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+            if (ImGui::GetIO().KeyCtrl && ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+                // Ctrl+clic: anade o quita de la seleccion (como en C4D).
+                if (g.selIds.count(node->id()) && g.selIds.size() > 1) {
+                    g.selIds.erase(node->id());
+                    if (node == selected) selected = firstSelected(root);
+                } else {
+                    g.selIds.insert(node->id());
+                    selected = node;
+                }
+                g.lastSelectedId = selected ? selected->id() : -1;
+            } else {
+                selected = node;
+            }
+            g.focus = AttrFocus::Object;
+        }
+        if (rowHovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            g.renamingNodeId = node->id();
+            std::snprintf(g.renameBuf, sizeof(g.renameBuf), "%s", node->name().c_str());
+            g.renameFocus = true;
+        }
+        if (rowHovered) g.hint = "Clic: seleccionar. Ctrl+Clic: anadir o quitar de la seleccion. Doble clic: renombrar. Clic derecho: menú contextual. Arrastre un material aquí para asignarlo.";
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("IRON3D_MAT")) {
+                const int mi = *(const int*)pl->Data;
+                if (hasGeometry(node->primitive) && mi >= 0 && (size_t)mi < materials.size()) {
+                    history.commitBefore(root);
+                    node->materialIndex = mi;
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+        if (ImGui::BeginPopupContextItem("##ctx")) {
+            ImGui::TextDisabled("%s", node->name().c_str());
+            ImGui::Separator();
+            if (ImGui::BeginMenu("Añadir Hijo")) {
+                addChildMenu(root, node, selected, history);
+                ImGui::EndMenu();
+            }
+            if (ImGui::MenuItem("Duplicar")) pendingDuplicate = node;
+            if (ImGui::MenuItem("Eliminar", "Supr")) pendingDelete = node;
+            if (ImGui::MenuItem("Renombrar")) {
+                g.renamingNodeId = node->id();
+                std::snprintf(g.renameBuf, sizeof(g.renameBuf), "%s", node->name().c_str());
+                g.renameFocus = true;
+            }
+            ImGui::Separator();
+            const bool canTag = hasGeometry(node->primitive) && !materials.empty();
+            if (ImGui::BeginMenu("Asignar Material", canTag)) {
+                for (size_t i = 0; i < materials.size(); ++i)
+                    if (ImGui::MenuItem(materials[i].name.c_str(), nullptr, node->materialIndex == (int)i)) {
+                        history.commitBefore(root);
+                        node->materialIndex = (int)i;
+                    }
+                ImGui::EndMenu();
+            }
+            if (ImGui::MenuItem("Eliminar Etiqueta de Textura", nullptr, false, node->materialIndex >= 0)) {
+                history.commitBefore(root);
+                node->materialIndex = -1;
+            }
+            ImGui::Separator();
+            disabledItems({{"Hacer Editable", "C"}, {"Estado Actual a Objeto", ""}, {"Conectar Objetos", ""},
+                           {"Agrupar Objetos", "Alt+G"}, {"Desagrupar Objetos", "Mayús+G"}});
+            ImGui::EndPopup();
+        }
+
+        // Fondo de fila
+        // En C4D la fila seleccionada no se rellena: solo el nombre pasa a naranja.
+        const bool nodeSel = g.selIds.count(node->id()) > 0;
+        if (rowHovered && !nodeSel) dl->AddRectFilled(p, q, kHoverRow);
+
+        // Columnas (separadores verticales como en C4D)
+        const float tagsX = q.x - tagsW;
+        const float flagsX = tagsX - flagsW;
+        dl->AddLine(ImVec2(flagsX - 1, p.y), ImVec2(flagsX - 1, q.y), kBorderDark);
+        dl->AddLine(ImVec2(tagsX - 1, p.y), ImVec2(tagsX - 1, q.y), kBorderDark);
+
+        // Expandir/plegar
+        const float x0 = p.x + 4 + depth * 16.0f;
+        if (!node->children().empty()) {
+            const bool open = !g.collapsed.count(node->id());
+            ImGui::SetCursorScreenPos(ImVec2(x0, p.y));
+            ImGui::SetNextItemAllowOverlap();
+            if (ImGui::InvisibleButton("##exp", ImVec2(12, rowH))) {
+                if (open) g.collapsed.insert(node->id());
+                else g.collapsed.erase(node->id());
+            }
+            const float cy = p.y + rowH * 0.5f;
+            if (open) dl->AddTriangleFilled(ImVec2(x0 + 1, cy - 3), ImVec2(x0 + 9, cy - 3), ImVec2(x0 + 5, cy + 3), kTextCol);
+            else dl->AddTriangleFilled(ImVec2(x0 + 2, cy - 4), ImVec2(x0 + 8, cy), ImVec2(x0 + 2, cy + 4), kTextCol);
+        }
+        icons::draw(dl, iconFor(node->primitive), ImVec2(x0 + 14, p.y + 2), 16, true);
+
+        // Nombre (o campo de renombrar)
+        const float nameX = x0 + 36;
+        if (g.renamingNodeId == node->id()) {
+            ImGui::SetCursorScreenPos(ImVec2(nameX, p.y + 1));
+            ImGui::SetNextItemWidth(std::max(60.0f, flagsX - nameX - 6));
+            if (g.renameFocus) {
+                ImGui::SetKeyboardFocusHere();
+                g.renameFocus = false;
+            }
+            const bool done = ImGui::InputText("##rename", g.renameBuf, sizeof(g.renameBuf),
+                                               ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+            if (done || ImGui::IsItemDeactivated()) {
+                if (std::strlen(g.renameBuf) > 0 && node->name() != g.renameBuf) {
+                    history.commitBefore(root);
+                    node->setName(g.renameBuf);
+                }
+                g.renamingNodeId = -1;
+            }
+        } else {
+            dl->PushClipRect(ImVec2(nameX, p.y), ImVec2(flagsX - 4, q.y), true);
+            dl->AddText(ImVec2(nameX, p.y + (rowH - ImGui::GetTextLineHeight()) * 0.5f),
+                        nodeSel ? kSelOrange : kTextCol, node->name().c_str());
+            dl->PopClipRect();
+        }
+
+        // Dos puntos de visibilidad independientes (seccion 7): el de ARRIBA
+        // es el visor (editor) y el de ABAJO el render. Cada clic avanza
+        // Por Defecto (gris) -> Activado (verde) -> Apagado (rojo), como C4D.
+        const ImVec2 dotC(flagsX + 9, p.y + rowH * 0.5f);
+        auto visDot = [&](const char* id, VisMode& mode, float yOff, const char* what) {
+            ImGui::SetCursorScreenPos(ImVec2(flagsX + 2, p.y + (yOff < 0 ? 0.0f : rowH * 0.5f)));
+            ImGui::SetNextItemAllowOverlap();
+            if (ImGui::InvisibleButton(id, ImVec2(14, rowH * 0.5f))) {
+                history.commitBefore(root);
+                mode = (VisMode)(((int)mode + 1) % 3);
+            }
+            static const char* kNames[] = {"Por Defecto", "Activado", "Apagado"};
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Visible en %s: %s\n(clic para cambiar)", what, kNames[(int)mode]);
+                g.hint = "Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.";
+            }
+            const ImU32 col = mode == VisMode::On    ? IM_COL32(70, 200, 80, 255)
+                              : mode == VisMode::Off ? IM_COL32(220, 60, 50, 255)
+                                                     : IM_COL32(150, 150, 150, 255);
+            dl->AddCircleFilled(ImVec2(dotC.x, dotC.y + yOff), 3.0f, col);
+        };
+        visDot("##visEd", node->editorVis, -4.0f, "Editor");
+        visDot("##visRd", node->renderVis, 4.0f, "Render");
+        icons::draw(dl, Icon::Check, ImVec2(flagsX + 17, p.y + 3), 14, true);
+
+        // Etiquetas: Phong (todas las primitivas con geometria) + Textura.
+        float tx = tagsX + 3;
+        if (hasGeometry(node->primitive)) {
+            icons::draw(dl, Icon::PhongTag, ImVec2(tx, p.y + 2), 16, true);
+            tx += 18;
+        }
+        if (node->materialIndex >= 0 && (size_t)node->materialIndex < materials.size()) {
+            const Material& m = materials[(size_t)node->materialIndex];
+            ImGui::SetCursorScreenPos(ImVec2(tx, p.y));
+            ImGui::SetNextItemAllowOverlap();
+            if (ImGui::InvisibleButton("##tag", ImVec2(18, rowH))) {
+                selected = node;
+                g.focus = AttrFocus::Tag;
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Etiqueta de Textura [%s]", m.name.c_str());
+            const bool tagSel = g.focus == AttrFocus::Tag && node == selected;
+            if (tagSel) dl->AddRect(ImVec2(tx - 1, p.y + 1), ImVec2(tx + 17, p.y + rowH - 1), kAmber, 2.0f);
+            float previewSpec, previewShin;
+            materialBallSpecShininess(m, previewSpec, previewShin);
+            icons::materialBall(dl, ImVec2(tx + 8, p.y + rowH * 0.5f), 7.0f,
+                                ImVec4(m.baseColor.x, m.baseColor.y, m.baseColor.z, 1.0f), previewSpec, previewShin);
+        }
+
+        ImGui::SetCursorScreenPos(ImVec2(p.x, q.y));
         ImGui::PopID();
     }
-    ImGui::EndChild();
 
-    if (selectedMat < 0 || (size_t)selectedMat >= materials.size()) {
-        ImGui::TextDisabled("Ningun material seleccionado.");
-        return;
+    // Area vacia: clic deselecciona, clic derecho anade objetos en la raiz.
+    const ImVec2 rest = ImGui::GetContentRegionAvail();
+    if (rest.y > 4) {
+        ImGui::InvisibleButton("##empty", ImVec2(fullW, rest.y), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) selected = nullptr;
+        if (ImGui::BeginPopupContextItem("##emptyctx")) {
+            if (ImGui::BeginMenu("Añadir")) {
+                addChildMenu(root, &root, selected, history);
+                ImGui::EndMenu();
+            }
+            ImGui::EndPopup();
+        }
     }
-    Material& m = materials[(size_t)selectedMat];
-    char nameBuf[128];
-    std::snprintf(nameBuf, sizeof(nameBuf), "%s", m.name.c_str());
-    if (ImGui::InputText("Nombre##mat", nameBuf, sizeof(nameBuf))) m.name = nameBuf;
-    ImGui::ColorEdit3("Difuso", &m.diffuse.x);
-    ImGui::SliderFloat("Especular", &m.specular, 0.0f, 1.0f);
-    ImGui::SliderFloat("Brillo", &m.shininess, 1.0f, 128.0f);
+    ImGui::EndChild();
+    ImGui::PopStyleVar();
+    ImGui::End();
+
+    if (pendingDuplicate && pendingDuplicate->parent()) {
+        history.commitBefore(root);
+        selected = duplicateSubtree(*pendingDuplicate->parent(), *pendingDuplicate);
+    }
+    if (pendingDelete && pendingDelete->parent()) {
+        history.commitBefore(root);
+        pendingDelete->parent()->removeChild(pendingDelete);
+        selected = nullptr;
+    }
 }
 
-void drawCreatePanel(SceneNode& root, SceneNode*& selected, SceneHistory& history,
-                      std::vector<Material>& materials, const ImVec2& pos, const ImVec2& size) {
-    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
-    ImGui::SetNextWindowSize(size, ImGuiCond_Always);
-    ImGui::Begin("Crear", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-
-    if (ImGui::BeginTabBar("##createTabs")) {
-        if (ImGui::BeginTabItem("Crear")) {
-            SceneNode* target = selected ? selected : &root;
-            auto createButton = [&](const char* label, PrimitiveType type) {
-                if (ImGui::Button(label, ImVec2(-1, 0))) {
-                    history.commitBefore(root);
-                    selected = target->addChild(defaultNameFor(type), type);
-                }
-            };
-            createButton("Cubo", PrimitiveType::Cube);
-            createButton("Esfera", PrimitiveType::Sphere);
-            createButton("Plano", PrimitiveType::Plane);
-            createButton("Luz", PrimitiveType::Light);
-            createButton("Nulo", PrimitiveType::None);
-            ImGui::EndTabItem();
-        }
-        stubTab("Editar");
-        stubTab("Funcion");
-        if (ImGui::BeginTabItem("Textura")) {
-            drawMaterialsTab(root, materials);
-            ImGui::EndTabItem();
-        }
-        ImGui::EndTabBar();
+// Pestanas verticales del borde derecho (seccion 8).
+void drawVerticalTabs(ImVec2 pos, ImVec2 size, const char* const* names, int count, int active) {
+    beginPanel(names[0], pos, size, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    float y = pos.y + 4;
+    for (int i = 0; i < count; ++i) {
+        const float len = icons::textVerticalLength(names[i]) + 14.0f;
+        const ImVec2 a(pos.x + 1, y), b(pos.x + size.x - 1, y + len);
+        ImGui::SetCursorScreenPos(a);
+        ImGui::PushID(i);
+        ImGui::InvisibleButton("##vt", ImVec2(b.x - a.x, len));
+        const bool hov = ImGui::IsItemHovered();
+        if (hov && i != active) ImGui::SetTooltip("%s (todavía no implementado)", names[i]);
+        ImGui::PopID();
+        dl->AddRectFilled(a, b, i == active ? kTabOn : kTabOff);
+        dl->AddRect(a, b, kBorderDark);
+        icons::textVertical(dl, ImVec2(b.x - 3, a.y + 7), i == active ? kTextCol : kTextDim, names[i]);
+        y += len + 2;
     }
     ImGui::End();
 }
 
-// Franja de estado inferior (FPS + "linea de tiempo"): Iron3D no tiene
-// animacion todavia, asi que los controles de reproduccion se muestran
-// deshabilitados en vez de fingir que funcionan -- hueco del layout fiel a
-// C4D, honesto sobre lo que hace de verdad.
-void drawStatusBar(float framerate, const ImVec2& pos, const ImVec2& size) {
-    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
-    ImGui::SetNextWindowSize(size, ImGuiCond_Always);
-    ImGui::Begin("##status", nullptr,
-                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
-                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+// --- Gestor de Atributos (secciones 6, 15, 17.3, 18.2, 19.3) --------------------
 
-    ImGui::Text("%.1f FPS (%.2f ms/frame)", framerate, 1000.0f / framerate);
+void attrHeaderNav() {
+    const float ib = ImGui::GetFrameHeight() - 4.0f;
+    ImGui::SameLine(ImGui::GetWindowWidth() - 5 * (ib + 3) - 8);
+    iconButton("anback", Icon::Back, ib, false, false, "Atrás", nullptr);
+    ImGui::SameLine(0, 3);
+    iconButton("anfwd", Icon::Forward, ib, false, false, "Adelante", nullptr);
+    ImGui::SameLine(0, 3);
+    iconButton("anup", Icon::Up, ib, false, false, "Subir", nullptr);
+    ImGui::SameLine(0, 3);
+    iconButton("anlock", Icon::Lock, ib, false, false, "Bloquear Elemento", nullptr);
+    ImGui::SameLine(0, 3);
+    iconButton("annew", Icon::NewPanel, ib, false, false, "Nuevo Gestor de Atributos", nullptr);
+}
+
+void titleLine(Icon icon, const char* title) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    icons::draw(dl, icon, ImVec2(p.x + 2, p.y + 1), 18, true);
+    if (g_fontBold) ImGui::PushFont(g_fontBold);
+    dl->AddText(ImVec2(p.x + 26, p.y + 2), kTextCol, title);
+    if (g_fontBold) ImGui::PopFont();
+    ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 22));
+}
+
+void drawProjectSettings() {
+    titleLine(Icon::Gear, "Proyecto");
+    static unsigned mask = 1u;
+    const char* tabs[] = {"Configuración del Proyecto", "Información", "Dinámicas", "Referenciar", "A Realizar",
+                          "Interpolación de Claves"};
+    attrTabRow(tabs, IM_ARRAYSIZE(tabs), mask);
+    if (tabOn(mask, 0)) {
+        sectionHeader("Configuración del Proyecto");
+        const float savedLabelW = g_labelW;
+        const float fullW = ImGui::GetContentRegionAvail().x;
+        // Dos columnas como en C4D (pares FPS | Tiempo del Proyecto, Min | Max...);
+        // si el panel es estrecho, una sola.
+        const bool twoCols = fullW >= 380.0f;
+        const float colW = twoCols ? std::floor(fullW * 0.5f) : fullW;
+        const float startX = ImGui::GetCursorPosX();
+        auto col = [&](int c) {  // coloca el cursor en la columna c de la fila actual
+            g_labelW = std::floor(colW * (twoCols ? 0.58f : 0.55f));
+            if (c == 1 && twoCols) ImGui::SameLine(startX + colW);
+        };
+        const float numW = std::min(80.0f, colW - g_labelW - 10.0f);
+
+        g_labelW = std::floor(colW * 0.58f);
+        propLabel("Escala del Proyecto", false);
+        ImGui::BeginDisabled();
+        ImGui::SetNextItemWidth(50);
+        float one = 1.0f;
+        ImGui::DragFloat("##scale", &one, 1, 0, 0, "%.0f");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(std::min(110.0f, ImGui::GetContentRegionAvail().x - 4.0f));
+        if (ImGui::BeginCombo("##unit", "Centímetros")) ImGui::EndCombo();
+        ImGui::Button("Escalar Proyecto...", ImVec2(std::min(fullW - 8.0f, 260.0f), 0));
+        ImGui::EndDisabled();
+        setHint("Escalar Proyecto: todavía no implementado en Iron3D.");
+        ImGui::Separator();
+
+        col(0);
+        propLabel("FPS", false);
+        ImGui::SetNextItemWidth(numW);
+        if (ImGui::DragInt("##fps", &g.fps, 0.2f, 1, 240)) g.fps = std::clamp(g.fps, 1, 240);
+        setHint("Fotogramas por segundo: velocidad de reproducción de la Línea de Tiempo.");
+        col(1);
+        propLabel("Tiempo del Proyecto", false);
+        int cur = (int)std::lround(g.frame);
+        ImGui::SetNextItemWidth(numW);
+        if (ImGui::DragInt("##cur", &cur, 0.2f, g.minFrame, g.maxFrame, "%d F")) g.frame = (float)cur;
+        col(0);
+        propLabel("Tiempo Mínimo", false);
+        ImGui::SetNextItemWidth(numW);
+        if (ImGui::DragInt("##min", &g.minFrame, 0.2f, -100000, g.maxFrame - 1, "%d F")) g.previewMin = std::max(g.previewMin, g.minFrame);
+        col(1);
+        propLabel("Tiempo Máximo", false);
+        ImGui::SetNextItemWidth(numW);
+        if (ImGui::DragInt("##max", &g.maxFrame, 0.2f, g.minFrame + 1, 100000, "%d F")) g.previewMax = std::min(g.previewMax, g.maxFrame);
+        col(0);
+        propLabel("Tiempo Mínimo de Previo", false);
+        ImGui::SetNextItemWidth(numW);
+        ImGui::DragInt("##pmin", &g.previewMin, 0.2f, g.minFrame, g.previewMax, "%d F");
+        col(1);
+        propLabel("Tiempo Máximo de Previo", false);
+        ImGui::SetNextItemWidth(numW);
+        ImGui::DragInt("##pmax", &g.previewMax, 0.2f, g.previewMin, g.maxFrame, "%d F");
+        ImGui::Separator();
+
+        auto roFloatN = [&](const char* label, float v, const char* fmt) {
+            propLabel(label, false);
+            ImGui::BeginDisabled();
+            ImGui::SetNextItemWidth(numW);
+            ImGui::PushID(label);
+            ImGui::DragFloat("##v", &v, 1.0f, 0.0f, 0.0f, fmt);
+            ImGui::PopID();
+            ImGui::EndDisabled();
+            setHint("Parámetro todavía no implementado en Iron3D");
+        };
+        col(0); roFloatN("Nivel de Detalle", 100.0f, "%.0f %%");
+        col(1); roCheck("Nivel de Detalle del Render en el Editor", false, false);
+        ImGui::Separator();
+        col(0); roCheck("Usar Animación", true, false);
+        col(1); roCheck("Usar Expresiones", true, false);
+        col(0); roCheck("Usar Generadores", true, false);
+        col(1); roCheck("Usar Deformadores", true, false);
+        col(0); roCheck("Usar Sistema de Movimiento", true, false);
+        ImGui::Separator();
+
+        g_labelW = std::floor(fullW * 0.45f);
+        roCombo("Color Objetos por Defecto", "Gris-Azul");
+        roCombo("Recortar Vista", "Medio");
+        roCheck("Flujo de Trabajo Lineal", true, false);
+        roCombo("Introducir Perfil de Color", "sRGB");
+        g_labelW = savedLabelW;
+
+        ImGui::Spacing();
+        ImGui::BeginDisabled();
+        const float bw = std::floor((fullW - 12.0f) * 0.5f);
+        ImGui::Button("Cargar Preestablecido...", ImVec2(bw, 0));
+        ImGui::SameLine();
+        ImGui::Button("Guardar Preestablecido...", ImVec2(bw, 0));
+        ImGui::EndDisabled();
+        setHint("Preestablecidos de proyecto: todavía no implementados en Iron3D.");
+    }
+    if (mask & ~1u) {
+        sectionHeader("Página no disponible");
+        ImGui::TextDisabled("  Todavía no implementado en Iron3D.");
+    }
+}
+
+void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& history) {
+    const bool isLight = node.primitive == PrimitiveType::Light;
+    const bool isNull = node.primitive == PrimitiveType::None;
+    const int kind = isLight ? 1 : (isNull ? 2 : 0);
+    unsigned& mask = g.objMask[kind];
+
+    char title[200];
+    std::snprintf(title, sizeof(title), "Objeto %s [%s]", defaultNameFor(node.primitive), node.name().c_str());
+    titleLine(iconFor(node.primitive), title);
+
+    static const char* geoTabs[] = {"Básico", "Coord.", "Objeto", "Phong"};
+    static const char* lightTabs[] = {"Básico", "Coord.", "General", "Detalles", "Visibilidad", "Sombra",
+                                      "Fotométrico", "Cáusticas", "Ruido", "Lentes", "Proyecto"};
+    static const char* nullTabs[] = {"Básico", "Coord.", "Objeto"};
+    if (isLight) attrTabRow(lightTabs, IM_ARRAYSIZE(lightTabs), mask);
+    else if (isNull) attrTabRow(nullTabs, IM_ARRAYSIZE(nullTabs), mask);
+    else attrTabRow(geoTabs, IM_ARRAYSIZE(geoTabs), mask);
+
+    if (tabOn(mask, 0)) {
+        sectionHeader("Propiedades Básicas");
+        propLabel("Nombre", false);
+        char nameBuf[128];
+        std::snprintf(nameBuf, sizeof(nameBuf), "%s", node.name().c_str());
+        ImGui::SetNextItemWidth(fieldWidth(220));
+        if (ImGui::InputText("##name", nameBuf, sizeof(nameBuf)) && nameBuf[0]) node.setName(nameBuf);
+        trackEdit(history, root);
+        roCombo("Capa", "");
+        const char* visItems[] = {"Por Defecto", "Activado", "Apagado"};
+        auto visCombo = [&](const char* label, const char* id, VisMode& mode, const char* hint) {
+            propLabel(label);
+            int v = (int)mode;
+            ImGui::SetNextItemWidth(fieldWidth(140));
+            if (ImGui::Combo(id, &v, visItems, 3)) {
+                history.commitBefore(root); // `mode` aun no ha cambiado aqui
+                mode = (VisMode)v;
+            }
+            setHint(hint);
+        };
+        visCombo("Visible en Editor", "##vised", node.editorVis,
+                 "Visible en Editor (punto superior): Por Defecto hereda del padre, Activado lo muestra siempre, Apagado lo oculta en el visor.");
+        visCombo("Visible en Render", "##visrd", node.renderVis,
+                 "Visible en Render (punto inferior): Iron3D todavía no tiene render final; el valor se guarda en la escena.");
+        roCombo("Usar Color", "Desactivado");
+        roCheck("Activado", true);
+        roCheck("Rayos X", false);
+    }
+    if (tabOn(mask, 1)) {
+        sectionHeader("Coordenadas");
+        if (ImGui::BeginTable("##coord", 3, ImGuiTableFlags_SizingStretchSame)) {
+            const char* pl[] = {"P . X", "P . Y", "P . Z"};
+            const char* sl[] = {"S . X", "S . Y", "S . Z"};
+            const char* rl[] = {"R . H", "R . P", "R . B"};
+            // HPB de C4D: H gira en Y, P en X, B en Z.
+            const int rotIdx[] = {1, 0, 2};
+            for (int i = 0; i < 3; ++i) {
+                ImGui::TableNextRow();
+                ImGui::PushID(i);
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(pl[i]);
+                ImGui::SameLine(44);
+                float cm = node.position[i] * kCmPerUnit;
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::DragFloat("##p", &cm, 1.0f, 0, 0, "%.0f cm")) node.position[i] = cm / kCmPerUnit;
+                trackEdit(history, root);
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(sl[i]);
+                ImGui::SameLine(44);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##s", &node.scale[i], 0.01f, 0.001f, 1000.0f, "%.3f");
+                trackEdit(history, root);
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(rl[i]);
+                ImGui::SameLine(44);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##r", &node.rotationDeg[rotIdx[i]], 0.5f, 0, 0, "%.1f °");
+                trackEdit(history, root);
+                ImGui::PopID();
+            }
+            ImGui::EndTable();
+        }
+        roCombo("Orden", "HPB");
+        sectionHeader("Congelar Transformación");
+        ImGui::TextDisabled("  Todavía no implementado en Iron3D.");
+    }
+    if (tabOn(mask, 2)) {
+        if (isLight) {
+            sectionHeader("General");
+            propLabel("Color");
+            ImGui::BeginDisabled();
+            float white[3] = {1, 1, 1};
+            ImGui::ColorEdit3("##lc", white, ImGuiColorEditFlags_NoInputs);
+            ImGui::EndDisabled();
+            roFloat("Intensidad", 100.0f, "%.0f %%");
+            roCombo("Tipo", "Omni");
+            roCombo("Sombra", "Ninguno");
+            roCombo("Luz Visible", "Ninguno");
+            roCheck("No Ilumina", false);
+            roCheck("Mostrar Iluminación", true, false);
+            roCheck("Difusión", true);
+            roCheck("Mostrar Luz Visible", false, false);
+            roCheck("Especular", true);
+            roCheck("Iluminación de IG", true);
+            ImGui::TextDisabled("  Iron3D: la luz ilumina con color e intensidad fijos por ahora.");
+        } else if (isNull) {
+            sectionHeader("Propiedades del Objeto");
+            roCombo("Mostrar", "Punto");
+            roFloat("Radio", 10.0f, "%.0f cm");
+            roFloat("Relación de Aspecto", 1.0f, "%.2f");
+            roCombo("Orientación", "Cámara");
+        } else {
+            sectionHeader("Propiedades del Objeto");
+            if (node.primitive == PrimitiveType::Cube) {
+                roFloat("Tamaño . X", 200, "%.0f cm");
+                roFloat("Tamaño . Y", 200, "%.0f cm");
+                roFloat("Tamaño . Z", 200, "%.0f cm");
+                roFloat("Segmentos en X", 1, "%.0f");
+                roFloat("Segmentos en Y", 1, "%.0f");
+                roFloat("Segmentos en Z", 1, "%.0f");
+                roCheck("Superficies Separadas", false);
+                roCheck("Canto", false);
+            } else if (node.primitive == PrimitiveType::Sphere) {
+                roFloat("Radio", 100, "%.0f cm");
+                roFloat("Segmentos", 24, "%.0f");
+                roCombo("Tipo", "Estándar");
+                roCheck("Perfectos de Render", true);
+            } else {
+                roFloat("Anchura", 200, "%.0f cm");
+                roFloat("Altura", 200, "%.0f cm");
+                roFloat("Segmentos en la Anchura", 1, "%.0f");
+                roFloat("Segmentos en la Altura", 1, "%.0f");
+                roCombo("Orientación", "+Y");
+            }
+            ImGui::TextDisabled("  Para cambiar el tamaño use Escala (Coord.) o el Gestor de Coordenadas.");
+        }
+    }
+    if (!isNull && !isLight && tabOn(mask, 3)) {
+        sectionHeader("Etiqueta Phong");
+        roCheck("Limitar Ángulo", true);
+        roFloat("Ángulo de Phong", 80.0f, "%.0f °");
+        roCheck("Usar Bordes", false);
+    }
+    if (isLight && (mask & ~7u)) {
+        sectionHeader("Página no disponible");
+        ImGui::TextDisabled("  Todavía no implementado en Iron3D.");
+    }
+}
+
+void drawMaterialAttributes(Material& m, int index, SceneNode& root, SceneHistory& history) {
+    char title[200];
+    std::snprintf(title, sizeof(title), "Material [%s]", m.name.c_str());
+    {
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        const ImVec2 p = ImGui::GetCursorScreenPos();
+        float previewSpec, previewShin;
+        materialBallSpecShininess(m, previewSpec, previewShin);
+        icons::materialBall(dl, ImVec2(p.x + 11, p.y + 11), 9, ImVec4(m.baseColor.x, m.baseColor.y, m.baseColor.z, 1), previewSpec, previewShin);
+        if (g_fontBold) ImGui::PushFont(g_fontBold);
+        dl->AddText(ImVec2(p.x + 26, p.y + 2), kTextCol, title);
+        if (g_fontBold) ImGui::PopFont();
+        ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 22));
+    }
+    static const char* tabs[] = {"Básico", "Color", "Reflectancia", "Iluminación", "Editor", "Asignar"};
+    attrTabRow(tabs, IM_ARRAYSIZE(tabs), g.matMask);
+
+    if (tabOn(g.matMask, 0)) {
+        sectionHeader("Propiedades Básicas");
+        propLabel("Nombre", false);
+        char nameBuf[128];
+        std::snprintf(nameBuf, sizeof(nameBuf), "%s", m.name.c_str());
+        ImGui::SetNextItemWidth(fieldWidth(220));
+        if (ImGui::InputText("##mname", nameBuf, sizeof(nameBuf)) && nameBuf[0]) m.name = nameBuf;
+        trackEdit(history, root);
+        roCombo("Capa", "");
+        roCheck("Color", true, false);
+        roCheck("Difusión", false, false);
+        roCheck("Luminancia", false, false);
+        roCheck("Transparencia", false, false);
+        roCheck("Reflectancia", true, false);
+        roCheck("Entorno", false, false);
+        roCheck("Relieve", false, false);
+        roCheck("Alfa", false, false);
+    }
+    if (tabOn(g.matMask, 1)) {
+        sectionHeader("Color");
+        propLabel("Color");
+        ImGui::SetNextItemWidth(fieldWidth(240));
+        ImGui::ColorEdit3("##diff", &m.baseColor.x, ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_PickerHueBar);
+        trackEdit(history, root);
+        roFloat("Brillo", 100.0f, "%.0f %%");
+        roCombo("Textura", "");
+        roCombo("Modelo", "Lambertiano");
+    }
+    if (tabOn(g.matMask, 2)) {
+        sectionHeader("Reflectancia — PBR (Metallic/Roughness)");
+        roCombo("Tipo", "GGX (Cook-Torrance)");
+        propLabel("Metálico");
+        float metallicPct = m.metallic * 100.0f;
+        ImGui::SetNextItemWidth(fieldWidth());
+        if (ImGui::SliderFloat("##metallic", &metallicPct, 0.0f, 100.0f, "%.0f %%")) m.metallic = metallicPct / 100.0f;
+        trackEdit(history, root);
+        propLabel("Rugosidad");
+        float roughnessPct = m.roughness * 100.0f;
+        ImGui::SetNextItemWidth(fieldWidth());
+        if (ImGui::SliderFloat("##roughness", &roughnessPct, 0.0f, 100.0f, "%.0f %%")) m.roughness = roughnessPct / 100.0f;
+        trackEdit(history, root);
+        roCombo("Atenuación", "Añadir");
+    }
+    if (tabOn(g.matMask, 3) || tabOn(g.matMask, 4)) {
+        sectionHeader(tabOn(g.matMask, 3) ? "Iluminación" : "Editor");
+        ImGui::TextDisabled("  Todavía no implementado en Iron3D.");
+    }
+    if (tabOn(g.matMask, 5)) {
+        sectionHeader("Asignar");
+        std::vector<SceneNode*> users;
+        collectUsers(root, index, users);
+        if (users.empty()) ImGui::TextDisabled("  Ningún objeto usa este material. Arrástrelo al Gestor de Objetos.");
+        for (SceneNode* u : users) {
+            ImGui::PushID(u->id());
+            icons::draw(ImGui::GetWindowDrawList(), iconFor(u->primitive), ImGui::GetCursorScreenPos(), 16, true);
+            ImGui::Dummy(ImVec2(20, 16));
+            ImGui::SameLine();
+            ImGui::TextUnformatted(u->name().c_str());
+            ImGui::PopID();
+        }
+    }
+}
+
+void drawTagAttributes(SceneNode& node, std::vector<Material>& materials, SceneNode& root, SceneHistory& history) {
+    titleLine(Icon::Sphere, "Etiqueta de Textura [Textura]");
+    static const char* tabs[] = {"Básico", "Etiqueta", "Coordenadas"};
+    attrTabRow(tabs, IM_ARRAYSIZE(tabs), g.tagMask);
+    if (tabOn(g.tagMask, 0)) {
+        sectionHeader("Propiedades Básicas");
+        roCombo("Nombre", "Textura");
+    }
+    if (tabOn(g.tagMask, 1)) {
+        sectionHeader("Propiedades de Etiqueta");
+        propLabel("Material", false);
+        const char* cur = node.materialIndex >= 0 && (size_t)node.materialIndex < materials.size()
+                              ? materials[(size_t)node.materialIndex].name.c_str()
+                              : "";
+        ImGui::SetNextItemWidth(fieldWidth(200));
+        if (ImGui::BeginCombo("##tmat", cur)) {
+            for (size_t i = 0; i < materials.size(); ++i)
+                if (ImGui::Selectable(materials[i].name.c_str(), node.materialIndex == (int)i)) {
+                    history.commitBefore(root);
+                    node.materialIndex = (int)i;
+                }
+            ImGui::EndCombo();
+        }
+        roCombo("Selección", "");
+        roCombo("Proyección", "Mapeado UVW");
+        roCombo("Lado", "Ambos");
+        roCheck("Mezclar Texturas", false);
+        roCheck("Repetición", true);
+        roCheck("Sin Costuras", false);
+        roCheck("Usar UVW para Relieve", true);
+        roFloat("Desfase U", 0, "%.0f %%");
+        roFloat("Desfase V", 0, "%.0f %%");
+        roFloat("Longitud U", 100, "%.0f %%");
+        roFloat("Longitud V", 100, "%.0f %%");
+        roFloat("Repeticiones U", 1, "%.0f");
+        roFloat("Repeticiones V", 1, "%.0f");
+    }
+    if (tabOn(g.tagMask, 2)) {
+        sectionHeader("Coordenadas");
+        ImGui::TextDisabled("  Todavía no implementado en Iron3D.");
+    }
+}
+
+void drawAttributesManager(SceneNode& root, SceneNode* selected, SceneHistory& history,
+                           std::vector<Material>& materials, ImVec2 pos, ImVec2 size) {
+    beginPanel("##attrmgr", pos, size, ImGuiWindowFlags_MenuBar);
+    if (ImGui::BeginMenuBar()) {
+        panelGrip(names().attributes);
+        if (ImGui::BeginMenu("Modo")) {
+            if (ImGui::MenuItem("Objeto", nullptr, g.focus == AttrFocus::Object)) g.focus = AttrFocus::Object;
+            if (ImGui::MenuItem("Etiqueta", nullptr, g.focus == AttrFocus::Tag, selected && selected->materialIndex >= 0))
+                g.focus = AttrFocus::Tag;
+            if (ImGui::MenuItem("Material", nullptr, g.focus == AttrFocus::Material, g.selectedMat >= 0))
+                g.focus = AttrFocus::Material;
+            ImGui::Separator();
+            if (ImGui::MenuItem("Proyecto", "Ctrl+D", g.focus == AttrFocus::Project)) g.focus = AttrFocus::Project;
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Editar")) {
+            disabledItems({{"Copiar", ""}, {"Pegar", ""}, {nullptr, nullptr}, {"Seleccionar Todo", ""},
+                           {"Mostrar Subcanales", ""}});
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Datos de Usuario")) {
+            disabledItems({{"Añadir Datos de Usuario...", ""}, {"Gestionar Datos de Usuario...", ""}});
+            ImGui::EndMenu();
+        }
+        attrHeaderNav();
+        ImGui::EndMenuBar();
+    }
+
+    g_labelW = std::clamp(ImGui::GetContentRegionAvail().x * 0.42f, 120.0f, 220.0f);
+    switch (g.focus) {
+        case AttrFocus::Project:
+            drawProjectSettings();
+            break;
+        case AttrFocus::Material:
+            if (g.selectedMat >= 0 && (size_t)g.selectedMat < materials.size())
+                drawMaterialAttributes(materials[(size_t)g.selectedMat], g.selectedMat, root, history);
+            else
+                drawProjectSettings();
+            break;
+        case AttrFocus::Tag:
+            if (selected && selected->materialIndex >= 0) {
+                drawTagAttributes(*selected, materials, root, history);
+                break;
+            }
+            [[fallthrough]];
+        case AttrFocus::Object:
+            // Sin seleccion: Configuracion del Proyecto (seccion 15), nunca un panel vacio.
+            if (selected) drawObjectAttributes(*selected, root, history);
+            else drawProjectSettings();
+            break;
+    }
+    ImGui::End();
+}
+
+// --- Linea de Tiempo (secciones 1 y 14) ---------------------------------------------
+
+void drawTimeline(ImVec2 pos, ImVec2 size) {
+    beginPanel("##timeline", pos, size, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const float rulerH = 22.0f;
+    const float pad = 12.0f;
+    const ImVec2 r0(pos.x + 4, pos.y + 3), r1(pos.x + size.x - 60, pos.y + 3 + rulerH);
+    dl->AddRectFilled(r0, r1, kRulerBg);
+    dl->AddRect(r0, r1, kBorderDark);
+
+    const float x0 = r0.x + pad, x1 = r1.x - pad;
+    const int span = std::max(1, g.maxFrame - g.minFrame);
+    auto fx = [&](float f) { return x0 + (f - (float)g.minFrame) / (float)span * (x1 - x0); };
+    const float pxPerFrame = (x1 - x0) / (float)span;
+    int labelStep = 5;
+    while (labelStep * pxPerFrame < 34.0f) labelStep *= 2;
+    const int tickStep = pxPerFrame >= 5.0f ? 1 : std::max(1, labelStep / 5);
+
+    // Rango de previo (franja algo mas clara)
+    dl->AddRectFilled(ImVec2(fx((float)g.previewMin), r0.y + 1), ImVec2(fx((float)g.previewMax), r1.y - 1),
+                      IM_COL32(64, 64, 64, 255));
+    for (int f = g.minFrame; f <= g.maxFrame; f += tickStep) {
+        const float x = fx((float)f);
+        const bool major = (f % labelStep) == 0;
+        dl->AddLine(ImVec2(x, r1.y - (major ? 9 : 5)), ImVec2(x, r1.y - 1), IM_COL32(150, 150, 150, 255));
+        if (major) {
+            char buf[16];
+            std::snprintf(buf, sizeof(buf), "%d", f);
+            dl->AddText(ImVec2(x + 2, r0.y + 1), IM_COL32(190, 190, 190, 255), buf);
+        }
+    }
+
+    // Arrastrar en la regla mueve el fotograma actual.
+    ImGui::SetCursorScreenPos(r0);
+    ImGui::InvisibleButton("##ruler", ImVec2(r1.x - r0.x, r1.y - r0.y));
+    if (ImGui::IsItemActive()) {
+        const float t = (ImGui::GetIO().MousePos.x - x0) / std::max(1.0f, x1 - x0);
+        g.frame = std::round(std::clamp((float)g.minFrame + t * (float)span, (float)g.minFrame, (float)g.maxFrame));
+        g.playDir = 0;
+    }
+    if (ImGui::IsItemHovered()) g.hint = "Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.";
+
+    // Cursor de tiempo
+    {
+        const int fi = (int)std::lround(g.frame);
+        const float x = fx(g.frame);
+        char buf[16];
+        std::snprintf(buf, sizeof(buf), "%d", fi);
+        const ImVec2 ts = ImGui::CalcTextSize(buf);
+        dl->AddRectFilled(ImVec2(x - ts.x * 0.5f - 4, r0.y + 1), ImVec2(x + ts.x * 0.5f + 4, r0.y + ts.y + 2), kPlayhead, 2.0f);
+        dl->AddText(ImVec2(x - ts.x * 0.5f, r0.y + 1), IM_COL32(255, 255, 255, 255), buf);
+        dl->AddLine(ImVec2(x, r0.y + ts.y + 2), ImVec2(x, r1.y - 1), kPlayhead, 2.0f);
+        std::snprintf(buf, sizeof(buf), "%d F", fi);
+        dl->AddText(ImVec2(r1.x + 8, r0.y + 3), kTextCol, buf);
+    }
+
+    // Fila de transporte
+    ImGui::SetCursorScreenPos(ImVec2(pos.x + 6, r1.y + 4));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3, 0));
+    const float b = std::min(size.y, 56.0f) - rulerH - 12.0f; // alto fijo aunque el panel crezca (SFM)
+    ImGui::SetNextItemWidth(56);
+    ImGui::DragInt("##tmin", &g.minFrame, 0.2f, -100000, g.maxFrame - 1, "%d F");
+    setHint("Tiempo Mínimo del proyecto.");
     ImGui::SameLine();
+    {
+        const ImVec2 p = ImGui::GetCursorScreenPos();
+        const float w = std::max(40.0f, size.x * 0.22f);
+        ImGui::InvisibleButton("##range", ImVec2(w, b));
+        dl->AddRectFilled(ImVec2(p.x, p.y + b * 0.3f), ImVec2(p.x + w, p.y + b * 0.7f), IM_COL32(40, 40, 40, 255), 2);
+        const float a0 = p.x + (float)(g.previewMin - g.minFrame) / (float)span * w;
+        const float a1 = p.x + (float)(g.previewMax - g.minFrame) / (float)span * w;
+        dl->AddRectFilled(ImVec2(a0, p.y + b * 0.3f), ImVec2(a1, p.y + b * 0.7f), IM_COL32(120, 120, 120, 255), 2);
+        setHint("Rango de previo (Tiempo Mínimo/Máximo de Previo).");
+    }
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(56);
+    ImGui::DragInt("##tmax", &g.maxFrame, 0.2f, g.minFrame + 1, 100000, "%d F");
+    setHint("Tiempo Máximo del proyecto (editable, la regla se reescala).");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(56);
+    ImGui::DragInt("##pmax2", &g.previewMax, 0.2f, g.previewMin, g.maxFrame, "%d F");
+    setHint("Tiempo Máximo de Previo.");
+    ImGui::SameLine(0, 14);
+
+    auto tbtn = [&](const char* id, Icon icon, bool active, bool enabled, const char* tip) {
+        const bool clicked = iconButton(id, icon, b, active, enabled, tip, tip) == BtnResult::Click;
+        ImGui::SameLine();
+        return clicked;
+    };
+    if (tbtn("tstart", Icon::ToStart, false, true, "Ir al Inicio [Mayús+F]")) g.frame = (float)g.minFrame;
+    tbtn("tprevk", Icon::PrevKey, false, false, "Ir a la Clave Anterior [Ctrl+F] (no hay claves)");
+    if (tbtn("tprev", Icon::StepBack, false, true, "Ir al Fotograma Anterior [F]")) g.frame = std::max((float)g.minFrame, std::ceil(g.frame) - 1);
+    if (tbtn("tplayb", Icon::PlayBack, g.playDir == -1, true, "Reproducir Hacia Atrás [F6]")) g.playDir = g.playDir == -1 ? 0 : -1;
+    if (tbtn("tplay", g.playDir == 1 ? Icon::Pause : Icon::Play, g.playDir == 1, true, "Reproducir Hacia Delante [F8]")) g.playDir = g.playDir == 1 ? 0 : 1;
+    if (tbtn("tnext", Icon::StepFwd, false, true, "Ir al Fotograma Siguiente [G]")) g.frame = std::min((float)g.maxFrame, std::floor(g.frame) + 1);
+    tbtn("tnextk", Icon::NextKey, false, false, "Ir a la Clave Siguiente [Ctrl+G] (no hay claves)");
+    if (tbtn("tend", Icon::ToEnd, false, true, "Ir al Final [Mayús+G]")) g.frame = (float)g.maxFrame;
+    toolbarSeparator(true, b);
+    ImGui::SameLine();
+    tbtn("trec", Icon::Record, false, false, "Grabar Objetos Activos [F9] (animación todavía no implementada)");
+    tbtn("tauto", Icon::AutoKey, false, false, "Fotogramas Clave Automáticos [Ctrl+F9] (animación todavía no implementada)");
+    tbtn("tksel", Icon::KeySel, false, false, "Selección de Claves (animación todavía no implementada)");
+    toolbarSeparator(true, b);
+    ImGui::SameLine();
+    tbtn("tkpos", Icon::KeyPos, true, false, "Grabar Posición (animación todavía no implementada)");
+    tbtn("tkscl", Icon::KeyScale, true, false, "Grabar Escala (animación todavía no implementada)");
+    tbtn("tkrot", Icon::KeyRot, true, false, "Grabar Rotación (animación todavía no implementada)");
+    tbtn("tkpar", Icon::KeyParam, true, false, "Grabar Parámetro (animación todavía no implementada)");
+    tbtn("tkpla", Icon::KeyPLA, false, false, "Grabar Nivel de Puntos (animación todavía no implementada)");
+    ImGui::PopStyleVar();
+    // Panel mas alto que la tira de transporte (SFM): el resto es donde ira
+    // el editor de curvas; de momento se dice tal cual.
+    if (size.y > 110.0f) {
+        const char* msg = "Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D";
+        const ImVec2 ts = ImGui::CalcTextSize(msg);
+        ImDrawList* tdl = ImGui::GetWindowDrawList();
+        const float top = pos.y + 60.0f;
+        tdl->AddLine(ImVec2(pos.x + 4, top), ImVec2(pos.x + size.x - 4, top), kBorderDark);
+        tdl->AddText(ImVec2(pos.x + (size.x - ts.x) * 0.5f, top + (size.y - 60.0f - ts.y) * 0.5f), kTextDim, msg);
+    }
+    ImGui::End();
+}
+
+// --- Gestor de Materiales (secciones 9 y 19.1) --------------------------------------
+
+void drawMaterialManager(SceneNode& root, SceneNode*& selected, SceneHistory& history,
+                         std::vector<Material>& materials, ImVec2 pos, ImVec2 size) {
+    beginPanel("##matmgr", pos, size, ImGuiWindowFlags_MenuBar);
+    if (ImGui::BeginMenuBar()) {
+        panelGrip(names().materials);
+        if (ImGui::BeginMenu("Crear")) {
+            ImGui::MenuItem("Nuevo Material PBR", "Ctrl+Mayús+N", false, false);
+            if (ImGui::MenuItem("Nuevo Material", "Ctrl+N")) {
+                history.commitBefore(root);
+                newMaterial(materials);
+            }
+            ImGui::BeginMenu("Shader", false);
+            ImGui::Separator();
+            disabledItems({{"Cargar Materiales...", "Ctrl+Mayús+O"}, {"Guardar Materiales como...", ""},
+                           {"Guardar Todos los Materiales como...", ""}, {nullptr, nullptr},
+                           {"Cargar Material Preestablecido", ""}, {"Guardar Material Preestablecido...", ""}});
+            ImGui::EndMenu();
+        }
+        const bool hasSel = g.selectedMat >= 0 && (size_t)g.selectedMat < materials.size();
+        if (ImGui::BeginMenu("Edición")) {
+            ImGui::MenuItem("Deshacer", "Ctrl+Z", false, false);
+            ImGui::Separator();
+            if (ImGui::MenuItem("Eliminar", "Supr", false, hasSel)) {
+                history.commitBefore(root);
+                fixupMaterialIndicesAfterRemoval(root, g.selectedMat);
+                materials.erase(materials.begin() + g.selectedMat);
+                g.selectedMat = -1;
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Función")) {
+            if (ImGui::MenuItem("Editar...", nullptr, false, hasSel)) g.showMatEditor = true;
+            if (ImGui::MenuItem("Renombrar", nullptr, false, hasSel)) {
+                g.renamingMat = g.selectedMat;
+                std::snprintf(g.renameBuf, sizeof(g.renameBuf), "%s", materials[(size_t)g.selectedMat].name.c_str());
+                g.renameFocus = true;
+            }
+            if (ImGui::MenuItem("Aplicar", nullptr, false, hasSel && selected && hasGeometry(selected->primitive))) {
+                history.commitBefore(root);
+                selected->materialIndex = g.selectedMat;
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Eliminar Materiales sin Usar", nullptr, false, !materials.empty())) {
+                history.commitBefore(root);
+                for (int i = (int)materials.size() - 1; i >= 0; --i) {
+                    if (materialUsed(root, i)) continue;
+                    fixupMaterialIndicesAfterRemoval(root, i);
+                    materials.erase(materials.begin() + i);
+                }
+                g.selectedMat = -1;
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Textura")) {
+            disabledItems({{"Cargar Textura...", ""}, {"Editar Textura...", ""}});
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
+
+    ImGui::BeginChild("##swatches", ImVec2(0, 0));
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const float cellW = 64.0f, cellH = 70.0f;
+    const float availW = ImGui::GetContentRegionAvail().x;
+    const int perRow = std::max(1, (int)(availW / (cellW + 4)));
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+    int pendingDelete = -1;
+    for (int i = 0; i < (int)materials.size(); ++i) {
+        Material& m = materials[(size_t)i];
+        const ImVec2 p(origin.x + (i % perRow) * (cellW + 4), origin.y + (i / perRow) * (cellH + 4));
+        ImGui::SetCursorScreenPos(p);
+        ImGui::PushID(i);
+        ImGui::InvisibleButton("##sw", ImVec2(cellW, cellH));
+        const bool hov = ImGui::IsItemHovered();
+        if (ImGui::IsItemClicked() || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+            g.selectedMat = i;
+            g.focus = AttrFocus::Material;
+        }
+        if (hov && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            const bool onName = ImGui::GetIO().MousePos.y > p.y + cellH - 18;
+            if (onName) {
+                g.renamingMat = i;
+                std::snprintf(g.renameBuf, sizeof(g.renameBuf), "%s", m.name.c_str());
+                g.renameFocus = true;
+            } else {
+                g.showMatEditor = true;
+            }
+        }
+        if (hov) g.hint = "Clic: seleccionar material. Doble clic: Editor de Material (en el nombre: renombrar). Arrastre a un objeto para asignarlo.";
+        if (ImGui::BeginDragDropSource()) {
+            ImGui::SetDragDropPayload("IRON3D_MAT", &i, sizeof(int));
+            float previewSpec, previewShin;
+            materialBallSpecShininess(m, previewSpec, previewShin);
+            icons::materialBall(ImGui::GetForegroundDrawList(), ImVec2(ImGui::GetIO().MousePos.x + 18, ImGui::GetIO().MousePos.y + 18),
+                                14, ImVec4(m.baseColor.x, m.baseColor.y, m.baseColor.z, 1), previewSpec, previewShin);
+            ImGui::Text("%s", m.name.c_str());
+            ImGui::EndDragDropSource();
+        }
+        if (ImGui::BeginPopupContextItem("##mctx")) {
+            if (ImGui::MenuItem("Editar...")) g.showMatEditor = true;
+            if (ImGui::MenuItem("Aplicar", nullptr, false, selected && hasGeometry(selected->primitive))) {
+                history.commitBefore(root);
+                selected->materialIndex = i;
+            }
+            if (ImGui::MenuItem("Renombrar")) {
+                g.renamingMat = i;
+                std::snprintf(g.renameBuf, sizeof(g.renameBuf), "%s", m.name.c_str());
+                g.renameFocus = true;
+            }
+            if (ImGui::MenuItem("Eliminar", "Supr")) pendingDelete = i;
+            ImGui::EndPopup();
+        }
+
+        const bool sel = g.selectedMat == i;
+        if (hov) dl->AddRectFilled(p, ImVec2(p.x + cellW, p.y + cellH), IM_COL32(255, 255, 255, 12), 2);
+        float previewSpec, previewShin;
+        materialBallSpecShininess(m, previewSpec, previewShin);
+        icons::materialBall(dl, ImVec2(p.x + cellW * 0.5f, p.y + 26), 23, ImVec4(m.baseColor.x, m.baseColor.y, m.baseColor.z, 1),
+                            previewSpec, previewShin);
+        const ImVec2 n0(p.x + 1, p.y + cellH - 17), n1(p.x + cellW - 1, p.y + cellH - 1);
+        if (g.renamingMat == i) {
+            ImGui::SetCursorScreenPos(n0);
+            ImGui::SetNextItemWidth(cellW - 2);
+            if (g.renameFocus) {
+                ImGui::SetKeyboardFocusHere();
+                g.renameFocus = false;
+            }
+            const bool done = ImGui::InputText("##mren", g.renameBuf, sizeof(g.renameBuf),
+                                               ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+            if (done || ImGui::IsItemDeactivated()) {
+                if (g.renameBuf[0]) {
+                    history.commitBefore(root);
+                    m.name = g.renameBuf;
+                }
+                g.renamingMat = -1;
+            }
+        } else {
+            if (sel) dl->AddRectFilled(n0, n1, kAmber, 2);
+            dl->PushClipRect(n0, n1, true);
+            const ImVec2 ts = ImGui::CalcTextSize(m.name.c_str());
+            dl->AddText(ImVec2(p.x + std::max(2.0f, (cellW - ts.x) * 0.5f), n0.y + 1),
+                        sel ? IM_COL32(25, 25, 25, 255) : kTextCol, m.name.c_str());
+            dl->PopClipRect();
+        }
+        ImGui::PopID();
+    }
+    const int rowsUsed = materials.empty() ? 0 : ((int)materials.size() + perRow - 1) / perRow;
+    ImGui::SetCursorScreenPos(ImVec2(origin.x, origin.y + rowsUsed * (cellH + 4)));
+    const ImVec2 rest = ImGui::GetContentRegionAvail();
+    if (rest.y > 4 && rest.x > 4) {
+        // Doble clic en el hueco vacio crea un material nuevo, como en C4D.
+        ImGui::InvisibleButton("##matempty", rest);
+        // Primero el clic simple (deselecciona) y despues el doble clic, que
+        // llega en el mismo frame que su segundo clic: asi el material nuevo
+        // queda seleccionado.
+        if (ImGui::IsItemClicked()) g.selectedMat = -1;
+        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            history.commitBefore(root);
+            newMaterial(materials);
+        }
+        if (ImGui::IsItemHovered()) g.hint = "Doble clic en un espacio vacío del Gestor de Materiales para crear un material nuevo.";
+        if (materials.empty()) {
+            const char* t = "Doble clic aquí para crear un material";
+            const ImVec2 ts = ImGui::CalcTextSize(t);
+            const ImVec2 c(ImGui::GetItemRectMin().x + (rest.x - ts.x) * 0.5f, ImGui::GetItemRectMin().y + (rest.y - ts.y) * 0.5f);
+            dl->AddText(c, IM_COL32(110, 110, 110, 255), t);
+        }
+    }
+    ImGui::EndChild();
+    ImGui::End();
+
+    if (pendingDelete >= 0) {
+        history.commitBefore(root);
+        fixupMaterialIndicesAfterRemoval(root, pendingDelete);
+        materials.erase(materials.begin() + pendingDelete);
+        g.selectedMat = -1;
+    }
+}
+
+// --- Gestor de Coordenadas (seccion 1) -----------------------------------------------
+
+void drawCoordinatesManager(SceneNode& root, SceneNode* selected, SceneHistory& history, ImVec2 pos, ImVec2 size) {
+    beginPanel("##coordmgr", pos, size, ImGuiWindowFlags_NoScrollbar);
+    // Con ficha de nombre (presets que no son C4D) la ficha va en su propia
+    // linea y las cabeceras debajo, para no desplazar las columnas.
+    const bool chipLine = !isC4DArrangement();
+    const float startX = ImGui::GetCursorPosX();
+    panelGrip(chipLine ? names().coords : nullptr);
+    const float colW = (ImGui::GetContentRegionAvail().x - 6) / 3.0f;
+    const char* headers[] = {"Posición", "Tamaño", "Rotación"};
+    if (g.coordSizeMode == 1) headers[1] = "Escala";
+    if (!chipLine) ImGui::SameLine();
+    const float baseX = startX + 12.0f + ImGui::GetStyle().ItemSpacing.x - 14.0f;
+    for (int c = 0; c < 3; ++c) {
+        const float w = ImGui::CalcTextSize(headers[c]).x;
+        if (c == 0 && chipLine) ImGui::SetCursorPosX(baseX + (colW - w) * 0.5f);
+        else ImGui::SameLine(baseX + c * colW + (colW - w) * 0.5f);
+        if (g_fontBold) ImGui::PushFont(g_fontBold);
+        ImGui::TextUnformatted(headers[c]);
+        if (g_fontBold) ImGui::PopFont();
+    }
     ImGui::Separator();
-    ImGui::SameLine();
 
-    ImGui::BeginDisabled();
-    ImGui::Button("|<");
-    ImGui::SameLine();
-    ImGui::Button(">");
-    ImGui::SameLine();
-    ImGui::Button(">|");
-    ImGui::SameLine();
-    ImGui::TextUnformatted("Fotograma 0/0");
-    ImGui::EndDisabled();
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Animacion: todavia no implementada");
+    if (!selected) ImGui::BeginDisabled();
+    glm::vec3 dummy(0.0f);
+    glm::vec3& posRef = selected ? selected->position : dummy;
+    glm::vec3& rotRef = selected ? selected->rotationDeg : dummy;
+    glm::vec3& sclRef = selected ? selected->scale : dummy;
+    const glm::vec3 base = selected ? baseSizeCm(selected->primitive) : glm::vec3(0.0f);
+    const char* axisP[] = {"X", "Y", "Z"};
+    const char* axisR[] = {"H", "P", "B"};
+    const int rotIdx[] = {1, 0, 2};
+    for (int i = 0; i < 3; ++i) {
+        ImGui::PushID(i);
+        for (int c = 0; c < 3; ++c) {
+            if (c > 0) ImGui::SameLine(baseX + c * colW + 14);
+            else ImGui::SetCursorPosX(baseX + 14);
+            ImGui::TextUnformatted(c == 2 ? axisR[i] : axisP[i]);
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(colW - 34);
+            ImGui::PushID(c);
+            if (!selected) {
+                // Sin seleccion C4D deja los campos vacios con "--".
+                float none = 0.0f;
+                ImGui::DragFloat("##v", &none, 1.0f, 0, 0, "--");
+            } else if (c == 0) {
+                float cm = posRef[i] * kCmPerUnit;
+                if (ImGui::DragFloat("##v", &cm, 1.0f, 0, 0, "%.0f cm")) posRef[i] = cm / kCmPerUnit;
+            } else if (c == 1) {
+                if (g.coordSizeMode == 0 && base[i] > 0.0f) {
+                    float sz = sclRef[i] * base[i];
+                    if (ImGui::DragFloat("##v", &sz, 1.0f, 0.1f, 1.0e6f, "%.0f cm")) sclRef[i] = std::max(0.0005f, sz / base[i]);
+                } else if (g.coordSizeMode == 0) {
+                    float zero = 0.0f;
+                    ImGui::BeginDisabled();
+                    ImGui::DragFloat("##v", &zero, 1.0f, 0, 0, "%.0f cm");
+                    ImGui::EndDisabled();
+                } else {
+                    ImGui::DragFloat("##v", &sclRef[i], 0.01f, 0.001f, 1000.0f, "%.3f");
+                }
+            } else {
+                ImGui::DragFloat("##v", &rotRef[rotIdx[i]], 0.5f, 0, 0, "%.1f °");
+            }
+            if (selected) trackEdit(history, root);
+            ImGui::PopID();
+        }
+        ImGui::PopID();
+    }
+    if (!selected) ImGui::EndDisabled();
 
+    ImGui::Dummy(ImVec2(1, 2));
+    ImGui::SetCursorPosX(baseX + 14);
+    ImGui::SetNextItemWidth(colW - 14);
+    const char* spaces[] = {"Objeto (Rel)", "Objeto (Abs)", "Mundo"};
+    if (ImGui::BeginCombo("##space", spaces[g.coordSpace])) {
+        for (int i = 0; i < 3; ++i) {
+            if (i > 0) ImGui::BeginDisabled();
+            if (ImGui::Selectable(spaces[i], g.coordSpace == i)) g.coordSpace = i;
+            if (i > 0) ImGui::EndDisabled();
+        }
+        ImGui::EndCombo();
+    }
+    setHint("Sistema de coordenadas de los campos (solo Objeto (Rel) disponible por ahora).");
+    ImGui::SameLine(baseX + colW + 14);
+    ImGui::SetNextItemWidth(colW - 14);
+    const char* sizeModes[] = {"Tamaño", "Escala"};
+    ImGui::Combo("##sizemode", &g.coordSizeMode, sizeModes, 2);
+    setHint("Tamaño: medidas en cm. Escala: multiplicador del objeto.");
+    ImGui::SameLine(baseX + 2 * colW + 14);
+    if (!selected) ImGui::BeginDisabled();
+    if (ImGui::Button("Aplicar", ImVec2(colW - 14, 0)) && selected) history.commitBefore(root);
+    if (!selected) ImGui::EndDisabled();
+    setHint("Aplicar los valores de los campos al objeto seleccionado.");
+    ImGui::End();
+}
+
+// --- Barra de estado -----------------------------------------------------------------------
+
+void drawStatusBar(float framerate, GizmoMode mode, const ViewportState& vp, RendererBackend backend, ImVec2 pos,
+                   ImVec2 size) {
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::ColorConvertU32ToFloat4(kStatusBg));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 2));
+    beginPanel("##status", pos, size, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs);
+    std::string text = g.hint;
+    if (text.empty()) {
+        if (vp.selectTool) text = "Selección en Vivo: Haga clic para seleccionar elementos.";
+        else if (mode == GizmoMode::Translate)
+            text = "Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.";
+        else if (mode == GizmoMode::Rotate)
+            text = "Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.";
+        else
+            text = "Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.";
+    }
+    ImGui::TextColored(ImVec4(0.78f, 0.78f, 0.78f, 1), "%s", text.c_str());
+    char right[64];
+    std::snprintf(right, sizeof(right), "%s  ·  %.0f FPS", backend == RendererBackend::Vulkan ? "Vulkan" : "OpenGL", framerate);
+    const float w = ImGui::CalcTextSize(right).x;
+    ImGui::SameLine(size.x - w - 10);
+    ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1), "%s", right);
+    ImGui::End();
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
+}
+
+// --- Dialogos flotantes ----------------------------------------------------------------------
+
+void drawSceneDialog(SceneNode& root, SceneNode*& selected, const std::filesystem::path& scenesDir,
+                     SceneHistory& history, std::vector<Material>& materials) {
+    if (!g.showScene) return;
+    static char filenameBuf[128] = "escena";
+    static std::string statusMsg;
+    static bool statusIsError = false;
+    ImGui::SetNextWindowSize(ImVec2(420, 0), ImGuiCond_Appearing);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::Begin(g.sceneLoadMode ? "Abrir###scenedlg" : "Guardar como###scenedlg", &g.showScene,
+                     ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::TextUnformatted("Nombre de archivo:");
+        ImGui::SetNextItemWidth(300);
+        ImGui::InputText("##fn", filenameBuf, sizeof(filenameBuf));
+        ImGui::SameLine();
+        ImGui::TextDisabled(".iron");
+        ImGui::TextDisabled("Carpeta: %s", scenesDir.string().c_str());
+        ImGui::Separator();
+        const std::filesystem::path path = scenesDir / (std::string(filenameBuf) + ".iron");
+        if (ImGui::Button(g.sceneLoadMode ? "Abrir" : "Guardar", ImVec2(120, 0))) {
+            std::string err;
+            if (g.sceneLoadMode) {
+                if (loadScene(path, root, materials, &err)) {
+                    selected = nullptr;
+                    history.reset();
+                    g.selectedMat = -1;
+                    statusMsg = "Cargado: " + path.filename().string();
+                    statusIsError = false;
+                } else {
+                    statusMsg = "Error al cargar: " + err;
+                    statusIsError = true;
+                }
+            } else if (saveScene(path, root, materials, &err)) {
+                statusMsg = "Guardado: " + path.filename().string();
+                statusIsError = false;
+            } else {
+                statusMsg = "Error al guardar: " + err;
+                statusIsError = true;
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancelar", ImVec2(120, 0))) g.showScene = false;
+        if (!statusMsg.empty())
+            ImGui::TextColored(statusIsError ? ImVec4(0.95f, 0.35f, 0.35f, 1) : ImVec4(0.4f, 0.9f, 0.4f, 1), "%s", statusMsg.c_str());
+    }
+    ImGui::End();
+}
+
+// --- Preferencias > Interfaz: presets de interfaz -----------------------------
+
+ImU32 seedU32(const glm::vec3& c, float delta = 0.0f) {
+    const glm::vec3 v = glm::clamp(c + glm::vec3(delta), glm::vec3(0.0f), glm::vec3(1.0f)) * 255.0f;
+    return IM_COL32((int)(v.x + 0.5f), (int)(v.y + 0.5f), (int)(v.z + 0.5f), 255);
+}
+
+// Miniatura de un preset: el mismo computeLayout que usa la ventana, escalado
+// a la tarjeta y pintado con los colores del preset.
+void drawPresetThumb(ImDrawList* dl, ImVec2 a, ImVec2 sz, const UiPreset& p) {
+    const ImVec2 ref(1600.0f, 900.0f);
+    const LayoutRects r = computeLayout(p.layout, ImVec2(0, 0), ref, 26.0f, 22.0f);
+    const float sx = sz.x / ref.x, sy = sz.y / ref.y;
+    const glm::vec3& bg = p.theme.panelBg;
+    const ImU32 border = seedU32(bg, -0.12f);
+    dl->AddRectFilled(a, ImVec2(a.x + sz.x, a.y + sz.y), seedU32(bg, -0.03f));
+    auto box = [&](const PanelRect& pr, ImU32 col) {
+        if (!pr.visible()) return;
+        const ImVec2 p0(a.x + pr.pos.x * sx, a.y + pr.pos.y * sy);
+        const ImVec2 p1(p0.x + pr.size.x * sx, p0.y + pr.size.y * sy);
+        dl->AddRectFilled(p0, p1, col);
+        dl->AddRect(p0, p1, border);
+    };
+    box(r.top, seedU32(bg, 0.02f));
+    box(r.left, seedU32(bg));
+    box(r.viewport, seedU32(p.theme.viewportBg));
+    box(r.objects, seedU32(bg));
+    box(r.attributes, seedU32(bg));
+    box(r.objTabs, seedU32(bg, -0.05f));
+    box(r.attrTabs, seedU32(bg, -0.05f));
+    box(r.timeline, seedU32(bg, -0.04f));
+    box(r.materials, seedU32(bg));
+    box(r.coords, seedU32(bg));
+    box(r.status, seedU32(bg, -0.13f));
+    // Detalles: fila seleccionada en Objetos (acento), objeto en el visor
+    // (seleccion) y cabezal en la linea de tiempo.
+    if (r.objects.visible()) {
+        const float y = a.y + (r.objects.pos.y + 60.0f) * sy;
+        dl->AddRectFilled(ImVec2(a.x + r.objects.pos.x * sx + 2, y),
+                          ImVec2(a.x + (r.objects.pos.x + r.objects.size.x) * sx - 2, y + 2.0f), seedU32(p.theme.toolBlue));
+    }
+    if (r.viewport.visible()) {
+        const ImVec2 c(a.x + (r.viewport.pos.x + r.viewport.size.x * 0.5f) * sx,
+                       a.y + (r.viewport.pos.y + r.viewport.size.y * 0.55f) * sy);
+        const float h = std::max(3.0f, r.viewport.size.y * sy * 0.14f);
+        dl->AddRectFilled(ImVec2(c.x - h, c.y - h), ImVec2(c.x + h, c.y + h), seedU32(glm::vec3(0.62f)));
+        dl->AddRect(ImVec2(c.x - h, c.y - h), ImVec2(c.x + h, c.y + h), seedU32(p.theme.selection));
+    }
+    if (r.timeline.visible()) {
+        const float x = a.x + (r.timeline.pos.x + r.timeline.size.x * 0.3f) * sx;
+        dl->AddLine(ImVec2(x, a.y + r.timeline.pos.y * sy), ImVec2(x, a.y + (r.timeline.pos.y + r.timeline.size.y) * sy),
+                    seedU32(p.theme.accent), 1.5f);
+    }
+}
+
+bool presetCard(const char* id, const UiPreset& p, bool active, float w) {
+    const float thumbH = std::floor(w * 9.0f / 16.0f);
+    const float h = thumbH + ImGui::GetTextLineHeight() + 10.0f;
+    ImGui::PushID(id);
+    const ImVec2 a = ImGui::GetCursorScreenPos();
+    const bool clicked = ImGui::InvisibleButton("##card", ImVec2(w, h));
+    const bool hov = ImGui::IsItemHovered();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    dl->AddRectFilled(a, ImVec2(a.x + w, a.y + h), hov ? kTabOn : kTabOff, 3.0f);
+    drawPresetThumb(dl, ImVec2(a.x + 4, a.y + 4), ImVec2(w - 8, thumbH - 4), p);
+    const ImVec2 ts = ImGui::CalcTextSize(p.name.c_str());
+    dl->PushClipRect(a, ImVec2(a.x + w, a.y + h), true);
+    dl->AddText(ImVec2(a.x + std::max(4.0f, (w - ts.x) * 0.5f), a.y + thumbH + 4), active ? kAmber : kTextCol, p.name.c_str());
+    dl->PopClipRect();
+    if (active) dl->AddRect(a, ImVec2(a.x + w, a.y + h), kAmber, 3.0f, 0, 2.0f);
+    if (hov) ImGui::SetTooltip("%s\nDisposición: %s", p.name.c_str(), arrangementName(p.layout.arrangement));
+    ImGui::PopID();
+    return clicked;
+}
+
+void drawInterfacePage(Preferences& prefs, const std::filesystem::path& prefsPath, std::string& statusMsg) {
+    UiPreset& cur = prefs.uiPreset;
+    const std::filesystem::path presetsDir = prefsPath.parent_path() / "presets";
+    static std::vector<UiPreset> userPresets;
+    static bool userLoaded = false;
+    if (!userLoaded) {
+        userPresets = loadUserPresets(presetsDir);
+        userLoaded = true;
+    }
+    auto choose = [&](const UiPreset& p) {
+        cur = p;
+        applyPreset(cur);
+        statusMsg.clear();
+    };
+
+    ImGui::TextDisabled("Colores y disposición de los paneles como en cada programa. Se aplica al momento.");
+    ImGui::Dummy(ImVec2(0, 2));
+
+    // Galeria: integrados y, debajo, los del usuario.
+    const float cardW = 132.0f, gap = 8.0f;
+    const int perRow = std::max(1, (int)((ImGui::GetContentRegionAvail().x + gap) / (cardW + gap)));
+    int col = 0;
+    auto place = [&]() {
+        if (col > 0) ImGui::SameLine(0, gap);
+        col = (col + 1) % perRow;
+    };
+    for (const UiPreset& p : builtinPresets()) {
+        place();
+        if (presetCard(p.id.c_str(), p, cur.id == p.id, cardW)) choose(p);
+    }
+    if (cur.id == "custom") {
+        place();
+        presetCard("custom", cur, true, cardW);
+    }
+    if (!userPresets.empty()) {
+        ImGui::Dummy(ImVec2(0, 4));
+        ImGui::TextDisabled("Mis presets");
+        col = 0;
+        for (const UiPreset& p : userPresets) {
+            place();
+            if (presetCard(p.id.c_str(), p, cur.id == p.id, cardW)) choose(p);
+        }
+    }
+
+    ImGui::Dummy(ImVec2(0, 6));
+    sectionHeader("Personalizar");
+    bool changed = false;
+    // Disposicion base: cambiarla trae la colocacion y las metricas de ese
+    // programa, pero conserva los colores que haya.
+    int arr = (int)cur.layout.arrangement;
+    const char* arrNames[] = {"Cinema 4D", "Blender", "Maya", "3ds Max", "Source Filmmaker"};
+    ImGui::SetNextItemWidth(220);
+    if (ImGui::Combo("Disposición", &arr, arrNames, IM_ARRAYSIZE(arrNames))) {
+        const UiPreset& base = builtinPresets()[(size_t)arr];
+        cur.layout = base.layout;
+        cur.style = base.style;
+        changed = true;
+    }
+    if (ImGui::BeginTable("##cust", 2, ImGuiTableFlags_SizingStretchSame)) {
+        ImGui::TableNextColumn();
+        ImGui::TextDisabled("Colores");
+        changed |= ImGui::ColorEdit3("Fondo de paneles", &cur.theme.panelBg.x, ImGuiColorEditFlags_NoInputs);
+        changed |= ImGui::ColorEdit3("Fondo de campos", &cur.theme.fieldBg.x, ImGuiColorEditFlags_NoInputs);
+        changed |= ImGui::ColorEdit3("Acento", &cur.theme.accent.x, ImGuiColorEditFlags_NoInputs);
+        changed |= ImGui::ColorEdit3("Azul de herramientas", &cur.theme.toolBlue.x, ImGuiColorEditFlags_NoInputs);
+        changed |= ImGui::ColorEdit3("Texto", &cur.theme.text.x, ImGuiColorEditFlags_NoInputs);
+        changed |= ImGui::ColorEdit3("Selección", &cur.theme.selection.x, ImGuiColorEditFlags_NoInputs);
+        changed |= ImGui::ColorEdit3("Fondo del visor", &cur.theme.viewportBg.x, ImGuiColorEditFlags_NoInputs);
+        ImGui::TableNextColumn();
+        ImGui::TextDisabled("Paneles");
+        LayoutSpec& l = cur.layout;
+        const float sw = std::max(80.0f, ImGui::GetContentRegionAvail().x - 150.0f);
+        ImGui::SetNextItemWidth(sw);
+        changed |= ImGui::SliderFloat("Barra superior", &l.toolbarH, 26.0f, 48.0f, "%.0f px");
+        ImGui::SetNextItemWidth(sw);
+        if (ImGui::SliderFloat("Columna lateral", &l.sideFrac, 0.15f, 0.40f, "%.2f")) {
+            l.sideMin = std::min(l.sideMin, 220.0f); // que el minimo no anule el deslizador
+            changed = true;
+        }
+        if (l.arrangement == Arrangement::Maya || l.arrangement == Arrangement::Max) {
+            ImGui::SetNextItemWidth(sw);
+            changed |= ImGui::SliderFloat("Columna de objetos", &l.outlinerW, 150.0f, 360.0f, "%.0f px");
+        } else {
+            ImGui::SetNextItemWidth(sw);
+            changed |= ImGui::SliderFloat("Objetos / Atributos", &l.objFrac, 0.20f, 0.80f, "%.2f");
+        }
+        ImGui::SetNextItemWidth(sw);
+        changed |= ImGui::SliderFloat("Fila inferior", &l.shelfFrac, 0.08f, 0.25f, "%.2f");
+        ImGui::SetNextItemWidth(sw);
+        if (l.timelineFrac > 0.0f) changed |= ImGui::SliderFloat("Línea de tiempo", &l.timelineFrac, 0.12f, 0.50f, "%.2f");
+        else changed |= ImGui::SliderFloat("Línea de tiempo", &l.timelineH, 36.0f, 96.0f, "%.0f px");
+        changed |= ImGui::Checkbox("Pestañas verticales", &l.verticalTabs);
+        ImGui::SetNextItemWidth(sw);
+        changed |= ImGui::SliderFloat("Redondeo", &cur.style.frameRounding, 0.0f, 8.0f, "%.0f px");
+        if (changed) {
+            cur.style.grabRounding = cur.style.frameRounding;
+            cur.style.popupRounding = std::max(cur.style.popupRounding, 0.0f);
+        }
+        ImGui::EndTable();
+    }
+    if (changed) {
+        // Tocar un preset lo convierte en uno propio sin guardar.
+        cur.id = "custom";
+        cur.name = "Personalizado (sin guardar)";
+        applyPreset(cur);
+        statusMsg.clear();
+    }
+
+    ImGui::Dummy(ImVec2(0, 4));
+    static char newName[64] = "";
+    ImGui::SetNextItemWidth(200);
+    ImGui::InputTextWithHint("##pname", "Nombre del preset", newName, sizeof(newName));
+    ImGui::SameLine();
+    if (ImGui::Button("Guardar como preset")) {
+        UiPreset p = cur;
+        p.name = newName;
+        if (saveUserPreset(presetsDir, p)) {
+            userPresets = loadUserPresets(presetsDir);
+            for (const UiPreset& u : userPresets)
+                if (u.name == p.name || u.id == "user:" + std::string(newName)) cur = u;
+            statusMsg = "Preset guardado en presets/.";
+            newName[0] = 0;
+        } else {
+            statusMsg = "Escriba un nombre válido (letras, números, espacios, - o _).";
+        }
+    }
+    const bool isUser = cur.id.rfind("user:", 0) == 0;
+    ImGui::SameLine();
+    if (!isUser) ImGui::BeginDisabled();
+    if (ImGui::Button("Eliminar")) {
+        if (deleteUserPreset(presetsDir, cur.name)) {
+            userPresets = loadUserPresets(presetsDir);
+            choose(builtinPresets()[(size_t)cur.layout.arrangement]);
+            statusMsg = "Preset eliminado.";
+        }
+    }
+    if (!isUser) ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (ImGui::Button("Restablecer")) choose(builtinPresets()[(size_t)cur.layout.arrangement]);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Vuelve al preset integrado de %s.", arrangementName(cur.layout.arrangement));
+
+    ImGui::Dummy(ImVec2(0, 4));
+    if (ImGui::Button("Guardar##prefsui", ImVec2(120, 0))) {
+        statusMsg = savePreferences(prefsPath, prefs) ? "Guardado. Se usará al abrir Iron3D."
+                                                      : "Error al guardar las preferencias.";
+    }
+    ImGui::SameLine();
+    ImGui::TextDisabled("Preset activo: %s", cur.name.c_str());
+    if (!statusMsg.empty()) ImGui::TextUnformatted(statusMsg.c_str());
+}
+
+void drawPreferencesDialog(RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath) {
+    if (!g.showPrefs) return;
+    static std::string statusMsg;
+    ImGui::SetNextWindowSize(ImVec2(900, 640), ImGuiCond_Appearing);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::Begin("Preferencias", &g.showPrefs, ImGuiWindowFlags_NoCollapse)) {
+        static int page = 0;
+        const char* pages[] = {"Interfaz", "Visor", "Archivos", "Unidades", "Memoria", "Renderizador"};
+        ImGui::BeginChild("##pages", ImVec2(150, 0), ImGuiChildFlags_Border);
+        for (int i = 0; i < IM_ARRAYSIZE(pages); ++i) {
+            if (i != 0 && i != 1 && i != 5) ImGui::BeginDisabled();
+            if (ImGui::Selectable(pages[i], page == i)) page = i;
+            if (i != 0 && i != 1 && i != 5) ImGui::EndDisabled();
+        }
+        ImGui::EndChild();
+        ImGui::SameLine();
+        ImGui::BeginChild("##page");
+        sectionHeader(pages[page]);
+        if (page == 0) {
+            drawInterfacePage(prefs, prefsPath, statusMsg);
+        } else if (page == 1 || page == 5) {
+
+            ImGui::Text("Backend activo en esta sesión: %s", activeBackend == RendererBackend::Vulkan ? "Vulkan" : "OpenGL");
+            ImGui::TextUnformatted("Backend de render (se aplica al reiniciar):");
+            int idx = prefs.renderBackend == RendererBackend::Vulkan ? 0 : 1;
+            if (ImGui::RadioButton("Vulkan", idx == 0)) prefs.renderBackend = RendererBackend::Vulkan;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("OpenGL", idx == 1)) prefs.renderBackend = RendererBackend::OpenGL;
+            if (ImGui::Button("Guardar")) {
+                statusMsg = savePreferences(prefsPath, prefs) ? "Guardado. Reinicie Iron3D Studio para aplicarlo."
+                                                              : "Error al guardar las preferencias.";
+            }
+            if (!statusMsg.empty()) ImGui::TextUnformatted(statusMsg.c_str());
+        }
+        ImGui::EndChild();
+    }
+    ImGui::End();
+}
+
+void drawMaterialEditor(SceneNode& root, SceneHistory& history, std::vector<Material>& materials) {
+    if (!g.showMatEditor) return;
+    if (g.selectedMat < 0 || (size_t)g.selectedMat >= materials.size()) {
+        g.showMatEditor = false;
+        return;
+    }
+    Material& m = materials[(size_t)g.selectedMat];
+    ImGui::SetNextWindowSize(ImVec2(640, 460), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
+    char title[160];
+    std::snprintf(title, sizeof(title), "Editor de Material  [%s]###mateditor", m.name.c_str());
+    if (ImGui::Begin(title, &g.showMatEditor, ImGuiWindowFlags_NoCollapse)) {
+        ImGui::BeginChild("##left", ImVec2(190, 0), ImGuiChildFlags_Border);
+        const ImVec2 p = ImGui::GetCursorScreenPos();
+        ImGui::GetWindowDrawList()->AddRectFilled(p, ImVec2(p.x + 170, p.y + 150), IM_COL32(30, 30, 30, 255));
+        float previewSpec, previewShin;
+        materialBallSpecShininess(m, previewSpec, previewShin);
+        icons::materialBall(ImGui::GetWindowDrawList(), ImVec2(p.x + 85, p.y + 75), 62,
+                            ImVec4(m.baseColor.x, m.baseColor.y, m.baseColor.z, 1), previewSpec, previewShin);
+        ImGui::Dummy(ImVec2(170, 154));
+        char nameBuf[128];
+        std::snprintf(nameBuf, sizeof(nameBuf), "%s", m.name.c_str());
+        ImGui::SetNextItemWidth(170);
+        if (ImGui::InputText("##mename", nameBuf, sizeof(nameBuf)) && nameBuf[0]) m.name = nameBuf;
+        trackEdit(history, root);
+        ImGui::Separator();
+        struct Ch { const char* name; bool on; bool usable; };
+        const Ch channels[] = {{"Color", true, true}, {"Difusión", false, false}, {"Luminancia", false, false},
+                               {"Transparencia", false, false}, {"Reflectancia", true, true}, {"Entorno", false, false},
+                               {"Niebla", false, false}, {"Relieve", false, false}, {"Normales", false, false},
+                               {"Alfa", false, false}, {"Fosforescencia", false, false},
+                               {"Desplazamiento", false, false}, {nullptr, false, false}, {"Editor", false, false},
+                               {"Iluminación", false, false}, {"Asignación", false, true}};
+        for (int i = 0; i < IM_ARRAYSIZE(channels); ++i) {
+            if (!channels[i].name) {
+                ImGui::Separator();
+                continue;
+            }
+            ImGui::PushID(i);
+            bool on = channels[i].on;
+            ImGui::BeginDisabled();
+            ImGui::Checkbox("##on", &on);
+            ImGui::EndDisabled();
+            ImGui::SameLine();
+            const bool act = g.matEditorChannel == i;
+            if (act) ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ColorConvertU32ToFloat4(kAmber));
+            if (!channels[i].usable) ImGui::BeginDisabled();
+            if (ImGui::Selectable(channels[i].name, act)) g.matEditorChannel = i;
+            if (!channels[i].usable) ImGui::EndDisabled();
+            if (act) ImGui::PopStyleColor();
+            ImGui::PopID();
+        }
+        ImGui::EndChild();
+        ImGui::SameLine();
+        ImGui::BeginChild("##right");
+        g_labelW = 150.0f;
+        if (g.matEditorChannel == 0) {
+            sectionHeader("Color");
+            ImGui::ColorPicker3("##picker", &m.baseColor.x,
+                                ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_NoSidePreview);
+            trackEdit(history, root);
+            roFloat("Brillo", 100.0f, "%.0f %%");
+            roCombo("Modelo", "Lambertiano");
+        } else if (g.matEditorChannel == 4) {
+            sectionHeader("Reflectancia — PBR (Metallic/Roughness)");
+            ImGui::TextDisabled("  Capas:  GGX (Cook-Torrance)");
+            propLabel("Metálico");
+            float metallicPct = m.metallic * 100.0f;
+            ImGui::SetNextItemWidth(fieldWidth(220));
+            if (ImGui::SliderFloat("##metallic", &metallicPct, 0, 100, "%.0f %%")) m.metallic = metallicPct / 100.0f;
+            trackEdit(history, root);
+            propLabel("Rugosidad");
+            float roughnessPct = m.roughness * 100.0f;
+            ImGui::SetNextItemWidth(fieldWidth(220));
+            if (ImGui::SliderFloat("##roughness", &roughnessPct, 0, 100, "%.0f %%")) m.roughness = roughnessPct / 100.0f;
+            trackEdit(history, root);
+        } else {
+            sectionHeader("Asignación");
+            std::vector<SceneNode*> users;
+            collectUsers(root, g.selectedMat, users);
+            if (users.empty()) ImGui::TextDisabled("  Ningún objeto usa este material.");
+            for (SceneNode* u : users) ImGui::BulletText("%s", u->name().c_str());
+        }
+        ImGui::EndChild();
+    }
+    ImGui::End();
+}
+
+void drawAboutDialog() {
+    if (!g.showAbout) return;
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::Begin("Acerca de Iron3D Studio", &g.showAbout, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
+        if (g_fontBold) ImGui::PushFont(g_fontBold);
+        ImGui::TextUnformatted("Iron3D Studio");
+        if (g_fontBold) ImGui::PopFont();
+        ImGui::TextUnformatted("Static Forge");
+        ImGui::Separator();
+        ImGui::TextDisabled("Interfaz inspirada en el flujo de trabajo de Cinema 4D R19.");
+        ImGui::TextDisabled("Cinema 4D es una marca de Maxon; Iron3D no está afiliado a Maxon.");
+    }
     ImGui::End();
 }
 
 } // namespace
 
+// Mayus+clic en el visor: anade o quita el objeto de la seleccion y devuelve el
+// nuevo objeto activo (main.cpp hace el picking, la seleccion vive aqui).
+SceneNode* toggleViewportSelection(SceneNode& root, SceneNode* hit, SceneNode* active) {
+    if (!hit) return active;
+    if (g.selIds.count(hit->id()) && g.selIds.size() > 1) {
+        g.selIds.erase(hit->id());
+        SceneNode* next = (hit == active) ? firstSelected(root) : active;
+        g.lastSelectedId = next ? next->id() : -1;
+        return next;
+    }
+    g.selIds.insert(hit->id());
+    g.lastSelectedId = hit->id();
+    return hit;
+}
+
+int selectionCount() { return (int)g.selIds.size(); }
+
+// Centro de la seleccion en mundo: media de las posiciones de los objetos
+// seleccionados (donde C4D planta el gizmo con varios activos).
+glm::vec3 selectionPivot(SceneNode& root, SceneNode* active) {
+    std::vector<SceneNode*> sel;
+    collectSelected(root, sel);
+    if (sel.empty()) return active ? glm::vec3(active->worldMatrix()[3]) : glm::vec3(0.0f);
+    glm::vec3 sum(0.0f);
+    for (SceneNode* n : sel) sum += glm::vec3(n->worldMatrix()[3]);
+    return sum / (float)sel.size();
+}
+
+// Reparte un paso del arrastre del gizmo al resto de la seleccion: los demas
+// copian la rotacion y la escala del objeto activo, y TODOS (el activo
+// incluido) orbitan alrededor del pivote comun, como en C4D.
+void applySelectionDrag(SceneNode& root, SceneNode* active, const glm::vec3& pivot,
+                        const glm::vec3& worldDelta, const glm::vec3& rotDeltaDeg,
+                        const glm::vec3& scaleRatio) {
+    if (g.selIds.size() < 2) return;
+    const bool moving = worldDelta != glm::vec3(0.0f);
+    const bool rotating = rotDeltaDeg != glm::vec3(0.0f);
+    const bool scaling = scaleRatio != glm::vec3(1.0f);
+    if (!moving && !rotating && !scaling) return;
+    // Misma composicion que SceneNode::localMatrix (rz * ry * rx).
+    glm::mat4 r(1.0f);
+    r = glm::rotate(r, glm::radians(rotDeltaDeg.z), glm::vec3(0, 0, 1));
+    r = glm::rotate(r, glm::radians(rotDeltaDeg.y), glm::vec3(0, 1, 0));
+    r = glm::rotate(r, glm::radians(rotDeltaDeg.x), glm::vec3(1, 0, 0));
+    const glm::mat3 rot(r);
+    std::vector<SceneNode*> sel;
+    collectSelected(root, sel);
+    for (SceneNode* n : sel) {
+        bool underSelected = false;
+        for (SceneNode* p = n->parent(); p; p = p->parent())
+            if (g.selIds.count(p->id())) { underSelected = true; break; }
+        if (underSelected) continue;  // ya se mueve con su padre seleccionado
+        if (n != active) {
+            n->rotationDeg += rotDeltaDeg;
+            n->scale *= scaleRatio;
+        }
+        const glm::vec3 world(n->worldMatrix()[3]);
+        glm::vec3 target = world;
+        if (rotating || scaling) target = pivot + rot * ((world - pivot) * scaleRatio);
+        if (n != active && moving) target += worldDelta;
+        if (target == world) continue;
+        n->position = glm::vec3(glm::inverse(n->parentWorldMatrix()) * glm::vec4(target, 1.0f));
+    }
+}
+
+// Arrastrar el gizmo mueve TODA la seleccion: el objeto activo lo mueve el
+// gizmo y el resto recibe aqui el mismo desplazamiento en mundo (saltando los
+// que cuelgan de otro seleccionado, que ya se mueven con su padre).
+void applySelectionDelta(SceneNode& root, SceneNode* active, const glm::vec3& worldDelta) {
+    if (g.selIds.size() < 2 || worldDelta == glm::vec3(0.0f)) return;
+    std::vector<SceneNode*> sel;
+    collectSelected(root, sel);
+    for (SceneNode* n : sel) {
+        if (n == active) continue;
+        bool underSelected = false;
+        for (SceneNode* p = n->parent(); p; p = p->parent())
+            if (g.selIds.count(p->id())) { underSelected = true; break; }
+        if (underSelected) continue;
+        const glm::mat3 inv = glm::inverse(glm::mat3(n->parentWorldMatrix()));
+        n->position += inv * worldDelta;
+    }
+}
+
+// Fuentes del sistema (seccion 12 de la referencia), con tildes (Latin-1).
+// Solo hace falta una vez -- a diferencia de los colores, el tema no cambia
+// la tipografia, asi que esto no forma parte de applyTheme().
+void loadC4DFonts() {
+    ImGuiIO& io = ImGui::GetIO();
+    const char* regular[] = {"C:/Windows/Fonts/segoeui.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                             "/usr/share/fonts/TTF/DejaVuSans.ttf"};
+    const char* bold[] = {"C:/Windows/Fonts/segoeuib.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                          "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf"};
+    for (const char* f : regular) {
+        std::error_code ec;
+        if (std::filesystem::exists(f, ec) && io.Fonts->AddFontFromFileTTF(f, 15.0f)) break;
+    }
+    for (const char* f : bold) {
+        std::error_code ec;
+        if (std::filesystem::exists(f, ec)) {
+            g_fontBold = io.Fonts->AddFontFromFileTTF(f, 15.0f);
+            break;
+        }
+    }
+    if (io.Fonts->Fonts.empty()) io.Fonts->AddFontDefault();
+}
+
+namespace {
+ImU32 shadeU32(const glm::vec3& base, float delta) {
+    const glm::vec3 c = glm::clamp(base + glm::vec3(delta), glm::vec3(0.0f), glm::vec3(1.0f)) * 255.0f;
+    return IM_COL32((int)(c.x + 0.5f), (int)(c.y + 0.5f), (int)(c.z + 0.5f), 255);
+}
+} // namespace
+
+// Aplica un preset de interfaz entero: recalcula ImGuiStyle::Colors[] y la
+// paleta ImU32 de dibujado custom (kAmber/kStatusBg/etc.) a partir de los
+// colores semilla, las metricas de estilo (redondeo, padding) y la
+// disposicion/nombres de los paneles que usa drawMainUi. Se llama al arranque
+// con el preset guardado en Preferencias y cada vez que Core cambia algo en
+// Preferencias > Interfaz (vista previa en vivo).
+void applyPreset(const UiPreset& preset) {
+    g_preset = preset;
+    g_names = &panelNames(preset.layout.arrangement);
+    const UiTheme& theme = preset.theme;
+    // Cromo: mismos grises que los literales de antes con el fondo C4D
+    // (#3C3C3C -> 78, 52, 120, 48).
+    kTabOn = shadeU32(theme.panelBg, 78.0f / 255.0f - 0.235f);
+    kTabOff = shadeU32(theme.panelBg, 52.0f / 255.0f - 0.235f);
+    kGrip = shadeU32(theme.panelBg, 120.0f / 255.0f - 0.235f);
+    kIconGutter = shadeU32(theme.panelBg, 48.0f / 255.0f - 0.235f);
+
+    static bool fontsLoaded = false;
+    if (!fontsLoaded) {
+        loadC4DFonts();
+        fontsLoaded = true;
+    }
+
+    const DerivedPalette pal = derivePalette(theme);
+    kAmber = pal.amberU32;
+    kToolBlue = pal.toolBlueU32;
+    kTabActive = pal.tabActiveU32;
+    kSelOrange = pal.selOrangeU32;
+    kHoverRow = pal.hoverRowU32;
+    kTextCol = pal.textColU32;
+    kTextDim = pal.textDimU32;
+    kBorderDark = pal.borderDarkU32;
+    kBorderLight = pal.borderLightU32;
+    kSectionBg = pal.sectionBgU32;
+    kStatusBg = pal.statusBgU32;
+    kRulerBg = pal.rulerBgU32;
+    kPlayhead = pal.playheadU32;
+
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    ImVec4* c = style.Colors;
+
+    const ImVec4& panelBg = pal.panelBg;
+    const ImVec4& fieldBg = pal.fieldBg;
+    const ImVec4& border = pal.border;
+    const ImVec4& text = pal.text;
+    const ImVec4& textDisabled = pal.textDisabled;
+    const ImVec4& amber = pal.amber;
+    const ImVec4& amberHover = pal.amberHover;
+    const ImVec4& toolBlue = pal.toolBlue;
+    const ImVec4& selection = pal.selection;
+
+    const StyleMetrics& sm = preset.style;
+    style.WindowRounding = sm.windowRounding;
+    style.ChildRounding = 0.0f;
+    style.FrameRounding = sm.frameRounding;
+    style.PopupRounding = sm.popupRounding;
+    style.GrabRounding = sm.grabRounding;
+    style.TabRounding = sm.tabRounding;
+    style.ScrollbarRounding = std::max(2.0f, sm.frameRounding);
+    style.WindowBorderSize = 1.0f;
+    style.ChildBorderSize = 1.0f;
+    style.FrameBorderSize = 0.0f;
+    style.PopupBorderSize = 1.0f;
+    style.WindowPadding = ImVec2(6, 6);
+    style.FramePadding = ImVec2(sm.framePadX, sm.framePadY);
+    style.ItemSpacing = ImVec2(6, 4);
+    style.ItemInnerSpacing = ImVec2(5, 4);
+    style.ScrollbarSize = 12.0f;
+    style.GrabMinSize = 8.0f;
+    style.WindowMenuButtonPosition = ImGuiDir_None;
+    style.SeparatorTextBorderSize = 1.0f;
+
+    c[ImGuiCol_Text] = text;
+    c[ImGuiCol_TextDisabled] = textDisabled;
+    c[ImGuiCol_WindowBg] = panelBg;
+    c[ImGuiCol_ChildBg] = ImVec4(0, 0, 0, 0);
+    c[ImGuiCol_PopupBg] = pal.popupBg;
+    c[ImGuiCol_Border] = border;
+    c[ImGuiCol_FrameBg] = fieldBg;
+    c[ImGuiCol_FrameBgHovered] = pal.frameBgHovered;
+    c[ImGuiCol_FrameBgActive] = pal.frameBgActive;
+    c[ImGuiCol_TitleBg] = pal.titleBg;
+    c[ImGuiCol_TitleBgActive] = pal.titleBgActive;
+    c[ImGuiCol_TitleBgCollapsed] = panelBg;
+    c[ImGuiCol_MenuBarBg] = pal.menuBarBg;
+    c[ImGuiCol_ScrollbarBg] = pal.scrollbarBg;
+    c[ImGuiCol_ScrollbarGrab] = pal.scrollbarGrab;
+    c[ImGuiCol_ScrollbarGrabHovered] = pal.scrollbarGrabHovered;
+    c[ImGuiCol_ScrollbarGrabActive] = amber;
+    c[ImGuiCol_Button] = pal.buttonCol;
+    c[ImGuiCol_ButtonHovered] = pal.buttonHovered;
+    c[ImGuiCol_ButtonActive] = toolBlue;
+    c[ImGuiCol_Header] = selection;
+    c[ImGuiCol_HeaderHovered] = pal.headerHovered;
+    c[ImGuiCol_HeaderActive] = selection;
+    c[ImGuiCol_Tab] = panelBg;
+    c[ImGuiCol_TabHovered] = amberHover;
+    c[ImGuiCol_TabSelected] = amber;
+    c[ImGuiCol_TabDimmed] = panelBg;
+    c[ImGuiCol_TabDimmedSelected] = pal.tabDimmedSelected;
+    c[ImGuiCol_Separator] = border;
+    c[ImGuiCol_SeparatorHovered] = amber;
+    c[ImGuiCol_SeparatorActive] = amber;
+    c[ImGuiCol_CheckMark] = amber;
+    c[ImGuiCol_SliderGrab] = amber;
+    c[ImGuiCol_SliderGrabActive] = amberHover;
+    c[ImGuiCol_TableBorderLight] = border;
+    c[ImGuiCol_TableBorderStrong] = border;
+    c[ImGuiCol_DragDropTarget] = amber;
+    c[ImGuiCol_NavHighlight] = amber;
+    c[ImGuiCol_TextSelectedBg] = pal.textSelectedBg;
+    c[ImGuiCol_ModalWindowDimBg] = ImVec4(0, 0, 0, 0.35f);
+}
+
 void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
                  const std::filesystem::path& scenesDir, SceneHistory& history, float framerate,
                  RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath,
-                 std::vector<Material>& materials) {
-    SceneNode* toDelete = nullptr;
+                 std::vector<Material>& materials, OrbitalCamera& camera, ViewportState& viewport) {
+    g.hint.clear();
 
-    handleGlobalShortcuts(gizmoMode, root, selected, history);
-    drawMenuBar(root, selected, history);
-
-    // Layout fijo estilo C4D: toda la medida sale del viewport principal
-    // cada frame, asi que se adapta solo al redimensionar la ventana (igual
-    // que el resto de la app, ver resizeIfNeeded en main.cpp).
-    ImGuiViewport* vp = ImGui::GetMainViewport();
-    const float menuBarH = ImGui::GetFrameHeight();
-    const float toolbarH = 34.0f;
-    const float statusH = 30.0f;
-    const float rightW = std::min(std::max(vp->Size.x * 0.24f, 300.0f), 380.0f);
-    // 300px minimo: con menos, las 4 pestanas (Crear/Editar/Funcion/Textura)
-    // se amontonan y se solapan visualmente -- visto al comprobarlo en vivo.
-    const float createW = std::min(std::max(vp->Size.x * 0.22f, 300.0f), 380.0f);
-    // 210px: pestana + 5 botones de primitiva (Cubo/Esfera/Plano/Luz/Nulo)
-    // completos sin tener que hacer scroll -- con 150 el ultimo quedaba
-    // cortado, visto al comprobarlo en vivo.
-    const float createH = 210.0f;
-
-    const float contentTop = vp->Pos.y + menuBarH + toolbarH;
-    const float contentBottom = vp->Pos.y + vp->Size.y - statusH;
-    const float contentH = contentBottom - contentTop;
-    const float objectsH = contentH * 0.45f;
-
-    drawIconToolbar(gizmoMode, root, selected, history, activeBackend,
-                     ImVec2(vp->Pos.x, vp->Pos.y + menuBarH), ImVec2(vp->Size.x, toolbarH));
-    drawStatusBar(framerate, ImVec2(vp->Pos.x, vp->Pos.y + vp->Size.y - statusH), ImVec2(vp->Size.x, statusH));
-    drawCreatePanel(root, selected, history, materials, ImVec2(vp->Pos.x, contentBottom - createH),
-                     ImVec2(createW, createH));
-
-    ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + vp->Size.x - rightW, contentTop), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(rightW, objectsH), ImGuiCond_Always);
-    ImGui::Begin("Gestor de Objetos", nullptr,
-                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-    drawNodeTree(root, selected, toDelete, root, history);
-    ImGui::End();
-
-    ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + vp->Size.x - rightW, contentTop + objectsH), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(rightW, contentH - objectsH), ImGuiCond_Always);
-    drawAttributesPanel(selected, root, history, materials);
-
-    drawScenePanel(root, selected, scenesDir, history, materials, &g_showScenePanel);
-    drawPreferencesPanel(activeBackend, prefs, prefsPath, &g_showPreferencesPanel);
-
-    if (toDelete && toDelete->parent()) {
-        history.commitBefore(root);
-        toDelete->parent()->removeChild(toDelete); // tras esta linea `toDelete` ya no existe
-        selected = nullptr; // evita un puntero colgante si se borro el seleccionado o un ancestro suyo
+    // Seleccionar un objeto (en el visor o en el Gestor) devuelve el Gestor de
+    // Atributos al objeto, como en C4D.
+    const int selId = selected ? selected->id() : -1;
+    if (selId != g.lastSelectedId) {
+        if (selected && g.focus != AttrFocus::Tag) g.focus = AttrFocus::Object;
+        if (!selected && g.focus == AttrFocus::Tag) g.focus = AttrFocus::Object;
+        g.lastSelectedId = selId;
+        // Si el cambio no viene de un Ctrl/Mayus+clic, la seleccion pasa a ser solo este.
+        if (selId < 0) g.selIds.clear();
+        else if (!g.selIds.count(selId)) { g.selIds.clear(); g.selIds.insert(selId); }
+        viewport.renderView = false;  // cambiar la seleccion redibuja el visor (adios render)
     }
+
+    // Reproduccion de la Linea de Tiempo (sin animacion todavia: solo avanza
+    // el fotograma, con el FPS del proyecto).
+    if (g.playDir != 0) {
+        g.frame += ImGui::GetIO().DeltaTime * (float)g.fps * (float)g.playDir;
+        const float lo = (float)g.previewMin, hi = (float)g.previewMax;
+        if (g.frame > hi) g.frame = g.loop ? lo : hi;
+        if (g.frame < lo) g.frame = g.loop ? hi : lo;
+    }
+    g.frame = std::clamp(g.frame, (float)g.minFrame, (float)g.maxFrame);
+    g.previewMin = std::clamp(g.previewMin, g.minFrame, g.maxFrame);
+    g.previewMax = std::clamp(g.previewMax, g.previewMin, g.maxFrame);
+
+    handleShortcuts(root, selected, gizmoMode, history, materials, camera, viewport);
+    drawMainMenu(root, selected, gizmoMode, history, materials, camera, viewport);
+
+    // Layout de paneles segun el preset de interfaz (UiPreset.cpp,
+    // computeLayout), recalculado cada frame. Con el preset C4D salen los
+    // mismos numeros de siempre (Entorno de Arranque, seccion 1).
+    const ImGuiViewport* mv = ImGui::GetMainViewport();
+    const float menuH = ImGui::GetFrameHeight();
+    const float statusH = 22.0f;
+    const float vpHeaderH = ImGui::GetFrameHeight() + 2.0f;
+    const LayoutRects L = computeLayout(g_preset.layout, mv->Pos, mv->Size, menuH, statusH);
+    const PanelNames& pn = names();
+
+    drawTopToolbar(root, selected, gizmoMode, history, viewport, L.top.pos, L.top.size);
+    drawLeftToolbar(L.left.pos, L.left.size);
+
+    drawViewportHeader(root, selected, camera, viewport, L.viewport.pos, ImVec2(L.viewport.size.x, vpHeaderH));
+    viewport.x = L.viewport.pos.x;
+    viewport.y = L.viewport.pos.y + vpHeaderH;
+    viewport.w = std::max(1.0f, L.viewport.size.x);
+    viewport.h = std::max(1.0f, L.viewport.size.y - vpHeaderH);
+    drawViewportOverlay(camera, viewport, root);
+
+    drawObjectManager(root, selected, history, materials, L.objects.pos, L.objects.size);
+    drawAttributesManager(root, selected, history, materials, L.attributes.pos, L.attributes.size);
+    if (g_preset.layout.verticalTabs) {
+        if (L.objTabs.visible() && pn.topTabCount > 0)
+            drawVerticalTabs(L.objTabs.pos, L.objTabs.size, pn.topTabs, pn.topTabCount, 0);
+        if (L.attrTabs.visible() && pn.sideTabCount > 0)
+            drawVerticalTabs(L.attrTabs.pos, L.attrTabs.size, pn.sideTabs, pn.sideTabCount, 0);
+    }
+
+    drawTimeline(L.timeline.pos, L.timeline.size);
+    drawMaterialManager(root, selected, history, materials, L.materials.pos, L.materials.size);
+    drawCoordinatesManager(root, selected, history, L.coords.pos, L.coords.size);
+
+    drawSceneDialog(root, selected, scenesDir, history, materials);
+    drawPreferencesDialog(activeBackend, prefs, prefsPath);
+    drawMaterialEditor(root, history, materials);
+    drawAboutDialog();
+
+    drawStatusBar(framerate, gizmoMode, viewport, activeBackend, L.status.pos, L.status.size);
 }
+
+void drawIconSheet(ViewportState& viewport) {
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.w = 1.0f;
+    viewport.h = 1.0f;
+    const ImGuiViewport* mv = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(mv->Pos);
+    ImGui::SetNextWindowSize(mv->Size);
+    ImGui::Begin("##iconsheet", nullptr, kPanelFlags);
+    const int total = (int)Icon::Count_;
+    ImGui::Text("Iron3D Studio - hoja de iconos (%d)", total);
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const float cellW = 132.0f, cellH = 30.0f, iconS = 20.0f;
+    const int cols = std::max(1, (int)(ImGui::GetContentRegionAvail().x / cellW));
+    const ImVec2 o = ImGui::GetCursorScreenPos();
+    for (int i = 0; i < total; ++i) {
+        const ImVec2 p(o.x + (float)(i % cols) * cellW, o.y + (float)(i / cols) * cellH);
+        dl->AddRectFilled(p, ImVec2(p.x + iconS + 6, p.y + iconS + 6), kIconGutter);
+        icons::draw(dl, (Icon)i, ImVec2(p.x + 3, p.y + 3), iconS, true);
+        dl->AddText(ImVec2(p.x + iconS + 10, p.y + 6), kTextCol, icons::name((Icon)i));
+    }
+    ImGui::Dummy(ImVec2((float)cols * cellW, (float)((total + cols - 1) / cols) * cellH));
+    ImGui::End();
+}
+
+void openPreferencesDialog() { g.showPrefs = true; }
 
 } // namespace iron3d

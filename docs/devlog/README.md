@@ -1,0 +1,9 @@
+# Notas de desarrollo de Iron3D Studio
+
+Qué hemos hecho, por qué y qué falta, contado sin prisas. La lista seca de cambios está
+en [`CHANGELOG.md`](../../CHANGELOG.md). Estas mismas notas salen resumidas en
+[staticforge.me/i3ds.html](https://staticforge.me/i3ds.html#notas).
+
+- **2026-11-04** — [Cada icono, el suyo, y cinco formas de vestir la interfaz](2026-11-04-iconos-y-presets.md)
+- **2026-11-03** — [Oclusión ambiental y colores a tu gusto](2026-11-03-ssao-y-colores.md)
+- **2026-10-30** — [Materiales PBR, sombras y selección múltiple](2026-10-30-pbr-sombras-seleccion.md)

@@ -27,10 +27,21 @@ public:
     void resizeIfNeeded(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device,
                          uint32_t queueFamily, int fbWidth, int fbHeight);
 
-    // Adquiere imagen, espera el fence del frame, abre el command buffer y el
-    // render pass. Devuelve VK_NULL_HANDLE si hay que saltarse el frame (p.ej.
-    // swapchain fuera de fecha -- ya se marco requestRebuild() internamente).
+    // Adquiere imagen, espera el fence del frame y abre el command buffer
+    // (vkBeginCommandBuffer) -- YA NO abre el render pass principal aqui (ver
+    // beginRenderPass() abajo): entre esto y abrirlo hay que dejar hueco para
+    // pasadas previas que necesitan el command buffer abierto pero ningun
+    // render pass en marcha todavia (Fase render 2, mapa de sombras -- Vulkan
+    // no permite anidar/cambiar de render pass sin cerrar el actual). Devuelve
+    // VK_NULL_HANDLE si hay que saltarse el frame (p.ej. swapchain fuera de
+    // fecha -- ya se marco requestRebuild() internamente).
     VkCommandBuffer beginFrame(VkDevice device);
+
+    // Abre el render pass principal (color+profundidad) sobre el command
+    // buffer que devolvio beginFrame() y fija su viewport/scissor a pantalla
+    // completa (el caller puede estrechar despues con vkCmdSetViewport/Scissor
+    // propios, como ya hace VulkanRenderer para el rectangulo del visor 3D).
+    void beginRenderPass(VkCommandBuffer cmd);
 
     // Cierra el render pass (tras que el caller haya grabado ImGui_ImplVulkan_RenderDrawData
     // y cualquier otro dibujado), envia el command buffer y presenta.

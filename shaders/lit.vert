@@ -7,12 +7,14 @@ layout(push_constant) uniform PushConstants {
     mat4 model;
     mat4 mvp;
     vec4 lightPosAndAmbient;
-    vec4 eyePosAndShininess;
-    vec4 materialDiffuseSpec;
+    vec4 eyePosAndRoughness;
+    vec4 baseColorAndMetallic;
+    mat4 lightViewProj; // Fase render 2: posicion del fragmento en espacio de la luz
 } pc;
 
 layout(location = 0) out vec3 fragNormalWS;
 layout(location = 1) out vec3 fragPosWS;
+layout(location = 2) out vec4 fragPosLightSpace;
 
 void main() {
     vec4 worldPos = pc.model * vec4(inPosition, 1.0);
@@ -21,4 +23,5 @@ void main() {
     // ese caso) -- simplificacion deliberada de esta fase, ver LitPipeline.h.
     fragNormalWS = normalize(mat3(pc.model) * inNormal);
     fragPosWS = worldPos.xyz;
+    fragPosLightSpace = pc.lightViewProj * worldPos;
 }

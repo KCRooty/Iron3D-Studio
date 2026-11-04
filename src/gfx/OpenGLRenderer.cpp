@@ -212,6 +212,8 @@ void OpenGLRenderer::shutdown() {
     gl::glDeleteBuffers(1, &gizmoLineVbo_);
     gl::glDeleteVertexArrays(1, &gizmoTriVao_);
     gl::glDeleteBuffers(1, &gizmoTriVbo_);
+    gl::glDeleteVertexArrays(1, &gridVao_);
+    gl::glDeleteBuffers(1, &gridVbo_);
     gl::glDeleteProgram(program_);
     gl::glDeleteProgram(litProgram_);
 
@@ -243,6 +245,7 @@ void OpenGLRenderer::createGizmoBuffers() {
     };
     setup(gizmoLineVao_, gizmoLineVbo_);
     setup(gizmoTriVao_, gizmoTriVbo_);
+    setup(gridVao_, gridVbo_);
 }
 
 MeshHandle OpenGLRenderer::createMesh(const MeshData& data) {
@@ -282,10 +285,44 @@ bool OpenGLRenderer::beginFrame() {
     gl::glViewport(0, 0, width_, height_);
     gl::glClearColor(clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]);
     gl::glClear(gl::GL_COLOR_BUFFER_BIT | gl::GL_DEPTH_BUFFER_BIT);
+    // GL cuenta Y desde abajo; el rectangulo llega con origen arriba-izquierda.
+    if (vpW_ > 0 && vpH_ > 0) gl::glViewport(vpX_, height_ - (vpY_ + vpH_), vpW_, vpH_);
     return true;
 }
 
-void OpenGLRenderer::setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS) {
+// Sin sombras en OpenGL (ver ROADMAP_RENDER.md) -- beginFrame() ya deja GL
+// listo para dibujar, asi que las cuatro son no-ops.
+void OpenGLRenderer::beginShadowPass(const glm::mat4& /*lightViewProj*/) {}
+void OpenGLRenderer::drawMeshShadow(MeshHandle /*mesh*/, const glm::mat4& /*model*/) {}
+void OpenGLRenderer::endShadowPass() {}
+// Sin SSAO en OpenGL (mismo criterio que las sombras arriba) -- no-ops.
+void OpenGLRenderer::beginGBufferPass(const glm::mat4& /*view*/, const glm::mat4& /*proj*/) {}
+void OpenGLRenderer::drawMeshGBuffer(MeshHandle /*mesh*/, const glm::mat4& /*model*/) {}
+void OpenGLRenderer::endGBufferPass() {}
+void OpenGLRenderer::beginMainPass() {}
+
+void OpenGLRenderer::setViewportRect(int x, int y, int width, int height) {
+    vpX_ = x < 0 ? 0 : x;
+    vpY_ = y < 0 ? 0 : y;
+    vpW_ = width < 0 ? 0 : width;
+    vpH_ = height < 0 ? 0 : height;
+}
+
+void OpenGLRenderer::drawGrid(const std::vector<Vertex>& lineVerts, const glm::mat4& viewProj) {
+    if (lineVerts.empty()) return;
+    gl::glDisable(gl::GL_DEPTH_TEST);
+    gl::glUseProgram(program_);
+    gl::glUniformMatrix4fv(uMvpLocation_, 1, gl::GL_FALSE_, &viewProj[0][0]);
+    const size_t n = std::min(lineVerts.size(), (size_t)kGizmoMaxVertices);
+    gl::glBindVertexArray(gridVao_);
+    gl::glBindBuffer(gl::GL_ARRAY_BUFFER, gridVbo_);
+    gl::glBufferSubData(gl::GL_ARRAY_BUFFER, 0, (gl::GLsizeiptr)(n * sizeof(Vertex)), lineVerts.data());
+    gl::glDrawArrays(gl::GL_LINES, 0, (gl::GLsizei)n);
+    gl::glEnable(gl::GL_DEPTH_TEST);
+}
+
+void OpenGLRenderer::setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
+                                  const glm::mat4& /*lightViewProj*/) {
     lightPosWS_ = lightPosWS;
     eyePosWS_ = eyePosWS;
 }
@@ -298,9 +335,16 @@ void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     gl::glUniformMatrix4fv(uLitMvpLoc_, 1, gl::GL_FALSE_, &mvp[0][0]);
     gl::glUniform3fv(uLitLightPosLoc_, 1, &lightPosWS_.x);
     gl::glUniform3fv(uLitEyePosLoc_, 1, &eyePosWS_.x);
-    gl::glUniform3fv(uLitDiffuseLoc_, 1, &material.diffuse.x);
-    gl::glUniform1f(uLitSpecularLoc_, material.specular);
-    gl::glUniform1f(uLitShininessLoc_, material.shininess);
+    // Backend OpenGL = Phong de siempre, sin subir a PBR (decision de Core,
+    // 2026-10-30, ver ROADMAP_RENDER.md: el esfuerzo real de render va a
+    // Vulkan). Aqui solo se aproxima specular/shininess a partir de
+    // metallic/roughness para que el material PBR se vea razonable tambien
+    // en este backend, no para que sea fisicamente correcto.
+    const float specularIntensity = glm::mix(0.2f, 1.0f, material.metallic);
+    const float shininess = glm::mix(96.0f, 4.0f, material.roughness);
+    gl::glUniform3fv(uLitDiffuseLoc_, 1, &material.baseColor.x);
+    gl::glUniform1f(uLitSpecularLoc_, specularIntensity);
+    gl::glUniform1f(uLitShininessLoc_, shininess);
     gl::glBindVertexArray(meshes_[mesh].vao);
     gl::glDrawElements(gl::GL_TRIANGLES, meshes_[mesh].indexCount, gl::GL_UNSIGNED_SHORT, nullptr);
 }

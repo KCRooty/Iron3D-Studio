@@ -294,6 +294,12 @@ VkCommandBuffer SwapchainWindow::beginFrame(VkDevice device) {
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     checkVk(vkBeginCommandBuffer(fd->CommandBuffer, &beginInfo));
 
+    return fd->CommandBuffer;
+}
+
+void SwapchainWindow::beginRenderPass(VkCommandBuffer cmd) {
+    ImGui_ImplVulkanH_Frame* fd = &wd_->Frames[wd_->FrameIndex];
+
     VkClearValue clearValues[2];
     clearValues[0] = wd_->ClearValue;
     clearValues[1].depthStencil = {1.0f, 0};
@@ -305,15 +311,13 @@ VkCommandBuffer SwapchainWindow::beginFrame(VkDevice device) {
     rpInfo.renderArea.extent.height = (uint32_t)wd_->Height;
     rpInfo.clearValueCount = 2;
     rpInfo.pClearValues = clearValues;
-    vkCmdBeginRenderPass(fd->CommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     // Viewport/scissor dinamicos (BasicPipeline los declara VK_DYNAMIC_STATE_*).
     VkViewport viewport{0.0f, 0.0f, (float)wd_->Width, (float)wd_->Height, 0.0f, 1.0f};
     VkRect2D scissor{{0, 0}, {(uint32_t)wd_->Width, (uint32_t)wd_->Height}};
-    vkCmdSetViewport(fd->CommandBuffer, 0, 1, &viewport);
-    vkCmdSetScissor(fd->CommandBuffer, 0, 1, &scissor);
-
-    return fd->CommandBuffer;
+    vkCmdSetViewport(cmd, 0, 1, &viewport);
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
 }
 
 void SwapchainWindow::endFrame(VkDevice /*device*/, VkQueue queue, ImDrawData* imguiDrawData) {

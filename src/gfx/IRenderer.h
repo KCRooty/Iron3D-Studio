@@ -62,15 +62,61 @@ public:
 
     // true si hay que dibujar este frame; false si hay que saltarselo
     // (minimizada, swapchain fuera de fecha en Vulkan...) -- en ese caso no
-    // llamar a setLighting/drawMesh/drawGizmo/endFrame.
+    // llamar a nada mas de esta lista hasta el siguiente beginFrame().
+    // Ya NO deja el render pass principal abierto (Fase render 2): entre
+    // esto y beginMainPass() es donde va la pasada de sombras (ver abajo),
+    // que en Vulkan necesita el command buffer abierto pero sin ningun
+    // render pass en marcha todavia.
     virtual bool beginFrame() = 0;
 
-    // Estado de iluminacion de ESTE frame (Fase 5): una sola luz puntual +
-    // un termino ambiente fijo, nada de PBR/sombras todavia -- lo minimo
-    // para que la "Luz" de la escena (o el foco de camara de respaldo si no
-    // hay ninguna, ver main.cpp) ilumine algo de verdad. Llamar una vez por
-    // frame, antes de cualquier drawMesh.
-    virtual void setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS) = 0;
+    // Pasada de profundidad desde el punto de vista de la luz (Fase render
+    // 2, shadow mapping): beginShadowPass/drawMeshShadow/endShadowPass se
+    // llaman ANTES de beginMainPass(), una vez por nodo con geometria de la
+    // escena (mismo recorrido que drawScene() en main.cpp, sin material --
+    // solo hace falta profundidad). En OpenGL (sin sombras todavia, ver
+    // ROADMAP_RENDER.md) estos tres son no-ops.
+    virtual void beginShadowPass(const glm::mat4& lightViewProj) = 0;
+    virtual void drawMeshShadow(MeshHandle mesh, const glm::mat4& model) = 0;
+    virtual void endShadowPass() = 0;
+
+    // Pasada de G-buffer para oclusion ambiental en espacio de pantalla
+    // (Fase 3, SSAO -- ver ROADMAP_RENDER.md): beginGBufferPass/
+    // drawMeshGBuffer/endGBufferPass se llaman DESPUES de endShadowPass() y
+    // ANTES de beginMainPass() -- mismo recorrido de escena que la pasada de
+    // sombras (sin material, solo posicion/normal en espacio de vista).
+    // endGBufferPass() ya deja encadenadas las pasadas de SSAO + blur (ver
+    // SsaoPass); el resultado esta listo para que drawMesh() lo muestree.
+    // En OpenGL (sin SSAO, mismo criterio que las sombras) estos tres son
+    // no-ops.
+    virtual void beginGBufferPass(const glm::mat4& view, const glm::mat4& proj) = 0;
+    virtual void drawMeshGBuffer(MeshHandle mesh, const glm::mat4& model) = 0;
+    virtual void endGBufferPass() = 0;
+
+    // Abre el render pass/estado principal de color (en Vulkan; en OpenGL no
+    // hace falta, ya lo dejo listo beginFrame()). Llamar despues de
+    // endGBufferPass(), antes de setViewportRect/drawGrid/drawMesh/drawGizmo.
+    virtual void beginMainPass() = 0;
+
+    // Rectangulo del visor 3D dentro del framebuffer (pixeles, origen
+    // arriba-izquierda). La escena, la cuadricula y el gizmo solo se dibujan
+    // ahi; el resto de la ventana son paneles de ImGui, igual que en C4D.
+    // Se aplica en el siguiente beginFrame().
+    virtual void setViewportRect(int x, int y, int width, int height) = 0;
+
+    // Cuadricula de suelo: lineas en espacio de mundo, sin test de
+    // profundidad y sin escribirla -- llamar ANTES de drawMesh para que la
+    // geometria la tape. Buffer propio, independiente del gizmo.
+    virtual void drawGrid(const std::vector<Vertex>& lineVerts, const glm::mat4& viewProj) = 0;
+
+    // Estado de iluminacion de ESTE frame: una sola luz puntual + un termino
+    // ambiente tipo IBL aproximado (ver lit.frag) -- la "Luz" de la escena
+    // (o el foco de camara de respaldo si no hay ninguna, ver main.cpp).
+    // `lightViewProj` es la misma matriz que beginShadowPass() uso para
+    // rellenar el mapa de sombras (Fase render 2); en OpenGL se ignora
+    // (sin sombras todavia). Llamar una vez por frame, antes de cualquier
+    // drawMesh.
+    virtual void setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
+                              const glm::mat4& lightViewProj) = 0;
     // `model` es la matriz de mundo del nodo (para posicion/normal en espacio
     // de mundo); `mvp` ya trae la proyeccion*vista*mundo para gl_Position --
     // se pasan ambas en vez de reconstruir una desde la otra en el shader.

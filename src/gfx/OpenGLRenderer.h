@@ -34,7 +34,23 @@ public:
     void destroyMesh(MeshHandle handle) override;
 
     bool beginFrame() override;
-    void setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS) override;
+    // Sin sombras en OpenGL (decision de Core, ver ROADMAP_RENDER.md: todo
+    // el esfuerzo real de render va a Vulkan) -- las tres son no-ops, y
+    // beginMainPass() tambien lo es: beginFrame() ya deja GL listo para
+    // dibujar, no hay "render pass" que abrir aparte.
+    void beginShadowPass(const glm::mat4& lightViewProj) override;
+    void drawMeshShadow(MeshHandle mesh, const glm::mat4& model) override;
+    void endShadowPass() override;
+    // Sin SSAO en OpenGL (mismo criterio que las sombras arriba) -- las tres
+    // son no-ops.
+    void beginGBufferPass(const glm::mat4& view, const glm::mat4& proj) override;
+    void drawMeshGBuffer(MeshHandle mesh, const glm::mat4& model) override;
+    void endGBufferPass() override;
+    void beginMainPass() override;
+    void setViewportRect(int x, int y, int width, int height) override;
+    void drawGrid(const std::vector<Vertex>& lineVerts, const glm::mat4& viewProj) override;
+    void setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
+                      const glm::mat4& lightViewProj) override;
     void drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
                   const Material& material) override;
     void drawGizmo(const std::vector<Vertex>& lineVerts, const std::vector<Vertex>& triVerts,
@@ -71,6 +87,8 @@ private:
     static constexpr gl::GLsizei kGizmoMaxVertices = 4096; // igual tope que GizmoMesh (Vulkan)
     gl::GLuint gizmoLineVao_ = 0, gizmoLineVbo_ = 0;
     gl::GLuint gizmoTriVao_ = 0, gizmoTriVbo_ = 0;
+    gl::GLuint gridVao_ = 0, gridVbo_ = 0;
+    int vpX_ = 0, vpY_ = 0, vpW_ = 0, vpH_ = 0; // 0x0 = framebuffer entero
 };
 
 } // namespace iron3d

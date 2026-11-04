@@ -1,5 +1,6 @@
 #include "SceneSerializer.h"
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -35,7 +36,8 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth) {
         << " px=" << node.position.x << " py=" << node.position.y << " pz=" << node.position.z
         << " rx=" << node.rotationDeg.x << " ry=" << node.rotationDeg.y << " rz=" << node.rotationDeg.z
         << " sx=" << node.scale.x << " sy=" << node.scale.y << " sz=" << node.scale.z
-        << " visible=" << (node.visible ? 1 : 0) << " materialIndex=" << node.materialIndex << " {\n";
+        << " editorVis=" << (int)node.editorVis << " renderVis=" << (int)node.renderVis
+        << " materialIndex=" << node.materialIndex << " {\n";
     for (const auto& child : node.children()) writeNode(out, *child, depth + 1);
     out << indent << "}\n";
 }
@@ -43,8 +45,8 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth) {
 void writeMaterials(std::ostream& out, const std::vector<Material>& materials) {
     out << "MATERIALS {\n";
     for (const Material& m : materials) {
-        out << "  MATERIAL name=\"" << m.name << "\" dr=" << m.diffuse.r << " dg=" << m.diffuse.g
-            << " db=" << m.diffuse.b << " specular=" << m.specular << " shininess=" << m.shininess << " {\n  }\n";
+        out << "  MATERIAL name=\"" << m.name << "\" br=" << m.baseColor.r << " bg=" << m.baseColor.g
+            << " bb=" << m.baseColor.b << " metallic=" << m.metallic << " roughness=" << m.roughness << " {\n  }\n";
     }
     out << "}\n";
 }
@@ -86,7 +88,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err) {
     std::string name = node.name();
     PrimitiveType prim = PrimitiveType::None;
     glm::vec3 pos(0.0f), rot(0.0f), scale(1.0f);
-    bool visible = true;
+    VisMode editorVis = VisMode::Default, renderVis = VisMode::Default;
     int materialIndex = -1;
 
     while (!p.atEnd() && p.peek() != "{") {
@@ -107,7 +109,10 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err) {
             else if (key == "sx") scale.x = std::stof(val);
             else if (key == "sy") scale.y = std::stof(val);
             else if (key == "sz") scale.z = std::stof(val);
-            else if (key == "visible") visible = (val != "0");
+            // .iron antiguos: un solo `visible`; 0 = oculto en visor y render.
+            else if (key == "visible") { if (val == "0") editorVis = renderVis = VisMode::Off; }
+            else if (key == "editorVis") editorVis = (VisMode)std::clamp(std::stoi(val), 0, 2);
+            else if (key == "renderVis") renderVis = (VisMode)std::clamp(std::stoi(val), 0, 2);
             else if (key == "materialIndex") materialIndex = std::stoi(val);
         } catch (const std::exception&) {
             err = "valor numerico invalido en '" + tok + "'";
@@ -121,7 +126,8 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err) {
     node.position = pos;
     node.rotationDeg = rot;
     node.scale = scale;
-    node.visible = visible;
+    node.editorVis = editorVis;
+    node.renderVis = renderVis;
     node.materialIndex = materialIndex;
 
     while (!p.atEnd() && p.peek() != "}") {
@@ -143,11 +149,11 @@ bool parseMaterial(Parser& p, Material& out, std::string& err) {
         std::string val = tok.substr(eq + 1);
         try {
             if (key == "name") out.name = unquote(val);
-            else if (key == "dr") out.diffuse.r = std::stof(val);
-            else if (key == "dg") out.diffuse.g = std::stof(val);
-            else if (key == "db") out.diffuse.b = std::stof(val);
-            else if (key == "specular") out.specular = std::stof(val);
-            else if (key == "shininess") out.shininess = std::stof(val);
+            else if (key == "br") out.baseColor.r = std::stof(val);
+            else if (key == "bg") out.baseColor.g = std::stof(val);
+            else if (key == "bb") out.baseColor.b = std::stof(val);
+            else if (key == "metallic") out.metallic = std::stof(val);
+            else if (key == "roughness") out.roughness = std::stof(val);
         } catch (const std::exception&) {
             err = "valor numerico invalido en '" + tok + "'";
             return false;
@@ -212,7 +218,8 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.position = temp.position;
     root.rotationDeg = temp.rotationDeg;
     root.scale = temp.scale;
-    root.visible = temp.visible;
+    root.editorVis = temp.editorVis;
+    root.renderVis = temp.renderVis;
     root.materialIndex = temp.materialIndex;
     root.clearChildren();
     root.adoptChildrenFrom(temp);

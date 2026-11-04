@@ -8,3 +8,9 @@ installer/output/
 __pycache__/
 *.pyc
 .pytest_cache/
+imgui.ini
+desktop.ini
+captura.png
+/*.png
+/*.pdf
+/documentacion_exhaustiva*.md

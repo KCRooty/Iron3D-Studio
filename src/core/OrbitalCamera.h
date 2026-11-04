@@ -25,6 +25,16 @@ public:
     glm::mat4 projectionMatrix(float aspectRatio, bool flipY = true) const;
     glm::vec3 eyePosition() const;
 
+    // Mismas operaciones que los atajos Alt+clic, en pixeles de raton --
+    // tambien las usan los iconos de navegacion de la esquina del visor.
+    void orbit(float dxPixels, float dyPixels);
+    void pan(float dxPixels, float dyPixels);
+    void dolly(float dyPixels);
+    void resetView();
+    // Encuadrar (tecla H / "Encuadrar Geometria" en C4D): centra el objetivo
+    // en `center` a una distancia que deja ver una esfera de radio `radius`.
+    void frame(const glm::vec3& center, float radius);
+
 private:
     glm::vec3 target_{0.0f, 0.0f, 0.0f};
     float distance_ = 4.0f;
