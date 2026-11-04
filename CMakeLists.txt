@@ -81,6 +81,9 @@ add_executable(Iron3DStudio
     src/gfx/BasicPipeline.cpp
     src/gfx/IRenderer.cpp
     src/gfx/VulkanRenderer.cpp
+    src/gfx/ShadowPipeline.cpp
+    src/gfx/ShadowMap.cpp
+    src/gfx/SsaoPass.cpp
     src/gfx/OpenGLRenderer.cpp
     src/gfx/gl/GLLoader.cpp
     src/core/MeshData.cpp
@@ -95,7 +98,15 @@ add_executable(Iron3DStudio
     src/core/Preferences.cpp
     src/core/Material.cpp
     src/gfx/LitPipeline.cpp
-    src/ui/MainUi.cpp)
+    src/ui/MainUi.cpp
+    src/ui/UiTheme.cpp
+    src/ui/C4DIcons.cpp
+    src/ui/IconsSplines.cpp
+    src/ui/IconsGenerators.cpp
+    src/ui/IconsDeformers.cpp
+    src/ui/IconsScene.cpp
+    src/ui/IconsMenus.cpp
+    src/ui/UiPreset.cpp)
 
 target_include_directories(Iron3DStudio PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -112,7 +123,8 @@ target_compile_definitions(Iron3DStudio PRIVATE
     GLM_FORCE_DEPTH_ZERO_TO_ONE)
 
 if(MSVC)
-    target_compile_options(Iron3DStudio PRIVATE /W4)
+    # /utf-8: los textos de la UI llevan tildes (Edición, Selección...).
+    target_compile_options(Iron3DStudio PRIVATE /W4 /utf-8)
 else()
     target_compile_options(Iron3DStudio PRIVATE -Wall -Wextra)
 endif()
@@ -137,7 +149,13 @@ set(SHADER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/basic.vert
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/basic.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/lit.vert
-    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/lit.frag)
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/lit.frag
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadow.vert
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fullscreen.vert
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/gbuffer.vert
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/gbuffer.frag
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/ssao.frag
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/blur.frag)
 
 add_custom_command(TARGET Iron3DStudio POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:Iron3DStudio>/shaders"

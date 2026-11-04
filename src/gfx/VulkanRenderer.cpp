@@ -50,13 +50,19 @@ void VulkanRenderer::init(GLFWwindow* window, int width, int height) {
     // decision en el commit de la Fase 2c (no vale la pena verificar a mano
     // el orden de vertices de cada primitiva nueva).
     const std::filesystem::path shaderDir = exeDirectory() / "shaders";
+    // El ShadowMap y el SsaoPass se crean ANTES que LitPipeline: esta ultima
+    // necesita sus descriptor set layouts para construir el pipeline layout
+    // (set=0 del sampler de sombras, set=1 del mapa de AO).
+    shadowMap_.create(ctx_.device, ctx_.physicalDevice, allocator_, shaderDir);
+    ssaoPass_.create(ctx_.device, ctx_.physicalDevice, allocator_, shaderDir, width, height);
     litPipeline_.create(ctx_.device, ctx_.physicalDevice, swapchain_.renderPass(), shaderDir,
-                         VK_CULL_MODE_NONE);
+                         shadowMap_.descriptorSetLayout(), ssaoPass_.descriptorSetLayout(), VK_CULL_MODE_NONE);
     gizmoLinePipeline_.create(ctx_.device, swapchain_.renderPass(), shaderDir,
                                VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
     gizmoTriPipeline_.create(ctx_.device, swapchain_.renderPass(), shaderDir,
                               VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_CULL_MODE_NONE);
     gizmoMesh_.create(allocator_);
+    gridMesh_.create(allocator_);
 
     ImGui_ImplGlfw_InitForVulkan(window, true);
 
@@ -82,9 +88,12 @@ void VulkanRenderer::shutdown() {
     vkCheck(vkDeviceWaitIdle(ctx_.device), "vkDeviceWaitIdle");
 
     gizmoMesh_.destroy(allocator_);
+    gridMesh_.destroy(allocator_);
     gizmoLinePipeline_.destroy(ctx_.device);
     gizmoTriPipeline_.destroy(ctx_.device);
     litPipeline_.destroy(ctx_.device);
+    shadowMap_.destroy(ctx_.device, allocator_);
+    ssaoPass_.destroy(ctx_.device, allocator_);
     for (auto& mesh : meshes_) mesh.destroy(ctx_.device, allocator_);
     meshes_.clear();
     vmaDestroyAllocator(allocator_);
@@ -99,6 +108,7 @@ void VulkanRenderer::shutdown() {
 void VulkanRenderer::resizeIfNeeded(int fbWidth, int fbHeight) {
     swapchain_.resizeIfNeeded(ctx_.instance, ctx_.physicalDevice, ctx_.device,
                                ctx_.graphicsQueueFamily, fbWidth, fbHeight);
+    ssaoPass_.resize(ctx_.device, ctx_.physicalDevice, allocator_, swapchain_.width(), swapchain_.height());
 }
 
 void VulkanRenderer::setClearColor(float r, float g, float b, float a) {
@@ -119,13 +129,73 @@ void VulkanRenderer::destroyMesh(MeshHandle handle) {
 
 bool VulkanRenderer::beginFrame() {
     if (swapchain_.isMinimized()) return false;
+    // Solo adquiere imagen + abre el command buffer -- el render pass
+    // principal lo abre beginMainPass(), despues de la pasada de sombras
+    // (ver comentario de SwapchainWindow::beginFrame()).
     currentCmd_ = swapchain_.beginFrame(ctx_.device);
     return currentCmd_ != VK_NULL_HANDLE;
 }
 
-void VulkanRenderer::setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS) {
+void VulkanRenderer::beginShadowPass(const glm::mat4& lightViewProj) {
+    lightViewProj_ = lightViewProj;
+    shadowMap_.beginPass(currentCmd_);
+}
+
+void VulkanRenderer::drawMeshShadow(MeshHandle mesh, const glm::mat4& model) {
+    if (mesh >= meshes_.size()) return;
+    shadowMap_.pushLightMvp(currentCmd_, lightViewProj_ * model);
+    meshes_[mesh].draw(currentCmd_);
+}
+
+void VulkanRenderer::endShadowPass() {
+    shadowMap_.endPass(currentCmd_);
+}
+
+void VulkanRenderer::beginGBufferPass(const glm::mat4& view, const glm::mat4& proj) {
+    ssaoPass_.beginGBufferPass(currentCmd_, view, proj);
+}
+
+void VulkanRenderer::drawMeshGBuffer(MeshHandle mesh, const glm::mat4& model) {
+    if (mesh >= meshes_.size()) return;
+    ssaoPass_.drawMeshGBuffer(currentCmd_, model);
+    meshes_[mesh].draw(currentCmd_);
+}
+
+void VulkanRenderer::endGBufferPass() {
+    ssaoPass_.endGBufferPass(currentCmd_);
+}
+
+void VulkanRenderer::beginMainPass() {
+    swapchain_.beginRenderPass(currentCmd_);
+    // ImGui fija su propio viewport/scissor al componer, asi que basta con
+    // fijar el del visor aqui para todo lo que se dibuja antes de endFrame().
+    if (vpW_ > 0 && vpH_ > 0) {
+        VkViewport viewport{(float)vpX_, (float)vpY_, (float)vpW_, (float)vpH_, 0.0f, 1.0f};
+        VkRect2D scissor{{vpX_, vpY_}, {(uint32_t)vpW_, (uint32_t)vpH_}};
+        vkCmdSetViewport(currentCmd_, 0, 1, &viewport);
+        vkCmdSetScissor(currentCmd_, 0, 1, &scissor);
+    }
+}
+
+void VulkanRenderer::setViewportRect(int x, int y, int width, int height) {
+    vpX_ = x < 0 ? 0 : x;
+    vpY_ = y < 0 ? 0 : y;
+    vpW_ = width < 0 ? 0 : width;
+    vpH_ = height < 0 ? 0 : height;
+}
+
+void VulkanRenderer::drawGrid(const std::vector<Vertex>& lineVerts, const glm::mat4& viewProj) {
+    gridMesh_.upload(lineVerts, {});
+    gizmoLinePipeline_.bind(currentCmd_);
+    gizmoLinePipeline_.pushMvp(currentCmd_, viewProj);
+    gridMesh_.drawLines(currentCmd_);
+}
+
+void VulkanRenderer::setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
+                                  const glm::mat4& lightViewProj) {
     lightPosWS_ = lightPosWS;
     eyePosWS_ = eyePosWS;
+    lightViewProj_ = lightViewProj;
 }
 
 void VulkanRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
@@ -135,7 +205,9 @@ void VulkanRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     // drawGizmo cambia de pipeline, asi que el orden de llamadas no puede
     // importar.
     litPipeline_.bind(currentCmd_);
-    litPipeline_.pushConstants(currentCmd_, model, mvp, lightPosWS_, eyePosWS_, material);
+    litPipeline_.bindShadowMap(currentCmd_, shadowMap_.descriptorSet());
+    litPipeline_.bindAoMap(currentCmd_, ssaoPass_.descriptorSet());
+    litPipeline_.pushConstants(currentCmd_, model, mvp, lightPosWS_, eyePosWS_, material, lightViewProj_);
     meshes_[mesh].draw(currentCmd_);
 }
 

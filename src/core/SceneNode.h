@@ -24,6 +24,13 @@ namespace iron3d {
 enum class PrimitiveType { None, Cube, Sphere, Plane, Light };
 const char* primitiveTypeName(PrimitiveType type); // nombre para la UI, en espanol
 
+// Estado de visibilidad de C4D: Por Defecto (gris, hereda del padre),
+// Activado (verde, visible aunque el padre este oculto) o Apagado (rojo).
+enum class VisMode { Default = 0, On = 1, Off = 2 };
+inline bool resolveVisibility(VisMode mode, bool parentVisible) {
+    return mode == VisMode::On ? true : (mode == VisMode::Off ? false : parentVisible);
+}
+
 class SceneNode {
 public:
     explicit SceneNode(std::string name, PrimitiveType primitive = PrimitiveType::None);
@@ -55,7 +62,11 @@ public:
     glm::vec3 position{0.0f, 0.0f, 0.0f};
     glm::vec3 rotationDeg{0.0f, 0.0f, 0.0f}; // Euler XYZ en grados, solo para la UI
     glm::vec3 scale{1.0f, 1.0f, 1.0f};
-    bool visible = true;
+    // Visibilidad como en C4D: dos interruptores independientes (los dos
+    // puntos del Gestor de Objetos), el de arriba para el visor (editor) y
+    // el de abajo para el render. Por Defecto hereda del padre.
+    VisMode editorVis = VisMode::Default;
+    VisMode renderVis = VisMode::Default;
     PrimitiveType primitive = PrimitiveType::None;
     // Indice en el std::vector<Material> global (ver core/Material.h); -1 =
     // sin material asignado (usa Material::defaultMaterial() al dibujar).

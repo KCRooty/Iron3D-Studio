@@ -1,10 +1,17 @@
 #pragma once
 
 // Material basico (Fase 5, Documento Maestro: iluminacion + materiales tras
-// cerrar el bloque "todo junto" de render/instalador/UI). Sin texturas/PBR
-// todavia -- solo los coeficientes de un Phong clasico (difuso + especular +
-// brillo), que es lo minimo para que la Luz de la escena (SceneNode con
-// primitive=Light) ilumine algo de verdad en vez de ser solo un icono.
+// cerrar el bloque "todo junto" de render/instalador/UI).
+//
+// PBR metallic/roughness (2026-10-30, ver ROADMAP_RENDER.md fase 1) en vez
+// del Phong clasico original -- el estandar real de cualquier renderer
+// moderno (Redshift incluido). Por decision de Core, esta fase es SOLO
+// Vulkan: el backend OpenGL se queda en su Phong de siempre (ver
+// OpenGLRenderer.cpp, mapea estos mismos campos a specular/shininess
+// aproximados solo para que siga compilando y se vea razonable, no es un
+// segundo PBR). El formato de escena .iron tambien cambia sin migracion
+// (decision de Core: proyecto en fase temprana, no hay escenas guardadas
+// que proteger).
 //
 // Diseno propio, inspirado en el DESACOPLE real de C4D (BaseMaterial vive en
 // una lista global del documento, no dentro del objeto; el objeto solo
@@ -23,9 +30,9 @@ namespace iron3d {
 
 struct Material {
     std::string name = "Material";
-    glm::vec3 diffuse{0.7f, 0.7f, 0.7f};
-    float specular = 0.2f;    // intensidad especular, 0..1
-    float shininess = 64.0f;  // exponente Phong -- mas alto, brillo mas concentrado
+    glm::vec3 baseColor{0.7f, 0.7f, 0.7f}; // albedo (dielectrico) o color de reflejo (metal)
+    float metallic = 0.0f;                 // 0 = dielectrico, 1 = metal puro
+    float roughness = 0.5f;                // 0 = espejo, 1 = totalmente mate
 
     // Gris neutro usado cuando un nodo no tiene material asignado
     // (materialIndex == -1) o cuando el indice ya no es valido (p.ej. tras

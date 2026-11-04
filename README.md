@@ -22,10 +22,12 @@ compatibilidad con `.c4d`/`.lib4d` y plugins de R19.
 Documento Maestro del proyecto en `V:\ObsidianVault\14-Iron3D-CoalMix\Iron3D_CoalMix_Documento_Maestro_2026-10-27.pdf`
 (resumen en `estado.md` de esa misma carpeta).
 
-Estado (2026-10-28): Fase 1 y Fase 2 (grafo de escena + Gestor de Objetos + gizmo de
-transformación mover/rotar/escalar, sin importación Cineware) completadas y verificadas
-en vivo — ventana Vulkan + ImGui, cubo de prueba, cámara orbital estilo C4D. Ver
-`AGENTS.md` §5 para el stack y `estado.md` del vault para el detalle de cada fase.
+Estado (2026-11-04): en desarrollo temprano, sin versión publicada. Fases 1 y 2 hechas
+(grafo de escena, Gestor de Objetos, gizmo mover/rotar/escalar). Desde entonces: render
+PBR con sombras y SSAO (Vulkan), selección múltiple, modos libres del gizmo, 222 iconos
+propios y presets de interfaz (Cinema 4D, Blender, Maya, 3ds Max, Source Filmmaker).
+Qué se probó y qué no, en [`CHANGELOG.md`](CHANGELOG.md); las notas largas, en
+[`docs/devlog/`](docs/devlog/). Ver `AGENTS.md` §5 para el stack.
 
 ## Estructura
 

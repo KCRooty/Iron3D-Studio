@@ -43,7 +43,8 @@ VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code
 } // namespace
 
 void LitPipeline::create(VkDevice device, VkPhysicalDevice physicalDevice, VkRenderPass renderPass,
-                          const std::filesystem::path& shaderDir, VkCullModeFlags cullMode) {
+                          const std::filesystem::path& shaderDir, VkDescriptorSetLayout shadowSetLayout,
+                          VkDescriptorSetLayout aoSetLayout, VkCullModeFlags cullMode) {
     VkPhysicalDeviceProperties props{};
     vkGetPhysicalDeviceProperties(physicalDevice, &props);
     if (props.limits.maxPushConstantsSize < sizeof(LitPushConstants)) {
@@ -130,7 +131,10 @@ void LitPipeline::create(VkDevice device, VkPhysicalDevice physicalDevice, VkRen
     pushConstant.offset = 0;
     pushConstant.size = sizeof(LitPushConstants);
 
+    const VkDescriptorSetLayout setLayouts[2] = {shadowSetLayout, aoSetLayout};
     VkPipelineLayoutCreateInfo layoutInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+    layoutInfo.setLayoutCount = 2;
+    layoutInfo.pSetLayouts = setLayouts;
     layoutInfo.pushConstantRangeCount = 1;
     layoutInfo.pPushConstantRanges = &pushConstant;
     vkCheck(vkCreatePipelineLayout(device, &layoutInfo, nullptr, &layout_), "vkCreatePipelineLayout (lit)");
@@ -170,15 +174,24 @@ void LitPipeline::bind(VkCommandBuffer cmd) const {
 
 void LitPipeline::pushConstants(VkCommandBuffer cmd, const glm::mat4& model, const glm::mat4& mvp,
                                  const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
-                                 const Material& material) const {
+                                 const Material& material, const glm::mat4& lightViewProj) const {
     LitPushConstants pc{};
     pc.model = model;
     pc.mvp = mvp;
     pc.lightPosAndAmbient = glm::vec4(lightPosWS, kAmbientStrength);
-    pc.eyePosAndShininess = glm::vec4(eyePosWS, material.shininess);
-    pc.materialDiffuseSpec = glm::vec4(material.diffuse, material.specular);
+    pc.eyePosAndRoughness = glm::vec4(eyePosWS, material.roughness);
+    pc.baseColorAndMetallic = glm::vec4(material.baseColor, material.metallic);
+    pc.lightViewProj = lightViewProj;
     vkCmdPushConstants(cmd, layout_, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                         sizeof(LitPushConstants), &pc);
+}
+
+void LitPipeline::bindShadowMap(VkCommandBuffer cmd, VkDescriptorSet shadowSet) const {
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout_, 0, 1, &shadowSet, 0, nullptr);
+}
+
+void LitPipeline::bindAoMap(VkCommandBuffer cmd, VkDescriptorSet aoSet) const {
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout_, 1, 1, &aoSet, 0, nullptr);
 }
 
 } // namespace iron3d
