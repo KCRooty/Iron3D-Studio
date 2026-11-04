@@ -68,26 +68,28 @@ Windows (MSVC/Clang-cl) y Linux (GCC/Clang) con paridad; CI falla si uno de los 
 
 Dual MIT OR Apache-2.0 (ver `LICENSE-MIT`/`LICENSE-APACHE` en la raíz). Las dependencias deben ser compatibles.
 
-**Cineware SDK — leída la licencia (2026-10-30).** Maxon no publica un documento de licencia propio
-para el SDK; el que aplica es el EULA general de Maxon (maxon.net/en/legal/eula, actualizado
-sept. 2026), que cubre explícitamente la marca Cineware. Dos cláusulas son las que importan aquí:
+**Cineware SDK — licencia corregida (2026-11-04).** La nota del 2026-10-30 se basó en el EULA
+general de Maxon porque no teníamos el SDK delante. El SDK sí trae su propio contrato
+(`EULA.txt`, "Software License Agreement for MAXON Cineware SDK", idéntico desde Melange 5.1
+hasta Cineware 22.008 salvo el nombre), y es ese el que regula el SDK:
 
-- **§1.11:** el usuario no puede hacer que el Software quede sujeto a una licencia que la OSI o la
-  FSF consideren open source (MIT y Apache-2.0 entran ahí) ni a ninguna sustancialmente parecida.
-  → **El módulo `src/importers/cineware/` no puede entrar en el MIT/Apache-2.0 del resto de Iron3D.**
-  Tiene que quedar fuera del ámbito de esa licencia, exactamente como ya decía este documento.
-- **§10.3:** prohíbe copiar, modificar, descompilar, hacer ingeniería inversa, distribuir o
-  reproducir el Software salvo lo que la ley permita. No hay ninguna cláusula que autorice
-  redistribuir el SDK ni sus binarios/cabeceras.
-  → **El repo nunca debe llevar ficheros del SDK de Maxon**, ni en el código ni en los releases.
-  Cada usuario que quiera importación `.c4d` tiene que bajarse su propia copia del Cineware SDK
-  (developers.maxon.net) y compilar ese módulo en local — igual que hace assimp con Melange/Cineware:
-  dependencia opcional, con bandera de build explícita, nunca empaquetada.
-- No existe un programa de licencia de desarrollador "no-for-resale" (Maxon lo descartó en foros
-  antiguos) ni redistribución vía terceros (Maxon: la API solo se da por canales oficiales propios).
-- "Licensed, not sold" — el uso comercial depende del nivel de licencia Maxon que tenga Core (ya
-  tiene licencia legal de C4D R19, ver §5 arriba).
+- **§1.2 / §2.1:** gratis; derecho mundial y no exclusivo a descargarlo, copiarlo y usarlo.
+- **§2.2:** las cabeceras y las librerías estáticas se pueden integrar en nuestro programa y
+  distribuirse **solo como parte integrada** de él.
+- **§2.3:** los ejemplos y la documentación **no** se pueden modificar ni distribuir.
+- No contiene la cláusula anti-open-source (§1.11) del EULA general.
 
-**Conclusión práctica:** el plan ya descrito en este documento (módulo opcional, aislado, nunca
-en el repo) es correcto y ahora está respaldado por el texto real del EULA, no solo por precaución.
-No se necesita nada más de Core aquí salvo confirmar que lo acepta así.
+Reglas que salen de ahí:
+- **El repo nunca lleva ficheros del SDK** (cabeceras, `.lib`, ejemplos, doc): sueltos no son
+  "parte integrada" de un producto. El SDK vive fuera del repo y se pasa con
+  `-DIRON3D_CINEWARE_SDK=<ruta>`; sin esa opción, Iron3D compila sin importador `.c4d` (CI).
+- **El ejecutable publicado sí puede llevar Cineware enlazado**, con un aviso de tercero
+  (Maxon, EULA del Cineware SDK) junto a las licencias.
+- `src/importers/cineware/` es código nuestro (MIT/Apache) que llama a la API; no copia
+  ejemplos ni doc del SDK.
+- Cineware solo trae librerías para Windows y macOS: en Linux el importador `.c4d` no existe
+  (aviso claro en la UI), sin romper la paridad del resto del programa.
+- Hace falta un ID de escritor único registrado en developers.maxon.net (`GetWriterInfo`) antes
+  de escribir `.c4d`. Lo registra Core con su cuenta.
+- Detalle y lectura completa: `research_investigacion_c4d/notas/01_cineware_sdk.md` (carpeta
+  local, fuera del repo).
