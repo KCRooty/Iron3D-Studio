@@ -41,6 +41,7 @@ constexpr GLenum GL_TRIANGLES = 0x0004;
 constexpr GLenum GL_LINES = 0x0001;
 constexpr GLenum GL_FLOAT = 0x1406;
 constexpr GLenum GL_UNSIGNED_SHORT = 0x1403;
+constexpr GLenum GL_UNSIGNED_INT = 0x1405;
 constexpr GLenum GL_ARRAY_BUFFER = 0x8892;
 constexpr GLenum GL_ELEMENT_ARRAY_BUFFER = 0x8893;
 constexpr GLenum GL_STATIC_DRAW = 0x88E4;

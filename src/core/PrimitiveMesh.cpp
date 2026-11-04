@@ -35,7 +35,7 @@ void PrimitiveMesh::create(VkDevice /*device*/, VmaAllocator allocator, const Me
         allocator, sizeof(Vertex) * data.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         vertexAllocation_, data.vertices.data());
     indexBuffer_ = createHostVisibleBuffer(
-        allocator, sizeof(uint16_t) * data.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        allocator, sizeof(uint32_t) * data.indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         indexAllocation_, data.indices.data());
     indexCount_ = (uint32_t)data.indices.size();
 }
@@ -49,7 +49,7 @@ void PrimitiveMesh::destroy(VkDevice /*device*/, VmaAllocator allocator) {
 void PrimitiveMesh::draw(VkCommandBuffer cmd) const {
     VkDeviceSize offset = 0;
     vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer_, &offset);
-    vkCmdBindIndexBuffer(cmd, indexBuffer_, 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindIndexBuffer(cmd, indexBuffer_, 0, VK_INDEX_TYPE_UINT32);
     vkCmdDrawIndexed(cmd, indexCount_, 1, 0, 0, 0);
 }
 

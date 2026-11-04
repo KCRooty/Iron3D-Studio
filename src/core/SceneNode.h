@@ -11,6 +11,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "MeshData.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -21,7 +23,9 @@ namespace iron3d {
 // principal en este nodo, si alguna. `Light` no ilumina nada todavia (no hay
 // pipeline PBR hasta una fase posterior) -- es solo un icono organizativo de
 // tamano fijo, ver drawScene() en main.cpp.
-enum class PrimitiveType { None, Cube, Sphere, Plane, Light };
+// `Mesh` (2026-11-04) = Objeto Poligonal de C4D: geometria propia en
+// SceneNode::mesh (la que llega al importar un .c4d).
+enum class PrimitiveType { None, Cube, Sphere, Plane, Light, Mesh };
 const char* primitiveTypeName(PrimitiveType type); // nombre para la UI, en espanol
 
 // Estado de visibilidad de C4D: Por Defecto (gris, hereda del padre),
@@ -44,6 +48,9 @@ public:
     // que arma el arbol nuevo en un nodo temporal antes de aplicarlo de verdad
     // a la raiz real (si el parseo falla a medias, la raiz real no se toca).
     void adoptChildrenFrom(SceneNode& other);
+    // Como adoptChildrenFrom, pero conserva los hijos que ya hubiera (los de
+    // `other` van detras) -- usado por Fusionar / importar un .c4d.
+    void appendChildrenFrom(SceneNode& other);
 
     glm::mat4 localMatrix() const;
     // Acumula localMatrix() con la de todos los ancestros -- usado por el
@@ -71,6 +78,10 @@ public:
     // Indice en el std::vector<Material> global (ver core/Material.h); -1 =
     // sin material asignado (usa Material::defaultMaterial() al dibujar).
     int materialIndex = -1;
+    // Solo con primitive == Mesh. Inmutable y compartida: Duplicar y los
+    // pasos de deshacer reutilizan la misma malla sin copiarla; editarla
+    // (cuando haya modelado) sera crear una nueva y cambiar el puntero.
+    std::shared_ptr<const MeshData> mesh;
 
 private:
     int id_;

@@ -22,6 +22,7 @@
 
 #include "SceneNode.h"
 #include "Material.h"
+#include "SceneSerializer.h"
 
 #include <string>
 #include <vector>
@@ -35,6 +36,7 @@ public:
     void reset() {
         undoStack_.clear();
         redoStack_.clear();
+        meshRefs_.clear();
     }
 
     // Snapshot de `root` (+ materiales) tal cual estan AHORA, sin tocar
@@ -63,6 +65,9 @@ public:
 
 private:
     std::vector<Material>& materials_;
+    // Mallas citadas por los snapshots (meshref=N). Solo crece hasta el
+    // siguiente reset() (escena nueva / abrir), que es cuando se vacian las pilas.
+    mutable MeshRefTable meshRefs_;
     std::vector<std::string> undoStack_;
     std::vector<std::string> redoStack_;
     static constexpr size_t kMaxDepth = 100; // suficiente para una sesion de edicion normal

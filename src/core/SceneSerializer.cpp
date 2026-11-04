@@ -10,7 +10,7 @@ namespace iron3d {
 
 namespace {
 
-constexpr int kFormatVersion = 2; // v2 = Fase 5: bloque MATERIALS + materialIndex por nodo
+constexpr int kFormatVersion = 3; // v2 = Fase 5: bloque MATERIALS + materialIndex; v3 = mallas (MESH)
 
 const char* primitiveCode(PrimitiveType type) {
     switch (type) {
@@ -18,6 +18,7 @@ const char* primitiveCode(PrimitiveType type) {
         case PrimitiveType::Sphere: return "sphere";
         case PrimitiveType::Plane: return "plane";
         case PrimitiveType::Light: return "light";
+        case PrimitiveType::Mesh: return "mesh";
         case PrimitiveType::None: default: return "none";
     }
 }
@@ -27,18 +28,35 @@ PrimitiveType primitiveFromCode(const std::string& code) {
     if (code == "sphere") return PrimitiveType::Sphere;
     if (code == "plane") return PrimitiveType::Plane;
     if (code == "light") return PrimitiveType::Light;
+    if (code == "mesh") return PrimitiveType::Mesh;
     return PrimitiveType::None;
 }
 
-void writeNode(std::ostream& out, const SceneNode& node, int depth) {
+// Bloque MESH: nv vertices (posicion + normal, el color no se guarda) y ni
+// indices, todo en una linea por vertice / por triangulo.
+void writeMesh(std::ostream& out, const MeshData& mesh, const std::string& indent) {
+    out << indent << "  MESH nv=" << mesh.vertices.size() << " ni=" << mesh.indices.size() << " {\n";
+    for (const Vertex& v : mesh.vertices)
+        out << indent << "    " << v.position.x << ' ' << v.position.y << ' ' << v.position.z << ' ' << v.normal.x
+            << ' ' << v.normal.y << ' ' << v.normal.z << '\n';
+    for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3)
+        out << indent << "    " << mesh.indices[i] << ' ' << mesh.indices[i + 1] << ' ' << mesh.indices[i + 2] << '\n';
+    out << indent << "  }\n";
+}
+
+void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable* meshRefs) {
     const std::string indent((size_t)depth * 2, ' ');
     out << indent << "NODE name=\"" << node.name() << "\" primitive=" << primitiveCode(node.primitive)
         << " px=" << node.position.x << " py=" << node.position.y << " pz=" << node.position.z
         << " rx=" << node.rotationDeg.x << " ry=" << node.rotationDeg.y << " rz=" << node.rotationDeg.z
         << " sx=" << node.scale.x << " sy=" << node.scale.y << " sz=" << node.scale.z
         << " editorVis=" << (int)node.editorVis << " renderVis=" << (int)node.renderVis
-        << " materialIndex=" << node.materialIndex << " {\n";
-    for (const auto& child : node.children()) writeNode(out, *child, depth + 1);
+        << " materialIndex=" << node.materialIndex;
+    const bool hasMesh = node.primitive == PrimitiveType::Mesh && node.mesh;
+    if (hasMesh && meshRefs) out << " meshref=" << meshRefs->ref(node.mesh);
+    out << " {\n";
+    if (hasMesh && !meshRefs) writeMesh(out, *node.mesh, indent);
+    for (const auto& child : node.children()) writeNode(out, *child, depth + 1, meshRefs);
     out << indent << "}\n";
 }
 
@@ -82,7 +100,47 @@ std::string unquote(std::string val) {
     return val;
 }
 
-bool parseNode(Parser& p, SceneNode& node, std::string& err) {
+bool parseMesh(Parser& p, std::shared_ptr<const MeshData>& out, std::string& err) {
+    p.next(); // "MESH"
+    size_t nv = 0, ni = 0;
+    while (!p.atEnd() && p.peek() != "{") {
+        const std::string tok = p.next();
+        try {
+            if (tok.rfind("nv=", 0) == 0) nv = (size_t)std::stoul(tok.substr(3));
+            else if (tok.rfind("ni=", 0) == 0) ni = (size_t)std::stoul(tok.substr(3));
+        } catch (const std::exception&) {
+            err = "cabecera MESH invalida";
+            return false;
+        }
+    }
+    if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras MESH"; return false; }
+    if (p.toks.size() - p.pos < nv * 6 + ni) { err = "bloque MESH truncado"; return false; }
+    auto mesh = std::make_shared<MeshData>();
+    mesh->vertices.resize(nv);
+    mesh->indices.resize(ni);
+    try {
+        for (size_t i = 0; i < nv; ++i) {
+            Vertex& v = mesh->vertices[i];
+            v.position.x = std::stof(p.next()); v.position.y = std::stof(p.next()); v.position.z = std::stof(p.next());
+            v.normal.x = std::stof(p.next()); v.normal.y = std::stof(p.next()); v.normal.z = std::stof(p.next());
+            v.color = glm::vec3(0.8f);
+        }
+        for (size_t i = 0; i < ni; ++i) {
+            const unsigned long idx = std::stoul(p.next());
+            if (idx >= nv) { err = "indice de MESH fuera de rango"; return false; }
+            mesh->indices[i] = (uint32_t)idx;
+        }
+    } catch (const std::exception&) {
+        err = "valor numerico invalido en MESH";
+        return false;
+    }
+    if (p.atEnd() || p.next() != "}") { err = "se esperaba '}' de cierre de MESH"; return false; }
+    updateBounds(*mesh);
+    out = std::move(mesh);
+    return true;
+}
+
+bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable* meshRefs) {
     if (p.atEnd() || p.next() != "NODE") { err = "se esperaba NODE"; return false; }
 
     std::string name = node.name();
@@ -90,6 +148,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err) {
     glm::vec3 pos(0.0f), rot(0.0f), scale(1.0f);
     VisMode editorVis = VisMode::Default, renderVis = VisMode::Default;
     int materialIndex = -1;
+    std::shared_ptr<const MeshData> mesh;
 
     while (!p.atEnd() && p.peek() != "{") {
         const std::string tok = p.next();
@@ -114,12 +173,21 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err) {
             else if (key == "editorVis") editorVis = (VisMode)std::clamp(std::stoi(val), 0, 2);
             else if (key == "renderVis") renderVis = (VisMode)std::clamp(std::stoi(val), 0, 2);
             else if (key == "materialIndex") materialIndex = std::stoi(val);
+            else if (key == "meshref") {
+                const int r = std::stoi(val);
+                if (!meshRefs || r < 0 || (size_t)r >= meshRefs->meshes.size()) {
+                    err = "meshref sin tabla de mallas";
+                    return false;
+                }
+                mesh = meshRefs->meshes[(size_t)r];
+            }
         } catch (const std::exception&) {
             err = "valor numerico invalido en '" + tok + "'";
             return false;
         }
     }
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras los atributos de NODE"; return false; }
+    if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
 
     node.setName(name);
     node.primitive = prim;
@@ -129,11 +197,13 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err) {
     node.editorVis = editorVis;
     node.renderVis = renderVis;
     node.materialIndex = materialIndex;
+    node.mesh = std::move(mesh);
+    if (node.primitive == PrimitiveType::Mesh && !node.mesh) node.primitive = PrimitiveType::None;
 
     while (!p.atEnd() && p.peek() != "}") {
         if (p.peek() != "NODE") { err = "token inesperado: " + p.peek(); return false; }
         SceneNode* child = node.addChild(std::string());
-        if (!parseNode(p, *child, err)) return false;
+        if (!parseNode(p, *child, err, meshRefs)) return false;
     }
     if (p.atEnd() || p.next() != "}") { err = "se esperaba '}' de cierre"; return false; }
     return true;
@@ -182,16 +252,25 @@ bool parseMaterialsBlockIfPresent(Parser& p, std::vector<Material>& materials, s
 
 } // namespace
 
-std::string serializeScene(const SceneNode& root, const std::vector<Material>& materials) {
+int MeshRefTable::ref(const std::shared_ptr<const MeshData>& mesh) {
+    auto it = index.find(mesh.get());
+    if (it != index.end()) return it->second;
+    const int r = (int)meshes.size();
+    meshes.push_back(mesh);
+    index.emplace(mesh.get(), r);
+    return r;
+}
+
+std::string serializeScene(const SceneNode& root, const std::vector<Material>& materials, MeshRefTable* meshRefs) {
     std::ostringstream out;
     out << "IRON3D_SCENE " << kFormatVersion << "\n";
     writeMaterials(out, materials);
-    writeNode(out, root, 0);
+    writeNode(out, root, 0, meshRefs);
     return out.str();
 }
 
 bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Material>& materials,
-                       std::string* outError) {
+                       std::string* outError, const MeshRefTable* meshRefs) {
     const std::vector<std::string> tokens = tokenize(text);
 
     if (tokens.size() < 2 || tokens[0] != "IRON3D_SCENE") {
@@ -208,7 +287,7 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     }
 
     SceneNode temp("__scene_load_tmp__");
-    if (!parseNode(p, temp, err)) {
+    if (!parseNode(p, temp, err, meshRefs)) {
         if (outError) *outError = err;
         return false;
     }
@@ -221,6 +300,7 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.editorVis = temp.editorVis;
     root.renderVis = temp.renderVis;
     root.materialIndex = temp.materialIndex;
+    root.mesh = temp.mesh;
     root.clearChildren();
     root.adoptChildrenFrom(temp);
     materials = std::move(tempMaterials);

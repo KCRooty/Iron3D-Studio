@@ -17,6 +17,7 @@ const char* primitiveTypeName(PrimitiveType type) {
         case PrimitiveType::Sphere: return "Esfera";
         case PrimitiveType::Plane: return "Plano";
         case PrimitiveType::Light: return "Luz";
+        case PrimitiveType::Mesh: return "Objeto poligonal";
         case PrimitiveType::None: default: return "Nulo (vacio)";
     }
 }
@@ -34,6 +35,14 @@ SceneNode* SceneNode::addChild(std::string name, PrimitiveType primitive_) {
 void SceneNode::adoptChildrenFrom(SceneNode& other) {
     children_ = std::move(other.children_);
     for (auto& child : children_) child->parent_ = this;
+    other.children_.clear();
+}
+
+void SceneNode::appendChildrenFrom(SceneNode& other) {
+    for (auto& child : other.children_) {
+        child->parent_ = this;
+        children_.push_back(std::move(child));
+    }
     other.children_.clear();
 }
 
@@ -71,6 +80,7 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
     copy->editorVis = src.editorVis;
     copy->renderVis = src.renderVis;
     copy->materialIndex = src.materialIndex;
+    copy->mesh = src.mesh;
     for (const auto& child : src.children()) cloneInto(*copy, *child, child->name());
     return copy;
 }

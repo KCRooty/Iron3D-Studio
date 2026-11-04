@@ -17,10 +17,23 @@
 #include "Material.h"
 
 #include <filesystem>
+#include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace iron3d {
+
+// v3 (2026-11-04): nodos `primitive=mesh` con un bloque MESH dentro (vertices
+// + indices en texto). En los snapshots de deshacer NO se escribe la malla:
+// se apunta en esta tabla y el nodo lleva `meshref=N`, asi un paso de
+// deshacer con una malla de 100 000 vertices sigue costando unos bytes.
+struct MeshRefTable {
+    std::vector<std::shared_ptr<const MeshData>> meshes;
+    std::unordered_map<const MeshData*, int> index;
+    int ref(const std::shared_ptr<const MeshData>& mesh);
+    void clear() { meshes.clear(); index.clear(); }
+};
 
 // Version en memoria (sin tocar disco): la reutiliza SceneHistory (Fase 2d)
 // para los snapshots de deshacer/rehacer -- clonar el arbol entero (y la
@@ -29,11 +42,12 @@ namespace iron3d {
 // insignificante. Esto tambien hace que deshacer/rehacer cubra sin esfuerzo
 // extra tanto la asignacion de material de un nodo como la propia lista de
 // materiales (anadir/borrar/editar un material es parte del mismo snapshot).
-std::string serializeScene(const SceneNode& root, const std::vector<Material>& materials);
+std::string serializeScene(const SceneNode& root, const std::vector<Material>& materials,
+                           MeshRefTable* meshRefs = nullptr);
 // Misma garantia que loadScene: si `text` no parsea entero, ni `root` ni
-// `materials` se tocan.
+// `materials` se tocan. `meshRefs` resuelve los `meshref=N` de un snapshot.
 bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Material>& materials,
-                       std::string* outError = nullptr);
+                       std::string* outError = nullptr, const MeshRefTable* meshRefs = nullptr);
 
 bool saveScene(const std::filesystem::path& path, const SceneNode& root,
                const std::vector<Material>& materials, std::string* outError = nullptr);

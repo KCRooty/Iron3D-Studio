@@ -28,14 +28,61 @@
 #include "core/SceneSerializer.h"
 #include "ui/MainUi.h"
 
+#include "importers/cineware/CinewareImporter.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 #include <filesystem>
 
 namespace {
+
+// Mallas en GPU (2026-11-04): las tres primitivas fijas + una entrada por
+// cada malla propia (Objeto poligonal) que haya en la escena. La malla de
+// CPU es compartida (SceneNode::mesh); cuando ningun nodo ni ningun paso de
+// deshacer la usa, el weak_ptr caduca y collect() libera su copia en GPU.
+struct SceneMeshes {
+    iron3d::IRenderer* renderer = nullptr;
+    iron3d::MeshHandle cube = iron3d::kInvalidMesh, sphere = iron3d::kInvalidMesh, plane = iron3d::kInvalidMesh;
+    struct Entry { std::weak_ptr<const iron3d::MeshData> owner; iron3d::MeshHandle handle; };
+    std::unordered_map<const iron3d::MeshData*, Entry> custom;
+
+    iron3d::MeshHandle forNode(const iron3d::SceneNode& node) {
+        using iron3d::PrimitiveType;
+        switch (node.primitive) {
+            case PrimitiveType::Cube: return cube;
+            case PrimitiveType::Sphere: return sphere;
+            case PrimitiveType::Plane: return plane;
+            case PrimitiveType::Mesh: {
+                if (!node.mesh || node.mesh->indices.empty()) return iron3d::kInvalidMesh;
+                auto it = custom.find(node.mesh.get());
+                if (it != custom.end() && !it->second.owner.expired()) return it->second.handle;
+                if (it != custom.end()) { // misma direccion reutilizada por una malla nueva
+                    renderer->destroyMesh(it->second.handle);
+                    custom.erase(it);
+                }
+                const iron3d::MeshHandle h = renderer->createMesh(*node.mesh);
+                custom.emplace(node.mesh.get(), Entry{node.mesh, h});
+                return h;
+            }
+            default: return iron3d::kInvalidMesh;
+        }
+    }
+
+    void collect() {
+        for (auto it = custom.begin(); it != custom.end();) {
+            if (it->second.owner.expired()) {
+                renderer->destroyMesh(it->second.handle);
+                it = custom.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+};
 
 void glfwErrorCallback(int error, const char* description) {
     std::fprintf(stderr, "[Iron3D][glfw] Error %d: %s\n", error, description);
@@ -108,44 +155,36 @@ glm::mat4 computeLightViewProj(const glm::vec3& lightPos) {
 // mismo grafo que drawScene() pero sin materiales (no hace falta mas que la
 // geometria) y sin el icono de Luz (un marcador decorativo proyectando su
 // propia sombra justo en el origen de la luz no aporta nada).
-void drawSceneShadow(iron3d::IRenderer& renderer, iron3d::MeshHandle cubeMesh, iron3d::MeshHandle sphereMesh,
-                      iron3d::MeshHandle planeMesh, iron3d::SceneNode& node, const glm::mat4& parentWorld,
-                      bool parentVisible = true) {
+void drawSceneShadow(iron3d::IRenderer& renderer, SceneMeshes& meshes, iron3d::SceneNode& node,
+                      const glm::mat4& parentWorld, bool parentVisible = true) {
     const bool vis = iron3d::resolveVisibility(node.editorVis, parentVisible);
     const glm::mat4 world = parentWorld * node.localMatrix();
 
-    using iron3d::PrimitiveType;
-    switch (vis ? node.primitive : PrimitiveType::None) {
-        case PrimitiveType::Cube:   renderer.drawMeshShadow(cubeMesh, world); break;
-        case PrimitiveType::Sphere: renderer.drawMeshShadow(sphereMesh, world); break;
-        case PrimitiveType::Plane:  renderer.drawMeshShadow(planeMesh, world); break;
-        default: break;
+    if (vis && node.primitive != iron3d::PrimitiveType::Light) {
+        const iron3d::MeshHandle h = meshes.forNode(node);
+        if (h != iron3d::kInvalidMesh) renderer.drawMeshShadow(h, world);
     }
 
     for (const auto& child : node.children()) {
-        drawSceneShadow(renderer, cubeMesh, sphereMesh, planeMesh, *child, world, vis);
+        drawSceneShadow(renderer, meshes, *child, world, vis);
     }
 }
 
 // Mismo recorrido que drawSceneShadow(), para el G-buffer de SSAO (Fase 3):
 // tampoco hace falta material, solo la geometria para posicion/normal en
 // espacio de vista.
-void drawSceneGBuffer(iron3d::IRenderer& renderer, iron3d::MeshHandle cubeMesh, iron3d::MeshHandle sphereMesh,
-                       iron3d::MeshHandle planeMesh, iron3d::SceneNode& node, const glm::mat4& parentWorld,
-                       bool parentVisible = true) {
+void drawSceneGBuffer(iron3d::IRenderer& renderer, SceneMeshes& meshes, iron3d::SceneNode& node,
+                       const glm::mat4& parentWorld, bool parentVisible = true) {
     const bool vis = iron3d::resolveVisibility(node.editorVis, parentVisible);
     const glm::mat4 world = parentWorld * node.localMatrix();
 
-    using iron3d::PrimitiveType;
-    switch (vis ? node.primitive : PrimitiveType::None) {
-        case PrimitiveType::Cube:   renderer.drawMeshGBuffer(cubeMesh, world); break;
-        case PrimitiveType::Sphere: renderer.drawMeshGBuffer(sphereMesh, world); break;
-        case PrimitiveType::Plane:  renderer.drawMeshGBuffer(planeMesh, world); break;
-        default: break;
+    if (vis && node.primitive != iron3d::PrimitiveType::Light) {
+        const iron3d::MeshHandle h = meshes.forNode(node);
+        if (h != iron3d::kInvalidMesh) renderer.drawMeshGBuffer(h, world);
     }
 
     for (const auto& child : node.children()) {
-        drawSceneGBuffer(renderer, cubeMesh, sphereMesh, planeMesh, *child, world, vis);
+        drawSceneGBuffer(renderer, meshes, *child, world, vis);
     }
 }
 
@@ -155,8 +194,7 @@ void drawSceneGBuffer(iron3d::IRenderer& renderer, iron3d::MeshHandle cubeMesh, 
 // uno asignado). La visibilidad del visor es el punto de ARRIBA del Gestor de
 // Objetos (editorVis): Apagado oculta el nodo y a los hijos en Por Defecto,
 // pero un hijo en Activado sigue viendose, igual que en C4D.
-void drawScene(iron3d::IRenderer& renderer, iron3d::MeshHandle cubeMesh, iron3d::MeshHandle sphereMesh,
-               iron3d::MeshHandle planeMesh, const std::vector<iron3d::Material>& materials,
+void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vector<iron3d::Material>& materials,
                iron3d::SceneNode& node, const glm::mat4& parentWorld, const glm::mat4& viewProj,
                bool parentVisible = true) {
     const bool vis = iron3d::resolveVisibility(node.editorVis, parentVisible);
@@ -166,14 +204,13 @@ void drawScene(iron3d::IRenderer& renderer, iron3d::MeshHandle cubeMesh, iron3d:
     using iron3d::PrimitiveType;
     switch (vis ? node.primitive : PrimitiveType::None) {
         case PrimitiveType::Cube:
-            renderer.drawMesh(cubeMesh, world, viewProj * world, material);
-            break;
         case PrimitiveType::Sphere:
-            renderer.drawMesh(sphereMesh, world, viewProj * world, material);
-            break;
         case PrimitiveType::Plane:
-            renderer.drawMesh(planeMesh, world, viewProj * world, material);
+        case PrimitiveType::Mesh: {
+            const iron3d::MeshHandle h = meshes.forNode(node);
+            if (h != iron3d::kInvalidMesh) renderer.drawMesh(h, world, viewProj * world, material);
             break;
+        }
         case PrimitiveType::Light: {
             // Icono de tamano fijo, ignora la escala del nodo a proposito --
             // una luz no es geometria escalable, es un marcador. Ahora SI se
@@ -182,7 +219,7 @@ void drawScene(iron3d::IRenderer& renderer, iron3d::MeshHandle cubeMesh, iron3d:
             const glm::mat4 iconWorld = parentWorld *
                 glm::translate(glm::mat4(1.0f), node.position) *
                 glm::scale(glm::mat4(1.0f), glm::vec3(0.12f));
-            renderer.drawMesh(sphereMesh, iconWorld, viewProj * iconWorld, material);
+            renderer.drawMesh(meshes.sphere, iconWorld, viewProj * iconWorld, material);
             break;
         }
         case PrimitiveType::None:
@@ -191,16 +228,64 @@ void drawScene(iron3d::IRenderer& renderer, iron3d::MeshHandle cubeMesh, iron3d:
     }
 
     for (const auto& child : node.children()) {
-        drawScene(renderer, cubeMesh, sphereMesh, planeMesh, materials, *child, world, viewProj, vis);
+        drawScene(renderer, meshes, materials, *child, world, viewProj, vis);
     }
 }
 
 // Interseccion rayo-nodo para seleccionar con clic en el visor: el rayo se
 // lleva al espacio local del nodo (inversa de su matriz de mundo), donde las
 // primitivas son de tamano unidad, y la distancia se mide de vuelta en mundo.
-bool rayHitsLocal(iron3d::PrimitiveType type, const glm::vec3& o, const glm::vec3& d, float& tOut) {
+// Rayo contra caja alineada [mn, mx] (metodo de las placas).
+bool rayHitsBox(const glm::vec3& o, const glm::vec3& d, const glm::vec3& mn, const glm::vec3& mx, float& tOut) {
+    float t0 = -1e30f, t1 = 1e30f;
+    for (int i = 0; i < 3; ++i) {
+        if (std::fabs(d[i]) < 1e-12f) {
+            if (o[i] < mn[i] || o[i] > mx[i]) return false;
+            continue;
+        }
+        float a = (mn[i] - o[i]) / d[i], b = (mx[i] - o[i]) / d[i];
+        if (a > b) std::swap(a, b);
+        t0 = std::max(t0, a);
+        t1 = std::min(t1, b);
+        if (t0 > t1) return false;
+    }
+    if (t1 < 0.0f) return false;
+    tOut = t0 >= 0.0f ? t0 : t1;
+    return true;
+}
+
+// Malla propia: primero la caja (descarte barato), luego cada triangulo
+// (Moller-Trumbore, a dos caras como el render).
+bool rayHitsMesh(const iron3d::MeshData& mesh, const glm::vec3& o, const glm::vec3& d, float& tOut) {
+    float tb = 0.0f;
+    const glm::vec3 pad(1e-4f);
+    if (!rayHitsBox(o, d, mesh.boundsMin - pad, mesh.boundsMax + pad, tb)) return false;
+    bool hit = false;
+    float best = 1e30f;
+    for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
+        const glm::vec3& a = mesh.vertices[mesh.indices[i]].position;
+        const glm::vec3& b = mesh.vertices[mesh.indices[i + 1]].position;
+        const glm::vec3& c = mesh.vertices[mesh.indices[i + 2]].position;
+        const glm::vec3 e1 = b - a, e2 = c - a, pv = glm::cross(d, e2);
+        const float det = glm::dot(e1, pv);
+        if (std::fabs(det) < 1e-12f) continue;
+        const float inv = 1.0f / det;
+        const glm::vec3 tv = o - a;
+        const float u = glm::dot(tv, pv) * inv;
+        if (u < 0.0f || u > 1.0f) continue;
+        const glm::vec3 qv = glm::cross(tv, e1);
+        const float v = glm::dot(d, qv) * inv;
+        if (v < 0.0f || u + v > 1.0f) continue;
+        const float t = glm::dot(e2, qv) * inv;
+        if (t >= 0.0f && t < best) { best = t; hit = true; }
+    }
+    if (hit) tOut = best;
+    return hit;
+}
+
+bool rayHitsLocal(const iron3d::SceneNode& node, const glm::vec3& o, const glm::vec3& d, float& tOut) {
     using iron3d::PrimitiveType;
-    switch (type) {
+    switch (node.primitive) {
         case PrimitiveType::Cube: {
             float t0 = -1e30f, t1 = 1e30f;
             for (int i = 0; i < 3; ++i) {
@@ -238,6 +323,8 @@ bool rayHitsLocal(iron3d::PrimitiveType type, const glm::vec3& o, const glm::vec
             tOut = t;
             return true;
         }
+        case PrimitiveType::Mesh:
+            return node.mesh && rayHitsMesh(*node.mesh, o, d, tOut);
         default:
             return false;
     }
@@ -258,7 +345,7 @@ void pickNode(iron3d::SceneNode& node, const glm::mat4& parentWorld, const iron3
         const glm::vec3 lo = glm::vec3(inv * glm::vec4(ray.origin, 1.0f));
         const glm::vec3 ld = glm::vec3(inv * glm::vec4(ray.direction, 0.0f));
         float t = 0.0f;
-        if (rayHitsLocal(node.primitive, lo, ld, t)) {
+        if (rayHitsLocal(node, lo, ld, t)) {
             const glm::vec3 hit = glm::vec3(m * glm::vec4(lo + ld * t, 1.0f));
             const float dist = glm::length(hit - ray.origin);
             if (dist < bestDist) {
@@ -368,9 +455,11 @@ int main(int argc, char** argv) {
     }
 
     // --- Geometria --------------------------------------------------------
-    MeshHandle cubeMesh = renderer->createMesh(makeCubeMesh());
-    MeshHandle sphereMesh = renderer->createMesh(makeSphereMesh());
-    MeshHandle planeMesh = renderer->createMesh(makePlaneMesh());
+    SceneMeshes meshes;
+    meshes.renderer = renderer.get();
+    meshes.cube = renderer->createMesh(makeCubeMesh());
+    meshes.sphere = renderer->createMesh(makeSphereMesh());
+    meshes.plane = renderer->createMesh(makePlaneMesh());
 
     TransformGizmo gizmo;
     std::vector<Vertex> gizmoLineVerts, gizmoTriVerts;
@@ -392,10 +481,24 @@ int main(int argc, char** argv) {
 
     // "Iron3DStudio.exe escena.iron" abre esa escena al arrancar (doble clic
     // en un .iron desde el Explorador, igual que un .c4d con Cinema 4D).
+    // Un .c4d tambien (2026-11-04): se importa con Cineware sobre una escena vacia.
     if (sceneArg) {
         std::string err;
-        if (loadScene(std::filesystem::path(sceneArg), sceneRoot, materials, &err)) {
+        const std::filesystem::path argPath = std::filesystem::path(sceneArg);
+        if (iron3d::isC4DPath(argPath)) {
+            iron3d::C4DImportReport report;
+            sceneRoot.clearChildren();
+            if (iron3d::importC4D(argPath, sceneRoot, materials, report, &err)) {
+                selected = nullptr;
+                iron3d::showImportReport(report);
+                iron3d::frameScene(camera, sceneRoot);
+            } else {
+                std::fprintf(stderr, "[Iron3D] No se pudo importar '%s': %s\n", sceneArg, err.c_str());
+                selected = sceneRoot.addChild("Cubo", PrimitiveType::Cube); // el cubo de antes ya no existe
+            }
+        } else if (loadScene(argPath, sceneRoot, materials, &err)) {
             selected = nullptr;
+            iron3d::frameScene(camera, sceneRoot);
         } else {
             std::fprintf(stderr, "[Iron3D] No se pudo abrir '%s': %s\n", sceneArg, err.c_str());
         }
@@ -553,7 +656,7 @@ int main(int argc, char** argv) {
             // buffer y no se puede anidar/cambiar de render pass sin cerrar el
             // actual (ver SwapchainWindow::beginFrame()/beginRenderPass()).
             renderer->beginShadowPass(lightViewProj);
-            drawSceneShadow(*renderer, cubeMesh, sphereMesh, planeMesh, sceneRoot, glm::mat4(1.0f));
+            drawSceneShadow(*renderer, meshes, sceneRoot, glm::mat4(1.0f));
             renderer->endShadowPass();
 
             // Pasada de G-buffer para SSAO (Fase 3): mismo motivo que la de
@@ -562,14 +665,14 @@ int main(int argc, char** argv) {
             // las de la luz), asi que se recorre DESPUES de calcular `view`/
             // `proj` mas arriba en este mismo bucle.
             renderer->beginGBufferPass(view, proj);
-            drawSceneGBuffer(*renderer, cubeMesh, sphereMesh, planeMesh, sceneRoot, glm::mat4(1.0f));
+            drawSceneGBuffer(*renderer, meshes, sceneRoot, glm::mat4(1.0f));
             renderer->endGBufferPass();
 
             renderer->setLighting(lightPos, eye, lightViewProj);
             renderer->beginMainPass();
 
             if (viewport.showGrid && !viewport.renderView) renderer->drawGrid(gridVerts, viewProj);
-            drawScene(*renderer, cubeMesh, sphereMesh, planeMesh, materials, sceneRoot, glm::mat4(1.0f), viewProj);
+            drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), viewProj);
 
             // Gizmo encima de la escena (ningun buffer de profundidad todavia en
             // Fase 1-2, asi que "despues" ya implica "por encima").
@@ -577,6 +680,7 @@ int main(int argc, char** argv) {
 
             renderer->endFrame(); // compone ImGui y presenta
         }
+        meshes.collect(); // libera en GPU las mallas que ya nadie usa
     }
 
     // --- Cierre ----------------------------------------------------------------

@@ -96,6 +96,8 @@ void VulkanRenderer::shutdown() {
     ssaoPass_.destroy(ctx_.device, allocator_);
     for (auto& mesh : meshes_) mesh.destroy(ctx_.device, allocator_);
     meshes_.clear();
+    pendingDestroy_.clear();
+    freeMeshes_.clear();
     vmaDestroyAllocator(allocator_);
 
     ImGui_ImplVulkan_Shutdown();
@@ -118,17 +120,34 @@ void VulkanRenderer::setClearColor(float r, float g, float b, float a) {
 MeshHandle VulkanRenderer::createMesh(const MeshData& data) {
     PrimitiveMesh mesh;
     mesh.create(ctx_.device, allocator_, data);
+    if (!freeMeshes_.empty()) {
+        const MeshHandle h = freeMeshes_.back();
+        freeMeshes_.pop_back();
+        meshes_[h] = std::move(mesh);
+        return h;
+    }
     meshes_.push_back(std::move(mesh));
     return (MeshHandle)(meshes_.size() - 1);
 }
 
 void VulkanRenderer::destroyMesh(MeshHandle handle) {
     if (handle >= meshes_.size()) return;
-    meshes_[handle].destroy(ctx_.device, allocator_);
+    // 4 frames: mas que los frames en vuelo del swapchain, con margen.
+    pendingDestroy_.push_back({handle, 4});
 }
 
 bool VulkanRenderer::beginFrame() {
     if (swapchain_.isMinimized()) return false;
+    for (size_t i = 0; i < pendingDestroy_.size();) {
+        if (--pendingDestroy_[i].framesLeft <= 0) {
+            meshes_[pendingDestroy_[i].handle].destroy(ctx_.device, allocator_);
+            freeMeshes_.push_back(pendingDestroy_[i].handle);
+            pendingDestroy_[i] = pendingDestroy_.back();
+            pendingDestroy_.pop_back();
+        } else {
+            ++i;
+        }
+    }
     // Solo adquiere imagen + abre el command buffer -- el render pass
     // principal lo abre beginMainPass(), despues de la pasada de sombras
     // (ver comentario de SwapchainWindow::beginFrame()).
