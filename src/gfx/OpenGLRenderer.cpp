@@ -260,12 +260,18 @@ MeshHandle OpenGLRenderer::createMesh(const MeshData& data) {
 
     gl::glGenBuffers(1, &res.ebo);
     gl::glBindBuffer(gl::GL_ELEMENT_ARRAY_BUFFER, res.ebo);
-    gl::glBufferData(gl::GL_ELEMENT_ARRAY_BUFFER, (gl::GLsizeiptr)(data.indices.size() * sizeof(uint16_t)),
+    gl::glBufferData(gl::GL_ELEMENT_ARRAY_BUFFER, (gl::GLsizeiptr)(data.indices.size() * sizeof(uint32_t)),
                       data.indices.data(), gl::GL_STATIC_DRAW);
 
     setupLitVertexAttribs();
     res.indexCount = (gl::GLsizei)data.indices.size();
 
+    for (size_t i = 0; i < meshes_.size(); ++i) {
+        if (meshes_[i].vao == 0) { // hueco libre de un destroyMesh() anterior
+            meshes_[i] = res;
+            return (MeshHandle)i;
+        }
+    }
     meshes_.push_back(res);
     return (MeshHandle)(meshes_.size() - 1);
 }
@@ -346,7 +352,7 @@ void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     gl::glUniform1f(uLitSpecularLoc_, specularIntensity);
     gl::glUniform1f(uLitShininessLoc_, shininess);
     gl::glBindVertexArray(meshes_[mesh].vao);
-    gl::glDrawElements(gl::GL_TRIANGLES, meshes_[mesh].indexCount, gl::GL_UNSIGNED_SHORT, nullptr);
+    gl::glDrawElements(gl::GL_TRIANGLES, meshes_[mesh].indexCount, gl::GL_UNSIGNED_INT, nullptr);
 }
 
 void OpenGLRenderer::drawGizmo(const std::vector<Vertex>& lineVerts, const std::vector<Vertex>& triVerts,

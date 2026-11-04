@@ -3,6 +3,9 @@
 #include "UiPreset.h"
 #include "UiTheme.h"
 #include "core/SceneSerializer.h"
+#include "FileDialog.h"
+#include "core/Paths.h"
+#include "importers/cineware/CinewareImporter.h"
 
 #include <imgui.h>
 #include <imgui_internal.h> // MenuItemEx / BeginMenuEx (iconos en los menus)
@@ -69,6 +72,10 @@ struct UiState {
     bool showPrefs = false;
     bool showMatEditor = false;
     bool showAbout = false;
+    // Resultado de Abrir/Fusionar un .c4d (o el error de abrir cualquier archivo).
+    bool showImport = false;
+    C4DImportReport importReport;
+    std::string importError;
 
     AttrFocus focus = AttrFocus::Object;
     int lastSelectedId = -1;
@@ -114,6 +121,7 @@ const char* defaultNameFor(PrimitiveType type) {
         case PrimitiveType::Sphere: return "Esfera";
         case PrimitiveType::Plane: return "Plano";
         case PrimitiveType::Light: return "Luz";
+        case PrimitiveType::Mesh: return "Polígono";
         case PrimitiveType::None: default: return "Nulo";
     }
 }
@@ -124,12 +132,14 @@ Icon iconFor(PrimitiveType type) {
         case PrimitiveType::Sphere: return Icon::Sphere;
         case PrimitiveType::Plane: return Icon::Plane;
         case PrimitiveType::Light: return Icon::Light;
+        case PrimitiveType::Mesh: return Icon::Polygon;
         case PrimitiveType::None: default: return Icon::Null;
     }
 }
 
 bool hasGeometry(PrimitiveType t) {
-    return t == PrimitiveType::Cube || t == PrimitiveType::Sphere || t == PrimitiveType::Plane;
+    return t == PrimitiveType::Cube || t == PrimitiveType::Sphere || t == PrimitiveType::Plane ||
+           t == PrimitiveType::Mesh;
 }
 
 // Medida base de cada primitiva en cm (antes de escalar), para el modo
@@ -141,6 +151,12 @@ glm::vec3 baseSizeCm(PrimitiveType t) {
         case PrimitiveType::Plane: return glm::vec3(kCmPerUnit, 0.0f, kCmPerUnit);
         default: return glm::vec3(0.0f);
     }
+}
+
+// Igual, pero un Objeto poligonal mide lo que mida su malla.
+glm::vec3 baseSizeCm(const SceneNode& n) {
+    if (n.primitive == PrimitiveType::Mesh && n.mesh) return (n.mesh->boundsMax - n.mesh->boundsMin) * kCmPerUnit;
+    return baseSizeCm(n.primitive);
 }
 
 void setHint(const char* text) {
@@ -192,8 +208,13 @@ SceneNode* findById(SceneNode& node, int id) {
 void accumulateBounds(const SceneNode& node, glm::vec3& mn, glm::vec3& mx, bool& any) {
     if (node.primitive != PrimitiveType::None) {
         const glm::mat4 w = node.worldMatrix();
+        glm::vec3 lo(-0.5f), hi(0.5f);
+        if (node.primitive == PrimitiveType::Mesh && node.mesh) {
+            lo = node.mesh->boundsMin;
+            hi = node.mesh->boundsMax;
+        }
         for (int i = 0; i < 8; ++i) {
-            const glm::vec3 corner((i & 1) ? 0.5f : -0.5f, (i & 2) ? 0.5f : -0.5f, (i & 4) ? 0.5f : -0.5f);
+            const glm::vec3 corner((i & 1) ? hi.x : lo.x, (i & 2) ? hi.y : lo.y, (i & 4) ? hi.z : lo.z);
             const glm::vec3 p = glm::vec3(w * glm::vec4(corner, 1.0f));
             mn = any ? glm::min(mn, p) : p;
             mx = any ? glm::max(mx, p) : p;
@@ -529,6 +550,84 @@ void newScene(SceneNode& root, SceneNode*& selected, SceneHistory& history, std:
     g.frame = (float)g.minFrame;
 }
 
+void offsetMaterialIndices(SceneNode& node, int base) {
+    if (node.materialIndex >= 0) node.materialIndex += base;
+    for (const auto& c : node.children()) offsetMaterialIndices(*c, base);
+}
+
+void reportFileError(const std::filesystem::path& path, const std::string& err) {
+    g.importReport = C4DImportReport{};
+    g.importReport.fileName = pathUtf8(path.filename());
+    g.importError = err;
+    g.showImport = true;
+}
+
+void frameNodes(OrbitalCamera& camera, const SceneNode& node, bool includeSelf);
+
+// Archivo > Abrir (Ctrl+O): .iron o .c4d con el dialogo del sistema. Sin
+// dialogo nativo (Linux por ahora) se usa el propio de la carpeta scenes/.
+void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history, std::vector<Material>& materials,
+                   OrbitalCamera& camera) {
+    if (!nativeFileDialogAvailable()) {
+        g.showScene = true;
+        g.sceneLoadMode = true;
+        return;
+    }
+    const auto path = openFileDialog("Abrir", {{"Escenas de Iron3D y Cinema 4D", "*.iron;*.c4d"},
+                                               {"Iron3D", "*.iron"}, {"Cinema 4D", "*.c4d"}});
+    if (!path) return;
+    std::string err;
+    if (isC4DPath(*path)) {
+        SceneNode temp("tmp");
+        std::vector<Material> mats;
+        C4DImportReport rep;
+        if (!importC4D(*path, temp, mats, rep, &err)) return reportFileError(*path, err);
+        root.clearChildren();
+        root.adoptChildrenFrom(temp);
+        materials = std::move(mats);
+        g.importReport = rep;
+        g.importError.clear();
+        g.showImport = true;
+    } else if (!loadScene(*path, root, materials, &err)) {
+        return reportFileError(*path, err);
+    }
+    selected = nullptr;
+    history.reset();
+    g.selectedMat = -1;
+    frameNodes(camera, root, false);
+}
+
+// Archivo > Fusionar (Ctrl+Mayus+O): anade a la escena actual lo que haya en
+// otro .c4d o .iron, como en C4D. Se puede deshacer.
+void mergeSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history, std::vector<Material>& materials) {
+    if (!nativeFileDialogAvailable()) {
+        reportFileError("Fusionar", "Fusionar necesita el diálogo de archivos del sistema, que en esta "
+                                    "plataforma todavía no existe.");
+        return;
+    }
+    const auto path = openFileDialog("Fusionar", {{"Escenas de Cinema 4D e Iron3D", "*.c4d;*.iron"},
+                                                  {"Cinema 4D", "*.c4d"}, {"Iron3D", "*.iron"}});
+    if (!path) return;
+    const std::string before = history.snapshot(root);
+    std::string err;
+    if (isC4DPath(*path)) {
+        C4DImportReport rep;
+        if (!importC4D(*path, root, materials, rep, &err)) return reportFileError(*path, err);
+        g.importReport = rep;
+        g.importError.clear();
+        g.showImport = true;
+    } else {
+        SceneNode temp("tmp");
+        std::vector<Material> mats;
+        if (!loadScene(*path, temp, mats, &err)) return reportFileError(*path, err);
+        offsetMaterialIndices(temp, (int)materials.size());
+        for (Material& m : mats) materials.push_back(std::move(m));
+        root.appendChildrenFrom(temp);
+    }
+    history.commit(before);
+    selected = nullptr;
+}
+
 void deleteSelected(SceneNode& root, SceneNode*& selected, SceneHistory& history) {
     if (!selected || !selected->parent()) return;
     history.commitBefore(root);
@@ -820,7 +919,10 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
         }
         if (pressed(ImGuiKey_R)) vp.renderView = true;
         if (pressed(ImGuiKey_N)) newScene(root, selected, history, materials);
-        if (pressed(ImGuiKey_O)) { g.showScene = true; g.sceneLoadMode = true; }
+        if (pressed(ImGuiKey_O)) {
+            if (shift) mergeSceneFile(root, selected, history, materials);
+            else openSceneFile(root, selected, history, materials, camera);
+        }
         if (pressed(ImGuiKey_S)) { g.showScene = true; g.sceneLoadMode = false; }
         if (pressed(ImGuiKey_E)) g.showPrefs = true;
         if (pressed(ImGuiKey_D)) { g.focus = AttrFocus::Project; }
@@ -842,8 +944,10 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
 
     if (ImGui::BeginMenu("Archivo")) {
         if (iconMenuItem(Icon::MnuNew, "Nuevo", "Ctrl+N")) newScene(root, selected, history, materials);
-        if (iconMenuItem(Icon::MnuOpen, "Abrir...", "Ctrl+O")) { g.showScene = true; g.sceneLoadMode = true; }
-        disabledItems({{"Fusionar...", "Ctrl+Mayús+O"}, {"Volver a Archivo Guardado...", ""}, {nullptr, nullptr},
+        if (iconMenuItem(Icon::MnuOpen, "Abrir...", "Ctrl+O")) openSceneFile(root, selected, history, materials, camera);
+        if (ImGui::MenuItemEx("Fusionar...", kIconGutterText, "Ctrl+Mayús+O"))
+            mergeSceneFile(root, selected, history, materials);
+        disabledItems({{"Volver a Archivo Guardado...", ""}, {nullptr, nullptr},
                        {"Cerrar", "Ctrl+F4"}, {"Cerrar Todos", "Ctrl+Mayús+F4"}, {nullptr, nullptr}});
         if (iconMenuItem(Icon::MnuSave, "Guardar", "Ctrl+S")) { g.showScene = true; g.sceneLoadMode = false; }
         if (iconMenuItem(Icon::MnuSaveAs, "Guardar como...", "Ctrl+Mayús+S")) { g.showScene = true; g.sceneLoadMode = false; }
@@ -1335,6 +1439,13 @@ void drawSelectionOutline(ImDrawList* dl, const SceneNode* sel, const OrbitalCam
                 }
             }
             break;
+        case PrimitiveType::Mesh: {
+            if (!sel->mesh) return;
+            const glm::vec3 lo = sel->mesh->boundsMin, hi = sel->mesh->boundsMax;
+            for (int i = 0; i < 8; ++i)
+                local.emplace_back(i & 1 ? hi.x : lo.x, i & 2 ? hi.y : lo.y, i & 4 ? hi.z : lo.z);
+            break;
+        }
         default:
             return;
     }
@@ -1977,6 +2088,11 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                 roFloat("Segmentos en Z", 1, "%.0f");
                 roCheck("Superficies Separadas", false);
                 roCheck("Canto", false);
+            } else if (node.primitive == PrimitiveType::Mesh) {
+                const MeshData* m = node.mesh.get();
+                roFloat("Vértices", m ? (float)m->vertices.size() : 0.0f, "%.0f");
+                roFloat("Triángulos", m ? (float)(m->indices.size() / 3) : 0.0f, "%.0f");
+                ImGui::TextDisabled("  Geometría importada. Editar polígonos llegará con el modo Modelado.");
             } else if (node.primitive == PrimitiveType::Sphere) {
                 roFloat("Radio", 100, "%.0f cm");
                 roFloat("Segmentos", 24, "%.0f");
@@ -2515,7 +2631,7 @@ void drawCoordinatesManager(SceneNode& root, SceneNode* selected, SceneHistory& 
     glm::vec3& posRef = selected ? selected->position : dummy;
     glm::vec3& rotRef = selected ? selected->rotationDeg : dummy;
     glm::vec3& sclRef = selected ? selected->scale : dummy;
-    const glm::vec3 base = selected ? baseSizeCm(selected->primitive) : glm::vec3(0.0f);
+    const glm::vec3 base = selected ? baseSizeCm(*selected) : glm::vec3(0.0f);
     const char* axisP[] = {"X", "Y", "Z"};
     const char* axisR[] = {"H", "P", "B"};
     const int rotIdx[] = {1, 0, 2};
@@ -3025,11 +3141,68 @@ void drawAboutDialog() {
         ImGui::Separator();
         ImGui::TextDisabled("Interfaz inspirada en el flujo de trabajo de Cinema 4D R19.");
         ImGui::TextDisabled("Cinema 4D es una marca de Maxon; Iron3D no está afiliado a Maxon.");
+        if (cinewareAvailable()) {
+            ImGui::Separator();
+            ImGui::TextDisabled("La importación de archivos .c4d usa el Cineware SDK");
+            ImGui::TextDisabled("de MAXON Computer GmbH, integrado según su licencia.");
+        }
+    }
+    ImGui::End();
+}
+
+void drawImportReport() {
+    if (!g.showImport) return;
+    const C4DImportReport& r = g.importReport;
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    const char* title = g.importError.empty() ? "Importar Cinema 4D###importrep" : "No se pudo abrir###importrep";
+    if (ImGui::Begin(title, &g.showImport, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
+        // Al abrir Iron3D con un .c4d el informe sale en el primer frame y las
+        // ventanas que se crean despues lo taparian. Se queda delante de los
+        // paneles mientras no haya un menu abierto ni otro dialogo con el foco.
+        ImGuiWindow* self = ImGui::GetCurrentWindow();
+        const ImGuiWindow* focused = ImGui::GetCurrentContext()->NavWindow;
+        const bool otherDialog = focused && focused->RootWindow != self &&
+                                 !(focused->RootWindow->Flags & ImGuiWindowFlags_NoBringToFrontOnFocus);
+        if (!otherDialog && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId))
+            ImGui::BringWindowToDisplayFront(self);
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 34.0f);
+        if (g_fontBold) ImGui::PushFont(g_fontBold);
+        ImGui::TextUnformatted(r.fileName.c_str());
+        if (g_fontBold) ImGui::PopFont();
+        if (!g.importError.empty()) {
+            ImGui::TextColored(ImVec4(0.95f, 0.45f, 0.40f, 1.0f), "%s", g.importError.c_str());
+        } else {
+            ImGui::Text("%d objetos, %d con malla, %d materiales, %d luces", r.objects, r.meshes, r.materials,
+                        r.lights);
+            ImGui::Text("%lld puntos, %lld polígonos", r.points, r.polygons);
+            if (r.generatorsFromCache > 0)
+                ImGui::Text("%d generadores con la geometría guardada por Cinema 4D", r.generatorsFromCache);
+            if (r.primitivesRebuilt > 0)
+                ImGui::Text("%d primitivas reconstruidas desde sus parámetros", r.primitivesRebuilt);
+            ImGui::Separator();
+            if (r.warnings.empty()) {
+                ImGui::TextColored(ImVec4(0.45f, 0.85f, 0.45f, 1.0f), "Importado sin avisos.");
+            } else {
+                ImGui::TextUnformatted("Revisa:");
+                for (const std::string& w : r.warnings) ImGui::BulletText("%s", w.c_str());
+            }
+        }
+        ImGui::PopTextWrapPos();
+        ImGui::Spacing();
+        if (ImGui::Button("Cerrar", ImVec2(120, 0))) g.showImport = false;
     }
     ImGui::End();
 }
 
 } // namespace
+
+void frameScene(OrbitalCamera& camera, const SceneNode& root) { frameNodes(camera, root, false); }
+
+void showImportReport(const C4DImportReport& report) {
+    g.importReport = report;
+    g.importError.clear();
+    g.showImport = true;
+}
 
 // Mayus+clic en el visor: anade o quita el objeto de la seleccion y devuelve el
 // nuevo objeto activo (main.cpp hace el picking, la seleccion vive aqui).
@@ -3330,6 +3503,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     drawPreferencesDialog(activeBackend, prefs, prefsPath);
     drawMaterialEditor(root, history, materials);
     drawAboutDialog();
+    drawImportReport();
 
     drawStatusBar(framerate, gizmoMode, viewport, activeBackend, L.status.pos, L.status.size);
 }

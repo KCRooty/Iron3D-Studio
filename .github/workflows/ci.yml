@@ -1,9 +1,10 @@
 name: CI
 
 # AGENTS.md §5 / Documento Maestro §4.3: CI obligatoria, Windows + Linux con
-# paridad total -- si una de las dos no compila, la build entera falla. Solo
-# compila (no ejecuta Iron3DStudio.exe): el runner no tiene GPU real, y la
-# regla del proyecto es sobre compilar, no sobre correr en el runner.
+# paridad total -- si una de las dos no compila, la build entera falla. Compila
+# y pasa los tests sin ventana (ctest); no ejecuta Iron3DStudio.exe porque el
+# runner no tiene GPU real. El importador .c4d no entra: el Cineware SDK no
+# esta en el repo, asi que la CI compila su stub.
 
 on:
   push:
@@ -53,6 +54,10 @@ jobs:
         shell: pwsh
         run: cmake --build build --parallel
 
+      - name: Tests
+        shell: pwsh
+        run: ctest --test-dir build --output-on-failure
+
   linux:
     runs-on: ubuntu-latest
     steps:
@@ -70,3 +75,6 @@ jobs:
 
       - name: Compilar
         run: cmake --build build --parallel
+
+      - name: Tests
+        run: ctest --test-dir build --output-on-failure

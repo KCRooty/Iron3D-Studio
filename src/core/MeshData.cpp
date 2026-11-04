@@ -27,14 +27,14 @@ MeshData makeCubeMesh() {
     };
 
     for (const Face& f : faces) {
-        const uint16_t base = (uint16_t)mesh.vertices.size();
+        const uint32_t base = (uint32_t)mesh.vertices.size();
         for (const glm::vec3& corner : f.corners) {
             mesh.vertices.push_back({corner, f.color, f.normal});
         }
         // CCW visto desde fuera (coherente con el orden de esquinas de cada cara).
         mesh.indices.insert(mesh.indices.end(), {
-            (uint16_t)(base + 0), (uint16_t)(base + 1), (uint16_t)(base + 2),
-            (uint16_t)(base + 2), (uint16_t)(base + 3), (uint16_t)(base + 0),
+            base + 0, base + 1, base + 2,
+            base + 2, base + 3, base + 0,
         });
     }
     return mesh;
@@ -66,10 +66,10 @@ MeshData makeSphereMesh(int rings, int segments) {
     const int stride = segments + 1;
     for (int ring = 0; ring < rings; ++ring) {
         for (int seg = 0; seg < segments; ++seg) {
-            const uint16_t a = (uint16_t)(ring * stride + seg);
-            const uint16_t b = (uint16_t)(ring * stride + seg + 1);
-            const uint16_t c = (uint16_t)((ring + 1) * stride + seg);
-            const uint16_t d = (uint16_t)((ring + 1) * stride + seg + 1);
+            const uint32_t a = (uint32_t)(ring * stride + seg);
+            const uint32_t b = (uint32_t)(ring * stride + seg + 1);
+            const uint32_t c = (uint32_t)((ring + 1) * stride + seg);
+            const uint32_t d = (uint32_t)((ring + 1) * stride + seg + 1);
             // CCW visto desde fuera, igual que el cubo.
             mesh.indices.insert(mesh.indices.end(), {a, c, b, b, c, d});
         }
@@ -93,6 +93,20 @@ MeshData makePlaneMesh() {
     };
     mesh.indices = {0, 2, 1, 2, 0, 3};
     return mesh;
+}
+
+void updateBounds(MeshData& mesh) {
+    if (mesh.vertices.empty()) {
+        mesh.boundsMin = mesh.boundsMax = glm::vec3(0.0f);
+        return;
+    }
+    glm::vec3 mn = mesh.vertices[0].position, mx = mn;
+    for (const Vertex& v : mesh.vertices) {
+        mn = glm::min(mn, v.position);
+        mx = glm::max(mx, v.position);
+    }
+    mesh.boundsMin = mn;
+    mesh.boundsMax = mx;
 }
 
 } // namespace iron3d

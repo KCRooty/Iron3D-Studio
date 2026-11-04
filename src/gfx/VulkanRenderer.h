@@ -69,6 +69,13 @@ private:
     int vpX_ = 0, vpY_ = 0, vpW_ = 0, vpH_ = 0; // 0x0 = framebuffer entero
 
     std::vector<PrimitiveMesh> meshes_; // indexado por MeshHandle
+    // Borrado diferido (2026-11-04): destroyMesh() no libera en el acto
+    // porque el frame anterior puede seguir usando el buffer en la GPU. Se
+    // apunta aqui y beginFrame() lo libera unos frames despues; el hueco
+    // pasa a freeMeshes_ para reutilizarlo en el siguiente createMesh().
+    struct PendingDestroy { MeshHandle handle; int framesLeft; };
+    std::vector<PendingDestroy> pendingDestroy_;
+    std::vector<MeshHandle> freeMeshes_;
 
     glm::vec3 lightPosWS_{0.0f}; // fijado por setLighting(), leido en cada drawMesh() de este frame
     glm::vec3 eyePosWS_{0.0f};

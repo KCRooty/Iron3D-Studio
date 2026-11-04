@@ -39,6 +39,15 @@ struct ViewportState {
     bool renderView = false;
 };
 
+// Muestra la ventana con el resultado de importar un .c4d (main.cpp la usa al
+// abrir un .c4d pasado por linea de comandos).
+struct C4DImportReport;
+void showImportReport(const C4DImportReport& report);
+
+// Encuadra la camara sobre todo lo que hay en la escena (como "Encuadrar
+// todo" de C4D). main.cpp lo usa tras abrir una escena por linea de comandos.
+void frameScene(OrbitalCamera& camera, const SceneNode& root);
+
 // `selected` cambia al hacer clic en otro objeto, duplicarlo, borrarlo o al
 // cargar/deshacer/rehacer una escena entera encima. `gizmoMode` se cambia
 // desde la barra de iconos o con E/R/T (atajos de C4D). `history` es la pila

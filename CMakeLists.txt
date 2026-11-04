@@ -106,11 +106,65 @@ add_executable(Iron3DStudio
     src/ui/IconsDeformers.cpp
     src/ui/IconsScene.cpp
     src/ui/IconsMenus.cpp
-    src/ui/UiPreset.cpp)
+    src/ui/UiPreset.cpp
+    src/ui/FileDialog.cpp
+    src/importers/c4d_compat/C4DGeometry.cpp)
 
 target_include_directories(Iron3DStudio PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${glm_SOURCE_DIR})
+
+# -----------------------------------------------------------------------------
+# Importador de .c4d (Cineware SDK de MAXON). El SDK NO esta en el repositorio
+# (ver AGENTS.md 7): se pasa su carpeta con -DIRON3D_CINEWARE_SDK=<ruta>, la
+# que contiene includes/ y libraries/. Sin ella (CI, Linux) se compila la
+# version vacia del importador y Iron3D explica que no puede abrir .c4d.
+# MAXON solo publica librerias para Windows y macOS.
+# -----------------------------------------------------------------------------
+set(IRON3D_CINEWARE_SDK "" CACHE PATH "Carpeta del Cineware SDK (includes/, libraries/) para importar .c4d")
+if(IRON3D_CINEWARE_SDK AND WIN32)
+    if(NOT EXISTS "${IRON3D_CINEWARE_SDK}/includes/c4d.h")
+        message(FATAL_ERROR "IRON3D_CINEWARE_SDK no apunta al Cineware SDK (falta includes/c4d.h): ${IRON3D_CINEWARE_SDK}")
+    endif()
+    set(_cwlib "${IRON3D_CINEWARE_SDK}/libraries/win")
+    target_sources(Iron3DStudio PRIVATE src/importers/cineware/CinewareImporter.cpp)
+    # SYSTEM: los avisos de las cabeceras del SDK no son nuestros (/W4 sigue para nuestro codigo).
+    target_include_directories(Iron3DStudio SYSTEM PRIVATE "${IRON3D_CINEWARE_SDK}/includes")
+    set_source_files_properties(src/importers/cineware/CinewareImporter.cpp PROPERTIES
+        COMPILE_DEFINITIONS "__PC;_CRT_SECURE_NO_WARNINGS"
+        # Las cabeceras del SDK no compilan con /permissive- (el modo estricto que
+        # trae C++20 en MSVC): solo en este archivo se vuelve al modo permisivo.
+        COMPILE_OPTIONS "/permissive;/Zc:twoPhase-")
+    # Librerias de VS2019 (/MD), compatibles con el MSVC actual.
+    target_link_libraries(Iron3DStudio PRIVATE
+        "$<IF:$<CONFIG:Debug>,${_cwlib}/cinewarelib_2019/cinewarelib_debug.lib,${_cwlib}/cinewarelib_2019/cinewarelib_release.lib>"
+        "$<IF:$<CONFIG:Debug>,${_cwlib}/jpeglib_2019/jpeglib_debug.lib,${_cwlib}/jpeglib_2019/jpeglib_release.lib>"
+        ws2_32 winmm rpcrt4 iphlpapi)
+    message(STATUS "Iron3D: importador .c4d con Cineware SDK (${IRON3D_CINEWARE_SDK})")
+
+    # Herramienta de consola para probar el importador con archivos reales.
+    add_executable(c4d_probe
+        tools/c4d_probe.cpp
+        src/importers/cineware/CinewareImporter.cpp
+        src/importers/c4d_compat/C4DGeometry.cpp
+        src/core/MeshData.cpp
+        src/core/SceneNode.cpp
+        src/core/SceneSerializer.cpp
+        src/core/Material.cpp)
+    target_include_directories(c4d_probe PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+    target_include_directories(c4d_probe SYSTEM PRIVATE "${IRON3D_CINEWARE_SDK}/includes")
+    target_compile_definitions(c4d_probe PRIVATE GLM_FORCE_RADIANS)
+    target_compile_options(c4d_probe PRIVATE /W4 /utf-8)
+    target_link_libraries(c4d_probe PRIVATE
+        "$<IF:$<CONFIG:Debug>,${_cwlib}/cinewarelib_2019/cinewarelib_debug.lib,${_cwlib}/cinewarelib_2019/cinewarelib_release.lib>"
+        "$<IF:$<CONFIG:Debug>,${_cwlib}/jpeglib_2019/jpeglib_debug.lib,${_cwlib}/jpeglib_2019/jpeglib_release.lib>"
+        ws2_32 winmm rpcrt4 iphlpapi)
+else()
+    if(IRON3D_CINEWARE_SDK)
+        message(WARNING "IRON3D_CINEWARE_SDK solo se usa en Windows por ahora; se compila sin importador .c4d")
+    endif()
+    target_sources(Iron3DStudio PRIVATE src/importers/cineware/CinewareImporterStub.cpp)
+endif()
 
 target_link_libraries(Iron3DStudio PRIVATE
     Vulkan::Vulkan
@@ -167,3 +221,21 @@ foreach(SHADER ${SHADER_SOURCES})
         COMMAND ${GLSLANG_VALIDATOR} -V ${SHADER} -o "$<TARGET_FILE_DIR:Iron3DStudio>/shaders/${SHADER_NAME}.spv"
         COMMENT "Compilando ${SHADER_NAME} -> SPIR-V")
 endforeach()
+
+# -----------------------------------------------------------------------------
+# Pruebas sin GPU (las ejecuta tambien el CI): geometria compatible con C4D.
+# -----------------------------------------------------------------------------
+enable_testing()
+add_executable(iron3d_tests
+    tests/c4d_geometry_test.cpp
+    src/importers/c4d_compat/C4DGeometry.cpp
+    src/core/MeshData.cpp
+    src/core/SceneNode.cpp)
+target_include_directories(iron3d_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+target_compile_definitions(iron3d_tests PRIVATE GLM_FORCE_RADIANS)
+if(MSVC)
+    target_compile_options(iron3d_tests PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(iron3d_tests PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME c4d_geometry COMMAND iron3d_tests)
