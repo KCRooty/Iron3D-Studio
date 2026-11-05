@@ -52,6 +52,16 @@ constexpr GLenum GL_COMPILE_STATUS = 0x8B81;
 constexpr GLenum GL_LINK_STATUS = 0x8B82;
 constexpr GLenum GL_CULL_FACE = 0x0B44;
 constexpr GLenum GL_DEPTH_TEST = 0x0B71;
+// Texturas de la UI (miniaturas del Navegador de Contenido).
+constexpr GLenum GL_TEXTURE_2D = 0x0DE1;
+constexpr GLenum GL_RGBA = 0x1908;
+constexpr GLenum GL_UNSIGNED_BYTE = 0x1401;
+constexpr GLenum GL_TEXTURE_MAG_FILTER = 0x2800;
+constexpr GLenum GL_TEXTURE_MIN_FILTER = 0x2801;
+constexpr GLenum GL_TEXTURE_WRAP_S = 0x2802;
+constexpr GLenum GL_TEXTURE_WRAP_T = 0x2803;
+constexpr GLenum GL_LINEAR = 0x2601;
+constexpr GLenum GL_CLAMP_TO_EDGE = 0x812F;
 
 // --- Punteros a funcion (nombres y firmas identicos a los headers oficiales
 // de Khronos) ---------------------------------------------------------------
@@ -64,6 +74,12 @@ using PFNGLDEPTHFUNCPROC = void (*)(GLenum);
 using PFNGLDEPTHMASKPROC = void (*)(GLboolean);
 using PFNGLDRAWARRAYSPROC = void (*)(GLenum, GLint, GLsizei);
 using PFNGLDRAWELEMENTSPROC = void (*)(GLenum, GLsizei, GLenum, const void*);
+
+using PFNGLGENTEXTURESPROC = void (*)(GLsizei, GLuint*);
+using PFNGLBINDTEXTUREPROC = void (*)(GLenum, GLuint);
+using PFNGLDELETETEXTURESPROC = void (*)(GLsizei, const GLuint*);
+using PFNGLTEXPARAMETERIPROC = void (*)(GLenum, GLenum, GLint);
+using PFNGLTEXIMAGE2DPROC = void (*)(GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum, GLenum, const void*);
 
 using PFNGLGENVERTEXARRAYSPROC = void (*)(GLsizei, GLuint*);
 using PFNGLBINDVERTEXARRAYPROC = void (*)(GLuint);
@@ -109,6 +125,12 @@ extern PFNGLDEPTHFUNCPROC glDepthFunc;
 extern PFNGLDEPTHMASKPROC glDepthMask;
 extern PFNGLDRAWARRAYSPROC glDrawArrays;
 extern PFNGLDRAWELEMENTSPROC glDrawElements;
+
+extern PFNGLGENTEXTURESPROC glGenTextures;
+extern PFNGLBINDTEXTUREPROC glBindTexture;
+extern PFNGLDELETETEXTURESPROC glDeleteTextures;
+extern PFNGLTEXPARAMETERIPROC glTexParameteri;
+extern PFNGLTEXIMAGE2DPROC glTexImage2D;
 
 extern PFNGLGENVERTEXARRAYSPROC glGenVertexArrays;
 extern PFNGLBINDVERTEXARRAYPROC glBindVertexArray;

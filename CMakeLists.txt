@@ -44,7 +44,29 @@ FetchContent_Declare(imgui
     GIT_TAG        v1.91.0
     GIT_SHALLOW    TRUE)
 
-FetchContent_MakeAvailable(glfw glm vma imgui)
+# stb_image (dominio publico / MIT), fijado por commit: miniaturas JPEG y
+# descompresion zlib de las librerias .lib4d. Solo cabeceras: no tiene
+# CMakeLists propio, FetchContent solo lo descarga.
+FetchContent_Declare(stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG        d14d46f6b44456eb88beac58cba833a4135d4c89)
+
+FetchContent_MakeAvailable(glfw glm vma imgui stb)
+
+# Lector de .lib4d (importers/lib4d): lo comparten Iron3D y las pruebas.
+add_library(iron3d_lib4d STATIC
+    src/importers/lib4d/PresetLibrary.cpp
+    src/importers/lib4d/StbImpl.cpp)
+target_include_directories(iron3d_lib4d PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(iron3d_lib4d SYSTEM PUBLIC ${stb_SOURCE_DIR})
+if(MSVC)
+    target_compile_options(iron3d_lib4d PRIVATE /W4 /utf-8)
+    # stb_image no es nuestro: sin avisos en su implementacion.
+    set_source_files_properties(src/importers/lib4d/StbImpl.cpp PROPERTIES COMPILE_OPTIONS "/W0")
+else()
+    target_compile_options(iron3d_lib4d PRIVATE -Wall -Wextra)
+    set_source_files_properties(src/importers/lib4d/StbImpl.cpp PROPERTIES COMPILE_OPTIONS "-w")
+endif()
 
 # VMA es header-only: la implementacion se instancia en src/gfx/VulkanMemory.cpp
 add_library(vma_impl STATIC ${CMAKE_CURRENT_SOURCE_DIR}/src/gfx/VmaImpl.cpp)
@@ -108,6 +130,7 @@ add_executable(Iron3DStudio
     src/ui/IconsMenus.cpp
     src/ui/UiPreset.cpp
     src/ui/FileDialog.cpp
+    src/ui/ContentBrowser.cpp
     src/importers/c4d_compat/C4DGeometry.cpp)
 
 target_include_directories(Iron3DStudio PRIVATE
@@ -170,7 +193,8 @@ target_link_libraries(Iron3DStudio PRIVATE
     Vulkan::Vulkan
     glfw
     imgui
-    vma_impl)
+    vma_impl
+    iron3d_lib4d)
 
 target_compile_definitions(Iron3DStudio PRIVATE
     GLM_FORCE_RADIANS
@@ -239,3 +263,12 @@ else()
     target_compile_options(iron3d_tests PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME c4d_geometry COMMAND iron3d_tests)
+
+add_executable(preset_library_test tests/preset_library_test.cpp)
+target_link_libraries(preset_library_test PRIVATE iron3d_lib4d)
+if(MSVC)
+    target_compile_options(preset_library_test PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(preset_library_test PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME preset_library COMMAND preset_library_test)

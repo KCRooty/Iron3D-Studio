@@ -217,8 +217,36 @@ void OpenGLRenderer::shutdown() {
     gl::glDeleteProgram(program_);
     gl::glDeleteProgram(litProgram_);
 
+    if (!uiTextures_.empty()) gl::glDeleteTextures((gl::GLsizei)uiTextures_.size(), uiTextures_.data());
+    uiTextures_.clear();
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+}
+
+void* OpenGLRenderer::createUiTexture(const uint8_t* rgba, int width, int height) {
+    if (!rgba || width <= 0 || height <= 0) return nullptr;
+    gl::GLuint tex = 0;
+    gl::glGenTextures(1, &tex);
+    if (!tex) return nullptr;
+    gl::glBindTexture(gl::GL_TEXTURE_2D, tex);
+    gl::glTexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MIN_FILTER, (gl::GLint)gl::GL_LINEAR);
+    gl::glTexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MAG_FILTER, (gl::GLint)gl::GL_LINEAR);
+    gl::glTexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_S, (gl::GLint)gl::GL_CLAMP_TO_EDGE);
+    gl::glTexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_T, (gl::GLint)gl::GL_CLAMP_TO_EDGE);
+    gl::glTexImage2D(gl::GL_TEXTURE_2D, 0, (gl::GLint)gl::GL_RGBA, width, height, 0, gl::GL_RGBA,
+                     gl::GL_UNSIGNED_BYTE, rgba);
+    gl::glBindTexture(gl::GL_TEXTURE_2D, 0);
+    uiTextures_.push_back(tex);
+    return reinterpret_cast<void*>(static_cast<intptr_t>(tex));
+}
+
+void OpenGLRenderer::destroyUiTexture(void* texture) {
+    const auto tex = static_cast<gl::GLuint>(reinterpret_cast<intptr_t>(texture));
+    if (!tex) return;
+    // En GL la orden se encola detras de los dibujos ya emitidos: se puede borrar ya.
+    gl::glDeleteTextures(1, &tex);
+    std::erase(uiTextures_, tex);
 }
 
 void OpenGLRenderer::resizeIfNeeded(int fbWidth, int fbHeight) {

@@ -1,0 +1,244 @@
+// Pruebas del lector de .lib4d (importers/lib4d/PresetLibrary). Sin GPU ni
+// Cineware: se ejecutan en el CI de Windows y Linux con una libreria
+// sintetica construida aqui mismo con el formato observado.
+//
+// Con argumentos, ademas abre esas librerias reales y comprueba que cada
+// modelo se descomprime a un .c4d y que las miniaturas se decodifican:
+//   preset_library_test "ruta/a/libreria.lib4d" ...
+
+#include "importers/lib4d/PresetLibrary.h"
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wall"
+#pragma GCC diagnostic ignored "-Wextra"
+#endif
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STBI_WRITE_NO_STDIO
+#include <stb_image_write.h>
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+
+#include <cstdio>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <string>
+#include <vector>
+
+using namespace iron3d;
+using Bytes = std::vector<uint8_t>;
+
+namespace {
+
+int g_failures = 0;
+
+void check(bool ok, const char* what) {
+    if (!ok) {
+        ++g_failures;
+        std::printf("FALLO: %s\n", what);
+    }
+}
+
+void put32(Bytes& b, uint32_t v) {
+    for (int s = 24; s >= 0; s -= 8) b.push_back(uint8_t(v >> s));
+}
+
+void put64(Bytes& b, uint64_t v) {
+    put32(b, uint32_t(v >> 32));
+    put32(b, uint32_t(v));
+}
+
+void putString(Bytes& b, const char* ascii) {
+    const uint8_t mark[] = {0x0F, 0x00, 0x00, 0x00, 0x82, 0x82};
+    b.insert(b.end(), std::begin(mark), std::end(mark));
+    put32(b, uint32_t(std::strlen(ascii) * 2));
+    for (const char* p = ascii; *p; ++p) {
+        b.push_back(0);
+        b.push_back(uint8_t(*p));
+    }
+}
+
+void putType(Bytes& b, uint32_t type) {
+    const uint8_t key1[] = {0x0F, 0x00, 0x00, 0x00, 0x01, 0x0F, 0x00, 0x00, 0x00, 0x0F, 0x0F};
+    b.insert(b.end(), std::begin(key1), std::end(key1));
+    put32(b, type);
+}
+
+// Registro con la forma de los reales: cabecera de contenedor, url, nombre
+// localizado y despues el tipo. Delante del nombre va un "clave 1" falso con
+// otro valor (los registros reales lo tienen y no es el tipo).
+Bytes record(const std::string& url, const char* name, uint32_t type) {
+    Bytes b = {'Q', 'C', '4', 'D', 'b', 'r', 'o', 'w', 0, 0, 'J', 'P'};
+    putString(b, url.c_str());
+    putType(b, 2);
+    if (name) putString(b, name);
+    if (type) putType(b, type);
+    b.push_back(2);
+    return b;
+}
+
+void chunk(Bytes& out, const char* tag, uint32_t id, const Bytes& body) {
+    out.insert(out.end(), tag, tag + 4);
+    put32(out, id);
+    put64(out, body.size());
+    out.insert(out.end(), body.begin(), body.end());
+}
+
+uint32_t adler32(const Bytes& d) {
+    uint32_t a = 1, b = 0;
+    for (uint8_t c : d) {
+        a = (a + c) % 65521;
+        b = (b + a) % 65521;
+    }
+    return (b << 16) | a;
+}
+
+// u32 BE con el tamano + flujo zlib con bloques "stored" (sin comprimir):
+// valido para cualquier inflador y no hace falta un compresor en la prueba.
+Bytes zlibStored(const Bytes& d) {
+    Bytes b;
+    put32(b, uint32_t(d.size()));
+    b.push_back(0x78);
+    b.push_back(0x01);
+    size_t pos = 0;
+    do {
+        const size_t n = std::min<size_t>(65535, d.size() - pos);
+        b.push_back(pos + n == d.size() ? 1 : 0);
+        b.push_back(uint8_t(n));
+        b.push_back(uint8_t(n >> 8));
+        b.push_back(uint8_t(~n));
+        b.push_back(uint8_t(~n >> 8));
+        b.insert(b.end(), d.begin() + std::ptrdiff_t(pos), d.begin() + std::ptrdiff_t(pos + n));
+        pos += n;
+    } while (pos < d.size());
+    put32(b, adler32(d));
+    return b;
+}
+
+Bytes tinyJpeg() {
+    unsigned char px[8 * 8 * 3];
+    for (int i = 0; i < 8 * 8; ++i) {
+        px[i * 3 + 0] = 200;
+        px[i * 3 + 1] = 40;
+        px[i * 3 + 2] = 40;
+    }
+    Bytes out;
+    stbi_write_jpg_to_func(
+        [](void* ctx, void* data, int size) {
+            auto* o = static_cast<Bytes*>(ctx);
+            o->insert(o->end(), static_cast<uint8_t*>(data), static_cast<uint8_t*>(data) + size);
+        },
+        &out, 8, 8, 3, px, 90);
+    return out;
+}
+
+void syntheticLibrary() {
+    const std::string base = "preset://prueba.lib4d";
+    Bytes doc = {'Q', 'C', '4', 'D', 'C', '4', 'D', '6'};
+    for (int i = 0; i < 150000; ++i) doc.push_back(uint8_t(i * 7)); // > 64 KB: varios bloques
+    const Bytes png = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3};
+
+    Bytes lib = {'d', 'b', 'f', 'h', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    chunk(lib, "difm", 0, record(base, "PRUEBA", 0));
+    chunk(lib, "bina", 3, png);
+    chunk(lib, "imag", 6, tinyJpeg());
+    chunk(lib, "bina", 6, zlibStored(Bytes(16, 0))); // version vieja del modelo...
+    chunk(lib, "ivld", 9, record(base + "/Borrado", "Borrado", 1018107));
+    chunk(lib, "bina", 6, zlibStored(doc));          // ...manda la ultima
+    chunk(lib, "ditm", 2, record(base + "/tex", "tex", 0));
+    chunk(lib, "ditm", 6, record(base + "/Modelo", "Modelo", kLib4dDocumentType));
+    chunk(lib, "ditm", 3, record(base + "/tex/piel.png", "piel.png", 1018031));
+    chunk(lib, "ditm", 7, record(base + "/Personajes/Extra/Otro", "Otro", kLib4dDocumentType));
+    chunk(lib, "bina", 7, zlibStored(doc));
+    chunk(lib, "ditm", 1, record(base, nullptr, 0));
+    chunk(lib, "dbfe", 0, {});
+
+    const auto path = std::filesystem::temp_directory_path() / "iron3d_preset_library_test.lib4d";
+    {
+        std::ofstream f(path, std::ios::binary);
+        f.write(reinterpret_cast<const char*>(lib.data()), std::streamsize(lib.size()));
+    }
+    PresetLibrary L;
+    std::string err;
+    check(L.open(path, &err), "abrir la libreria sintetica");
+    check(L.title() == "PRUEBA", "titulo de la libreria (difm)");
+    check(L.modelCount() == 2, "dos modelos (el anulado no cuenta)");
+
+    const PresetItem* model = nullptr;
+    const PresetItem* tex = nullptr;
+    for (const PresetItem& it : L.items()) {
+        if (it.path == "Modelo") model = &it;
+        if (it.path == "tex/piel.png") tex = &it;
+    }
+    check(model && model->kind == PresetKind::Model && model->compressed, "modelo comprimido");
+    check(model && model->hasThumb(), "miniatura del modelo");
+    check(tex && tex->kind == PresetKind::File && !tex->compressed && tex->parent == "tex", "textura sin comprimir");
+
+    const auto root = L.children("");
+    check(root.size() == 3, "raiz: tex, Personajes y Modelo");
+    check(!root.empty() && L.items()[root[0]].kind == PresetKind::Folder, "carpetas primero");
+    check(L.children("Personajes").size() == 1, "carpeta implicita Personajes/Extra");
+
+    Bytes out;
+    check(model && L.readData(*model, out, &err) && out == doc, "modelo descomprimido identico (ultima version)");
+    check(tex && L.readData(*tex, out, &err) && out == png, "textura tal cual");
+    std::vector<uint8_t> rgba;
+    int w = 0, h = 0;
+    check(model && L.readThumbnail(*model, rgba, w, h) && w == 8 && h == 8 && rgba.size() == 8 * 8 * 4,
+          "miniatura JPEG decodificada");
+    check(!rgba.empty() && rgba[0] > 150 && rgba[1] < 100, "color de la miniatura");
+
+    check(!L.open(path.parent_path() / "no_existe.lib4d", &err), "archivo inexistente");
+    Bytes junk = {'n', 'o', 'p', 'e'};
+    {
+        std::ofstream f(path, std::ios::binary);
+        f.write(reinterpret_cast<const char*>(junk.data()), std::streamsize(junk.size()));
+    }
+    check(!L.open(path, &err), "archivo que no es .lib4d");
+    std::filesystem::remove(path);
+    check(isLib4dPath("a/B.LIB4D") && !isLib4dPath("a/b.c4d"), "extension .lib4d");
+}
+
+void realLibrary(const char* p) {
+    PresetLibrary L;
+    std::string err;
+    if (!L.open(std::filesystem::path(reinterpret_cast<const char8_t*>(p)), &err)) {
+        std::printf("FALLO: %s: %s\n", p, err.c_str());
+        ++g_failures;
+        return;
+    }
+    int models = 0, files = 0, folders = 0, thumbs = 0, docsOk = 0;
+    bool thumbOk = false;
+    for (const PresetItem& it : L.items()) {
+        if (it.kind == PresetKind::Folder) ++folders;
+        if (it.kind == PresetKind::File) ++files;
+        if (it.hasThumb()) ++thumbs;
+        if (it.kind != PresetKind::Model) continue;
+        ++models;
+        Bytes d;
+        if (L.readData(it, d, &err) && d.size() > 8 && std::memcmp(d.data(), "QC4DC4D6", 8) == 0) ++docsOk;
+        else std::printf("  modelo '%s': %s\n", it.name.c_str(), err.c_str());
+        std::vector<uint8_t> rgba;
+        int w = 0, h = 0;
+        if (!thumbOk) thumbOk = L.readThumbnail(it, rgba, w, h);
+    }
+    std::printf("%s: \"%s\" modelos=%d (%d .c4d ok) archivos=%d carpetas=%d miniaturas=%d\n", p, L.title().c_str(),
+                models, docsOk, files, folders, thumbs);
+    check(models > 0 && docsOk == models, "todos los modelos se descomprimen a .c4d");
+    check(thumbOk, "alguna miniatura se decodifica");
+}
+
+} // namespace
+
+int main(int argc, char** argv) {
+    syntheticLibrary();
+    for (int i = 1; i < argc; ++i) realLibrary(argv[i]);
+    if (g_failures == 0) std::printf("preset_library: todo correcto\n");
+    return g_failures == 0 ? 0 : 1;
+}

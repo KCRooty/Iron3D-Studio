@@ -309,6 +309,76 @@ bool drawMenuIcon(const Pen& P, Icon icon) {
             P.arc(0.5f, 0.5f, 0.32f, -0.4f * kPi, 1.3f * kPi, k.gray, 2.2f);
             P.head(0.62f, 0.20f, 1.0f, 0.15f, 0.2f, k.gray);
             return true;
+
+        // --- Navegador de Contenido ---
+        case Icon::CbFolder:
+            folder(P, 0.08f, 0.16f, 0.92f, 0.84f);
+            return true;
+        case Icon::CbLibrary: // libro azul con banda dorada (una .lib4d)
+            P.fill(0.20f, 0.10f, 0.80f, 0.90f, P.c(60, 100, 180), 0.04f);
+            P.fill(0.20f, 0.10f, 0.30f, 0.90f, P.c(35, 60, 120));
+            P.fill(0.38f, 0.24f, 0.72f, 0.40f, P.c(230, 190, 80));
+            P.rect(0.20f, 0.10f, 0.80f, 0.90f, P.c(20, 35, 80), 0.8f);
+            return true;
+        case Icon::CbCatalog: // fichas apiladas
+            P.fill(0.26f, 0.12f, 0.88f, 0.70f, P.c(150, 150, 150));
+            P.fill(0.18f, 0.22f, 0.80f, 0.80f, P.c(190, 190, 190));
+            P.fill(0.10f, 0.32f, 0.72f, 0.90f, P.c(235, 235, 235));
+            P.rect(0.10f, 0.32f, 0.72f, 0.90f, P.c(100, 100, 100), 0.8f);
+            P.line(0.18f, 0.48f, 0.62f, 0.48f, P.c(120, 120, 120), 1.0f);
+            P.line(0.18f, 0.62f, 0.62f, 0.62f, P.c(120, 120, 120), 1.0f);
+            return true;
+        case Icon::CbRecent: // reloj
+            P.disc(0.5f, 0.5f, 0.40f, P.c(235, 235, 235));
+            P.circle(0.5f, 0.5f, 0.40f, P.c(90, 90, 90), 1.2f);
+            P.line(0.5f, 0.5f, 0.5f, 0.24f, P.c(40, 40, 40), 1.6f);
+            P.line(0.5f, 0.5f, 0.68f, 0.60f, P.c(40, 40, 40), 1.6f);
+            return true;
+        case Icon::CbFavorites: { // estrella
+            float xy[20];
+            for (int i = 0; i < 10; ++i) {
+                const float a = -kPi / 2 + (float)i * kPi / 5, r = (i % 2) ? 0.18f : 0.42f;
+                xy[i * 2] = 0.5f + std::cos(a) * r;
+                xy[i * 2 + 1] = 0.54f + std::sin(a) * r;
+            }
+            P.polyFill(xy, 10, P.c(250, 200, 60));
+            P.poly(xy, 10, P.c(160, 110, 20), 0.8f, true);
+            return true;
+        }
+        case Icon::CbComputer: // monitor
+            P.fill(0.10f, 0.14f, 0.90f, 0.68f, P.c(70, 70, 76), 0.03f);
+            P.fill(0.16f, 0.20f, 0.84f, 0.62f, P.c(90, 150, 220));
+            P.fill(0.42f, 0.68f, 0.58f, 0.80f, P.c(110, 110, 110));
+            P.fill(0.28f, 0.80f, 0.72f, 0.88f, P.c(140, 140, 140), 0.02f);
+            return true;
+        case Icon::CbPresets: // carpeta con libro: las librerias de preestablecidos
+            folder(P, 0.04f, 0.18f, 0.80f, 0.80f);
+            P.fill(0.50f, 0.36f, 0.94f, 0.94f, P.c(60, 100, 180), 0.03f);
+            P.fill(0.50f, 0.36f, 0.58f, 0.94f, P.c(35, 60, 120));
+            P.fill(0.64f, 0.48f, 0.88f, 0.58f, P.c(230, 190, 80));
+            return true;
+        case Icon::CbNetwork: // globo
+            P.disc(0.5f, 0.5f, 0.40f, P.c(80, 140, 210));
+            P.ellipse(0.5f, 0.5f, 0.16f, 0.40f, P.c(220, 235, 255), 1.0f);
+            P.line(0.10f, 0.5f, 0.90f, 0.5f, P.c(220, 235, 255), 1.0f);
+            P.circle(0.5f, 0.5f, 0.40f, P.c(30, 60, 110), 1.0f);
+            return true;
+        case Icon::CbSearchResults: // lupa sobre una hoja
+            page(P, 0.08f, 0.06f, 0.66f, 0.80f);
+            P.circle(0.60f, 0.56f, 0.18f, P.c(60, 60, 60), 2.0f);
+            P.line(0.73f, 0.70f, 0.92f, 0.92f, P.c(60, 60, 60), 2.6f);
+            return true;
+        case Icon::CbModel: // documento de C4D: hoja con un cubo
+            page(P, 0.12f, 0.06f, 0.88f, 0.94f);
+            P.quad(0.30f, 0.46f, 0.50f, 0.36f, 0.70f, 0.46f, 0.50f, 0.56f, P.c(150, 190, 240));
+            P.quad(0.30f, 0.46f, 0.50f, 0.56f, 0.50f, 0.80f, 0.30f, 0.70f, P.c(70, 120, 200));
+            P.quad(0.50f, 0.56f, 0.70f, 0.46f, 0.70f, 0.70f, 0.50f, 0.80f, P.c(100, 150, 220));
+            return true;
+        case Icon::CbFile:
+            page(P, 0.16f, 0.06f, 0.84f, 0.94f);
+            for (int i = 0; i < 3; ++i)
+                P.line(0.28f, 0.44f + (float)i * 0.14f, 0.72f, 0.44f + (float)i * 0.14f, P.c(150, 150, 150), 1.0f);
+            return true;
         default:
             return false;
     }

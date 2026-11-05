@@ -6,6 +6,8 @@
 #include "FileDialog.h"
 #include "core/Paths.h"
 #include "importers/cineware/CinewareImporter.h"
+#include "importers/lib4d/PresetLibrary.h"
+#include "ContentBrowser.h"
 
 #include <imgui.h>
 #include <imgui_internal.h> // MenuItemEx / BeginMenuEx (iconos en los menus)
@@ -17,6 +19,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <fstream>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -72,6 +75,9 @@ struct UiState {
     bool showPrefs = false;
     bool showMatEditor = false;
     bool showAbout = false;
+    // El hueco del Gestor de Objetos muestra el Navegador de Contenido
+    // (pestana vertical "Navegador de Contenido", Ventana o Mayus+F8).
+    bool browserOpen = false;
     // Resultado de Abrir/Fusionar un .c4d (o el error de abrir cualquier archivo).
     bool showImport = false;
     C4DImportReport importReport;
@@ -564,6 +570,73 @@ void reportFileError(const std::filesystem::path& path, const std::string& err) 
 
 void frameNodes(OrbitalCamera& camera, const SceneNode& node, bool includeSelf);
 
+// Como reportFileError, con un nombre ya en UTF-8 (elementos de una libreria).
+void reportNamedError(const std::string& name, const std::string& err) {
+    g.importReport = C4DImportReport{};
+    g.importReport.fileName = name;
+    g.importError = err;
+    g.showImport = true;
+}
+
+// Monta una .lib4d para esta sesion y abre el Navegador de Contenido en ella.
+void openPresetLibrary(const std::filesystem::path& path) {
+    std::string err;
+    if (!mountTemporaryLibrary(path, &err)) return reportFileError(path, err);
+    g.browserOpen = true;
+}
+
+// Archivo > Abrir Libreria de Preestablecidos... del propio navegador.
+void openPresetLibraryDialog() {
+    if (!nativeFileDialogAvailable()) {
+        reportFileError("Abrir librería", "Abrir una librería necesita el diálogo de archivos del sistema, que en "
+                                          "esta plataforma todavía no existe. Cópiala a library/browser.");
+        return;
+    }
+    const auto path = openFileDialog("Abrir librería de preestablecidos",
+                                     {{"Librerías de preestablecidos de Cinema 4D", "*.lib4d"}});
+    if (path) openPresetLibrary(*path);
+}
+
+// Carga un modelo de una libreria .lib4d en la escena (doble clic en el
+// navegador o arrastrarlo al visor), como en C4D: se fusiona con lo que haya.
+// El modelo es un .c4d completo dentro de la libreria: se descomprime a un
+// archivo temporal y pasa por el importador de .c4d de siempre. Se puede deshacer.
+void loadPresetImpl(const PresetLibrary& lib, const PresetItem& item, SceneNode& root, SceneNode*& selected,
+                         SceneHistory& history, std::vector<Material>& materials) {
+    std::vector<uint8_t> data;
+    std::string err;
+    if (!lib.readData(item, data, &err)) return reportNamedError(item.name, err);
+    if (data.size() < 8 || std::memcmp(data.data(), "QC4D", 4) != 0)
+        return reportNamedError(item.name, "Este preestablecido no es un modelo de Cinema 4D.");
+    std::error_code ec;
+    const auto dir = std::filesystem::temp_directory_path(ec) / "Iron3D";
+    std::filesystem::create_directories(dir, ec);
+    const auto tmp = dir / ("preset_" + std::to_string(item.id) + ".c4d");
+    {
+        std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
+        f.write(reinterpret_cast<const char*>(data.data()), std::streamsize(data.size()));
+        if (!f) return reportNamedError(item.name, "No se pudo escribir el archivo temporal en " + pathUtf8(dir) + ".");
+    }
+    data.clear();
+    data.shrink_to_fit();
+    const std::string before = history.snapshot(root);
+    C4DImportReport rep;
+    const bool ok = importC4D(tmp, root, materials, rep, &err);
+    std::filesystem::remove(tmp, ec);
+    if (!ok) return reportNamedError(item.name, err);
+    history.commit(before);
+    selected = nullptr;
+    noteRecentPreset(lib, item);
+    // Como en C4D, cargar un preestablecido no abre ninguna ventana... salvo
+    // que algo no haya llegado tal cual: entonces sale el informe.
+    rep.fileName = item.name + " (" + lib.title() + ")";
+    if (!rep.warnings.empty()) {
+        g.importReport = rep;
+        g.importError.clear();
+        g.showImport = true;
+    }
+}
+
 // Archivo > Abrir (Ctrl+O): .iron o .c4d con el dialogo del sistema. Sin
 // dialogo nativo (Linux por ahora) se usa el propio de la carpeta scenes/.
 void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history, std::vector<Material>& materials,
@@ -573,9 +646,13 @@ void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history,
         g.sceneLoadMode = true;
         return;
     }
-    const auto path = openFileDialog("Abrir", {{"Escenas de Iron3D y Cinema 4D", "*.iron;*.c4d"},
-                                               {"Iron3D", "*.iron"}, {"Cinema 4D", "*.c4d"}});
+    const auto path = openFileDialog("Abrir", {{"Escenas y librerías (iron, c4d, lib4d)", "*.iron;*.c4d;*.lib4d"},
+                                               {"Iron3D", "*.iron"}, {"Cinema 4D", "*.c4d"},
+                                               {"Librería de preestablecidos de Cinema 4D", "*.lib4d"}});
     if (!path) return;
+    // Una .lib4d no sustituye la escena: se monta en el Navegador de Contenido
+    // (Preestablecidos, solo esta sesion) y se abre su ventana, como en C4D.
+    if (isLib4dPath(*path)) return openPresetLibrary(*path);
     std::string err;
     if (isC4DPath(*path)) {
         SceneNode temp("tmp");
@@ -896,7 +973,11 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
                 deleteSelected(root, selected, history);
             }
         }
-        if (pressed(ImGuiKey_F8)) g.playDir = g.playDir == 1 ? 0 : 1;
+        if (pressed(ImGuiKey_F8)) {
+            if (shift) g.browserOpen = !g.browserOpen; // Mayus+F8: Navegador de Contenido
+            else g.playDir = g.playDir == 1 ? 0 : 1;
+        }
+        if (shift && pressed(ImGuiKey_F1)) g.browserOpen = false; // Mayus+F1: Gestor de Objetos
         if (pressed(ImGuiKey_F6)) g.playDir = g.playDir == -1 ? 0 : -1;
         if (pressed(ImGuiKey_F7)) g.playDir = 0;
         if (pressed(ImGuiKey_G)) g.frame = shift ? (float)g.maxFrame : std::min((float)g.maxFrame, std::floor(g.frame) + 1);
@@ -1128,14 +1209,15 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
     if (ImGui::BeginMenu("Ventana")) {
         // Los nombres siguen al preset (Esquema / Outliner / Scene Explorer...).
         const PanelNames& n = names();
-        iconMenuItem(Icon::MnuObjManager, n.objects, "Mayús+F1", true, false);
+        if (iconMenuItem(Icon::MnuObjManager, n.objects, "Mayús+F1", !g.browserOpen)) g.browserOpen = false;
         iconMenuItem(Icon::MnuMatManager, n.materials, "Mayús+F2", true, false);
         iconMenuItem(Icon::MnuTimeline, n.timeline, "Mayús+F3", true, false);
         iconMenuItem(Icon::MnuAttributes, n.attributes, "Mayús+F5", true, false);
         iconMenuItem(Icon::MnuCoords, n.coords, "Mayús+F7", true, false);
         ImGui::Separator();
         if (iconMenuItem(Icon::MnuMatEditor, "Editor de Material...", nullptr, g.showMatEditor)) g.showMatEditor = !g.showMatEditor;
-        iconMenuItem(Icon::MnuContentBrowser, "Navegador de Contenido", "Mayús+F8", false, false);
+        if (iconMenuItem(Icon::MnuContentBrowser, "Navegador de Contenido", "Mayús+F8", g.browserOpen))
+            g.browserOpen = !g.browserOpen;
         iconMenuItem(Icon::MnuLayers, "Gestor de Capas", "Mayús+F4", false, false);
         ImGui::EndMenu();
     }
@@ -1815,8 +1897,11 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
     }
 }
 
-// Pestanas verticales del borde derecho (seccion 8).
-void drawVerticalTabs(ImVec2 pos, ImVec2 size, const char* const* names, int count, int active) {
+// Pestanas verticales del borde derecho (seccion 8). Devuelve la pestana
+// pulsada (-1 ninguna); solo responden las de `enabledMask`.
+int drawVerticalTabs(ImVec2 pos, ImVec2 size, const char* const* names, int count, int active,
+                     unsigned enabledMask = 1u) {
+    int clickedTab = -1;
     beginPanel(names[0], pos, size, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImDrawList* dl = ImGui::GetWindowDrawList();
     float y = pos.y + 4;
@@ -1825,9 +1910,10 @@ void drawVerticalTabs(ImVec2 pos, ImVec2 size, const char* const* names, int cou
         const ImVec2 a(pos.x + 1, y), b(pos.x + size.x - 1, y + len);
         ImGui::SetCursorScreenPos(a);
         ImGui::PushID(i);
-        ImGui::InvisibleButton("##vt", ImVec2(b.x - a.x, len));
+        if (ImGui::InvisibleButton("##vt", ImVec2(b.x - a.x, len)) && (enabledMask & (1u << i))) clickedTab = i;
         const bool hov = ImGui::IsItemHovered();
-        if (hov && i != active) ImGui::SetTooltip("%s (todavía no implementado)", names[i]);
+        if (hov && i != active && !(enabledMask & (1u << i)))
+            ImGui::SetTooltip("%s (todavía no implementado)", names[i]);
         ImGui::PopID();
         dl->AddRectFilled(a, b, i == active ? kTabOn : kTabOff);
         dl->AddRect(a, b, kBorderDark);
@@ -1835,6 +1921,7 @@ void drawVerticalTabs(ImVec2 pos, ImVec2 size, const char* const* names, int cou
         y += len + 2;
     }
     ImGui::End();
+    return clickedTab;
 }
 
 // --- Gestor de Atributos (secciones 6, 15, 17.3, 18.2, 19.3) --------------------
@@ -3486,11 +3573,40 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     viewport.h = std::max(1.0f, L.viewport.size.y - vpHeaderH);
     drawViewportOverlay(camera, viewport, root);
 
-    drawObjectManager(root, selected, history, materials, L.objects.pos, L.objects.size);
+    if (g.browserOpen) {
+        ContentBrowserCallbacks cb;
+        cb.load = [&](const PresetLibrary& lib, const PresetItem& item) {
+            loadPresetImpl(lib, item, root, selected, history, materials);
+        };
+        cb.openLibrary = [] { openPresetLibraryDialog(); };
+        cb.close = [] { g.browserOpen = false; };
+        drawContentBrowser(L.objects.pos, L.objects.size, cb);
+    } else {
+        drawObjectManager(root, selected, history, materials, L.objects.pos, L.objects.size);
+    }
+    // Soltar en el visor un modelo arrastrado desde el navegador: se carga.
+    if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+        const PresetLibrary* plib = nullptr;
+        const PresetItem* pitem = nullptr;
+        const ImVec2 m = ImGui::GetIO().MousePos;
+        const bool overViewport = m.x >= viewport.x && m.y >= viewport.y && m.x < viewport.x + viewport.w &&
+                                  m.y < viewport.y + viewport.h;
+        if (overViewport && resolvePresetPayload(ImGui::GetDragDropPayload(), plib, pitem))
+            loadPresetImpl(*plib, *pitem, root, selected, history, materials);
+    }
     drawAttributesManager(root, selected, history, materials, L.attributes.pos, L.attributes.size);
     if (g_preset.layout.verticalTabs) {
-        if (L.objTabs.visible() && pn.topTabCount > 0)
-            drawVerticalTabs(L.objTabs.pos, L.objTabs.size, pn.topTabs, pn.topTabCount, 0);
+        // La pestana "Navegador de Contenido" (solo en el preset C4D) cambia el
+        // hueco del Gestor de Objetos; Tomas y Estructura aun no existen.
+        int browserTab = -1;
+        for (int i = 0; i < pn.topTabCount; ++i)
+            if (pn.topTabs[i] && std::strcmp(pn.topTabs[i], "Navegador de Contenido") == 0) browserTab = i;
+        const unsigned mask = 1u | (browserTab >= 0 ? (1u << browserTab) : 0u);
+        if (L.objTabs.visible() && pn.topTabCount > 0) {
+            const int clicked = drawVerticalTabs(L.objTabs.pos, L.objTabs.size, pn.topTabs, pn.topTabCount,
+                                                 g.browserOpen && browserTab >= 0 ? browserTab : 0, mask);
+            if (clicked >= 0) g.browserOpen = clicked == browserTab;
+        }
         if (L.attrTabs.visible() && pn.sideTabCount > 0)
             drawVerticalTabs(L.attrTabs.pos, L.attrTabs.size, pn.sideTabs, pn.sideTabCount, 0);
     }
@@ -3534,5 +3650,12 @@ void drawIconSheet(ViewportState& viewport) {
 }
 
 void openPreferencesDialog() { g.showPrefs = true; }
+
+void openContentBrowser() { g.browserOpen = true; }
+
+void loadPresetIntoScene(const PresetLibrary& lib, const PresetItem& item, SceneNode& root, SceneNode*& selected,
+                         SceneHistory& history, std::vector<Material>& materials) {
+    loadPresetImpl(lib, item, root, selected, history, materials);
+}
 
 } // namespace iron3d
