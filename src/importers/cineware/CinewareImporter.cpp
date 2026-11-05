@@ -340,8 +340,11 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, bool
     } else if (type == Osky || type == Ofloor || type == Oenvironment || type == Obackground ||
                type == Oforeground || type == Ostage) {
         ctx.warn("Objetos de escena (" + typeLabel(op) + "...): Iron3D todavía no los tiene; se importan como Nulo");
-    } else if (op->IsInstanceOf(Obasedeform)) {
-        ctx.warn("Deformadores: su efecto solo llega si C4D guardó la malla deformada; el deformador se importa como Nulo");
+    } else if (type == Ojoint) {
+        ctx.warn("Articulaciones (rigging): Iron3D todavía no tiene esqueletos; se importan como Nulo (conservan posición)");
+    } else if (type == Oskin || op->IsInstanceOf(Obasedeform)) {
+        ctx.warn("Deformadores (también Piel): su efecto solo llega si C4D guardó la malla deformada; el deformador se "
+                 "importa como Nulo");
     } else {
         ctx.warn(typeLabel(op) + ": sin geometría guardada en el archivo, se importa como Nulo "
                  "(guarda el .c4d con \"Guardar polígonos para Melange\" activado para traerla)");
