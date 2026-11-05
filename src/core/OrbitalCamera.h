@@ -34,6 +34,13 @@ public:
     // Encuadrar (tecla H / "Encuadrar Geometria" en C4D): centra el objetivo
     // en `center` a una distancia que deja ver una esfera de radio `radius`.
     void frame(const glm::vec3& center, float radius);
+    // Distancia a la que frame() dejaria ver una esfera de radio `radius`.
+    static float frameDistance(float radius);
+    // Objetivo y distancia actuales: la flecha de "objeto fuera de vista" los
+    // interpola para que la camara viaje en vez de saltar.
+    glm::vec3 target() const { return target_; }
+    float distance() const { return distance_; }
+    void setTargetDistance(const glm::vec3& target, float distance);
 
 private:
     glm::vec3 target_{0.0f, 0.0f, 0.0f};

@@ -67,10 +67,19 @@ void OrbitalCamera::resetView() {
     pitch_ = glm::radians(30.0f);
 }
 
+float OrbitalCamera::frameDistance(float radius) {
+    // FOV vertical de 50 grados (ver projectionMatrix): margen de ~20%.
+    return std::clamp(radius * 1.2f / std::sin(glm::radians(25.0f)), kMinDistance, kMaxDistance);
+}
+
 void OrbitalCamera::frame(const glm::vec3& center, float radius) {
     target_ = center;
-    // FOV vertical de 50 grados (ver projectionMatrix): margen de ~20%.
-    distance_ = std::clamp(radius * 1.2f / std::sin(glm::radians(25.0f)), kMinDistance, kMaxDistance);
+    distance_ = frameDistance(radius);
+}
+
+void OrbitalCamera::setTargetDistance(const glm::vec3& target, float distance) {
+    target_ = target;
+    distance_ = std::clamp(distance, kMinDistance, kMaxDistance);
 }
 
 glm::vec3 OrbitalCamera::eyePosition() const {

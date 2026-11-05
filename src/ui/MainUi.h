@@ -47,6 +47,11 @@ void showImportReport(const C4DImportReport& report);
 // Encuadra la camara sobre todo lo que hay en la escena (como "Encuadrar
 // todo" de C4D). main.cpp lo usa tras abrir una escena por linea de comandos.
 void frameScene(OrbitalCamera& camera, const SceneNode& root);
+// Encuadra un objeto concreto (con sus hijos), como la tecla O.
+void frameNode(OrbitalCamera& camera, const SceneNode& node);
+// Lo mismo que pulsar la flecha de objeto fuera de vista: la camara viaja
+// hasta encuadrar el objeto (animado, en los siguientes fotogramas).
+void travelToNode(OrbitalCamera& camera, const SceneNode& node);
 
 // `selected` cambia al hacer clic en otro objeto, duplicarlo, borrarlo o al
 // cargar/deshacer/rehacer una escena entera encima. `gizmoMode` se cambia
