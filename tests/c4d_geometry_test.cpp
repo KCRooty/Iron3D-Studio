@@ -2,11 +2,13 @@
 // ni Cineware: se ejecutan en el CI de Windows y Linux.
 
 #include "core/SceneNode.h"
+#include "core/ThumbnailRenderer.h"
 #include "importers/c4d_compat/C4DGeometry.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <cmath>
+#include <cstdlib>
 #include <cstdio>
 #include <functional>
 
@@ -39,6 +41,8 @@ bool facesPointOut(const MeshData& m, const std::function<glm::vec3(const glm::v
 }
 
 glm::vec3 fromCenter(const glm::vec3& p) { return p; }
+
+double kPi80() { return 80.0 * 3.14159265358979323846 / 180.0; }
 
 bool nearly(const glm::vec3& a, const glm::vec3& b, float eps = 1e-4f) { return glm::length(a - b) < eps; }
 
@@ -133,6 +137,89 @@ int main() {
             }
             check(ok, k.name);
         }
+    }
+
+    // --- Exportar: TRS de SceneNode -> matriz de C4D (inversa) --------------
+    {
+        struct Case { glm::vec3 pos, rot, scl; const char* name; };
+        const Case cases[] = {
+            {{0, 0, 0}, {0, 0, 0}, {1, 1, 1}, "exportar: identidad"},
+            {{1.5f, -0.25f, 3.0f}, {30, -45, 60}, {2, 0.5f, 1.25f}, "exportar: rotacion + escala"},
+            {{0, 1, 0}, {-120, 10, 170}, {-1, 1, 1}, "exportar: espejo en X"},
+        };
+        for (const Case& k : cases) {
+            SceneNode n("t");
+            n.position = k.pos;
+            n.rotationDeg = k.rot;
+            n.scale = k.scl;
+            const glm::mat4 m = n.localMatrix();
+            const c4d::Matrix cm = c4d::fromIronTRS(k.pos, k.rot, k.scl);
+            const glm::vec3 pts[] = {{0, 0, 0}, {0.5f, 0, 0}, {0, 0.5f, 0}, {0, 0, 0.5f}, {0.15f, -0.35f, 0.2f}};
+            bool ok = true;
+            for (const glm::vec3& p : pts) {
+                const glm::dvec3 q = c4d::fromIronPoint(p);
+                const glm::dvec3 c4dPoint = cm.off + q.x * cm.v1 + q.y * cm.v2 + q.z * cm.v3;
+                ok = ok && nearly(c4d::toIronPoint(c4dPoint), glm::vec3(m * glm::vec4(p, 1.0f)), 1e-4f);
+            }
+            // Y de vuelta: toIronTRS(fromIronTRS(x)) da la misma matriz.
+            const c4d::TRS back = c4d::toIronTRS(cm.off, cm.v1, cm.v2, cm.v3);
+            SceneNode b("b");
+            b.position = back.position;
+            b.rotationDeg = back.rotationDeg;
+            b.scale = back.scale;
+            const glm::mat4 mb = b.localMatrix();
+            for (int c = 0; c < 4; ++c) ok = ok && nearly(glm::vec3(mb[c]), glm::vec3(m[c]), 1e-4f);
+            check(ok, k.name);
+        }
+    }
+
+    // --- Exportar: malla de render -> poligonos de C4D -------------------------
+    {
+        bool smooth = true;
+        const c4d::PolySoup cube = c4d::fromIronMesh(makeCubeMesh(), &smooth);
+        check(cube.points.size() == 8, "exportar cubo: 8 puntos");
+        check(cube.polys.size() == 6, "exportar cubo: 6 cuadrilateros");
+        bool quads = true;
+        for (const auto& p : cube.polys) quads = quads && p[2] != p[3];
+        check(quads, "exportar cubo: todo cuadrilateros");
+        check(!smooth, "exportar cubo: caras planas");
+        // Ida y vuelta: las caras siguen mirando hacia fuera y la caja no cambia.
+        const MeshData back = c4d::toIronMesh(cube, -1.0);
+        check(facesPointOut(back, fromCenter), "exportar cubo: caras hacia fuera tras ida y vuelta");
+        check(nearly(back.boundsMin, glm::vec3(-0.5f)) && nearly(back.boundsMax, glm::vec3(0.5f)),
+              "exportar cubo: caja");
+
+        const c4d::PolySoup plane = c4d::fromIronMesh(makePlaneMesh(), nullptr);
+        check(plane.points.size() == 4 && plane.polys.size() == 1, "exportar plano: 1 cuadrilatero");
+        const MeshData planeBack = c4d::toIronMesh(plane, -1.0);
+        check(facesPointOut(planeBack, [](const glm::vec3&) { return glm::vec3(0.0f, 1.0f, 0.0f); }),
+              "exportar plano: sigue mirando a +Y");
+
+        const c4d::PolySoup sphere = c4d::fromIronMesh(c4d::toIronMesh(c4d::makeSphere(100.0, 24), kPi80()), &smooth);
+        check(smooth, "exportar esfera: normales suavizadas");
+        const MeshData sphereBack = c4d::toIronMesh(sphere, -1.0);
+        check(facesPointOut(sphereBack, fromCenter), "exportar esfera: caras hacia fuera");
+        check(nearly(sphereBack.boundsMax, glm::vec3(0.5f), 1e-3f), "exportar esfera: radio");
+    }
+
+    // --- Miniaturas (rasterizador por CPU) ------------------------------------
+    {
+        std::vector<Material> mats(1);
+        mats[0].baseColor = glm::vec3(0.9f, 0.1f, 0.1f);
+        SceneNode cube("Cubo", PrimitiveType::Cube);
+        cube.materialIndex = 0;
+        const Thumbnail th = renderThumbnail({&cube}, mats, 64);
+        check(th.width == 64 && th.height == 64 && th.rgba.size() == 64u * 64u * 4u, "miniatura: tamaño");
+        check(th.triangles == 12, "miniatura: 12 triangulos del cubo");
+        const uint8_t* c = &th.rgba[(32u * 64u + 32u) * 4u];
+        check(c[0] > c[1] + 40 && c[0] > c[2] + 40 && c[3] == 255, "miniatura: el centro es el cubo rojo");
+        const uint8_t* corner = &th.rgba[0];
+        check(std::abs((int)corner[0] - (int)corner[2]) < 4, "miniatura: la esquina es fondo gris");
+
+        SceneNode hidden("Oculto", PrimitiveType::Sphere);
+        hidden.editorVis = VisMode::Off;
+        check(renderThumbnail({&hidden}, mats, 32).triangles == 0, "miniatura: lo oculto no se dibuja");
+        check(renderThumbnail({}, mats, 32).rgba.size() == 32u * 32u * 4u, "miniatura: vacia, solo fondo");
     }
 
     if (g_failures == 0) std::printf("c4d_geometry: todo correcto\n");

@@ -11,6 +11,8 @@
 //    o pasandola por linea de comandos). Desaparecen al cerrar Iron3D.
 // Doble clic en un modelo, o arrastrarlo al visor, lo fusiona con la escena.
 
+#include "core/Material.h"
+#include "core/SceneNode.h"
 #include "importers/lib4d/PresetLibrary.h"
 
 #include <imgui.h>
@@ -64,5 +66,12 @@ constexpr const char* kPresetPayloadType = "IRON3D_PRESET";
 
 // Apunta un modelo en "Elementos Recientes" (tras cargarlo).
 void noteRecentPreset(const PresetLibrary& lib, const PresetItem& item);
+
+// "Guardar como Preestablecido" (Gestor de Objetos): exporta `node` con sus
+// hijos a .c4d en ese momento, renderiza su miniatura y abre la ventana donde
+// se elige libreria, carpeta y nombre.
+void beginSavePreset(const SceneNode& node, const std::vector<Material>& materials);
+// Dibuja esa ventana si esta abierta (MainUi la llama cada frame).
+void drawSavePresetDialog();
 
 } // namespace iron3d

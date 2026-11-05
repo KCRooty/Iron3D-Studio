@@ -90,9 +90,49 @@ std::vector<std::filesystem::path> openFilesDialog(const std::string& title,
     return out;
 }
 
+std::optional<std::filesystem::path> saveFileDialog(const std::string& title,
+                                                    const std::vector<std::pair<std::string, std::string>>& filters,
+                                                    const std::string& defaultName, const std::string& defaultExt) {
+    std::wstring filter;
+    for (const auto& f : filters) {
+        filter += widen(f.first + " (" + f.second + ")");
+        filter.push_back(L'\0');
+        filter += widen(f.second);
+        filter.push_back(L'\0');
+    }
+    filter.push_back(L'\0');
+    const std::wstring wtitle = widen(title);
+    const std::wstring wext = widen(defaultExt);
+    std::vector<wchar_t> buffer(4096, L'\0');
+    // Nombre propuesto, sin los caracteres que Windows no admite.
+    size_t n = 0;
+    for (wchar_t c : widen(defaultName)) {
+        if (n + 1 >= buffer.size()) break;
+        buffer[n++] = (c < 32 || wcschr(L"<>:\"/\\|?*", c)) ? L'_' : c;
+    }
+    OPENFILENAMEW ofn{};
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = GetActiveWindow();
+    ofn.lpstrFilter = filter.c_str();
+    ofn.nFilterIndex = 1;
+    ofn.lpstrFile = buffer.data();
+    ofn.nMaxFile = (DWORD)buffer.size();
+    ofn.lpstrTitle = wtitle.c_str();
+    ofn.lpstrDefExt = wext.empty() ? nullptr : wext.c_str();
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR | OFN_EXPLORER;
+    if (!GetSaveFileNameW(&ofn)) return std::nullopt;
+    return std::filesystem::path(buffer.data());
+}
+
 #else
 
 bool nativeFileDialogAvailable() { return false; }
+
+std::optional<std::filesystem::path> saveFileDialog(const std::string&,
+                                                    const std::vector<std::pair<std::string, std::string>>&,
+                                                    const std::string&, const std::string&) {
+    return std::nullopt;
+}
 
 std::vector<std::filesystem::path> openFilesDialog(const std::string&,
                                                    const std::vector<std::pair<std::string, std::string>>&) {

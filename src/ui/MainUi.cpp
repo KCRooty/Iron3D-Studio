@@ -93,6 +93,10 @@ struct UiState {
     bool showImport = false;
     C4DImportReport importReport;
     std::string importError;
+    // Resultado de Exportar a Cinema 4D / Guardar Objetos Seleccionados como.
+    bool showExport = false;
+    C4DExportReport exportReport;
+    std::string exportPath;
 
     AttrFocus focus = AttrFocus::Object;
     int lastSelectedId = -1;
@@ -716,6 +720,54 @@ void mergeSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history
     selected = nullptr;
 }
 
+// Seleccion sin repetir: si un padre esta seleccionado, sus hijos ya van con el.
+std::vector<const SceneNode*> topSelected(SceneNode& root, SceneNode* active) {
+    std::vector<SceneNode*> all;
+    collectSelected(root, all);
+    if (all.empty() && active) all.push_back(active);
+    std::vector<const SceneNode*> out;
+    for (SceneNode* n : all) {
+        bool underSelected = false;
+        for (SceneNode* p = n->parent(); p && !underSelected; p = p->parent()) underSelected = g.selIds.count(p->id()) > 0;
+        if (!underSelected) out.push_back(n);
+    }
+    return out;
+}
+
+// Archivo > Exportar > Cinema 4D (toda la escena) y Guardar Objetos
+// Seleccionados como... (solo la seleccion), con el exportador de Cineware.
+void exportC4DDialog(const std::vector<const SceneNode*>& roots, const std::vector<Material>& materials,
+                     bool allMaterials, const std::string& title, const std::string& defaultName) {
+    if (roots.empty()) return;
+    if (!nativeFileDialogAvailable()) {
+        reportNamedError(title, "Exportar necesita el diálogo de archivos del sistema, que en esta plataforma "
+                                "todavía no existe.");
+        return;
+    }
+    const auto path = saveFileDialog(title, {{"Cinema 4D", "*.c4d"}}, defaultName, "c4d");
+    if (!path) return;
+    std::string err;
+    C4DExportReport rep;
+    if (!exportC4D(*path, roots, materials, allMaterials, rep, &err)) return reportFileError(*path, err);
+    g.exportReport = rep;
+    g.exportPath = pathUtf8(*path);
+    g.showExport = true;
+}
+
+void exportSceneC4D(SceneNode& root, const std::vector<Material>& materials) {
+    std::vector<const SceneNode*> roots;
+    for (const auto& c : root.children()) roots.push_back(c.get());
+    if (roots.empty()) return reportNamedError("Exportar", "La escena está vacía.");
+    exportC4DDialog(roots, materials, true, "Exportar a Cinema 4D", "Escena.c4d");
+}
+
+void exportSelectedC4D(SceneNode& root, SceneNode* selected, const std::vector<Material>& materials) {
+    const auto roots = topSelected(root, selected);
+    if (roots.empty()) return;
+    exportC4DDialog(roots, materials, false, "Guardar Objetos Seleccionados como",
+                    roots.size() == 1 ? roots.front()->name() + ".c4d" : std::string("Objetos.c4d"));
+}
+
 void deleteSelected(SceneNode& root, SceneNode*& selected, SceneHistory& history) {
     if (!selected || !selected->parent()) return;
     history.commitBefore(root);
@@ -1044,9 +1096,16 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         if (iconMenuItem(Icon::MnuSave, "Guardar", "Ctrl+S")) { g.showScene = true; g.sceneLoadMode = false; }
         if (iconMenuItem(Icon::MnuSaveAs, "Guardar como...", "Ctrl+Mayús+S")) { g.showScene = true; g.sceneLoadMode = false; }
         disabledItems({{"Guardar incrementalmente...", ""}, {"Guardar Todo", ""},
-                       {"Guardar Proyecto con su Contenido...", ""}, {"Guardar Objetos Seleccionados como...", ""},
-                       {nullptr, nullptr}});
+                       {"Guardar Proyecto con su Contenido...", ""}});
+        if (ImGui::MenuItemEx("Guardar Objetos Seleccionados como...", kIconGutterText, nullptr, false,
+                              selected != nullptr && cinewareAvailable()))
+            exportSelectedC4D(root, selected, materials);
+        ImGui::Separator();
         if (iconBeginMenu(Icon::MnuExport, "Exportar")) {
+            if (ImGui::MenuItem("Cinema 4D (*.c4d)...", nullptr, false, cinewareAvailable()))
+                exportSceneC4D(root, materials);
+            if (!cinewareAvailable() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                ImGui::SetTooltip("Esta compilación no lleva el Cineware SDK de MAXON");
             disabledItems({{"Wavefront (*.obj)", ""}, {"FBX (*.fbx)", ""}, {"Alembic (*.abc)", ""},
                            {"STL (*.stl)", ""}, {"Collada 1.4 (*.dae)", ""}});
             ImGui::EndMenu();
@@ -1797,7 +1856,13 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
     if (ImGui::BeginMenuBar()) {
         panelGrip(names().objects);
         if (ImGui::BeginMenu("Archivo")) {
-            disabledItems({{"Fusionar Objetos...", ""}, {"Guardar Objetos Seleccionados como...", ""}});
+            disabledItems({{"Fusionar Objetos...", ""}});
+            if (ImGui::MenuItem("Guardar Objetos Seleccionados como...", nullptr, false,
+                                selected != nullptr && cinewareAvailable()))
+                exportSelectedC4D(root, selected, materials);
+            if (ImGui::MenuItem("Guardar como Preestablecido...", nullptr, false,
+                                selected != nullptr && cinewareAvailable()))
+                beginSavePreset(*selected, materials);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Editar")) {
@@ -1905,6 +1970,8 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
             }
             if (ImGui::MenuItem("Duplicar")) pendingDuplicate = node;
             if (ImGui::MenuItem("Eliminar", "Supr")) pendingDelete = node;
+            if (ImGui::MenuItem("Guardar como Preestablecido...", nullptr, false, cinewareAvailable()))
+                beginSavePreset(*node, materials);
             if (ImGui::MenuItem("Renombrar")) {
                 g.renamingNodeId = node->id();
                 std::snprintf(g.renameBuf, sizeof(g.renameBuf), "%s", node->name().c_str());
@@ -3446,6 +3513,33 @@ void drawImportReport() {
     ImGui::End();
 }
 
+void drawExportReport() {
+    if (!g.showExport) return;
+    const C4DExportReport& r = g.exportReport;
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::Begin("Exportado a Cinema 4D###exportrep", &g.showExport,
+                     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 34.0f);
+        if (g_fontBold) ImGui::PushFont(g_fontBold);
+        ImGui::TextUnformatted(r.fileName.c_str());
+        if (g_fontBold) ImGui::PopFont();
+        ImGui::TextDisabled("%s", g.exportPath.c_str());
+        ImGui::Text("%d objetos: %d mallas, %d primitivas, %d luces", r.objects, r.meshes, r.primitives, r.lights);
+        ImGui::Text("%d materiales, %lld puntos, %lld polígonos", r.materials, r.points, r.polygons);
+        ImGui::Separator();
+        if (r.warnings.empty()) {
+            ImGui::TextColored(ImVec4(0.45f, 0.85f, 0.45f, 1.0f), "Exportado sin avisos.");
+        } else {
+            ImGui::TextUnformatted("Revisa:");
+            for (const std::string& w : r.warnings) ImGui::BulletText("%s", w.c_str());
+        }
+        ImGui::PopTextWrapPos();
+        ImGui::Spacing();
+        if (ImGui::Button("Cerrar", ImVec2(120, 0))) g.showExport = false;
+    }
+    ImGui::End();
+}
+
 } // namespace
 
 void frameScene(OrbitalCamera& camera, const SceneNode& root) { frameNodes(camera, root, false); }
@@ -3789,6 +3883,8 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     drawMaterialEditor(root, history, materials);
     drawAboutDialog();
     drawImportReport();
+    drawExportReport();
+    drawSavePresetDialog();
 
     drawStatusBar(framerate, gizmoMode, viewport, activeBackend, L.status.pos, L.status.size);
 }

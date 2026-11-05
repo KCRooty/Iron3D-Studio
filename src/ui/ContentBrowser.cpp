@@ -3,6 +3,8 @@
 #include "C4DIcons.h"
 #include "FileDialog.h"
 #include "core/Paths.h"
+#include "core/ThumbnailRenderer.h"
+#include "importers/cineware/CinewareImporter.h"
 #include "importers/lib4d/PresetLibraryWriter.h"
 
 #include <imgui.h>
@@ -410,8 +412,26 @@ void addFolder(Mounted& m, const std::string& parent, const std::string& name) {
     if (reloadLib(m)) s.message = "Carpeta \"" + name + "\" creada.";
 }
 
+// Miniatura de un .c4d que se anade a una libreria: se importa con el
+// importador de siempre y se renderiza (C4D hace lo mismo al guardar un
+// preestablecido). Sin Cineware, o si no hay nada visible, se queda sin ella.
+void thumbnailFromC4D(const std::filesystem::path& file, lib4d::NewEntry& e) {
+    if (!cinewareAvailable()) return;
+    SceneNode temp("tmp");
+    std::vector<Material> mats;
+    C4DImportReport rep;
+    if (!importC4D(file, temp, mats, rep, nullptr)) return;
+    std::vector<const SceneNode*> roots;
+    for (const auto& c : temp.children()) roots.push_back(c.get());
+    Thumbnail th = renderThumbnail(roots, mats, 256);
+    if (th.triangles == 0) return;
+    e.thumbRgba = std::move(th.rgba);
+    e.thumbWidth = th.width;
+    e.thumbHeight = th.height;
+}
+
 // Anade archivos a `folder`: los .c4d entran como modelos (con su nombre sin
-// extension) y el resto (texturas...) tal cual, como en C4D.
+// extension y su miniatura) y el resto (texturas...) tal cual, como en C4D.
 void addFiles(Mounted& m, const std::string& folder, const std::vector<std::filesystem::path>& files) {
     std::vector<lib4d::NewEntry> entries;
     int models = 0, others = 0;
@@ -426,6 +446,7 @@ void addFiles(Mounted& m, const std::string& folder, const std::vector<std::file
         if (e.data.empty()) continue;
         const bool isC4d = e.data.size() >= 4 && std::memcmp(e.data.data(), "QC4D", 4) == 0;
         e.path = joinPath(folder, pathUtf8(isC4d ? f.stem() : f.filename()));
+        if (isC4d) thumbnailFromC4D(f, e);
         (isC4d ? models : others)++;
         entries.push_back(std::move(e));
     }
@@ -1012,6 +1033,185 @@ void drawContentBrowser(ImVec2 pos, ImVec2 size, const ContentBrowserCallbacks& 
     if (!s.message.empty() && ImGui::IsItemClicked()) s.message.clear();
     trimThumbs();
     ImGui::End();
+}
+
+// --- Guardar como Preestablecido ------------------------------------------------------
+
+namespace {
+
+struct SavePreset {
+    bool open = false;
+    bool focusName = false;
+    std::string error;           // no se pudo exportar: la ventana solo lo explica
+    std::vector<uint8_t> c4d;    // el .c4d ya exportado
+    Thumbnail thumb;
+    void* tex = nullptr;         // miniatura en la GPU para la ventana
+    C4DExportReport report;
+    int lib = 0;                 // serial de la libreria elegida
+    std::string folder;          // carpeta elegida ("" = raiz)
+    char name[128] = {};
+    std::string writeError;      // fallo al escribir (nombre repetido...)
+};
+SavePreset g_save;
+
+void closeSavePreset() {
+    if (g_save.tex && g_destroyTex) g_destroyTex(g_save.tex);
+    g_save = SavePreset{};
+}
+
+std::vector<std::string> foldersOf(const Mounted& m) {
+    std::vector<std::string> out;
+    for (const PresetItem& it : m.lib.items())
+        if (it.kind == PresetKind::Folder) out.push_back(it.path);
+    std::sort(out.begin(), out.end());
+    return out;
+}
+
+} // namespace
+
+void beginSavePreset(const SceneNode& node, const std::vector<Material>& materials) {
+    closeSavePreset();
+    g_save.open = true;
+    g_save.focusName = true;
+    std::snprintf(g_save.name, sizeof(g_save.name), "%s", node.name().c_str());
+    std::string err;
+    if (!exportC4DToBytes({&node}, materials, g_save.c4d, g_save.report, &err)) {
+        g_save.error = err;
+        return;
+    }
+    g_save.thumb = renderThumbnail({&node}, materials, 256);
+    // Libreria por defecto: la abierta en el navegador; si no, la ultima
+    // usada; si no, la primera.
+    if (s.loc.node == Node::Library && findLib(s.loc.lib)) {
+        g_save.lib = s.loc.lib;
+        g_save.folder = s.loc.folder;
+    } else if (!g_libs.empty()) {
+        g_save.lib = findLib(s.selLib) ? s.selLib : g_libs.front()->serial;
+    }
+}
+
+void drawSavePresetDialog() {
+    if (!g_save.open) return;
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    bool keep = true;
+    if (!ImGui::Begin("Guardar como Preestablecido###savepreset", &keep,
+                      ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings)) {
+        ImGui::End();
+        if (!keep) closeSavePreset();
+        return;
+    }
+    if (ImGui::IsWindowAppearing()) ImGui::SetWindowFocus();
+
+    bool done = !keep;
+    if (!g_save.error.empty()) {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+        ImGui::TextColored(ImVec4(0.95f, 0.45f, 0.40f, 1.0f), "%s", g_save.error.c_str());
+        ImGui::PopTextWrapPos();
+        if (ImGui::Button("Cerrar", ImVec2(120, 0))) done = true;
+        ImGui::End();
+        if (done) closeSavePreset();
+        return;
+    }
+
+    // Miniatura a la izquierda.
+    if (!g_save.tex && g_createTex && !g_save.thumb.rgba.empty())
+        g_save.tex = g_createTex(g_save.thumb.rgba.data(), g_save.thumb.width, g_save.thumb.height);
+    if (g_save.tex) ImGui::Image(reinterpret_cast<ImTextureID>(g_save.tex), ImVec2(160, 160));
+    else ImGui::Dummy(ImVec2(160, 160));
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    const float fieldW = ImGui::GetFontSize() * 17.0f;
+
+    Mounted* lib = findLib(g_save.lib);
+    if (g_libs.empty()) {
+        ImGui::TextUnformatted("No hay ninguna librería de preestablecidos.");
+        if (ImGui::Button("Crear \"Mis Preestablecidos\"")) {
+            createLibrary("Mis Preestablecidos");
+            if (s.loc.node == Node::Library) g_save.lib = s.loc.lib;
+        }
+    } else {
+        ImGui::TextUnformatted("Librería");
+        ImGui::SetNextItemWidth(fieldW);
+        if (ImGui::BeginCombo("##splib", lib ? lib->lib.title().c_str() : "(elige una)")) {
+            for (auto& m : g_libs) {
+                std::string label = m->lib.title() + (m->temporary ? "  (temporal)" : "");
+                label += "##" + std::to_string(m->serial);
+                if (ImGui::Selectable(label.c_str(), m->serial == g_save.lib)) {
+                    g_save.lib = m->serial;
+                    g_save.folder.clear();
+                    g_save.writeError.clear();
+                }
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::TextUnformatted("Carpeta");
+        ImGui::SetNextItemWidth(fieldW);
+        ImGui::BeginDisabled(!lib);
+        if (ImGui::BeginCombo("##spfolder", g_save.folder.empty() ? "(raíz de la librería)" : g_save.folder.c_str())) {
+            if (ImGui::Selectable("(raíz de la librería)", g_save.folder.empty())) g_save.folder.clear();
+            if (lib)
+                for (const std::string& f : foldersOf(*lib))
+                    if (ImGui::Selectable(f.c_str(), f == g_save.folder)) {
+                        g_save.folder = f;
+                        g_save.writeError.clear();
+                    }
+            ImGui::EndCombo();
+        }
+        ImGui::EndDisabled();
+    }
+    ImGui::TextUnformatted("Nombre");
+    ImGui::SetNextItemWidth(fieldW);
+    if (g_save.focusName) {
+        ImGui::SetKeyboardFocusHere();
+        g_save.focusName = false;
+    }
+    const bool enter = ImGui::InputText("##spname", g_save.name, sizeof(g_save.name),
+                                        ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+    if (ImGui::IsItemEdited()) g_save.writeError.clear();
+    const std::string name = trimmed(g_save.name);
+    const bool nameOk = validName(name);
+    if (!nameOk) ImGui::TextDisabled("Sin  / \\ : * ? \" < > |");
+    const C4DExportReport& r = g_save.report;
+    // Las primitivas van como primitivas de C4D (sin malla): sus poligonos no cuentan.
+    std::string info = std::to_string(r.objects) + " objetos";
+    if (r.polygons > 0) info += ", " + std::to_string(r.polygons) + " polígonos";
+    info += ", " + std::to_string(r.materials) + (r.materials == 1 ? " material" : " materiales");
+    info += "  (" + std::to_string((g_save.c4d.size() + 1023) / 1024) + " KB)";
+    ImGui::TextDisabled("%s", info.c_str());
+    ImGui::EndGroup();
+
+    for (const std::string& w : r.warnings) ImGui::BulletText("%s", w.c_str());
+    if (!g_save.writeError.empty())
+        ImGui::TextColored(ImVec4(0.95f, 0.45f, 0.40f, 1.0f), "%s", g_save.writeError.c_str());
+
+    const bool canSave = lib && nameOk;
+    ImGui::BeginDisabled(!canSave);
+    const bool save = ImGui::Button("Guardar", ImVec2(120, 0)) || (enter && canSave);
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (ImGui::Button("Cancelar", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) done = true;
+
+    if (save && canSave) {
+        lib4d::NewEntry e;
+        e.path = joinPath(g_save.folder, name);
+        e.data = g_save.c4d;
+        if (g_save.thumb.triangles > 0) {
+            e.thumbRgba = g_save.thumb.rgba;
+            e.thumbWidth = g_save.thumb.width;
+            e.thumbHeight = g_save.thumb.height;
+        }
+        std::string err;
+        if (!appendToPresetLibrary(lib->lib.file(), {e}, &err)) {
+            g_save.writeError = err;
+        } else if (reloadLib(*lib)) {
+            s.message = "\"" + name + "\" guardado en \"" + lib->lib.title() + "\".";
+            s.selLib = lib->serial;
+            navigate(libraryLocation(lib->serial, g_save.folder));
+            done = true;
+        }
+    }
+    ImGui::End();
+    if (done) closeSavePreset();
 }
 
 } // namespace iron3d

@@ -12,6 +12,7 @@
 #include "core/Material.h"
 #include "core/SceneNode.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -43,5 +44,31 @@ bool isC4DPath(const std::filesystem::path& path);
 // `materials` y devuelve false con el motivo en `outError`.
 bool importC4D(const std::filesystem::path& file, SceneNode& parent, std::vector<Material>& materials,
                C4DImportReport& report, std::string* outError = nullptr);
+
+// --- Exportar (CinewareExporter.cpp) -------------------------------------------
+
+struct C4DExportReport {
+    std::string fileName;
+    int objects = 0;
+    int meshes = 0;      // Objetos Poligonales
+    int primitives = 0;  // Cubo/Esfera/Plano como primitivas de C4D
+    int lights = 0;
+    int materials = 0;
+    long long points = 0;
+    long long polygons = 0;
+    std::vector<std::string> warnings;
+};
+
+// Guarda `roots` (cada uno con sus hijos, con su transformacion local) como
+// un .c4d nuevo. Con `allMaterials` van todos los materiales de la lista; si
+// no, solo los que usan esos objetos.
+bool exportC4D(const std::filesystem::path& file, const std::vector<const SceneNode*>& roots,
+               const std::vector<Material>& materials, bool allMaterials, C4DExportReport& report,
+               std::string* outError = nullptr);
+
+// Lo mismo, devolviendo los bytes del .c4d (para meterlo en una librería
+// .lib4d como preestablecido).
+bool exportC4DToBytes(const std::vector<const SceneNode*>& roots, const std::vector<Material>& materials,
+                      std::vector<uint8_t>& out, C4DExportReport& report, std::string* outError = nullptr);
 
 } // namespace iron3d

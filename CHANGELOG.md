@@ -6,6 +6,62 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-05 (3) — Exportar a `.c4d`, guardar objetos como preestablecidos y miniaturas
+
+**Añadido**
+- **Exportar a Cinema 4D** (con el Cineware SDK, solo Windows):
+  - Archivo > Exportar > **Cinema 4D (*.c4d)...**: toda la escena con todos los materiales.
+  - Archivo > **Guardar Objetos Seleccionados como...** (también en el menú Archivo del
+    Gestor de Objetos): solo la selección y los materiales que usa.
+  - Qué se exporta: jerarquía, nombres, posición/rotación/escala, visibilidad de visor y
+    render. El Cubo, la Esfera y el Plano van como primitivas de C4D, editables allí. Las
+    mallas van como Objeto Poligonal, con los vértices unidos y cuadriláteros donde se
+    puede, y con etiqueta Phong si estaban suavizadas. Las luces van como Luz. Los
+    materiales van como Material estándar: color más un reflejo GGX con la rugosidad
+    (metal = Fresnel de conductor), asignados con etiqueta de textura.
+- **Guardar como Preestablecido...** (clic derecho en un objeto, o Archivo en el Gestor de
+  Objetos): exporta el objeto con sus hijos, le hace una miniatura y abre una ventana para
+  elegir librería, carpeta y nombre. Si no hay ninguna librería, ofrece crear "Mis
+  Preestablecidos".
+- **Miniaturas de modelos**: un rasterizador propio por CPU, que no necesita la GPU, las
+  renderiza desde arriba a la derecha y ajusta el encuadre al objeto. Se guardan en JPEG
+  de 256×256 dentro de la `.lib4d`, como las de C4D. También salen al añadir un `.c4d`
+  con "Añadir Archivos".
+- Diálogo "Guardar como" del sistema (`saveFileDialog`).
+- `c4d_probe --export escena.iron salida.c4d` exporta y vuelve a importar.
+  `c4d_probe --preset escena.iron lib.lib4d Carpeta` guarda cada objeto como
+  preestablecido. Flag `--save-preset` para abrir la ventana con el objeto seleccionado.
+
+**Probado**
+- **Cinema 4D R19, sin ventana, abre lo que exporta Iron3D**:
+  - 3 `.c4d` exportados (materiales, primitivas y un personaje de 820 000 polígonos).
+  - Una librería con 13 preestablecidos y sus miniaturas, escrita por Iron3D.
+  - Al volver a leer lo que guardó R19, salen los mismos objetos, transformaciones,
+    materiales y polígonos.
+- Ida y vuelta Iron3D → `.c4d` → Iron3D: coinciden nombres, jerarquía, posiciones,
+  rotaciones, escalas, visibilidad, colores, rugosidad y metal.
+- Pruebas automáticas, en Windows y Linux:
+  - Transformación inversa.
+  - Malla a polígonos: el cubo vuelve con 8 puntos y 6 caras.
+  - Miniatura.
+  - Escribir y leer una miniatura JPEG en la `.lib4d`.
+- Por captura: la ventana "Guardar como Preestablecido" con la miniatura de un grupo.
+
+**Sin probar / limitaciones**
+- Con el ratón no se ha probado: los menús nuevos, la ventana de preestablecido ni el
+  diálogo "Guardar como".
+- No se ha visto en la ventana de C4D si muestra las miniaturas de Iron3D. R19 sin
+  ventana acepta la librería, pero eso no comprueba las miniaturas.
+- El ID de aplicación que se escribe en los `.c4d` (1000001) es **provisional**. Hay que
+  registrar uno de Static Forge en developers.maxon.net antes de publicar.
+- Se pierden los triángulos degenerados (de área cero, invisibles). En un personaje
+  fueron 72 de 820 000.
+- Los materiales medio metálicos son una aproximación en C4D: un reflejo sin Fresnel con
+  esa fuerza.
+- Cada objeto se exporta con su transformación local. Si se guarda un hijo suelto, no se
+  lleva la posición de sus padres.
+- Las cámaras no se exportan, porque Iron3D aún no tiene cámaras como objeto.
+
 ### 2026-11-05 (2) — Crear librerías `.lib4d` y flecha de objeto fuera de vista
 
 **Añadido**

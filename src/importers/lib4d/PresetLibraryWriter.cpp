@@ -15,6 +15,7 @@
 #pragma warning(push, 0)
 #endif
 #include <stb_image.h>
+#include <stb_image_write.h>
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
@@ -416,6 +417,30 @@ bool appendToPresetLibrary(const std::filesystem::path& file, const std::vector<
             r.elInt(1, static_cast<int32_t>(kLib4dDocumentType));
             stamp(r, 11);
             stamp(r, 13);
+            // Miniatura: bloque "imag" (JPEG) con el mismo id; la clave 5
+            // apunta al principio del bloque, como en las librerias reales.
+            const size_t px = static_cast<size_t>(std::max(0, e.thumbWidth)) * static_cast<size_t>(std::max(0, e.thumbHeight));
+            if (px > 0 && e.thumbRgba.size() >= px * 4) {
+                Bytes jpeg;
+                auto sink = [](void* ctx, void* bytes, int size) {
+                    auto* out = static_cast<Bytes*>(ctx);
+                    out->insert(out->end(), static_cast<uint8_t*>(bytes), static_cast<uint8_t*>(bytes) + size);
+                };
+                if (stbi_write_jpg_to_func(sink, &jpeg, e.thumbWidth, e.thumbHeight, 4, e.thumbRgba.data(), 90) &&
+                    !jpeg.empty()) {
+                    const uint64_t imagOffset = off + data.size();
+                    putChunk(data, "imag", id, jpeg);
+                    r.elBegin(5);
+                    r.elBegin(0, 0);
+                    r.elInt(1, e.thumbWidth);
+                    r.elInt(2, e.thumbHeight);
+                    r.elInt(3, 8);
+                    stamp(r, 4);
+                    r.elInt64(5, imagOffset);
+                    r.end();
+                    r.end();
+                }
+            }
         } else {
             putChunk(data, "bina", id, e.data);
             stamp(r, 11);
