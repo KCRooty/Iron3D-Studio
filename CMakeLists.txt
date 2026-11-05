@@ -53,9 +53,10 @@ FetchContent_Declare(stb
 
 FetchContent_MakeAvailable(glfw glm vma imgui stb)
 
-# Lector de .lib4d (importers/lib4d): lo comparten Iron3D y las pruebas.
+# Lector y escritor de .lib4d (importers/lib4d): lo comparten Iron3D y las pruebas.
 add_library(iron3d_lib4d STATIC
     src/importers/lib4d/PresetLibrary.cpp
+    src/importers/lib4d/PresetLibraryWriter.cpp
     src/importers/lib4d/StbImpl.cpp)
 target_include_directories(iron3d_lib4d PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_include_directories(iron3d_lib4d SYSTEM PUBLIC ${stb_SOURCE_DIR})

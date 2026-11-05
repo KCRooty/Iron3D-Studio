@@ -6,3 +6,9 @@
 #define STBI_ONLY_PNG
 #define STBI_NO_STDIO
 #include <stb_image.h>
+
+// stb_image_write: JPEG (miniaturas de las pruebas) y su compresor zlib
+// (stbi_zlib_compress) para los modelos que se guardan en una .lib4d.
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STBI_WRITE_NO_STDIO
+#include <stb_image_write.h>

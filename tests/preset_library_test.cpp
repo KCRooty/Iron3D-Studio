@@ -7,6 +7,7 @@
 //   preset_library_test "ruta/a/libreria.lib4d" ...
 
 #include "importers/lib4d/PresetLibrary.h"
+#include "importers/lib4d/PresetLibraryWriter.h"
 
 #if defined(_MSC_VER)
 #pragma warning(push, 0)
@@ -15,9 +16,7 @@
 #pragma GCC diagnostic ignored "-Wall"
 #pragma GCC diagnostic ignored "-Wextra"
 #endif
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define STBI_WRITE_NO_STDIO
-#include <stb_image_write.h>
+#include <stb_image_write.h> // implementacion en iron3d_lib4d (StbImpl.cpp)
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #elif defined(__GNUC__)
@@ -28,6 +27,8 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
+#include <string>
 #include <string>
 #include <vector>
 
@@ -234,10 +235,106 @@ void realLibrary(const char* p) {
     check(thumbOk, "alguna miniatura se decodifica");
 }
 
+// Escritor: crear, anadir y volver a leer con el lector propio.
+void writerRoundTrip() {
+    // Hash de la url: valor sacado de una libreria real (FNaF 2 Light Pack).
+    check(lib4d::urlHash("preset://FNaF 2 Light Pack.lib4d/FNaF 2 Light Pack.lib4d/In Office/Toy Chica In Office") ==
+              -411950167,
+          "hash de la url (CRC-32 de la url en minusculas, UTF-16BE)");
+
+    const std::filesystem::path path = std::filesystem::temp_directory_path() / "iron3d_writer_test.lib4d";
+    std::filesystem::remove(path);
+    std::string err;
+    check(createPresetLibrary(path, "Mi Librería", &err), "crear libreria vacia");
+    check(!createPresetLibrary(path, "Otra", &err), "no pisa una libreria que ya existe");
+    PresetLibrary L;
+    check(L.open(path, &err) && L.title() == "Mi Librería" && L.items().empty(), "libreria vacia se lee");
+
+    Bytes doc = {'Q', 'C', '4', 'D', 'C', '4', 'D', '6'};
+    for (int i = 0; i < 5000; ++i) doc.push_back(static_cast<uint8_t>(i * 7));
+    Bytes png;
+    const uint8_t px[4 * 4 * 3] = {255, 0, 0};
+    stbi_write_png_to_func(
+        [](void* ctx, void* data, int size) {
+            auto* b = static_cast<Bytes*>(ctx);
+            b->insert(b->end(), static_cast<uint8_t*>(data), static_cast<uint8_t*>(data) + size);
+        },
+        &png, 4, 4, 3, px, 4 * 3);
+
+    check(appendToPresetLibrary(path, {{"Personajes/Freddy", doc}, {"tex/piel.png", png}, {"Vacía", {}}}, &err),
+          "anadir modelo, textura y carpeta");
+    check(!appendToPresetLibrary(path, {{"Personajes/freddy", doc}}, &err), "no repite una ruta (sin mayusculas)");
+    check(appendToPresetLibrary(path, {{"Personajes/Bonnie", doc}}, &err), "anadir otra vez (al final)");
+
+    check(L.open(path, &err), "reabrir tras anadir");
+    const PresetItem *freddy = nullptr, *bonnie = nullptr, *tex = nullptr;
+    int folders = 0;
+    for (const PresetItem& it : L.items()) {
+        if (it.path == "Personajes/Freddy") freddy = &it;
+        if (it.path == "Personajes/Bonnie") bonnie = &it;
+        if (it.path == "tex/piel.png") tex = &it;
+        if (it.kind == PresetKind::Folder) ++folders;
+    }
+    check(folders == 3, "carpetas Personajes, tex y Vacía");
+    check(freddy && freddy->kind == PresetKind::Model && freddy->compressed && freddy->name == "Freddy",
+          "modelo comprimido con su nombre");
+    check(bonnie && bonnie->kind == PresetKind::Model, "segundo modelo");
+    check(tex && tex->kind == PresetKind::File && !tex->compressed, "textura tal cual");
+    Bytes out;
+    check(freddy && L.readData(*freddy, out, &err) && out == doc, "modelo identico al leerlo");
+    check(bonnie && L.readData(*bonnie, out, &err) && out == doc, "segundo modelo identico");
+    check(tex && L.readData(*tex, out, &err) && out == png, "textura identica");
+    check(L.children("").size() == 3, "raiz: Personajes, tex, Vacía");
+    // Texto que no es UTF-8 valido (p.ej. "Añadidos" en ANSI) no se come
+    // las letras siguientes: cada byte malo sale como un solo caracter.
+    check(appendToPresetLibrary(path, {{std::string("A\xF1" "adidos/Cubo"), doc}}, &err) && L.open(path, &err),
+          "anadir con nombre no UTF-8");
+    bool kept = false;
+    for (const PresetItem& it : L.items()) kept = kept || it.path.find("adidos/Cubo") != std::string::npos;
+    check(kept, "byte no UTF-8 sustituido sin perder letras");
+    std::filesystem::remove(path);
+}
+
+// "--write salida.lib4d Titulo ruta=archivo ... carpeta/": escribe una libreria
+// para validarla fuera (con el propio Cinema 4D R19 y el extractor).
+int writeMode(int argc, char** argv) {
+    if (argc < 4) return 2;
+    const std::filesystem::path out(reinterpret_cast<const char8_t*>(argv[2]));
+    std::string err;
+    // Si ya existe, solo se le anade (prueba del anadido al final).
+    if (!std::filesystem::exists(out) && !createPresetLibrary(out, argv[3], &err)) {
+        std::printf("FALLO: %s\n", err.c_str());
+        return 1;
+    }
+    std::vector<lib4d::NewEntry> entries;
+    for (int i = 4; i < argc; ++i) {
+        std::string a = argv[i];
+        lib4d::NewEntry e;
+        const size_t eq = a.find('=');
+        if (eq == std::string::npos) {
+            e.path = a;
+            if (!e.path.empty() && e.path.back() == '/') e.path.pop_back();
+        } else {
+            e.path = a.substr(0, eq);
+            std::ifstream f(std::filesystem::path(reinterpret_cast<const char8_t*>(a.c_str() + eq + 1)), std::ios::binary);
+            e.data.assign(std::istreambuf_iterator<char>(f), {});
+        }
+        entries.push_back(std::move(e));
+    }
+    if (!appendToPresetLibrary(out, entries, &err)) {
+        std::printf("FALLO: %s\n", err.c_str());
+        return 1;
+    }
+    std::printf("escrita %s\n", argv[2]);
+    return 0;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
+    if (argc > 1 && std::string(argv[1]) == "--write") return writeMode(argc, argv);
     syntheticLibrary();
+    writerRoundTrip();
     for (int i = 1; i < argc; ++i) realLibrary(argv[i]);
     if (g_failures == 0) std::printf("preset_library: todo correcto\n");
     return g_failures == 0 ? 0 : 1;

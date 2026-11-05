@@ -19,4 +19,8 @@ bool nativeFileDialogAvailable();
 std::optional<std::filesystem::path> openFileDialog(const std::string& title,
                                                     const std::vector<std::pair<std::string, std::string>>& filters);
 
+// Igual, pero se pueden elegir varios archivos a la vez (vacio = cancelado).
+std::vector<std::filesystem::path> openFilesDialog(const std::string& title,
+                                                   const std::vector<std::pair<std::string, std::string>>& filters);
+
 } // namespace iron3d

@@ -52,6 +52,11 @@ struct ContentBrowserCallbacks {
 // Dibuja el navegador en el rectangulo del Gestor de Objetos.
 void drawContentBrowser(ImVec2 pos, ImVec2 size, const ContentBrowserCallbacks& cb);
 
+// Archivos soltados desde el Explorador: si el raton esta sobre el navegador
+// y hay una libreria abierta, se le anaden (.c4d = modelo, el resto tal
+// cual). Devuelve si los ha usado.
+bool contentBrowserDropFiles(const std::vector<std::filesystem::path>& files);
+
 // Arrastre de un modelo desde el navegador: si `payload` es uno, devuelve su
 // libreria y elemento.
 bool resolvePresetPayload(const ImGuiPayload* payload, const PresetLibrary*& lib, const PresetItem*& item);

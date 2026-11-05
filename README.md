@@ -55,7 +55,7 @@ src/
   importers/
     cineware/       Importador .c4d (Cineware SDK de Maxon, antes "Melange"; opcional,
                     solo Windows; sin el SDK se compila un stub)
-    lib4d/          Lector propio de librerías .lib4d (Navegador de Contenido)
+    lib4d/          Lector y escritor propios de librerías .lib4d (Navegador de Contenido)
     c4d_compat/     Geometría y coordenadas de C4D sin el SDK (primitivas, TRS); más
                     adelante, el módulo `c4d` + ABI .cdl64
 tools/
