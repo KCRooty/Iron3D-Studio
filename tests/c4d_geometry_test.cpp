@@ -222,6 +222,46 @@ int main() {
         check(renderThumbnail({}, mats, 32).rgba.size() == 32u * 32u * 4u, "miniatura: vacia, solo fondo");
     }
 
+    // --- Reparentado (Agrupar / Expandir Grupo): setLocalMatrix y mundo ------
+    {
+        auto sameMat = [](const glm::mat4& a, const glm::mat4& b) {
+            for (int c = 0; c < 4; ++c)
+                if (glm::length(a[c] - b[c]) > 1e-3f) return false;
+            return true;
+        };
+        SceneNode n("n");
+        n.position = {1.5f, -2.0f, 3.0f};
+        n.rotationDeg = {20.0f, 10.0f, 30.0f};
+        n.scale = {1.0f, 2.0f, 0.5f};
+        const glm::mat4 m = n.localMatrix();
+        SceneNode back("b");
+        back.setLocalMatrix(m);
+        check(sameMat(back.localMatrix(), m), "setLocalMatrix: misma matriz");
+        check(nearly(back.rotationDeg, n.rotationDeg, 1e-2f), "setLocalMatrix: mismos angulos");
+        SceneNode gimbal("g");
+        gimbal.rotationDeg = {0.0f, 90.0f, 40.0f};
+        SceneNode g2("g2");
+        g2.setLocalMatrix(gimbal.localMatrix());
+        check(sameMat(g2.localMatrix(), gimbal.localMatrix()), "setLocalMatrix: bloqueo de cardan");
+
+        // Agrupar bajo un padre girado y volver a sacar: el hijo no se mueve en mundo.
+        SceneNode root("root");
+        SceneNode* parent = root.addChild("padre");
+        parent->position = {5.0f, 0.0f, 0.0f};
+        parent->rotationDeg = {0.0f, 45.0f, 0.0f};
+        parent->scale = glm::vec3(2.0f);
+        SceneNode* kid = root.addChild("hijo", PrimitiveType::Cube);
+        kid->position = {1.0f, 2.0f, 3.0f};
+        kid->rotationDeg = {10.0f, 0.0f, 5.0f};
+        const glm::mat4 world = kid->worldMatrix();
+        const glm::mat4 local = glm::inverse(parent->worldMatrix()) * world;
+        SceneNode* moved = parent->insertChild(root.detachChild(kid), 0);
+        moved->setLocalMatrix(local);
+        check(moved->parent() == parent && root.children().size() == 1, "insertChild/detachChild: arbol");
+        check(sameMat(moved->worldMatrix(), world), "reparentado: mismo mundo");
+        check(parent->indexOf(moved) == 0 && root.indexOf(moved) == root.children().size(), "indexOf");
+    }
+
     if (g_failures == 0) std::printf("c4d_geometry: todo correcto\n");
     return g_failures == 0 ? 0 : 1;
 }

@@ -51,6 +51,17 @@ public:
     // Como adoptChildrenFrom, pero conserva los hijos que ya hubiera (los de
     // `other` van detras) -- usado por Fusionar / importar un .c4d.
     void appendChildrenFrom(SceneNode& other);
+    // Reparentado (Agrupar / Expandir Grupo / Eliminar Sin Hijos del Gestor de
+    // Objetos): saca `child` del arbol sin destruirlo, o lo inserta en la
+    // posicion `index` (se recorta al final si se pasa).
+    std::unique_ptr<SceneNode> detachChild(SceneNode* child);
+    SceneNode* insertChild(std::unique_ptr<SceneNode> child, size_t index);
+    // Posicion de `child` entre los hijos, o children().size() si no es hijo.
+    size_t indexOf(const SceneNode* child) const;
+    // Inverso de localMatrix(): posicion, rotacion X/Y/Z y escala a partir de
+    // una matriz T*Rz*Ry*Rx*S (sin cizalla). Sirve para conservar la posicion
+    // en mundo al cambiar de padre.
+    void setLocalMatrix(const glm::mat4& m);
 
     glm::mat4 localMatrix() const;
     // Acumula localMatrix() con la de todos los ancestros -- usado por el

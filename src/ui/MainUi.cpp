@@ -20,6 +20,8 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <functional>
+#include <memory>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -113,6 +115,9 @@ struct UiState {
     // de Objetos. `selected` sigue siendo el objeto activo (el de Atributos y
     // el gizmo); este conjunto siempre lo contiene mientras haya seleccion.
     std::unordered_set<int> selIds;
+    // Raton sobre el Gestor de Objetos (frame anterior): Mayus+G expande el
+    // grupo ahi y va al final de la animacion en el resto, como en C4D.
+    bool objMgrHovered = false;
     unsigned objMask[3] = {1u << 2, 1u << 2, 1u << 2}; // geometria, luz, nulo: "Objeto"/"General"
     unsigned matMask = 1u << 1;                          // material: "Color"
     unsigned tagMask = 1u << 1;                          // etiqueta: "Etiqueta"
@@ -768,17 +773,89 @@ void exportSelectedC4D(SceneNode& root, SceneNode* selected, const std::vector<M
                     roots.size() == 1 ? roots.front()->name() + ".c4d" : std::string("Objetos.c4d"));
 }
 
+// Seleccion sin los nodos que ya cuelgan de otro seleccionado (al mover o
+// borrar un padre, sus hijos van con el). Si `clicked` no esta en la
+// seleccion (clic derecho sobre otra fila), la operacion es solo sobre el.
+std::vector<SceneNode*> topLevelSelection(SceneNode& root, SceneNode* clicked) {
+    if (clicked && !g.selIds.count(clicked->id())) return {clicked};
+    std::vector<SceneNode*> all, out;
+    collectSelected(root, all);
+    for (SceneNode* n : all) {
+        bool under = false;
+        for (SceneNode* p = n->parent(); p && !under; p = p->parent()) under = g.selIds.count(p->id()) > 0;
+        if (!under) out.push_back(n);
+    }
+    if (out.empty() && clicked) out.push_back(clicked);
+    return out;
+}
+
 void deleteSelected(SceneNode& root, SceneNode*& selected, SceneHistory& history) {
     if (!selected || !selected->parent()) return;
     history.commitBefore(root);
-    // Borra toda la seleccion, no solo el objeto activo.
-    std::vector<SceneNode*> doomed;
-    collectSelected(root, doomed);
+    // Borra toda la seleccion, no solo el objeto activo. Solo los de arriba:
+    // borrar un padre ya destruye a sus hijos seleccionados.
+    std::vector<SceneNode*> doomed = topLevelSelection(root, nullptr);
     if (doomed.empty()) doomed.push_back(selected);
     for (SceneNode* n : doomed)
         if (n->parent()) n->parent()->removeChild(n);
     g.selIds.clear();
     selected = nullptr;
+}
+
+// Mueve `n` bajo `newParent` en la posicion `index` sin que se mueva en mundo.
+SceneNode* reparentKeepWorld(SceneNode* n, SceneNode& newParent, size_t index) {
+    SceneNode* old = n->parent();
+    if (!old) return n;
+    const glm::mat4 world = n->worldMatrix();
+    SceneNode* moved = newParent.insertChild(old->detachChild(n), index);
+    moved->setLocalMatrix(glm::inverse(newParent.worldMatrix()) * world);
+    return moved;
+}
+
+void selectOnly(SceneNode*& selected, SceneNode* n) {
+    g.selIds.clear();
+    if (n) g.selIds.insert(n->id());
+    g.lastSelectedId = n ? n->id() : -1;
+    selected = n;
+}
+
+// Agrupar Objetos (Alt+G): un Nulo nuevo en el sitio del primero, con la
+// seleccion dentro y plegado, como en C4D.
+void groupObjects(SceneNode& root, SceneNode*& selected, SceneHistory& history, SceneNode* clicked) {
+    const std::vector<SceneNode*> nodes = topLevelSelection(root, clicked ? clicked : selected);
+    if (nodes.empty() || !nodes.front()->parent()) return;
+    history.commitBefore(root);
+    SceneNode* parent = nodes.front()->parent();
+    SceneNode* null = parent->insertChild(std::make_unique<SceneNode>("Nulo"), parent->indexOf(nodes.front()));
+    for (SceneNode* n : nodes) reparentKeepWorld(n, *null, null->children().size());
+    g.collapsed.insert(null->id());
+    selectOnly(selected, null);
+}
+
+// Expandir Grupo de Objetos (Mayus+G) y Eliminar Sin Hijos: los hijos suben
+// al sitio del objeto (sin moverse en mundo) y el objeto desaparece.
+void dissolveNode(SceneNode& root, SceneNode*& selected, SceneHistory& history, SceneNode* n) {
+    SceneNode* parent = n ? n->parent() : nullptr;
+    if (!parent) return;
+    history.commitBefore(root);
+    size_t at = parent->indexOf(n);
+    std::vector<SceneNode*> kids;
+    for (const auto& c : n->children()) kids.push_back(c.get());
+    g.selIds.clear();
+    SceneNode* first = nullptr;
+    for (SceneNode* k : kids) {
+        SceneNode* moved = reparentKeepWorld(k, *parent, ++at);
+        g.selIds.insert(moved->id());
+        if (!first) first = moved;
+    }
+    parent->removeChild(n);
+    selected = first;
+    g.lastSelectedId = first ? first->id() : -1;
+}
+
+void forSubtree(SceneNode& n, const std::function<void(SceneNode&)>& fn) {
+    fn(n);
+    for (const auto& c : n.children()) forSubtree(*c, fn);
 }
 
 void newMaterial(std::vector<Material>& materials) {
@@ -1043,7 +1120,12 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
         if (shift && pressed(ImGuiKey_F1)) g.browserOpen = false; // Mayus+F1: Gestor de Objetos
         if (pressed(ImGuiKey_F6)) g.playDir = g.playDir == -1 ? 0 : -1;
         if (pressed(ImGuiKey_F7)) g.playDir = 0;
-        if (pressed(ImGuiKey_G)) g.frame = shift ? (float)g.maxFrame : std::min((float)g.maxFrame, std::floor(g.frame) + 1);
+        if (pressed(ImGuiKey_G)) {
+            if (io.KeyAlt) groupObjects(root, selected, history, nullptr);       // Alt+G: Agrupar Objetos
+            else if (shift && g.objMgrHovered) {                                  // Mayus+G: Expandir Grupo
+                if (selected && !selected->children().empty()) dissolveNode(root, selected, history, selected);
+            } else g.frame = shift ? (float)g.maxFrame : std::min((float)g.maxFrame, std::floor(g.frame) + 1);
+        }
         if (pressed(ImGuiKey_F)) g.frame = shift ? (float)g.minFrame : std::max((float)g.minFrame, std::ceil(g.frame) - 1);
         if (pressed(ImGuiKey_Escape)) selected = nullptr;
     } else {
@@ -1918,6 +2000,8 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
     const float flagsW = 34.0f;
     SceneNode* pendingDelete = nullptr;
     SceneNode* pendingDuplicate = nullptr;
+    SceneNode* pendingGroup = nullptr;
+    SceneNode* pendingDissolve = nullptr;
 
     for (size_t r = 0; r < rows.size(); ++r) {
         SceneNode* node = rows[r].node;
@@ -1961,39 +2045,87 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
             }
             ImGui::EndDragDropTarget();
         }
+        // Menu contextual con la estructura del de C4D R19 (mismos grupos y
+        // orden); lo que Iron3D todavia no tiene sale deshabilitado.
         if (ImGui::BeginPopupContextItem("##ctx")) {
-            ImGui::TextDisabled("%s", node->name().c_str());
+            // Etiquetas: solo hay Etiqueta de Textura (el material asignado).
+            if (ImGui::BeginMenu("CINEMA 4D Etiquetas")) {
+                const bool canTag = hasGeometry(node->primitive) && !materials.empty();
+                if (ImGui::BeginMenu("Etiqueta de Textura", canTag)) {
+                    for (size_t i = 0; i < materials.size(); ++i)
+                        if (ImGui::MenuItem(materials[i].name.c_str(), nullptr, node->materialIndex == (int)i)) {
+                            history.commitBefore(root);
+                            node->materialIndex = (int)i;
+                        }
+                    ImGui::EndMenu();
+                }
+                if (ImGui::MenuItem("Eliminar Etiqueta de Textura", nullptr, false, node->materialIndex >= 0)) {
+                    history.commitBefore(root);
+                    node->materialIndex = -1;
+                }
+                ImGui::Separator();
+                disabledItems({{"Fong", ""}, {"Compositing", ""}, {"Protección", ""}, {"Mostrar", ""},
+                               {"Objetivo", ""}, {"Restricción", ""}});
+                ImGui::EndMenu();
+            }
+            for (const char* fam : {"Character Etiquetas", "Cineman Etiquetas", "Etiqueta UVW", "Hair Etiquetas",
+                                    "MoGraph Etiquetas", "Motion Tracker Etiquetas", "Scripting Etiquetas",
+                                    "Simulación Etiquetas", "Sketch Etiquetas", "Videocámara Etiquetas"})
+                if (ImGui::BeginMenu(fam, false)) ImGui::EndMenu();
+            ImGui::Separator();
+            if (ImGui::BeginMenu("Cargar Etiqueta Preestablecida", false)) ImGui::EndMenu();
+            if (ImGui::BeginMenu("Restaurar Selección", false)) ImGui::EndMenu();
+            ImGui::Separator();
+            iconMenuItem(Icon::MnuLayers, "Añadir a una Capa Nueva", nullptr, false, false);
+            iconMenuItem(Icon::MnuLayers, "Gestor de Capas...", "Mayús+F4", false, false);
+            ImGui::Separator();
+            disabledItems({{"Eliminar de Todas las Tomas", ""}, {"Gestor de Tomas...", ""}});
+            ImGui::Separator();
+            if (ImGui::MenuItem("Seleccionar Hijos", nullptr, false, !node->children().empty())) {
+                forSubtree(*node, [](SceneNode& n) { g.selIds.insert(n.id()); });
+                selected = node;
+                g.lastSelectedId = node->id();
+                g.focus = AttrFocus::Object;
+            }
+            ImGui::MenuItem("Establecer como Raíz", nullptr, false, false);
+            ImGui::Separator();
+            if (ImGui::MenuItem("Expandir Todo", nullptr, false, !node->children().empty()))
+                forSubtree(*node, [](SceneNode& n) { g.collapsed.erase(n.id()); });
+            if (ImGui::MenuItem("Contraer Todo", nullptr, false, !node->children().empty()))
+                forSubtree(*node, [](SceneNode& n) {
+                    if (!n.children().empty()) g.collapsed.insert(n.id());
+                });
+            ImGui::Separator();
+            iconMenuItem(Icon::MakeEditable, "Hacer Editable", "C", false, false);
+            disabledItems({{"Estado Actual del Objeto", ""}, {"Conectar Objetos", ""}, {"Conectar+Eliminar", ""}});
+            ImGui::Separator();
+            if (iconMenuItem(Icon::Null, "Agrupar Objetos", "Alt+G")) pendingGroup = node;
+            if (ImGui::MenuItem("Expandir Grupo de Objetos", "Mayús+G", false, !node->children().empty()))
+                pendingDissolve = node;
+            if (ImGui::MenuItem("Eliminar Sin Hijos", nullptr, false, true)) pendingDissolve = node;
+            ImGui::MenuItem("Convertir Selección de Objetos a XRef", nullptr, false, false);
+            ImGui::Separator();
+            disabledItems({{"Mostrar Pistas...", ""}, {"Mostrar F-Curves...", ""}, {"Mostrar Movimientos...", ""}});
+            ImGui::Separator();
+            ImGui::MenuItem("Información del Objeto...", nullptr, false, false);
+            if (iconMenuItem(Icon::MnuProject, "Información del Proyecto", "Ctrl+I")) g.focus = AttrFocus::Project;
+            ImGui::Separator();
+            iconMenuItem(Icon::MnuHelp, "Mostrar Ayuda...", "Ctrl+F1", false, false);
+            // Lo propio de Iron3D (en C4D vive en otros menus), al final.
             ImGui::Separator();
             if (ImGui::BeginMenu("Añadir Hijo")) {
                 addChildMenu(root, node, selected, history);
                 ImGui::EndMenu();
             }
-            if (ImGui::MenuItem("Duplicar")) pendingDuplicate = node;
-            if (ImGui::MenuItem("Eliminar", "Supr")) pendingDelete = node;
-            if (ImGui::MenuItem("Guardar como Preestablecido...", nullptr, false, cinewareAvailable()))
-                beginSavePreset(*node, materials);
             if (ImGui::MenuItem("Renombrar")) {
                 g.renamingNodeId = node->id();
                 std::snprintf(g.renameBuf, sizeof(g.renameBuf), "%s", node->name().c_str());
                 g.renameFocus = true;
             }
-            ImGui::Separator();
-            const bool canTag = hasGeometry(node->primitive) && !materials.empty();
-            if (ImGui::BeginMenu("Asignar Material", canTag)) {
-                for (size_t i = 0; i < materials.size(); ++i)
-                    if (ImGui::MenuItem(materials[i].name.c_str(), nullptr, node->materialIndex == (int)i)) {
-                        history.commitBefore(root);
-                        node->materialIndex = (int)i;
-                    }
-                ImGui::EndMenu();
-            }
-            if (ImGui::MenuItem("Eliminar Etiqueta de Textura", nullptr, false, node->materialIndex >= 0)) {
-                history.commitBefore(root);
-                node->materialIndex = -1;
-            }
-            ImGui::Separator();
-            disabledItems({{"Hacer Editable", "C"}, {"Estado Actual a Objeto", ""}, {"Conectar Objetos", ""},
-                           {"Agrupar Objetos", "Alt+G"}, {"Desagrupar Objetos", "Mayús+G"}});
+            if (ImGui::MenuItem("Duplicar")) pendingDuplicate = node;
+            if (iconMenuItem(Icon::MnuDelete, "Eliminar", "Supr")) pendingDelete = node;
+            if (ImGui::MenuItem("Guardar como Preestablecido...", nullptr, false, cinewareAvailable()))
+                beginSavePreset(*node, materials);
             ImGui::EndPopup();
         }
 
@@ -2114,10 +2246,13 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
             ImGui::EndPopup();
         }
     }
+    g.objMgrHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
     ImGui::EndChild();
     ImGui::PopStyleVar();
     ImGui::End();
 
+    if (pendingGroup) groupObjects(root, selected, history, pendingGroup);
+    if (pendingDissolve) dissolveNode(root, selected, history, pendingDissolve);
     if (pendingDuplicate && pendingDuplicate->parent()) {
         history.commitBefore(root);
         selected = duplicateSubtree(*pendingDuplicate->parent(), *pendingDuplicate);
