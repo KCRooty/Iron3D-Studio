@@ -1670,7 +1670,7 @@ bool offscreenArrow(const OrbitalCamera& camera, const ViewportState& vp, const 
     const glm::vec3 pv = glm::vec3(camera.viewMatrix() * glm::vec4(center, 1.0f));
     const float depth = -pv.z; // > 0: delante de la camara
     const ImVec2 mid(vp.x + vp.w * 0.5f, vp.y + vp.h * 0.5f);
-    const float margin = 20.0f;
+    const float margin = 3.0f; // la punta toca el borde del visor, como en C4D
     auto normalize = [](ImVec2 v) {
         const float l = std::sqrt(v.x * v.x + v.y * v.y);
         return l > 1e-4f ? ImVec2(v.x / l, v.y / l) : ImVec2(0.0f, 1.0f);
@@ -1718,7 +1718,7 @@ void drawOffscreenArrow(OrbitalCamera& camera, const ViewportState& vp, SceneNod
     ImVec2 tip, d;
     if (!offscreenArrow(camera, vp, *sel, tip, d)) return;
 
-    constexpr float len = 16.0f, half = 8.0f, hit = 30.0f;
+    constexpr float len = 17.0f, half = 6.0f, hit = 28.0f;
     const ImVec2 base(tip.x - d.x * len, tip.y - d.y * len);
     const ImVec2 perp(-d.y, d.x);
     const ImVec2 hc(tip.x - d.x * len * 0.5f, tip.y - d.y * len * 0.5f);
@@ -1748,9 +1748,13 @@ void drawOffscreenArrow(OrbitalCamera& camera, const ViewportState& vp, SceneNod
     dl->PushClipRect(ImVec2(vp.x, vp.y), ImVec2(vp.x + vp.w, vp.y + vp.h), true);
     const ImVec2 p1(base.x + perp.x * half, base.y + perp.y * half);
     const ImVec2 p2(base.x - perp.x * half, base.y - perp.y * half);
-    if (hovered) dl->AddCircleFilled(hc, hit * 0.5f, IM_COL32(0, 0, 0, 70));
-    dl->AddTriangleFilled(tip, p1, p2, kSelOrange);
-    dl->AddTriangle(tip, p1, p2, hovered ? IM_COL32(255, 255, 255, 230) : IM_COL32(20, 20, 20, 200), 1.2f);
+    // Como en C4D R19: punta de flecha azul clara, sin borde, con la cola
+    // hundida y dos caras (una mas clara) para que parezca un cono plano.
+    const ImVec2 notch(base.x + d.x * 5.0f, base.y + d.y * 5.0f);
+    const ImU32 light = hovered ? IM_COL32(185, 220, 255, 255) : IM_COL32(140, 185, 235, 255);
+    const ImU32 dark = hovered ? IM_COL32(120, 170, 235, 255) : IM_COL32(75, 125, 195, 255);
+    dl->AddTriangleFilled(tip, p1, notch, light);
+    dl->AddTriangleFilled(tip, notch, p2, dark);
     dl->PopClipRect();
 
     if (clicked) startCamTrip(camera, *sel);
