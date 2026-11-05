@@ -6,6 +6,46 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-05 (2) — Crear librerías `.lib4d` y flecha de objeto fuera de vista
+
+**Añadido**
+- **Escritor propio de `.lib4d`**, sin código de Maxon. Escribe como C4D R19.024 y, como
+  C4D, solo añade al final del archivo: nunca reescribe lo que ya hay.
+- En el Navegador de Contenido:
+  - Archivo > **Nueva Librería de Preestablecidos...** crea la librería en
+    `library/browser`, así que es permanente.
+  - Archivo > **Nueva Carpeta...** crea una carpeta en la librería o carpeta abierta.
+  - Archivo > **Añadir Archivos a la Librería...**, también desde el clic derecho en la
+    librería: los `.c4d` entran como modelos y el resto (texturas) tal cual.
+- **Arrastrar desde el Explorador:** una `.lib4d` soltada en Iron3D se monta en el
+  navegador. Otros archivos soltados encima del navegador se añaden a la librería
+  abierta.
+- Las texturas sin miniatura guardada enseñan la propia imagen.
+- **Flecha de objeto fuera de vista**, como en C4D R19: si el objeto seleccionado queda
+  fuera del visor, detrás de la cámara o demasiado lejos, sale una punta de flecha azul
+  en el borde apuntando hacia él. Con un clic, la cámara viaja hasta él y lo encuadra.
+- Flags de verificación: `--frame=<nombre>`, `--select=<nombre>` y `--travel`.
+
+**Probado**
+- **Cinema 4D R19, sin ventana, abre lo que escribe Iron3D.** Probado con una librería
+  nueva (2 modelos, 1 textura y carpetas) y con una copia de una librería real de 19
+  modelos a la que se le añadió uno: R19 carga los 20.
+- Gramática de los registros: los 816 registros de 5 librerías reales se leen y se
+  vuelven a escribir idénticos byte a byte.
+- Prueba automática del escritor (crear, añadir, volver a leer, texto que no es UTF-8),
+  en Windows y Linux.
+- Por captura: la flecha en tres casos (a un lado, detrás de la cámara y diminuto) y el
+  viaje de la cámara con `--travel`. El navegador lee las librerías escritas por Iron3D,
+  con la miniatura de la textura.
+
+**Sin probar / limitaciones**
+- Con el ratón no se ha probado: el clic en la flecha, los diálogos de nombre ni
+  arrastrar desde el Explorador.
+- Todavía no se puede **guardar un objeto de la escena** como preestablecido, porque
+  Iron3D aún no exporta a `.c4d`. Los modelos añadidos no llevan miniatura.
+- No se puede borrar, renombrar ni mover dentro de una librería.
+- La hora de creación que se guarda no está confirmada; la fecha sí.
+
 ### 2026-11-05 — Navegador de Contenido y librerías `.lib4d`
 
 **Añadido**

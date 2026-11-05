@@ -55,9 +55,49 @@ std::optional<std::filesystem::path> openFileDialog(const std::string& title,
     return std::filesystem::path(buffer);
 }
 
+std::vector<std::filesystem::path> openFilesDialog(const std::string& title,
+                                                   const std::vector<std::pair<std::string, std::string>>& filters) {
+    std::wstring filter;
+    for (const auto& f : filters) {
+        filter += widen(f.first + " (" + f.second + ")");
+        filter.push_back(L'\0');
+        filter += widen(f.second);
+        filter.push_back(L'\0');
+    }
+    filter.push_back(L'\0');
+    const std::wstring wtitle = widen(title);
+    // Con varios: "carpeta\0archivo1\0archivo2\0\0"; con uno: la ruta completa.
+    std::vector<wchar_t> buffer(1 << 16, L'\0');
+    OPENFILENAMEW ofn{};
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = GetActiveWindow();
+    ofn.lpstrFilter = filter.c_str();
+    ofn.nFilterIndex = 1;
+    ofn.lpstrFile = buffer.data();
+    ofn.nMaxFile = (DWORD)buffer.size();
+    ofn.lpstrTitle = wtitle.c_str();
+    ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR | OFN_EXPLORER | OFN_ALLOWMULTISELECT;
+    std::vector<std::filesystem::path> out;
+    if (!GetOpenFileNameW(&ofn)) return out;
+    const wchar_t* p = buffer.data();
+    const std::filesystem::path first(p);
+    p += wcslen(p) + 1;
+    if (!*p) {
+        out.push_back(first);
+        return out;
+    }
+    for (; *p; p += wcslen(p) + 1) out.push_back(first / p);
+    return out;
+}
+
 #else
 
 bool nativeFileDialogAvailable() { return false; }
+
+std::vector<std::filesystem::path> openFilesDialog(const std::string&,
+                                                   const std::vector<std::pair<std::string, std::string>>&) {
+    return {};
+}
 
 std::optional<std::filesystem::path> openFileDialog(const std::string&,
                                                     const std::vector<std::pair<std::string, std::string>>&) {

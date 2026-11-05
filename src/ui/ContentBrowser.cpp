@@ -1,13 +1,25 @@
 #include "ContentBrowser.h"
 
 #include "C4DIcons.h"
+#include "FileDialog.h"
 #include "core/Paths.h"
+#include "importers/lib4d/PresetLibraryWriter.h"
 
 #include <imgui.h>
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+#include <stb_image.h>
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <fstream>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <utility>
@@ -76,6 +88,14 @@ struct State {
     bool showFiles = true;
     std::string message; // aviso en la barra inferior (clic para quitarlo)
     std::vector<RecentItem> recent;
+    // Ventanita que pide un nombre (Nueva Libreria / Nueva Carpeta).
+    enum class Ask { None, Library, Folder } ask = Ask::None;
+    bool askOpen = false; // abrir el popup en el siguiente dibujo
+    int askLib = 0;
+    std::string askFolder;
+    char askBuf[128] = {};
+    // La ventana del navegador estaba bajo el raton (archivos soltados).
+    bool hovered = false;
 };
 
 State s;
@@ -149,9 +169,32 @@ void trimThumbs() {
     }
 }
 
+// Imagen de la libreria sin miniatura guardada (las anadidas desde Iron3D):
+// se decodifica entera y se reduce a 128 px como mucho.
+bool imageThumb(const Mounted& m, const PresetItem& it, std::vector<uint8_t>& rgba, int& w, int& h) {
+    std::vector<uint8_t> data;
+    if (it.dataSize > (64u << 20) || !m.lib.readData(it, data) || data.size() > 0x7FFFFFFF) return false;
+    int sw = 0, sh = 0, comp = 0;
+    unsigned char* px = stbi_load_from_memory(data.data(), (int)data.size(), &sw, &sh, &comp, 4);
+    if (!px) return false;
+    const int maxSide = 128;
+    const float k = std::min(1.0f, (float)maxSide / (float)std::max(sw, sh));
+    w = std::max(1, (int)(sw * k));
+    h = std::max(1, (int)(sh * k));
+    rgba.resize((size_t)w * h * 4);
+    for (int y = 0; y < h; ++y)
+        for (int x = 0; x < w; ++x) {
+            const int sx = std::min(sw - 1, (int)(x / k)), sy = std::min(sh - 1, (int)(y / k));
+            std::memcpy(&rgba[((size_t)y * w + x) * 4], px + ((size_t)sy * sw + sx) * 4, 4);
+        }
+    stbi_image_free(px);
+    return true;
+}
+
 const Thumb* thumbFor(const Mounted& m, int index) {
     const PresetItem& it = m.lib.items()[index];
-    if (!it.hasThumb() || !g_createTex) return nullptr;
+    const bool fromImage = !it.hasThumb() && it.kind == PresetKind::File;
+    if ((!it.hasThumb() && !fromImage) || !g_createTex) return nullptr;
     Thumb& t = g_thumbs[{m.serial, index}];
     t.lastUsed = ImGui::GetFrameCount();
     if (t.tex || t.failed) return t.tex ? &t : nullptr;
@@ -162,7 +205,8 @@ const Thumb* thumbFor(const Mounted& m, int index) {
     if (g_uploadsThisFrame >= kMaxUploadsPerFrame) return nullptr;
     ++g_uploadsThisFrame;
     std::vector<uint8_t> rgba;
-    if (!m.lib.readThumbnail(it, rgba, t.w, t.h) || !(t.tex = g_createTex(rgba.data(), t.w, t.h))) {
+    const bool ok = fromImage ? imageThumb(m, it, rgba, t.w, t.h) : m.lib.readThumbnail(it, rgba, t.w, t.h);
+    if (!ok || !(t.tex = g_createTex(rgba.data(), t.w, t.h))) {
         t.failed = true;
         return nullptr;
     }
@@ -300,6 +344,150 @@ void makePermanent(Mounted& m) {
     s.message = "\"" + m.lib.title() + "\" es ahora permanente (" + pathUtf8(dst) + ").";
 }
 
+// --- Escribir en librerias (Nueva Libreria, Nueva Carpeta, Anadir Archivos) -----------
+
+// Vuelve a leer una libreria tras anadirle cosas (los indices cambian).
+bool reloadLib(Mounted& m) {
+    std::string err;
+    PresetLibrary fresh;
+    if (!fresh.open(m.lib.file(), &err)) {
+        s.message = err;
+        return false;
+    }
+    dropThumbsOf(m.serial);
+    m.lib = std::move(fresh);
+    s.selItem = -2;
+    return true;
+}
+
+std::string joinPath(const std::string& folder, const std::string& leaf) {
+    return folder.empty() ? leaf : folder + "/" + leaf;
+}
+
+std::string trimmed(const std::string& t) {
+    const size_t a = t.find_first_not_of(" \t"), b = t.find_last_not_of(" \t");
+    return a == std::string::npos ? std::string() : t.substr(a, b - a + 1);
+}
+
+// Nombre valido para una carpeta o un archivo de Windows.
+bool validName(const std::string& n) {
+    if (n.empty() || n == "." || n == "..") return false;
+    for (char c : n)
+        if (std::strchr("/\\:*?\"<>|", c) || (unsigned char)c < 32) return false;
+    return true;
+}
+
+void createLibrary(const std::string& name) {
+    const auto dir = permanentLibraryDir();
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    const std::u8string u8(name.begin(), name.end());
+    const auto file = dir / std::filesystem::path(u8 + u8".lib4d");
+    std::string err;
+    if (!createPresetLibrary(file, name, &err)) {
+        s.message = err;
+        return;
+    }
+    auto m = std::make_unique<Mounted>();
+    if (!m->lib.open(file, &err)) {
+        s.message = err;
+        return;
+    }
+    m->serial = g_nextSerial++;
+    m->temporary = false;
+    const int serial = m->serial;
+    g_libs.push_back(std::move(m));
+    navigate(libraryLocation(serial));
+    s.message = "Librería \"" + name + "\" creada en library/browser.";
+}
+
+void addFolder(Mounted& m, const std::string& parent, const std::string& name) {
+    std::string err;
+    if (!appendToPresetLibrary(m.lib.file(), {{joinPath(parent, name), {}}}, &err)) {
+        s.message = err;
+        return;
+    }
+    if (reloadLib(m)) s.message = "Carpeta \"" + name + "\" creada.";
+}
+
+// Anade archivos a `folder`: los .c4d entran como modelos (con su nombre sin
+// extension) y el resto (texturas...) tal cual, como en C4D.
+void addFiles(Mounted& m, const std::string& folder, const std::vector<std::filesystem::path>& files) {
+    std::vector<lib4d::NewEntry> entries;
+    int models = 0, others = 0;
+    for (const auto& f : files) {
+        std::ifstream in(f, std::ios::binary);
+        if (!in) {
+            s.message = "No se puede leer " + pathUtf8(f);
+            return;
+        }
+        lib4d::NewEntry e;
+        e.data.assign(std::istreambuf_iterator<char>(in), {});
+        if (e.data.empty()) continue;
+        const bool isC4d = e.data.size() >= 4 && std::memcmp(e.data.data(), "QC4D", 4) == 0;
+        e.path = joinPath(folder, pathUtf8(isC4d ? f.stem() : f.filename()));
+        (isC4d ? models : others)++;
+        entries.push_back(std::move(e));
+    }
+    if (entries.empty()) return;
+    std::string err;
+    if (!appendToPresetLibrary(m.lib.file(), entries, &err)) {
+        s.message = err;
+        return;
+    }
+    if (reloadLib(m))
+        s.message = std::to_string(models) + " modelos y " + std::to_string(others) + " archivos añadidos a \"" +
+                    m.lib.title() + "\".";
+}
+
+void addFilesDialog(Mounted& m, const std::string& folder) {
+    const auto files = openFilesDialog(
+        "Añadir a la librería",
+        {{"Modelos y texturas", "*.c4d;*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.exr;*.hdr;*.psd;*.bmp;*.tga"},
+         {"Todos los archivos", "*.*"}});
+    if (!files.empty()) addFiles(m, folder, files);
+}
+
+void askName(State::Ask what, int lib, const std::string& folder) {
+    s.ask = what;
+    s.askOpen = true;
+    s.askLib = lib;
+    s.askFolder = folder;
+    std::snprintf(s.askBuf, sizeof(s.askBuf), "%s", what == State::Ask::Library ? "Nueva Librería" : "Nueva Carpeta");
+}
+
+void drawAskName() {
+    if (s.askOpen) {
+        ImGui::OpenPopup("###cbask");
+        s.askOpen = false;
+    }
+    const char* title = s.ask == State::Ask::Library ? "Nueva Librería de Preestablecidos###cbask" : "Nueva Carpeta###cbask";
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (!ImGui::BeginPopupModal(title, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
+    ImGui::TextUnformatted("Nombre:");
+    if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
+    const bool enter = ImGui::InputText("##askname", s.askBuf, sizeof(s.askBuf),
+                                        ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+    const std::string name = trimmed(s.askBuf);
+    const bool ok = validName(name);
+    if (!ok) ImGui::TextDisabled("Sin  / \\ : * ? \" < > |");
+    if (s.ask == State::Ask::Library) ImGui::TextDisabled("Se guarda en library/browser: sale siempre.");
+    ImGui::BeginDisabled(!ok);
+    const bool create = ImGui::Button("Crear", ImVec2(110, 0)) || (enter && ok);
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    const bool cancel = ImGui::Button("Cancelar", ImVec2(110, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape);
+    if (create && ok) {
+        if (s.ask == State::Ask::Library) createLibrary(name);
+        else if (Mounted* m = findLib(s.askLib)) addFolder(*m, s.askFolder, name);
+    }
+    if ((create && ok) || cancel) {
+        s.ask = State::Ask::None;
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+}
+
 void openEntry(const Entry& e, const ContentBrowserCallbacks& cb) {
     if (e.item < 0) {
         navigate(libraryLocation(e.lib->serial));
@@ -368,10 +556,17 @@ void drawMenuBar(const ContentBrowserCallbacks& cb) {
     if (!curLib && s.selItem == -1) curLib = findLib(s.selLib);
     int unmountSerial = 0;
     if (ImGui::BeginMenu("Archivo")) {
+        Mounted* here = s.loc.node == Node::Library ? findLib(s.loc.lib) : nullptr;
         notYet("Nuevo Navegador", "Ctrl+N");
-        notYet("Nueva Carpeta");
+        if (ImGui::MenuItem("Nueva Carpeta...", nullptr, false, here != nullptr))
+            askName(State::Ask::Folder, here->serial, s.loc.folder);
+        if (!here && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+            ImGui::SetTooltip("Abre antes una librería (o una carpeta suya)");
         notYet("Nuevo Catálogo...");
-        notYet("Nueva Librería de Preestablecidos...");
+        if (ImGui::MenuItem("Nueva Librería de Preestablecidos...")) askName(State::Ask::Library, 0, {});
+        if (ImGui::MenuItem("Añadir Archivos a la Librería...", nullptr, false,
+                            here != nullptr && nativeFileDialogAvailable()))
+            addFilesDialog(*here, s.loc.folder);
         ImGui::Separator();
         if (ImGui::MenuItem("Abrir Librería de Preestablecidos...", nullptr, false, (bool)cb.openLibrary))
             cb.openLibrary();
@@ -502,6 +697,9 @@ int libraryContextMenu(Mounted& m) {
     int unmountSerial = 0;
     if (!ImGui::BeginPopupContextItem("##libctx")) return 0;
     ImGui::TextDisabled("%s", m.temporary ? "Librería temporal (solo esta sesión)" : "Librería permanente");
+    ImGui::Separator();
+    if (ImGui::MenuItem("Nueva Carpeta...")) askName(State::Ask::Folder, m.serial, {});
+    if (ImGui::MenuItem("Añadir Archivos...", nullptr, false, nativeFileDialogAvailable())) addFilesDialog(m, {});
     ImGui::Separator();
     if (ImGui::MenuItem("Hacer Permanente (copiar a library/browser)", nullptr, false, m.temporary)) makePermanent(m);
     if (ImGui::MenuItem("Quitar del Navegador", nullptr, false, m.temporary)) unmountSerial = m.serial;
@@ -754,6 +952,14 @@ void noteRecentPreset(const PresetLibrary& lib, const PresetItem& item) {
     }
 }
 
+bool contentBrowserDropFiles(const std::vector<std::filesystem::path>& files) {
+    if (!s.hovered || s.loc.node != Node::Library || files.empty()) return false;
+    Mounted* m = findLib(s.loc.lib);
+    if (!m) return false;
+    addFiles(*m, s.loc.folder, files);
+    return true;
+}
+
 bool resolvePresetPayload(const ImGuiPayload* payload, const PresetLibrary*& lib, const PresetItem*& item) {
     if (!payload || !payload->IsDataType(kPresetPayloadType) || payload->DataSize != (int)(2 * sizeof(int)))
         return false;
@@ -776,8 +982,10 @@ void drawContentBrowser(ImVec2 pos, ImVec2 size, const ContentBrowserCallbacks& 
         ImGui::End();
         return;
     }
+    s.hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
     drawMenuBar(cb);
     drawToolbar();
+    drawAskName();
 
     const float statusH = ImGui::GetTextLineHeightWithSpacing() + 2;
     const ImVec2 avail = ImGui::GetContentRegionAvail();

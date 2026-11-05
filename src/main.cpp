@@ -96,6 +96,16 @@ void glfwScrollCallback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffs
     g_scrollY += yoffset;
 }
 
+// Archivos soltados desde el Explorador (rutas UTF-8 de GLFW). Se procesan en
+// el bucle principal, despues de glfwPollEvents.
+std::vector<std::filesystem::path> g_droppedFiles;
+void glfwDropCallback(GLFWwindow* /*window*/, int count, const char** paths) {
+    for (int i = 0; i < count; ++i) {
+        const std::string p = paths[i];
+        g_droppedFiles.emplace_back(std::u8string(p.begin(), p.end()));
+    }
+}
+
 // Recorre el grafo de escena (Fase 2) buscando la primera Luz (Fase 5): su
 // posicion en mundo es la que usa drawScene() para iluminar todo lo demas.
 // Solo una luz activa por ahora -- Phong basico, no hace falta mas.
@@ -451,6 +461,7 @@ int main(int argc, char** argv) {
         return 1;
     }
     glfwSetScrollCallback(window, glfwScrollCallback);
+    glfwSetDropCallback(window, glfwDropCallback);
 
     // --- Dear ImGui: el contexto se crea ANTES del renderer (init() de cada
     // backend llama a ImGui_ImplGlfw_InitFor*/ImGui_Impl<Backend>_Init, que
@@ -572,6 +583,20 @@ int main(int argc, char** argv) {
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+        if (!g_droppedFiles.empty()) {
+            // Una .lib4d se monta en el Navegador de Contenido (como arrastrarla
+            // a C4D); el resto se anade a la libreria abierta si se suelta
+            // encima del navegador.
+            std::vector<std::filesystem::path> rest;
+            for (const auto& f : g_droppedFiles) {
+                std::string err;
+                if (!iron3d::isLib4dPath(f)) rest.push_back(f);
+                else if (iron3d::mountTemporaryLibrary(f, &err)) iron3d::openContentBrowser();
+                else std::fprintf(stderr, "[Iron3D] No se pudo abrir la librería: %s\n", err.c_str());
+            }
+            if (!rest.empty()) iron3d::contentBrowserDropFiles(rest);
+            g_droppedFiles.clear();
+        }
 
         glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
         renderer->resizeIfNeeded(fbWidth, fbHeight);
