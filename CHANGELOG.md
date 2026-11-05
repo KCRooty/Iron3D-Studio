@@ -6,6 +6,14 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-05 — Avisos del importador para rigging
+
+- Las articulaciones (joints) y el deformador Piel tienen su propio aviso al importar.
+  Antes salían como "sin geometría guardada" y recomendaban una opción de guardado que no
+  tiene nada que ver. Siguen entrando como Nulo.
+- **Probado** con `c4d_probe` sobre modelos con rigging sacados de bibliotecas `.lib4d`
+  (166 objetos, 101 articulaciones y 14 deformadores Piel).
+
 ### 2026-11-04 — Importar escenas de Cinema 4D (.c4d)
 
 **Añadido**
