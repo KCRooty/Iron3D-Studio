@@ -96,4 +96,15 @@ void drawIconSheet(ViewportState& viewport);
 // Interfaz sin tener que pulsar nada).
 void openPreferencesDialog();
 
+// Muestra el Navegador de Contenido en el hueco del Gestor de Objetos (main.cpp
+// lo usa al abrir Iron3D con un .lib4d).
+void openContentBrowser();
+
+// Carga un modelo de una libreria .lib4d en la escena, como un doble clic en
+// el navegador (se puede deshacer). main.cpp lo usa con "--load-preset=".
+class PresetLibrary;
+struct PresetItem;
+void loadPresetIntoScene(const PresetLibrary& lib, const PresetItem& item, SceneNode& root, SceneNode*& selected,
+                         SceneHistory& history, std::vector<Material>& materials);
+
 } // namespace iron3d

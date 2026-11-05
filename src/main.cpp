@@ -27,6 +27,8 @@
 #include "core/Material.h"
 #include "core/SceneSerializer.h"
 #include "ui/MainUi.h"
+#include "ui/ContentBrowser.h"
+#include "importers/lib4d/PresetLibrary.h"
 
 #include "importers/cineware/CinewareImporter.h"
 
@@ -396,13 +398,21 @@ int main(int argc, char** argv) {
     // "--prefs" abre Preferencias. Las tres son para verificar la UI. El primer argumento que no empiece por
     // "--" es la escena a abrir, como siempre.
     const char* sceneArg = nullptr;
+    std::string loadPresetArg; // "--load-preset=<ruta>": con un .lib4d, carga ese modelo (verificacion)
     bool iconSheet = false;
+    // "--no-focus": la ventana sale sin quitar el foco a la que se este usando
+    // (capturas de verificacion mientras Core trabaja en otra cosa).
+    bool noFocus = false;
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
-        if (a == "--icon-sheet") {
+        if (a == "--no-focus") {
+            noFocus = true;
+        } else if (a == "--icon-sheet") {
             iconSheet = true;
         } else if (a == "--prefs") {
             openPreferencesDialog();
+        } else if (a.rfind("--load-preset=", 0) == 0) {
+            loadPresetArg = a.substr(14);
         } else if (a.rfind("--ui-preset=", 0) == 0) {
             if (const UiPreset* p = findBuiltinPreset(a.substr(12))) prefs.uiPreset = *p;
             else std::fprintf(stderr, "[Iron3D] Preset de interfaz desconocido: %s\n", a.c_str());
@@ -420,6 +430,10 @@ int main(int argc, char** argv) {
     configureWindowHints(backend);
     // La interfaz de C4D esta pensada para pantalla completa: se abre maximizada.
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+    if (noFocus) {
+        glfwWindowHint(GLFW_FOCUSED, GLFW_FALSE);
+        glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_FALSE);
+    }
     GLFWwindow* window = glfwCreateWindow(1600, 900, "Iron3D Studio", nullptr, nullptr);
     if (!window) {
         std::fprintf(stderr, "[Iron3D] glfwCreateWindow fallo.\n");
@@ -445,6 +459,12 @@ int main(int argc, char** argv) {
 
     std::unique_ptr<IRenderer> renderer = createRenderer(backend);
     renderer->init(window, fbWidth, fbHeight);
+    // Miniaturas del Navegador de Contenido y librerias permanentes
+    // (<Iron3D>/library/browser/*.lib4d).
+    iron3d::setUiTextureFactory(
+        [&renderer](const uint8_t* rgba, int w, int h) { return renderer->createUiTexture(rgba, w, h); },
+        [&renderer](void* tex) { renderer->destroyUiTexture(tex); });
+    iron3d::scanPermanentLibraries();
     // Gris neutro #5A5A5A: confirmado en capturas reales de C4D R19 que el
     // viewport es MAS CLARO que los paneles de alrededor (#3C3C3C), no mas
     // oscuro como tenia Iron3D antes -- ver c4d_ui_reference_visual.md SS2.
@@ -485,7 +505,22 @@ int main(int argc, char** argv) {
     if (sceneArg) {
         std::string err;
         const std::filesystem::path argPath = std::filesystem::path(sceneArg);
-        if (iron3d::isC4DPath(argPath)) {
+        if (iron3d::isLib4dPath(argPath)) {
+            // Una .lib4d se monta en el Navegador de Contenido (temporal) y se
+            // abre su ventana; la escena sigue siendo la de siempre.
+            if (iron3d::mountTemporaryLibrary(argPath, &err)) {
+                iron3d::openContentBrowser();
+                const iron3d::PresetLibrary* lib = iron3d::findMountedLibrary(argPath);
+                for (const iron3d::PresetItem& it : lib ? lib->items() : std::vector<iron3d::PresetItem>{}) {
+                    if (loadPresetArg.empty() || it.path != loadPresetArg) continue;
+                    iron3d::loadPresetIntoScene(*lib, it, sceneRoot, selected, history, materials);
+                    iron3d::frameScene(camera, sceneRoot);
+                    std::fprintf(stderr, "[Iron3D] Preestablecido '%s' cargado: %d objetos en la escena\n",
+                                 it.name.c_str(), (int)sceneRoot.children().size());
+                }
+            }
+            else std::fprintf(stderr, "[Iron3D] No se pudo abrir la librería '%s': %s\n", sceneArg, err.c_str());
+        } else if (iron3d::isC4DPath(argPath)) {
             iron3d::C4DImportReport report;
             sceneRoot.clearChildren();
             if (iron3d::importC4D(argPath, sceneRoot, materials, report, &err)) {
@@ -690,6 +725,7 @@ int main(int argc, char** argv) {
     // destruia los VkBuffer mientras el ultimo frame enviado a la GPU
     // todavia los estaba usando -- validation error + crash en vez de cierre
     // limpio.
+    iron3d::releaseContentBrowserTextures();
     renderer->shutdown();
     renderer.reset();
 

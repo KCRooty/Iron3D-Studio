@@ -17,6 +17,11 @@ PFNGLDEPTHMASKPROC glDepthMask = nullptr;
 PFNGLDRAWARRAYSPROC glDrawArrays = nullptr;
 PFNGLDRAWELEMENTSPROC glDrawElements = nullptr;
 
+PFNGLGENTEXTURESPROC glGenTextures = nullptr;
+PFNGLBINDTEXTUREPROC glBindTexture = nullptr;
+PFNGLDELETETEXTURESPROC glDeleteTextures = nullptr;
+PFNGLTEXPARAMETERIPROC glTexParameteri = nullptr;
+PFNGLTEXIMAGE2DPROC glTexImage2D = nullptr;
 PFNGLGENVERTEXARRAYSPROC glGenVertexArrays = nullptr;
 PFNGLBINDVERTEXARRAYPROC glBindVertexArray = nullptr;
 PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays = nullptr;
@@ -77,6 +82,12 @@ bool loadOpenGLFunctions() {
     IRON3D_GL_LOAD(glDepthMask);
     IRON3D_GL_LOAD(glDrawArrays);
     IRON3D_GL_LOAD(glDrawElements);
+
+    IRON3D_GL_LOAD(glGenTextures);
+    IRON3D_GL_LOAD(glBindTexture);
+    IRON3D_GL_LOAD(glDeleteTextures);
+    IRON3D_GL_LOAD(glTexParameteri);
+    IRON3D_GL_LOAD(glTexImage2D);
 
     IRON3D_GL_LOAD(glGenVertexArrays);
     IRON3D_GL_LOAD(glBindVertexArray);

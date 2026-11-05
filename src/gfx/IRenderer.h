@@ -130,6 +130,13 @@ public:
     // Llamar despues de ImGui::Render().
     virtual void endFrame() = 0;
 
+    // Textura RGBA8 para dibujar con ImGui (miniaturas del Navegador de
+    // Contenido). Devuelve el ImTextureID del backend (VkDescriptorSet en
+    // Vulkan, nombre de textura en OpenGL) o nullptr si no se pudo crear.
+    // destroyUiTexture() la libera cuando la GPU ya no la usa.
+    virtual void* createUiTexture(const uint8_t* rgba, int width, int height) = 0;
+    virtual void destroyUiTexture(void* texture) = 0;
+
     // ImGui_Impl<Backend>_NewFrame() -- la mitad de ImGui_ImplGlfw_NewFrame()
     // es comun a los dos backends y se llama aparte, en main.cpp.
     virtual void imguiNewFrame() = 0;

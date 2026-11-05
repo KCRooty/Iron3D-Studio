@@ -54,7 +54,24 @@ public:
 
     void imguiNewFrame() override;
 
+    void* createUiTexture(const uint8_t* rgba, int width, int height) override;
+    void destroyUiTexture(void* texture) override;
+
 private:
+    // Texturas de la UI (miniaturas): imagen en GPU + descriptor de ImGui.
+    struct UiTexture {
+        VkImage image = VK_NULL_HANDLE;
+        VmaAllocation alloc = VK_NULL_HANDLE;
+        VkImageView view = VK_NULL_HANDLE;
+        VkDescriptorSet set = VK_NULL_HANDLE;
+    };
+    void freeUiTexture(const UiTexture& t);
+    std::vector<UiTexture> uiTextures_;
+    struct PendingUiDestroy { UiTexture tex; int framesLeft; };
+    std::vector<PendingUiDestroy> pendingUiDestroy_;
+    VkSampler uiSampler_ = VK_NULL_HANDLE;
+    VkCommandPool uploadPool_ = VK_NULL_HANDLE;
+
     VulkanContext ctx_;
     SwapchainWindow swapchain_;
     VmaAllocator allocator_ = VK_NULL_HANDLE;

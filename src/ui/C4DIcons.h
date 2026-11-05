@@ -56,7 +56,10 @@ namespace iron3d::icons {
     X(MnuProject) X(MnuPrefs) X(MnuRenderRegion) X(MnuPictureViewer) X(MnuRenderQueue) X(MnuInteractiveRegion)   \
     X(MnuMakePreview) X(MnuNewMaterial) X(MnuNewPbrMaterial) X(MnuLoadMaterial) X(MnuObjManager)                 \
     X(MnuMatManager) X(MnuTimeline) X(MnuAttributes) X(MnuCoords) X(MnuLayers) X(MnuContentBrowser)              \
-    X(MnuMatEditor) X(MnuHelp) X(MnuAbout) X(MnuLoop)
+    X(MnuMatEditor) X(MnuHelp) X(MnuAbout) X(MnuLoop)                                                                \
+    /* Navegador de Contenido (IconsMenus.cpp) */                                                             \
+    X(CbFolder) X(CbLibrary) X(CbCatalog) X(CbRecent) X(CbFavorites) X(CbComputer) X(CbPresets)             \
+    X(CbNetwork) X(CbSearchResults) X(CbModel) X(CbFile)
 
 enum class Icon {
 #define IRON3D_ICON_ENUM(name) name,

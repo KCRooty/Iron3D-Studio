@@ -10,6 +10,7 @@
 #include <imgui_impl_vulkan.h>
 
 #include <cstdio>
+#include <cstring>
 #include <cstdlib>
 
 namespace iron3d {
@@ -98,6 +99,14 @@ void VulkanRenderer::shutdown() {
     meshes_.clear();
     pendingDestroy_.clear();
     freeMeshes_.clear();
+    for (const auto& p : pendingUiDestroy_) freeUiTexture(p.tex);
+    for (const auto& t : uiTextures_) freeUiTexture(t);
+    pendingUiDestroy_.clear();
+    uiTextures_.clear();
+    if (uiSampler_) vkDestroySampler(ctx_.device, uiSampler_, nullptr);
+    if (uploadPool_) vkDestroyCommandPool(ctx_.device, uploadPool_, nullptr);
+    uiSampler_ = VK_NULL_HANDLE;
+    uploadPool_ = VK_NULL_HANDLE;
     vmaDestroyAllocator(allocator_);
 
     ImGui_ImplVulkan_Shutdown();
@@ -144,6 +153,15 @@ bool VulkanRenderer::beginFrame() {
             freeMeshes_.push_back(pendingDestroy_[i].handle);
             pendingDestroy_[i] = pendingDestroy_.back();
             pendingDestroy_.pop_back();
+        } else {
+            ++i;
+        }
+    }
+    for (size_t i = 0; i < pendingUiDestroy_.size();) {
+        if (--pendingUiDestroy_[i].framesLeft <= 0) {
+            freeUiTexture(pendingUiDestroy_[i].tex);
+            pendingUiDestroy_[i] = pendingUiDestroy_.back();
+            pendingUiDestroy_.pop_back();
         } else {
             ++i;
         }
@@ -250,6 +268,132 @@ void VulkanRenderer::endFrame() {
 
 void VulkanRenderer::imguiNewFrame() {
     ImGui_ImplVulkan_NewFrame();
+}
+
+// --- Texturas de la UI ---------------------------------------------------------
+// Subida sincrona (copia desde un buffer de paso + vkQueueWaitIdle): solo se
+// usa para miniaturas pequenas, unas pocas por frame (ContentBrowser.cpp).
+
+void* VulkanRenderer::createUiTexture(const uint8_t* rgba, int width, int height) {
+    if (!rgba || width <= 0 || height <= 0) return nullptr;
+    VkDevice dev = ctx_.device;
+    if (!uiSampler_) {
+        VkSamplerCreateInfo si{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+        si.magFilter = VK_FILTER_LINEAR;
+        si.minFilter = VK_FILTER_LINEAR;
+        si.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        si.addressModeU = si.addressModeV = si.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        si.maxLod = 1.0f;
+        vkCheck(vkCreateSampler(dev, &si, nullptr, &uiSampler_), "vkCreateSampler (UI)");
+    }
+    if (!uploadPool_) {
+        VkCommandPoolCreateInfo pi{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+        pi.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+        pi.queueFamilyIndex = ctx_.graphicsQueueFamily;
+        vkCheck(vkCreateCommandPool(dev, &pi, nullptr, &uploadPool_), "vkCreateCommandPool (UI)");
+    }
+
+    const VkDeviceSize bytes = VkDeviceSize(width) * VkDeviceSize(height) * 4;
+    VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    bi.size = bytes;
+    bi.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    VmaAllocationCreateInfo bai{};
+    bai.usage = VMA_MEMORY_USAGE_AUTO;
+    bai.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    VkBuffer staging = VK_NULL_HANDLE;
+    VmaAllocation stagingAlloc = VK_NULL_HANDLE;
+    VmaAllocationInfo stagingInfo{};
+    if (vmaCreateBuffer(allocator_, &bi, &bai, &staging, &stagingAlloc, &stagingInfo) != VK_SUCCESS) return nullptr;
+    std::memcpy(stagingInfo.pMappedData, rgba, size_t(bytes));
+    vmaFlushAllocation(allocator_, stagingAlloc, 0, VK_WHOLE_SIZE);
+
+    UiTexture t;
+    VkImageCreateInfo ii{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+    ii.imageType = VK_IMAGE_TYPE_2D;
+    ii.format = VK_FORMAT_R8G8B8A8_UNORM; // el swapchain es UNORM: sin conversion sRGB
+    ii.extent = {uint32_t(width), uint32_t(height), 1};
+    ii.mipLevels = 1;
+    ii.arrayLayers = 1;
+    ii.samples = VK_SAMPLE_COUNT_1_BIT;
+    ii.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ii.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    ii.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VmaAllocationCreateInfo iai{};
+    iai.usage = VMA_MEMORY_USAGE_AUTO;
+    if (vmaCreateImage(allocator_, &ii, &iai, &t.image, &t.alloc, nullptr) != VK_SUCCESS) {
+        vmaDestroyBuffer(allocator_, staging, stagingAlloc);
+        return nullptr;
+    }
+
+    VkCommandBufferAllocateInfo ai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+    ai.commandPool = uploadPool_;
+    ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    ai.commandBufferCount = 1;
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
+    vkCheck(vkAllocateCommandBuffers(dev, &ai, &cmd), "vkAllocateCommandBuffers (UI)");
+    VkCommandBufferBeginInfo cbi{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    cbi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cmd, &cbi);
+
+    VkImageMemoryBarrier b{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+    b.srcQueueFamilyIndex = b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    b.image = t.image;
+    b.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    b.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    b.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    b.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                         nullptr, 1, &b);
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = ii.extent;
+    vkCmdCopyBufferToImage(cmd, staging, t.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    b.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    b.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    b.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    b.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                         0, nullptr, 1, &b);
+    vkEndCommandBuffer(cmd);
+    VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
+    vkCheck(vkQueueSubmit(ctx_.graphicsQueue, 1, &submit, VK_NULL_HANDLE), "vkQueueSubmit (UI)");
+    vkCheck(vkQueueWaitIdle(ctx_.graphicsQueue), "vkQueueWaitIdle (UI)");
+    vkFreeCommandBuffers(dev, uploadPool_, 1, &cmd);
+    vmaDestroyBuffer(allocator_, staging, stagingAlloc);
+
+    VkImageViewCreateInfo vi{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+    vi.image = t.image;
+    vi.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    vi.format = ii.format;
+    vi.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkCheck(vkCreateImageView(dev, &vi, nullptr, &t.view), "vkCreateImageView (UI)");
+    t.set = ImGui_ImplVulkan_AddTexture(uiSampler_, t.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    if (!t.set) {
+        freeUiTexture(t);
+        return nullptr;
+    }
+    uiTextures_.push_back(t);
+    return reinterpret_cast<void*>(t.set);
+}
+
+void VulkanRenderer::destroyUiTexture(void* texture) {
+    const auto set = reinterpret_cast<VkDescriptorSet>(texture);
+    for (size_t i = 0; i < uiTextures_.size(); ++i) {
+        if (uiTextures_[i].set != set) continue;
+        // Los frames en vuelo pueden seguir muestreandola: se libera despues.
+        pendingUiDestroy_.push_back({uiTextures_[i], 4});
+        uiTextures_[i] = uiTextures_.back();
+        uiTextures_.pop_back();
+        return;
+    }
+}
+
+void VulkanRenderer::freeUiTexture(const UiTexture& t) {
+    if (t.set) ImGui_ImplVulkan_RemoveTexture(t.set);
+    if (t.view) vkDestroyImageView(ctx_.device, t.view, nullptr);
+    if (t.image) vmaDestroyImage(allocator_, t.image, t.alloc);
 }
 
 } // namespace iron3d

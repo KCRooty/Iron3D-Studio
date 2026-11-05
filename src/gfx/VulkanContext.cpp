@@ -149,11 +149,13 @@ void VulkanContext::init(const std::vector<const char*>& requiredInstanceExtensi
 
     // --- Descriptor pool para Dear ImGui -----------------------------------
     VkDescriptorPoolSize poolSizes[] = {
-        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 64},
+        // Fuente de ImGui + miniaturas del Navegador de Contenido (que
+        // mantiene como mucho unas cientos en memoria, ver ContentBrowser.cpp).
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1024},
     };
     VkDescriptorPoolCreateInfo poolInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
     poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    poolInfo.maxSets = 64;
+    poolInfo.maxSets = 1024;
     poolInfo.poolSizeCount = 1;
     poolInfo.pPoolSizes = poolSizes;
     vkCheck(vkCreateDescriptorPool(device, &poolInfo, nullptr, &imguiDescriptorPool), "vkCreateDescriptorPool");

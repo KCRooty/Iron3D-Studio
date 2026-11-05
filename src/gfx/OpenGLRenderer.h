@@ -59,7 +59,11 @@ public:
 
     void imguiNewFrame() override;
 
+    void* createUiTexture(const uint8_t* rgba, int width, int height) override;
+    void destroyUiTexture(void* texture) override;
+
 private:
+    std::vector<gl::GLuint> uiTextures_; // para liberarlas en shutdown()
     struct MeshResource {
         gl::GLuint vao = 0, vbo = 0, ebo = 0;
         gl::GLsizei indexCount = 0;
