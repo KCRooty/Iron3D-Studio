@@ -6,6 +6,47 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-05 — Navegador de Contenido y librerías `.lib4d`
+
+**Añadido**
+- **Lector propio de librerías de preestablecidos de Cinema 4D (`.lib4d`)**, sin código ni
+  SDK de Maxon: carpetas, modelos, texturas y miniaturas. Funciona también en Linux.
+- **Navegador de Contenido** en el hueco del Gestor de Objetos, como en C4D R19: pestaña
+  vertical "Navegador de Contenido", Ventana > Navegador de Contenido o Mayús+F8
+  (Mayús+F1 vuelve a Objetos).
+  - Árbol: Catálogos, Elementos Recientes, Favoritos, Ordenador, Preestablecidos, Red y
+    Resultado de la Búsqueda. Funcionan Preestablecidos, Elementos Recientes y Búsqueda;
+    el resto sale desactivado.
+  - Rejilla con la miniatura y el nombre de cada elemento, en tres tamaños (menú Ver).
+  - Atrás, Adelante, Subir y búsqueda por nombre en todas las librerías.
+  - Cargar un modelo: doble clic, Intro, clic derecho > Cargar en la Escena, o arrastrarlo
+    al visor. Se añade a la escena actual y se puede deshacer.
+- **Librerías temporales y permanentes.** Una `.lib4d` abierta con Archivo > Abrir (o
+  `Iron3DStudio.exe librería.lib4d`) se monta en Preestablecidos solo para esta sesión y
+  abre el navegador. Las que están en `library/browser/`, junto al ejecutable, salen
+  siempre. "Hacer Permanente" copia una temporal a esa carpeta.
+- Flags de verificación: `--load-preset=<ruta>` (con un `.lib4d`) carga ese modelo al
+  arrancar, y `--no-focus` abre la ventana sin quitar el foco.
+
+**Probado**
+- Prueba automática con una librería sintética (CI, Windows y Linux).
+- Con 6 librerías reales (Crying Child, FNaF 1 TCG, un pack de 37 luces, FNaF 4 con 30
+  modelos, Kirk, DONNIES DEV): todos los modelos se descomprimen a un `.c4d` válido y las
+  miniaturas se decodifican.
+- Por captura: abrir Iron3D con un `.lib4d` monta la librería y enseña el navegador con
+  las miniaturas. Con `--load-preset`, el modelo de Crying Child entra en la escena con su
+  jerarquía, sus articulaciones y sus 26 materiales.
+
+**Sin probar / limitaciones**
+- Lo interactivo (doble clic, arrastrar al visor, menús del navegador, búsqueda, Hacer
+  Permanente) no se ha probado con ratón: se probó solo por captura.
+- El encuadre de la cámara tras cargar un preestablecido no está confirmado.
+- Las texturas de la librería se ven en el navegador, pero los materiales de Iron3D
+  todavía no cargan texturas: el modelo entra con sus colores.
+- Todavía no se pueden **crear** librerías (Nueva Librería de Preestablecidos, guardar tus
+  propios preestablecidos): hace falta escribir `.lib4d`, y eso viene después.
+- Catálogos, Favoritos, Ordenador y Red están en el árbol pero aún no hacen nada.
+
 ### 2026-11-05 — Avisos del importador para rigging
 
 - Las articulaciones (joints) y el deformador Piel tienen su propio aviso al importar.
