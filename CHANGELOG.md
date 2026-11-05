@@ -6,6 +6,43 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-05 (4) — Menú contextual del Gestor de Objetos como el de C4D R19
+
+**Cambiado**
+- El clic derecho sobre un objeto del Gestor de Objetos tiene ahora los mismos grupos y el
+  mismo orden que el de C4D R19: familias de etiquetas, Cargar Etiqueta Preestablecida /
+  Restaurar Selección, capas, tomas, Seleccionar Hijos / Establecer como Raíz, Expandir /
+  Contraer Todo, Hacer Editable y conexiones, Agrupar / Expandir Grupo / Eliminar Sin Hijos
+  / XRef, pistas y curvas, información y ayuda. Lo que Iron3D todavía no tiene sale en gris.
+  Las opciones propias de Iron3D (Añadir Hijo, Renombrar, Duplicar, Eliminar, Guardar como
+  Preestablecido) siguen al final.
+- La asignación de material pasa a **CINEMA 4D Etiquetas > Etiqueta de Textura**.
+
+**Añadido (funciona de verdad)**
+- **Agrupar Objetos** (también **Alt+G**): mete la selección en un Nulo nuevo, plegado, en
+  el sitio del primero. Los objetos no se mueven en mundo.
+- **Expandir Grupo de Objetos** (también **Mayús+G** con el ratón sobre el Gestor de
+  Objetos; fuera de él Mayús+G sigue yendo al final de la animación) y **Eliminar Sin
+  Hijos**: los hijos suben al sitio del objeto sin moverse y el objeto desaparece.
+- **Seleccionar Hijos**, **Expandir Todo** y **Contraer Todo** (sobre la rama del objeto).
+- **Información del Proyecto** abre el Proyecto en el Gestor de Atributos.
+
+**Arreglado**
+- Eliminar una selección que incluía un padre y uno de sus hijos podía usar memoria ya
+  liberada; ahora solo se borran los de arriba.
+
+**Probado**: compila sin avisos nuevos; tests (`c4d_geometry` con pruebas nuevas de
+reparentado y de matriz a posición/rotación/escala, `preset_library`). Con el ratón en la
+app: el menú completo, Agrupar, Expandir Grupo, Contraer Todo, Seleccionar Hijos y
+Expandir Todo. **Sin probar con input**: los atajos Alt+G y Mayús+G (llaman a las mismas
+funciones) y Eliminar Sin Hijos (mismo código que Expandir Grupo).
+
+**Pendiente / conocido**
+- Faltan las entradas de plugins de terceros del menú de C4D (Redshift, TrueSymmetry).
+- El Gestor de Coordenadas rotula H/P/B sobre los ángulos X/Y/Z de Iron3D: con rotaciones
+  en varios ejes no coinciden con los H/P/B que muestra C4D para el mismo objeto (la
+  matriz exportada sí es la misma). Pendiente de arreglar.
+
 ### 2026-11-05 (3) — Exportar a `.c4d`, guardar objetos como preestablecidos y miniaturas
 
 **Añadido**
