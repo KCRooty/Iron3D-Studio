@@ -78,6 +78,17 @@ struct UiState {
     // El hueco del Gestor de Objetos muestra el Navegador de Contenido
     // (pestana vertical "Navegador de Contenido", Ventana o Mayus+F8).
     bool browserOpen = false;
+    // Viaje de la camara al pulsar la flecha de "objeto fuera de vista":
+    // interpola objetivo y distancia en ~0.35 s. Se cancela si otra cosa
+    // mueve la camara mientras tanto (Alt+clic, H, etc.).
+    struct CamTrip {
+        bool active = false;
+        float t = 0.0f;
+        glm::vec3 fromTarget{0.0f}, toTarget{0.0f};
+        float fromDist = 0.0f, toDist = 0.0f;
+        glm::vec3 lastTarget{0.0f};
+        float lastDist = 0.0f;
+    } camTrip;
     // Resultado de Abrir/Fusionar un .c4d (o el error de abrir cualquier archivo).
     bool showImport = false;
     C4DImportReport importReport;
@@ -1593,6 +1604,156 @@ void drawViewportOverlay(const OrbitalCamera& camera, const ViewportState& vp, c
         dl->AddText(ImVec2(b.x - ts.x - 10, b.y - ts.y - 6), IM_COL32(220, 220, 220, 255), gridTxt);
     dl->PopClipRect();
     dl->AddRect(ImVec2(a.x - 1, a.y - 1), ImVec2(b.x + 1, b.y + 1), kBorderDark);
+}
+
+// --- Flecha de objeto fuera de vista --------------------------------------------------
+// Como en C4D: si el objeto activo queda fuera del visor, detras de la camara o
+// tan lejos que no se ve, sale una flechita naranja apuntando hacia el. Clic =
+// la camara viaja hasta encuadrarlo (sin cambiar el angulo de vista).
+
+constexpr float kCamTripSeconds = 0.35f;
+constexpr float kFarPlane = 100.0f; // el de OrbitalCamera::projectionMatrix
+
+// Centro y radio de la esfera envolvente del nodo (con sus hijos). Un nulo sin
+// geometria cuenta como un punto en su posicion.
+void nodeSphere(const SceneNode& node, glm::vec3& center, float& radius) {
+    glm::vec3 mn(0.0f), mx(0.0f);
+    bool any = false;
+    accumulateBounds(node, mn, mx, any);
+    if (any) {
+        center = (mn + mx) * 0.5f;
+        radius = glm::length(mx - mn) * 0.5f;
+    } else {
+        center = glm::vec3(node.worldMatrix()[3]);
+        radius = 0.0f;
+    }
+}
+
+void startCamTrip(OrbitalCamera& camera, const SceneNode& node) {
+    glm::vec3 center;
+    float radius;
+    nodeSphere(node, center, radius);
+    auto& t = g.camTrip;
+    t.active = true;
+    t.t = 0.0f;
+    t.fromTarget = camera.target();
+    t.fromDist = camera.distance();
+    t.toTarget = center;
+    t.toDist = OrbitalCamera::frameDistance(std::max(0.25f, radius));
+    t.lastTarget = t.fromTarget;
+    t.lastDist = t.fromDist;
+}
+
+void tickCamTrip(OrbitalCamera& camera) {
+    auto& t = g.camTrip;
+    if (!t.active) return;
+    // Otra cosa ha movido la camara (Alt+clic, H...): manda el usuario.
+    if (glm::length(camera.target() - t.lastTarget) > 1e-4f || std::abs(camera.distance() - t.lastDist) > 1e-4f) {
+        t.active = false;
+        return;
+    }
+    t.t = std::min(1.0f, t.t + ImGui::GetIO().DeltaTime / kCamTripSeconds);
+    const float s = t.t * t.t * (3.0f - 2.0f * t.t); // smoothstep: arranca y frena suave
+    camera.setTargetDistance(glm::mix(t.fromTarget, t.toTarget, s), t.fromDist + (t.toDist - t.fromDist) * s);
+    t.lastTarget = camera.target();
+    t.lastDist = camera.distance();
+    if (t.t >= 1.0f) t.active = false;
+}
+
+// Donde y hacia donde va la flecha. false = el objeto se ve bien, sin flecha.
+// `tip` es la punta; `dir`, la direccion (unitaria, en pixeles) hacia el objeto.
+bool offscreenArrow(const OrbitalCamera& camera, const ViewportState& vp, const SceneNode& node, ImVec2& tip,
+                    ImVec2& dir) {
+    glm::vec3 center;
+    float radius;
+    nodeSphere(node, center, radius);
+    const glm::vec3 pv = glm::vec3(camera.viewMatrix() * glm::vec4(center, 1.0f));
+    const float depth = -pv.z; // > 0: delante de la camara
+    const ImVec2 mid(vp.x + vp.w * 0.5f, vp.y + vp.h * 0.5f);
+    const float margin = 20.0f;
+    auto normalize = [](ImVec2 v) {
+        const float l = std::sqrt(v.x * v.x + v.y * v.y);
+        return l > 1e-4f ? ImVec2(v.x / l, v.y / l) : ImVec2(0.0f, 1.0f);
+    };
+    auto toEdge = [&](ImVec2 d) {
+        const float hw = vp.w * 0.5f - margin, hh = vp.h * 0.5f - margin;
+        const float tx = std::abs(d.x) > 1e-4f ? hw / std::abs(d.x) : 1e9f;
+        const float ty = std::abs(d.y) > 1e-4f ? hh / std::abs(d.y) : 1e9f;
+        const float k = std::min(tx, ty);
+        return ImVec2(mid.x + d.x * k, mid.y + d.y * k);
+    };
+
+    if (depth + radius <= 0.05f) { // entero detras de la camara
+        dir = normalize(ImVec2(pv.x, -pv.y));
+        tip = toEdge(dir);
+        return true;
+    }
+    if (depth <= 0.05f) return false; // la camara esta dentro o casi: se ve
+
+    const glm::mat4 proj = camera.projectionMatrix(vp.w / vp.h, false);
+    const glm::vec4 c = proj * glm::vec4(pv, 1.0f);
+    const ImVec2 sp(vp.x + (c.x / c.w * 0.5f + 0.5f) * vp.w, vp.y + (0.5f - c.y / c.w * 0.5f) * vp.h);
+    const float rpx = radius / depth * proj[1][1] * vp.h * 0.5f;
+    const bool outside = sp.x + rpx < vp.x || sp.x - rpx > vp.x + vp.w || sp.y + rpx < vp.y ||
+                         sp.y - rpx > vp.y + vp.h;
+    if (outside) {
+        dir = normalize(ImVec2(sp.x - mid.x, sp.y - mid.y));
+        tip = toEdge(dir);
+        return true;
+    }
+    // Dentro del encuadre pero perdido: mas alla del plano lejano (no se
+    // dibuja) o reducido a un par de pixeles. La flecha se pone a su lado.
+    if (depth - radius > kFarPlane || rpx < 3.0f) {
+        ImVec2 d(sp.x - mid.x, sp.y - mid.y);
+        if (d.x * d.x + d.y * d.y < 30.0f * 30.0f) d = ImVec2(1.0f, 1.0f);
+        dir = normalize(d);
+        tip = ImVec2(sp.x - dir.x * (rpx + 5.0f), sp.y - dir.y * (rpx + 5.0f));
+        return true;
+    }
+    return false;
+}
+
+void drawOffscreenArrow(OrbitalCamera& camera, const ViewportState& vp, SceneNode* sel) {
+    if (!sel || vp.renderView || vp.w < 60.0f || vp.h < 60.0f || !nodeEditorVisible(sel)) return;
+    ImVec2 tip, d;
+    if (!offscreenArrow(camera, vp, *sel, tip, d)) return;
+
+    constexpr float len = 16.0f, half = 8.0f, hit = 30.0f;
+    const ImVec2 base(tip.x - d.x * len, tip.y - d.y * len);
+    const ImVec2 perp(-d.y, d.x);
+    const ImVec2 hc(tip.x - d.x * len * 0.5f, tip.y - d.y * len * 0.5f);
+
+    // Ventana invisible encima de la flecha: asi ImGui se queda el clic y el
+    // visor no lo toma como seleccion/deseleccion.
+    ImGui::SetNextWindowPos(ImVec2(hc.x - hit * 0.5f, hc.y - hit * 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(hit, hit));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    bool clicked = false, hovered = false;
+    if (ImGui::Begin("##offscreenArrow", nullptr,
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings |
+                         ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove |
+                         ImGuiWindowFlags_NoBringToFrontOnFocus)) {
+        clicked = ImGui::InvisibleButton("##go", ImVec2(hit, hit));
+        hovered = ImGui::IsItemHovered();
+        if (hovered) {
+            const std::string tipTxt = sel->name() + "\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.";
+            richTooltip(tipTxt.c_str());
+        }
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+
+    ImDrawList* dl = ImGui::GetBackgroundDrawList();
+    dl->PushClipRect(ImVec2(vp.x, vp.y), ImVec2(vp.x + vp.w, vp.y + vp.h), true);
+    const ImVec2 p1(base.x + perp.x * half, base.y + perp.y * half);
+    const ImVec2 p2(base.x - perp.x * half, base.y - perp.y * half);
+    if (hovered) dl->AddCircleFilled(hc, hit * 0.5f, IM_COL32(0, 0, 0, 70));
+    dl->AddTriangleFilled(tip, p1, p2, kSelOrange);
+    dl->AddTriangle(tip, p1, p2, hovered ? IM_COL32(255, 255, 255, 230) : IM_COL32(20, 20, 20, 200), 1.2f);
+    dl->PopClipRect();
+
+    if (clicked) startCamTrip(camera, *sel);
 }
 
 // --- Gestor de Objetos (seccion 7) --------------------------------------------------
@@ -3284,6 +3445,8 @@ void drawImportReport() {
 } // namespace
 
 void frameScene(OrbitalCamera& camera, const SceneNode& root) { frameNodes(camera, root, false); }
+void frameNode(OrbitalCamera& camera, const SceneNode& node) { frameNodes(camera, node, true); }
+void travelToNode(OrbitalCamera& camera, const SceneNode& node) { startCamTrip(camera, node); }
 
 void showImportReport(const C4DImportReport& report) {
     g.importReport = report;
@@ -3572,6 +3735,8 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     viewport.w = std::max(1.0f, L.viewport.size.x);
     viewport.h = std::max(1.0f, L.viewport.size.y - vpHeaderH);
     drawViewportOverlay(camera, viewport, root);
+    tickCamTrip(camera);
+    drawOffscreenArrow(camera, viewport, selected);
 
     if (g.browserOpen) {
         ContentBrowserCallbacks cb;

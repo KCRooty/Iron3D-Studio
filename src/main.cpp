@@ -39,6 +39,7 @@
 #include <unordered_map>
 #include <vector>
 #include <filesystem>
+#include <functional>
 
 namespace {
 
@@ -399,6 +400,10 @@ int main(int argc, char** argv) {
     // "--" es la escena a abrir, como siempre.
     const char* sceneArg = nullptr;
     std::string loadPresetArg; // "--load-preset=<ruta>": con un .lib4d, carga ese modelo (verificacion)
+    // "--frame=<nombre>" encuadra ese objeto y "--select=<nombre>" lo deja
+    // seleccionado (verificacion de la flecha de objeto fuera de vista).
+    std::string frameArg, selectArg;
+    bool travelArg = false; // "--travel": como pulsar la flecha (viaje hacia el seleccionado)
     bool iconSheet = false;
     // "--no-focus": la ventana sale sin quitar el foco a la que se este usando
     // (capturas de verificacion mientras Core trabaja en otra cosa).
@@ -413,6 +418,12 @@ int main(int argc, char** argv) {
             openPreferencesDialog();
         } else if (a.rfind("--load-preset=", 0) == 0) {
             loadPresetArg = a.substr(14);
+        } else if (a == "--travel") {
+            travelArg = true;
+        } else if (a.rfind("--frame=", 0) == 0) {
+            frameArg = a.substr(8);
+        } else if (a.rfind("--select=", 0) == 0) {
+            selectArg = a.substr(9);
         } else if (a.rfind("--ui-preset=", 0) == 0) {
             if (const UiPreset* p = findBuiltinPreset(a.substr(12))) prefs.uiPreset = *p;
             else std::fprintf(stderr, "[Iron3D] Preset de interfaz desconocido: %s\n", a.c_str());
@@ -537,6 +548,17 @@ int main(int argc, char** argv) {
         } else {
             std::fprintf(stderr, "[Iron3D] No se pudo abrir '%s': %s\n", sceneArg, err.c_str());
         }
+    }
+    if (!frameArg.empty() || !selectArg.empty()) {
+        std::function<SceneNode*(SceneNode&, const std::string&)> byName = [&](SceneNode& n, const std::string& name) -> SceneNode* {
+            if (n.name() == name) return &n;
+            for (const auto& c : n.children())
+                if (SceneNode* f = byName(*c, name)) return f;
+            return nullptr;
+        };
+        if (SceneNode* f = frameArg.empty() ? nullptr : byName(sceneRoot, frameArg)) iron3d::frameNode(camera, *f);
+        if (SceneNode* s = selectArg.empty() ? nullptr : byName(sceneRoot, selectArg)) selected = s;
+        if (travelArg && selected) iron3d::travelToNode(camera, *selected);
     }
 
     // --- Carpeta de escenas (Fase 2c: guardar/cargar .iron) -------------------
