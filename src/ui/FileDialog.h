@@ -19,6 +19,12 @@ bool nativeFileDialogAvailable();
 std::optional<std::filesystem::path> openFileDialog(const std::string& title,
                                                     const std::vector<std::pair<std::string, std::string>>& filters);
 
+// "Guardar como": `defaultName` sale ya escrito y `defaultExt` (sin punto) se
+// anade si no se pone extension. Pregunta antes de sobrescribir.
+std::optional<std::filesystem::path> saveFileDialog(const std::string& title,
+                                                    const std::vector<std::pair<std::string, std::string>>& filters,
+                                                    const std::string& defaultName, const std::string& defaultExt);
+
 // Igual, pero se pueden elegir varios archivos a la vez (vacio = cancelado).
 std::vector<std::filesystem::path> openFilesDialog(const std::string& title,
                                                    const std::vector<std::pair<std::string, std::string>>& filters);

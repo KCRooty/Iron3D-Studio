@@ -69,4 +69,25 @@ struct TRS {
 // Un cizallado (ejes no perpendiculares) no tiene equivalente en TRS y se pierde.
 TRS toIronTRS(const glm::dvec3& off, const glm::dvec3& v1, const glm::dvec3& v2, const glm::dvec3& v3);
 
+// --- Sentido contrario (exportar a .c4d) -------------------------------------
+
+// Matriz local de C4D (cm, ejes zurdos): off y los tres ejes.
+struct Matrix {
+    glm::dvec3 off{0.0}, v1{1.0, 0.0, 0.0}, v2{0.0, 1.0, 0.0}, v3{0.0, 0.0, 1.0};
+};
+// Posicion/rotacion/escala de SceneNode -> matriz local de C4D. Inversa de
+// toIronTRS (dentro de la precision de float).
+Matrix fromIronTRS(const glm::vec3& position, const glm::vec3& rotationDeg, const glm::vec3& scale);
+
+// Punto de Iron3D -> C4D (unidades -> cm y espejo en Z).
+glm::dvec3 fromIronPoint(const glm::vec3& p);
+
+// Malla de render de Iron3D (triangulos con vertices repetidos por cara) ->
+// poligonos de C4D: une los vertices con la misma posicion y junta en un
+// cuadrilatero cada par de triangulos seguidos que comparten arista y estan
+// en el mismo plano (asi un cubo vuelve a tener 6 caras). `smooth`, si se
+// pasa, dice si las normales estaban suavizadas (para ponerle una etiqueta
+// Phong al exportar).
+PolySoup fromIronMesh(const MeshData& mesh, bool* smooth = nullptr);
+
 } // namespace iron3d::c4d

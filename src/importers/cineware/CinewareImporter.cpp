@@ -32,12 +32,12 @@
 #include <memory>
 #include <unordered_map>
 
-// Cineware busca esta funcion en el espacio de nombres global. El ID solo se
-// escribe en los .c4d que se GUARDAN (para leer da igual); antes de anadir
-// la exportacion a .c4d hay que cambiarlo por el ID registrado por Static
-// Forge en developers.maxon.net.
+// Cineware busca esta funcion en el espacio de nombres global. El ID se
+// escribe en los .c4d que exporta Iron3D (CinewareExporter.cpp). 1000001 es
+// PROVISIONAL: hay que cambiarlo por un ID registrado por Static Forge en
+// developers.maxon.net antes de publicar una version que exporte .c4d.
 void GetWriterInfo(cineware::Int32& id, cineware::String& appname) {
-    id = 1000001; // provisional
+    id = 1000001; // provisional (pendiente de registrar)
     appname = "Iron3D Studio";
 }
 

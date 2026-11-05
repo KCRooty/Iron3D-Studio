@@ -414,6 +414,7 @@ int main(int argc, char** argv) {
     // seleccionado (verificacion de la flecha de objeto fuera de vista).
     std::string frameArg, selectArg;
     bool travelArg = false; // "--travel": como pulsar la flecha (viaje hacia el seleccionado)
+    bool savePresetArg = false; // "--save-preset": abre "Guardar como Preestablecido" con el seleccionado
     bool iconSheet = false;
     // "--no-focus": la ventana sale sin quitar el foco a la que se este usando
     // (capturas de verificacion mientras Core trabaja en otra cosa).
@@ -430,6 +431,8 @@ int main(int argc, char** argv) {
             loadPresetArg = a.substr(14);
         } else if (a == "--travel") {
             travelArg = true;
+        } else if (a == "--save-preset") {
+            savePresetArg = true;
         } else if (a.rfind("--frame=", 0) == 0) {
             frameArg = a.substr(8);
         } else if (a.rfind("--select=", 0) == 0) {
@@ -570,6 +573,7 @@ int main(int argc, char** argv) {
         if (SceneNode* f = frameArg.empty() ? nullptr : byName(sceneRoot, frameArg)) iron3d::frameNode(camera, *f);
         if (SceneNode* s = selectArg.empty() ? nullptr : byName(sceneRoot, selectArg)) selected = s;
         if (travelArg && selected) iron3d::travelToNode(camera, *selected);
+        if (savePresetArg && selected) iron3d::beginSavePreset(*selected, materials);
     }
 
     // --- Carpeta de escenas (Fase 2c: guardar/cargar .iron) -------------------

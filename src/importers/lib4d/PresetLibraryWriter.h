@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace iron3d {
@@ -24,8 +25,15 @@ namespace lib4d {
 // Con datos que empiezan por "QC4D" (un .c4d) = modelo, comprimido con zlib;
 // cualquier otro archivo (texturas...) se guarda tal cual.
 struct NewEntry {
+    NewEntry() = default;
+    NewEntry(std::string p, std::vector<uint8_t> d = {}) : path(std::move(p)), data(std::move(d)) {}
+
     std::string path;
     std::vector<uint8_t> data;
+    // Miniatura opcional de un modelo (RGBA, opaca): se guarda en JPEG en un
+    // bloque "imag", como las que renderiza C4D.
+    std::vector<uint8_t> thumbRgba;
+    int thumbWidth = 0, thumbHeight = 0;
 };
 
 // CRC-32 de la url en minusculas codificada en UTF-16BE: el numero que C4D

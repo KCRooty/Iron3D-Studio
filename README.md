@@ -22,11 +22,13 @@ compatibilidad con `.c4d`/`.lib4d` y plugins de R19.
 Documento Maestro del proyecto en `V:\ObsidianVault\14-Iron3D-CoalMix\Iron3D_CoalMix_Documento_Maestro_2026-10-27.pdf`
 (resumen en `estado.md` de esa misma carpeta).
 
-Estado (2026-11-04): en desarrollo temprano, sin versión publicada. Fases 1 y 2 hechas
+Estado (2026-11-05): en desarrollo temprano, sin versión publicada. Fases 1 y 2 hechas
 (grafo de escena, Gestor de Objetos, gizmo mover/rotar/escalar). Desde entonces: render
 PBR con sombras y SSAO (Vulkan), selección múltiple, modos libres del gizmo, 222 iconos
-propios, presets de interfaz (Cinema 4D, Blender, Maya, 3ds Max, Source Filmmaker) e
-importación de `.c4d` (Windows; mallas, primitivas, jerarquía y materiales).
+propios, presets de interfaz (Cinema 4D, Blender, Maya, 3ds Max, Source Filmmaker),
+importación y exportación de `.c4d` (Windows; mallas, primitivas, jerarquía y
+materiales) y librerías de preestablecidos `.lib4d` (leer, crear y guardar objetos con
+miniatura).
 Qué se probó y qué no, en [`CHANGELOG.md`](CHANGELOG.md); las notas largas, en
 [`docs/devlog/`](docs/devlog/). Ver `AGENTS.md` §5 para el stack.
 
@@ -38,9 +40,10 @@ cmake --build build --config Debug
 ctest --test-dir build -C Debug
 ```
 
-Para abrir `.c4d` hace falta el Cineware SDK de Maxon (gratuito, no viene en el repo; ver
-su licencia en `AGENTS.md` §7). En Windows, añade `-DIRON3D_CINEWARE_SDK=<carpeta del SDK>`
-al primer comando. Sin el SDK, Iron3D compila igual y avisa de que no puede abrir `.c4d`.
+Para abrir y guardar `.c4d` hace falta el Cineware SDK de Maxon (gratuito, no viene en el
+repo; ver su licencia en `AGENTS.md` §7). En Windows, añade `-DIRON3D_CINEWARE_SDK=<carpeta
+del SDK>` al primer comando. Sin el SDK, Iron3D compila igual y avisa de que no puede abrir
+ni guardar `.c4d`.
 
 ## Estructura
 
@@ -53,13 +56,14 @@ src/
   sdk/              Iron3D SDK (API C++ de plugins)
   python/           CPython embebido + módulo `iron` (pybind11)
   importers/
-    cineware/       Importador .c4d (Cineware SDK de Maxon, antes "Melange"; opcional,
-                    solo Windows; sin el SDK se compila un stub)
+    cineware/       Importador y exportador .c4d (Cineware SDK de Maxon, antes
+                    "Melange"; opcional, solo Windows; sin el SDK se compila un stub)
     lib4d/          Lector y escritor propios de librerías .lib4d (Navegador de Contenido)
     c4d_compat/     Geometría y coordenadas de C4D sin el SDK (primitivas, TRS); más
                     adelante, el módulo `c4d` + ABI .cdl64
 tools/
-  c4d_probe.cpp     Importa un .c4d sin ventana y lista lo que sale (necesita el SDK)
+  c4d_probe.cpp     Importa un .c4d sin ventana y lista lo que sale; --export y --preset
+                    prueban la exportación y los preestablecidos (necesita el SDK)
   dump_c4d_api.py   Ejecutar DENTRO de R19 (Script Manager) — Python 2.7
 iron3d-py2compat/   Paquete Python 3 para cargar plugins .pyp de R19 (hecho, 23 tests
                     originales pendientes de localizar — ver su README.md)

@@ -4,8 +4,11 @@
 //
 //   c4d_probe.exe archivo.c4d [--save salida.iron]
 
+#include "core/Paths.h"
 #include "core/SceneSerializer.h"
+#include "core/ThumbnailRenderer.h"
 #include "importers/cineware/CinewareImporter.h"
+#include "importers/lib4d/PresetLibraryWriter.h"
 
 #include <cstdio>
 #include <string>
@@ -33,8 +36,75 @@ int wmain(int argc, wchar_t** argv) {
     SetConsoleOutputCP(CP_UTF8);
 #endif
     if (argc < 2) {
-        std::printf("uso: c4d_probe archivo.c4d [--save salida.iron]\n");
+        std::printf("uso: c4d_probe archivo.c4d [--save salida.iron]\n"
+                    "     c4d_probe --export escena.iron salida.c4d   (exporta y vuelve a importar)\n");
         return 2;
+    }
+    // Guardar cada objeto de primer nivel de una escena como preestablecido
+    // (con miniatura) en una .lib4d; la crea si no existe. Mismo camino que
+    // "Guardar como Preestablecido" en la UI.
+    if (argc >= 5 && std::wstring(argv[1]) == L"--preset") {
+        SceneNode scene("Escena");
+        std::vector<Material> sceneMats;
+        std::string err;
+        if (!loadScene(std::filesystem::path(argv[2]), scene, sceneMats, &err)) {
+            std::printf("ERROR al leer el .iron: %s\n", err.c_str());
+            return 1;
+        }
+        const std::filesystem::path lib(argv[3]);
+        const std::string folder = pathUtf8(std::filesystem::path(argv[4]));
+        if (!std::filesystem::exists(lib) && !createPresetLibrary(lib, pathUtf8(lib.stem()), &err)) {
+            std::printf("ERROR al crear la librería: %s\n", err.c_str());
+            return 1;
+        }
+        std::vector<lib4d::NewEntry> entries;
+        for (const auto& c : scene.children()) {
+            lib4d::NewEntry e;
+            e.path = folder + "/" + c->name();
+            C4DExportReport ex;
+            if (!exportC4DToBytes({c.get()}, sceneMats, e.data, ex, &err)) {
+                std::printf("ERROR al exportar %s: %s\n", c->name().c_str(), err.c_str());
+                return 1;
+            }
+            const Thumbnail th = renderThumbnail({c.get()}, sceneMats, 256);
+            e.thumbRgba = th.rgba;
+            e.thumbWidth = th.width;
+            e.thumbHeight = th.height;
+            std::printf("%s: %zu bytes de .c4d, miniatura %dx%d (%d triangulos)\n", e.path.c_str(), e.data.size(),
+                        th.width, th.height, th.triangles);
+            entries.push_back(std::move(e));
+        }
+        if (!appendToPresetLibrary(lib, entries, &err)) {
+            std::printf("ERROR al añadir: %s\n", err.c_str());
+            return 1;
+        }
+        std::printf("añadidos %zu preestablecidos a %s\n", entries.size(), pathUtf8(lib).c_str());
+        return 0;
+    }
+    if (argc >= 4 && std::wstring(argv[1]) == L"--export") {
+        SceneNode scene("Escena");
+        std::vector<Material> sceneMats;
+        std::string err;
+        if (!loadScene(std::filesystem::path(argv[2]), scene, sceneMats, &err)) {
+            std::printf("ERROR al leer el .iron: %s\n", err.c_str());
+            return 1;
+        }
+        std::vector<const SceneNode*> roots;
+        for (const auto& c : scene.children()) roots.push_back(c.get());
+        C4DExportReport ex;
+        if (!exportC4D(std::filesystem::path(argv[3]), roots, sceneMats, true, ex, &err)) {
+            std::printf("ERROR al exportar: %s\n", err.c_str());
+            return 1;
+        }
+        std::printf("exportado %s: %d objetos, %d mallas, %d primitivas, %d luces, %d materiales, %lld puntos, %lld poligonos\n",
+                    ex.fileName.c_str(), ex.objects, ex.meshes, ex.primitives, ex.lights, ex.materials, ex.points,
+                    ex.polygons);
+        for (const std::string& w : ex.warnings) std::printf("aviso al exportar: %s\n", w.c_str());
+        std::printf("--- original (.iron)\n");
+        print(scene, sceneMats, 0);
+        std::printf("--- releido del .c4d\n");
+        argv[1] = argv[3];
+        argc = 2;
     }
     SceneNode root("Escena");
     std::vector<Material> mats;

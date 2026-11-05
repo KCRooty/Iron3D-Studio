@@ -292,6 +292,24 @@ void writerRoundTrip() {
     bool kept = false;
     for (const PresetItem& it : L.items()) kept = kept || it.path.find("adidos/Cubo") != std::string::npos;
     check(kept, "byte no UTF-8 sustituido sin perder letras");
+
+    // Modelo con miniatura: bloque "imag" en JPEG que el lector encuentra.
+    {
+        lib4d::NewEntry e("Con miniatura", doc);
+        e.thumbWidth = e.thumbHeight = 16;
+        e.thumbRgba.assign(16 * 16 * 4, 255);
+        for (size_t i = 0; i < e.thumbRgba.size(); i += 4) e.thumbRgba[i + 1] = e.thumbRgba[i + 2] = 40; // rojo
+        check(appendToPresetLibrary(path, {e}, &err) && L.open(path, &err), "anadir modelo con miniatura");
+        const PresetItem* withThumb = nullptr;
+        for (const PresetItem& it : L.items())
+            if (it.path == "Con miniatura") withThumb = &it;
+        Bytes rgba;
+        int w = 0, h = 0;
+        check(withThumb && withThumb->hasThumb() && L.readThumbnail(*withThumb, rgba, w, h) && w == 16 && h == 16 &&
+                  rgba.size() == 16u * 16u * 4u && rgba[0] > 200 && rgba[1] < 90,
+              "miniatura JPEG legible y roja");
+        check(withThumb && L.readData(*withThumb, out, &err) && out == doc, "modelo con miniatura identico");
+    }
     std::filesystem::remove(path);
 }
 

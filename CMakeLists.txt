@@ -120,6 +120,7 @@ add_executable(Iron3DStudio
     src/core/Paths.cpp
     src/core/Preferences.cpp
     src/core/Material.cpp
+    src/core/ThumbnailRenderer.cpp
     src/gfx/LitPipeline.cpp
     src/ui/MainUi.cpp
     src/ui/UiTheme.cpp
@@ -151,10 +152,12 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         message(FATAL_ERROR "IRON3D_CINEWARE_SDK no apunta al Cineware SDK (falta includes/c4d.h): ${IRON3D_CINEWARE_SDK}")
     endif()
     set(_cwlib "${IRON3D_CINEWARE_SDK}/libraries/win")
-    target_sources(Iron3DStudio PRIVATE src/importers/cineware/CinewareImporter.cpp)
+    target_sources(Iron3DStudio PRIVATE src/importers/cineware/CinewareImporter.cpp
+        src/importers/cineware/CinewareExporter.cpp)
     # SYSTEM: los avisos de las cabeceras del SDK no son nuestros (/W4 sigue para nuestro codigo).
     target_include_directories(Iron3DStudio SYSTEM PRIVATE "${IRON3D_CINEWARE_SDK}/includes")
-    set_source_files_properties(src/importers/cineware/CinewareImporter.cpp PROPERTIES
+    set_source_files_properties(src/importers/cineware/CinewareImporter.cpp
+        src/importers/cineware/CinewareExporter.cpp PROPERTIES
         COMPILE_DEFINITIONS "__PC;_CRT_SECURE_NO_WARNINGS"
         # Las cabeceras del SDK no compilan con /permissive- (el modo estricto que
         # trae C++20 en MSVC): solo en este archivo se vuelve al modo permisivo.
@@ -170,16 +173,18 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
     add_executable(c4d_probe
         tools/c4d_probe.cpp
         src/importers/cineware/CinewareImporter.cpp
+        src/importers/cineware/CinewareExporter.cpp
         src/importers/c4d_compat/C4DGeometry.cpp
         src/core/MeshData.cpp
         src/core/SceneNode.cpp
         src/core/SceneSerializer.cpp
-        src/core/Material.cpp)
+        src/core/Material.cpp
+        src/core/ThumbnailRenderer.cpp)
     target_include_directories(c4d_probe PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
     target_include_directories(c4d_probe SYSTEM PRIVATE "${IRON3D_CINEWARE_SDK}/includes")
     target_compile_definitions(c4d_probe PRIVATE GLM_FORCE_RADIANS)
     target_compile_options(c4d_probe PRIVATE /W4 /utf-8)
-    target_link_libraries(c4d_probe PRIVATE
+    target_link_libraries(c4d_probe PRIVATE iron3d_lib4d
         "$<IF:$<CONFIG:Debug>,${_cwlib}/cinewarelib_2019/cinewarelib_debug.lib,${_cwlib}/cinewarelib_2019/cinewarelib_release.lib>"
         "$<IF:$<CONFIG:Debug>,${_cwlib}/jpeglib_2019/jpeglib_debug.lib,${_cwlib}/jpeglib_2019/jpeglib_release.lib>"
         ws2_32 winmm rpcrt4 iphlpapi)
@@ -255,7 +260,9 @@ add_executable(iron3d_tests
     tests/c4d_geometry_test.cpp
     src/importers/c4d_compat/C4DGeometry.cpp
     src/core/MeshData.cpp
-    src/core/SceneNode.cpp)
+    src/core/SceneNode.cpp
+    src/core/Material.cpp
+    src/core/ThumbnailRenderer.cpp)
 target_include_directories(iron3d_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
 target_compile_definitions(iron3d_tests PRIVATE GLM_FORCE_RADIANS)
 if(MSVC)

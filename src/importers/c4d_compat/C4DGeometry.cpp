@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <map>
 
 namespace iron3d::c4d {
 
@@ -321,6 +322,115 @@ TRS toIronTRS(const glm::dvec3& off, const glm::dvec3& v1, const glm::dvec3& v2,
     const double toDeg = 180.0 / kPi;
     out.rotationDeg = glm::vec3((float)(a * toDeg), (float)(b * toDeg), (float)(c * toDeg));
     out.scale = glm::vec3(scl);
+    return out;
+}
+
+// --- Exportar ---------------------------------------------------------------------
+
+Matrix fromIronTRS(const glm::vec3& position, const glm::vec3& rotationDeg, const glm::vec3& scale) {
+    // Misma matriz que SceneNode::localMatrix (T * Rz * Ry * Rx * S), en double.
+    const double toRad = kPi / 180.0;
+    const double a = rotationDeg.x * toRad, b = rotationDeg.y * toRad, c = rotationDeg.z * toRad;
+    const double ca = std::cos(a), sa = std::sin(a), cb = std::cos(b), sb = std::sin(b), cc = std::cos(c), sc = std::sin(c);
+    // Columnas de R = Rz(c) * Ry(b) * Rx(a).
+    glm::dvec3 col[3] = {
+        {cc * cb, sc * cb, -sb},
+        {cc * sb * sa - sc * ca, sc * sb * sa + cc * ca, cb * sa},
+        {cc * sb * ca + sc * sa, sc * sb * ca - cc * sa, cb * ca},
+    };
+    for (int i = 0; i < 3; ++i) col[i] *= (double)scale[i];
+    // Espejo S = diag(1, 1, -1): A_c4d = S A S, off_c4d = S t (en cm).
+    const glm::dvec3 s(1.0, 1.0, -1.0);
+    Matrix m;
+    m.v1 = col[0] * s * s.x;
+    m.v2 = col[1] * s * s.y;
+    m.v3 = col[2] * s * s.z;
+    m.off = glm::dvec3(position.x, position.y, -position.z) * kCmPerUnit;
+    return m;
+}
+
+glm::dvec3 fromIronPoint(const glm::vec3& p) {
+    return glm::dvec3((double)p.x, (double)p.y, -(double)p.z) * kCmPerUnit;
+}
+
+PolySoup fromIronMesh(const MeshData& mesh, bool* smooth) {
+    PolySoup out;
+    if (smooth) *smooth = false;
+    const size_t nv = mesh.vertices.size();
+
+    // Unir vertices con la misma posicion exacta (la malla de render repite
+    // cada punto en todas las caras que lo usan).
+    std::vector<int> weld(nv, -1);
+    std::map<std::array<float, 3>, int> seen;
+    for (size_t i = 0; i < nv; ++i) {
+        const glm::vec3& p = mesh.vertices[i].position;
+        auto [it, inserted] = seen.emplace(std::array<float, 3>{p.x, p.y, p.z}, (int)seen.size());
+        if (inserted) out.points.push_back(fromIronPoint(p));
+        weld[i] = it->second;
+    }
+
+    struct Tri { int v[3]; glm::dvec3 n; };
+    std::vector<Tri> tris;
+    tris.reserve(mesh.indices.size() / 3);
+    for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
+        uint32_t r[3] = {mesh.indices[i], mesh.indices[i + 1], mesh.indices[i + 2]};
+        if (r[0] >= nv || r[1] >= nv || r[2] >= nv) continue;
+        Tri t{{weld[r[0]], weld[r[1]], weld[r[2]]}, {}};
+        if (t.v[0] == t.v[1] || t.v[1] == t.v[2] || t.v[0] == t.v[2]) continue; // degenerado
+        const glm::vec3& p0 = mesh.vertices[r[0]].position;
+        glm::vec3 fn = glm::cross(mesh.vertices[r[1]].position - p0, mesh.vertices[r[2]].position - p0);
+        // Iron3D dibuja sin descartar caras traseras y algunas mallas propias
+        // (el cubo) tienen triangulos con el giro al reves: manda la normal de
+        // los vertices, que es la que se ve iluminada.
+        const glm::vec3 vn = mesh.vertices[r[0]].normal + mesh.vertices[r[1]].normal + mesh.vertices[r[2]].normal;
+        if (glm::dot(fn, vn) < 0.0f) {
+            std::swap(t.v[1], t.v[2]);
+            fn = -fn;
+        }
+        const float len = glm::length(fn);
+        t.n = len > 1e-20f ? glm::dvec3(fn / len) : glm::dvec3(0.0);
+        if (smooth && !*smooth && len > 1e-20f) {
+            for (uint32_t k : r)
+                if (glm::dot(mesh.vertices[k].normal, fn / len) < 0.9995f) *smooth = true;
+        }
+        tris.push_back(t);
+    }
+
+    // Iron3D (diestro) -> C4D (zurdo): el espejo invierte el giro, asi que se
+    // invierte el orden de cada cara (como en toIronMesh, al reves).
+    // Junta `a` y `b` en un cuadrilatero si comparten arista (x->y en `a`,
+    // y->x en `b`), estan en el mismo plano y el resultado es convexo.
+    auto tryQuad = [&](const Tri& a, const Tri& b) {
+        if (glm::dot(a.n, b.n) < 0.99999) return false;
+        for (int e = 0; e < 3; ++e) {
+            const int x = a.v[e], y = a.v[(e + 1) % 3], p = a.v[(e + 2) % 3];
+            int q = -1;
+            for (int f = 0; f < 3; ++f)
+                if (b.v[f] == y && b.v[(f + 1) % 3] == x) q = b.v[(f + 2) % 3];
+            if (q < 0 || q == p) continue;
+            const int quad[4] = {x, q, y, p}; // mismo giro que los dos triangulos
+            // Normal en espacio de C4D: el espejo cambia el signo del producto
+            // vectorial, por eso convexo es "< 0".
+            const glm::dvec3 nC4d(a.n.x, a.n.y, -a.n.z);
+            for (int k = 0; k < 4; ++k) {
+                const glm::dvec3& p0 = out.points[(size_t)quad[k]];
+                const glm::dvec3& p1 = out.points[(size_t)quad[(k + 1) % 4]];
+                const glm::dvec3& p2 = out.points[(size_t)quad[(k + 2) % 4]];
+                if (glm::dot(glm::cross(p1 - p0, p2 - p1), nC4d) >= 0.0) return false;
+            }
+            out.polys.push_back({quad[0], quad[3], quad[2], quad[1]});
+            return true;
+        }
+        return false;
+    };
+    for (size_t i = 0; i < tris.size(); ++i) {
+        if (i + 1 < tris.size() && tryQuad(tris[i], tris[i + 1])) {
+            ++i;
+            continue;
+        }
+        const Tri& t = tris[i];
+        out.polys.push_back({t.v[0], t.v[2], t.v[1], t.v[1]});
+    }
     return out;
 }
 

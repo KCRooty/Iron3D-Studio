@@ -30,4 +30,28 @@ bool importC4D(const std::filesystem::path& /*file*/, SceneNode& /*parent*/, std
     return false;
 }
 
+namespace {
+void noExport(std::string* outError) {
+    if (outError)
+        *outError = "Esta compilación de Iron3D no puede guardar .c4d: hace falta el Cineware SDK de MAXON "
+                    "(solo Windows y macOS), que no viene incluido.";
+}
+} // namespace
+
+bool exportC4D(const std::filesystem::path& /*file*/, const std::vector<const SceneNode*>& /*roots*/,
+               const std::vector<Material>& /*materials*/, bool /*allMaterials*/, C4DExportReport& report,
+               std::string* outError) {
+    report = C4DExportReport{};
+    noExport(outError);
+    return false;
+}
+
+bool exportC4DToBytes(const std::vector<const SceneNode*>& /*roots*/, const std::vector<Material>& /*materials*/,
+                      std::vector<uint8_t>& out, C4DExportReport& report, std::string* outError) {
+    out.clear();
+    report = C4DExportReport{};
+    noExport(outError);
+    return false;
+}
+
 } // namespace iron3d
