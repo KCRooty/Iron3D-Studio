@@ -413,6 +413,7 @@ int main(int argc, char** argv) {
     // "--frame=<nombre>" encuadra ese objeto y "--select=<nombre>" lo deja
     // seleccionado (verificacion de la flecha de objeto fuera de vista).
     std::string frameArg, selectArg;
+    std::vector<std::string> uiCmdArgs; // "--ui-cmd=make-editable|frame-selected|commander[:texto]|vp-menu"
     bool travelArg = false; // "--travel": como pulsar la flecha (viaje hacia el seleccionado)
     bool savePresetArg = false; // "--save-preset": abre "Guardar como Preestablecido" con el seleccionado
     bool iconSheet = false;
@@ -437,6 +438,8 @@ int main(int argc, char** argv) {
             frameArg = a.substr(8);
         } else if (a.rfind("--select=", 0) == 0) {
             selectArg = a.substr(9);
+        } else if (a.rfind("--ui-cmd=", 0) == 0) {
+            uiCmdArgs.push_back(a.substr(9));
         } else if (a.rfind("--ui-preset=", 0) == 0) {
             if (const UiPreset* p = findBuiltinPreset(a.substr(12))) prefs.uiPreset = *p;
             else std::fprintf(stderr, "[Iron3D] Preset de interfaz desconocido: %s\n", a.c_str());
@@ -575,6 +578,8 @@ int main(int argc, char** argv) {
         if (travelArg && selected) iron3d::travelToNode(camera, *selected);
         if (savePresetArg && selected) iron3d::beginSavePreset(*selected, materials);
     }
+    for (const std::string& c : uiCmdArgs)
+        if (!iron3d::queueUiCommand(c)) std::fprintf(stderr, "[Iron3D] --ui-cmd desconocida: %s\n", c.c_str());
 
     // --- Carpeta de escenas (Fase 2c: guardar/cargar .iron) -------------------
     const std::filesystem::path scenesDir = exeDirectory() / "scenes";

@@ -6,6 +6,34 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-06 — Hacer Editable, menú del clic derecho en el visor y Commander
+
+**Añadido (funciona de verdad)**
+- **Hacer Editable (C)**: un Cubo, Esfera o Plano pasa a ser un Objeto Polígono con la misma
+  malla que se ve. Conserva nombre, hijos, material y posición; actúa sobre toda la
+  selección y se deshace con Ctrl+Z. Está en la tecla C, el botón de la barra izquierda, el
+  menú Malla y el clic derecho del Gestor de Objetos (en gris si no hay nada convertible).
+- **Clic derecho en el visor** (sin Alt y sin arrastrar): el menú del Modo Modelo de C4D
+  R19 — Deshacer, Encuadrar, Hacer Editable, Agrupar, Seleccionar Hijos, Mover / Escalar /
+  Rotar y Selección en Vivo. Lo que aún no existe sale en gris.
+- **Commander (Mayús+C)**: buscador de órdenes por nombre (sin distinguir mayúsculas ni
+  tildes); flechas para elegir, Enter para ejecutar, Esc para cerrar.
+- Atajos nuevos: **S** encuadra la selección entera, **Espacio** vuelve a la herramienta
+  anterior, **Ctrl+A** selecciona todos los objetos, **Ctrl+I** abre la información del
+  proyecto.
+- `--ui-cmd=make-editable|frame-selected|vp-menu|commander[:texto]` para verificar por
+  captura sin clics.
+
+**Arreglado**
+- Las mallas generadas por Hacer Editable calculan su caja envolvente (sin ella el Tamaño
+  salía 0 cm y fallaban el contorno, el clic y Encuadrar).
+
+**Probado**: build Debug sin avisos, ctest 2/2, capturas de Hacer Editable (icono, Atributos,
+Tamaño 200 cm, contorno), del menú del visor y del Commander filtrando "enc".
+**Sin probar**: el clic derecho real con el ratón, las teclas pulsadas de verdad y Espacio.
+**Pendiente**: vistas F1–F5 (no hay cámara ortográfica), Selección Rectangular (0) y Lazo
+(8), L, W, Mayús+R, Ctrl+B, F9, Estado Actual a Objeto y Conectar.
+
 ### 2026-11-05 (4) — Menú contextual del Gestor de Objetos como el de C4D R19
 
 **Cambiado**
