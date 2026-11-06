@@ -342,6 +342,12 @@ void OpenGLRenderer::setViewportRect(int x, int y, int width, int height) {
     vpH_ = height < 0 ? 0 : height;
 }
 
+void OpenGLRenderer::setDrawRect(int x, int y, int width, int height) {
+    if (width <= 0 || height <= 0) return;
+    // GL cuenta Y desde abajo; el rectangulo llega con origen arriba-izquierda.
+    gl::glViewport(x < 0 ? 0 : x, height_ - (y + height), width, height);
+}
+
 void OpenGLRenderer::drawGrid(const std::vector<Vertex>& lineVerts, const glm::mat4& viewProj) {
     if (lineVerts.empty()) return;
     gl::glDisable(gl::GL_DEPTH_TEST);

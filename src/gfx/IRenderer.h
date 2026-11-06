@@ -103,6 +103,11 @@ public:
     // Se aplica en el siguiente beginFrame().
     virtual void setViewportRect(int x, int y, int width, int height) = 0;
 
+    // Rectangulo de dibujo inmediato, ya dentro de la pasada principal (entre
+    // beginMainPass y endFrame): la vista de 4 paneles (F5) dibuja la escena
+    // una vez por panel. Mismas coordenadas que setViewportRect.
+    virtual void setDrawRect(int x, int y, int width, int height) = 0;
+
     // Cuadricula de suelo: lineas en espacio de mundo, sin test de
     // profundidad y sin escribirla -- llamar ANTES de drawMesh para que la
     // geometria la tape. Buffer propio, independiente del gizmo.

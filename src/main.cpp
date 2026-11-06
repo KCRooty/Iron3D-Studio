@@ -390,6 +390,19 @@ std::vector<iron3d::Vertex> buildGridVertices() {
     return v;
 }
 
+// En las vistas ortograficas la rejilla va en el plano de la vista, como en
+// C4D: XY en Frontal/Trasera, YZ en Derecha/Izquierda, XZ en el resto.
+glm::mat4 gridModelFor(iron3d::OrbitalCamera::View v) {
+    using V = iron3d::OrbitalCamera::View;
+    switch (v) {
+        case V::Front:
+        case V::Back: return glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        case V::Right:
+        case V::Left: return glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        default: return glm::mat4(1.0f);
+    }
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -727,8 +740,35 @@ int main(int argc, char** argv) {
         // coordenadas de ventana con escalado DPI).
         const float sx = io.DisplaySize.x > 0.0f ? (float)fbWidth / io.DisplaySize.x : 1.0f;
         const float sy = io.DisplaySize.y > 0.0f ? (float)fbHeight / io.DisplaySize.y : 1.0f;
-        renderer->setViewportRect((int)(viewport.x * sx), (int)(viewport.y * sy), (int)(viewport.w * sx),
-                                  (int)(viewport.h * sy));
+        // Paneles a dibujar: uno (el visor) o cuatro con F5, cada uno con su
+        // camara; el activo usa la `camera` de siempre y lleva el gizmo.
+        struct Panel {
+            int x, y, w, h;
+            glm::mat4 view, proj;
+            glm::vec3 eye;
+            OrbitalCamera::View kind;
+            bool active;
+        };
+        std::vector<Panel> panels;
+        if (viewport.quad) {
+            renderer->setViewportRect((int)(viewport.fullX * sx), (int)(viewport.fullY * sy),
+                                      (int)(viewport.fullW * sx), (int)(viewport.fullH * sy));
+            for (int i = 0; i < 4; ++i) {
+                const QuadRect r = quadPanelRect(viewport, i);
+                const bool act = i == viewport.quadActive;
+                const OrbitalCamera& cam = act ? camera : viewport.quadCams[i];
+                const float pa = r.h > 1.0f ? r.w / r.h : aspect;
+                panels.push_back({(int)(r.x * sx), (int)(r.y * sy), (int)(r.w * sx), (int)(r.h * sy),
+                                  act ? view : cam.viewMatrix(),
+                                  act ? proj : cam.projectionMatrix(pa, renderer->needsProjectionYFlip()),
+                                  act ? eye : cam.eyePosition(), cam.view(), act});
+            }
+        } else {
+            renderer->setViewportRect((int)(viewport.x * sx), (int)(viewport.y * sy), (int)(viewport.w * sx),
+                                      (int)(viewport.h * sy));
+            panels.push_back({(int)(viewport.x * sx), (int)(viewport.y * sy), (int)(viewport.w * sx),
+                              (int)(viewport.h * sy), view, proj, eye, camera.view(), true});
+        }
 
         if (viewport.renderView) renderer->setClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         else {
@@ -756,19 +796,29 @@ int main(int argc, char** argv) {
             // pass principal. Usa la vista/proyeccion de la camara real (no
             // las de la luz), asi que se recorre DESPUES de calcular `view`/
             // `proj` mas arriba en este mismo bucle.
+            // Con 4 paneles el G-buffer (una sola camara, pantalla completa)
+            // no vale para los cuatro: se deja vacio y el SSAO queda en 1
+            // (sin oclusion), ver ssao.frag.
             renderer->beginGBufferPass(view, proj);
-            drawSceneGBuffer(*renderer, meshes, sceneRoot, glm::mat4(1.0f));
+            if (!viewport.quad) drawSceneGBuffer(*renderer, meshes, sceneRoot, glm::mat4(1.0f));
             renderer->endGBufferPass();
 
             renderer->setLighting(lightPos, eye, lightViewProj);
             renderer->beginMainPass();
 
-            if (viewport.showGrid && !viewport.renderView) renderer->drawGrid(gridVerts, viewProj);
-            drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), viewProj);
+            for (const Panel& pn : panels) {
+                renderer->setDrawRect(pn.x, pn.y, pn.w, pn.h);
+                renderer->setLighting(lightPos, pn.eye, lightViewProj);
+                const glm::mat4 pvp = pn.proj * pn.view;
+                if (viewport.showGrid && !viewport.renderView)
+                    renderer->drawGrid(gridVerts, pvp * gridModelFor(pn.kind));
+                drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), pvp);
 
-            // Gizmo encima de la escena (ningun buffer de profundidad todavia en
-            // Fase 1-2, asi que "despues" ya implica "por encima").
-            if (!viewport.renderView) renderer->drawGizmo(gizmoLineVerts, gizmoTriVerts, viewProj);
+                // Gizmo encima de la escena (ningun buffer de profundidad todavia en
+                // Fase 1-2, asi que "despues" ya implica "por encima"). Solo en
+                // el panel activo: sus vertices dependen de su camara.
+                if (pn.active && !viewport.renderView) renderer->drawGizmo(gizmoLineVerts, gizmoTriVerts, viewProj);
+            }
 
             renderer->endFrame(); // compone ImGui y presenta
         }

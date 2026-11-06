@@ -43,9 +43,10 @@ public:
     void setTargetDistance(const glm::vec3& target, float distance);
 
     // Vistas de C4D (F1-F4): Perspectiva y las ortograficas Superior, Derecha
-    // y Frontal. En las ortograficas no se orbita (como en C4D): Alt+clic
-    // izquierdo no hace nada, el paneo y el zoom si.
-    enum class View { Perspective, Top, Right, Front };
+    // y Frontal; Izquierda, Trasera e Inferior desde el menu Camaras. En las
+    // ortograficas no se orbita (como en C4D): Alt+clic izquierdo no hace
+    // nada, el paneo y el zoom si.
+    enum class View { Perspective, Top, Right, Front, Left, Back, Bottom };
     void setView(View v);
     View view() const { return view_; }
     bool isOrtho() const { return view_ != View::Perspective; }

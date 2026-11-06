@@ -43,6 +43,7 @@ public:
     void endGBufferPass() override;
     void beginMainPass() override;
     void setViewportRect(int x, int y, int width, int height) override;
+    void setDrawRect(int x, int y, int width, int height) override;
     void drawGrid(const std::vector<Vertex>& lineVerts, const glm::mat4& viewProj) override;
     void setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
                       const glm::mat4& lightViewProj) override;
