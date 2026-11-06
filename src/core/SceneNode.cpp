@@ -151,10 +151,82 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
     copy->renderVis = src.renderVis;
     copy->materialIndex = src.materialIndex;
     copy->mesh = src.mesh;
+    copy->animPos = src.animPos;
+    copy->animRot = src.animRot;
+    copy->animScale = src.animScale;
     for (const auto& child : src.children()) cloneInto(*copy, *child, child->name());
     return copy;
 }
 } // namespace
+
+void AnimTrack::set(int frame, const glm::vec3& value) {
+    auto it = std::lower_bound(keys.begin(), keys.end(), frame, [](const AnimKey& k, int f) { return k.frame < f; });
+    if (it != keys.end() && it->frame == frame) it->value = value;
+    else keys.insert(it, AnimKey{frame, value});
+}
+
+bool AnimTrack::remove(int frame) {
+    auto it = std::find_if(keys.begin(), keys.end(), [&](const AnimKey& k) { return k.frame == frame; });
+    if (it == keys.end()) return false;
+    keys.erase(it);
+    return true;
+}
+
+bool AnimTrack::hasKeyAt(int frame) const {
+    return std::any_of(keys.begin(), keys.end(), [&](const AnimKey& k) { return k.frame == frame; });
+}
+
+namespace {
+// Pendiente automatica (valor por fotograma) de la clave i, por componente:
+// la de la recta entre sus vecinas, o 0 en los extremos y donde la clave es
+// un maximo/minimo local (asi la curva nunca se pasa de las claves).
+glm::vec3 autoSlope(const std::vector<AnimKey>& k, size_t i) {
+    if (i == 0 || i + 1 >= k.size()) return glm::vec3(0.0f);
+    const float df = (float)(k[i + 1].frame - k[i - 1].frame);
+    glm::vec3 s = (k[i + 1].value - k[i - 1].value) / std::max(df, 1e-6f);
+    for (int c = 0; c < 3; ++c) {
+        const float a = k[i].value[c] - k[i - 1].value[c], b = k[i + 1].value[c] - k[i].value[c];
+        if (a * b <= 0.0f) s[c] = 0.0f;
+    }
+    return s;
+}
+} // namespace
+
+glm::vec3 AnimTrack::evaluate(float frame) const {
+    if (frame <= (float)keys.front().frame) return keys.front().value;
+    if (frame >= (float)keys.back().frame) return keys.back().value;
+    size_t i = 0;
+    while (i + 1 < keys.size() && (float)keys[i + 1].frame <= frame) ++i;
+    const AnimKey& a = keys[i];
+    const AnimKey& b = keys[i + 1];
+    const float span = (float)(b.frame - a.frame);
+    const float t = (frame - (float)a.frame) / span;
+    const glm::vec3 m0 = autoSlope(keys, i) * span, m1 = autoSlope(keys, i + 1) * span;
+    const float t2 = t * t, t3 = t2 * t;
+    return (2 * t3 - 3 * t2 + 1) * a.value + (t3 - 2 * t2 + t) * m0 + (-2 * t3 + 3 * t2) * b.value + (t3 - t2) * m1;
+}
+
+void evaluateAnimation(SceneNode& node, float frame) {
+    if (!node.animPos.empty()) node.position = node.animPos.evaluate(frame);
+    if (!node.animRot.empty()) node.rotationDeg = node.animRot.evaluate(frame);
+    if (!node.animScale.empty()) node.scale = node.animScale.evaluate(frame);
+    for (const auto& c : node.children()) evaluateAnimation(*c, frame);
+}
+
+void recordKey(SceneNode& node, int frame, bool position, bool rotation, bool scale) {
+    if (position) node.animPos.set(frame, node.position);
+    if (rotation) node.animRot.set(frame, node.rotationDeg);
+    if (scale) node.animScale.set(frame, node.scale);
+}
+
+std::vector<int> keyFrames(const SceneNode& node) {
+    std::vector<int> out;
+    for (const AnimTrack* t : {&node.animPos, &node.animRot, &node.animScale})
+        for (const AnimKey& k : t->keys) out.push_back(k.frame);
+    std::sort(out.begin(), out.end());
+    out.erase(std::unique(out.begin(), out.end()), out.end());
+    return out;
+}
 
 SceneNode* duplicateSubtree(SceneNode& parent, const SceneNode& src) {
     return cloneInto(parent, src, src.name() + " copia");

@@ -2,6 +2,7 @@
 // ni Cineware: se ejecutan en el CI de Windows y Linux.
 
 #include "core/SceneNode.h"
+#include "core/SceneSerializer.h"
 #include "core/ThumbnailRenderer.h"
 #include "importers/c4d_compat/C4DGeometry.h"
 
@@ -300,6 +301,49 @@ int main() {
         floor->renderVis = VisMode::Off;
         const Thumbnail hidden = renderCameraImage(root, {}, view, proj, 32, 24, 1, glm::vec3(0.0f), glm::vec3(0.0f));
         check(hidden.triangles == 0, "render de camara: respeta la visibilidad de render");
+    }
+
+    {
+        // Animacion (F9): pistas por canal, interpolacion sin rebasar y .iron.
+        SceneNode root("root");
+        SceneNode* n = root.addChild("Cubo", PrimitiveType::Cube);
+        n->position = {0.0f, 0.0f, 0.0f};
+        recordKey(*n, 0, true, true, true);
+        n->position = {10.0f, 0.0f, 0.0f};
+        n->rotationDeg = {0.0f, 90.0f, 0.0f};
+        recordKey(*n, 10, true, false, false);  // solo Posicion
+        n->position = {10.0f, 5.0f, 0.0f};
+        recordKey(*n, 20, true, false, false);
+        check(n->animPos.keys.size() == 3 && n->animRot.keys.size() == 1 && n->animScale.keys.size() == 1,
+              "animacion: claves por canal");
+        evaluateAnimation(root, 5.0f);
+        check(std::fabs(n->position.x - 5.0f) < 1e-4f, "animacion: dos claves en S, mitad exacta");
+        check(n->rotationDeg.y == 0.0f, "animacion: rotacion sin grabar en 10 sigue en su unica clave");
+        evaluateAnimation(root, 15.0f);
+        check(n->position.x <= 10.0f + 1e-4f, "animacion: sin rebasar la clave (extremo recortado)");
+        check(n->position.y > 0.0f && n->position.y < 5.0f, "animacion: interpola entre 10 y 20");
+        evaluateAnimation(root, -5.0f);
+        check(n->position.x == 0.0f, "animacion: antes de la primera clave, fija");
+        evaluateAnimation(root, 99.0f);
+        check(nearly(n->position, {10.0f, 5.0f, 0.0f}), "animacion: despues de la ultima, fija");
+        const std::vector<int> kf = keyFrames(*n);
+        check(kf.size() == 3 && kf[0] == 0 && kf[1] == 10 && kf[2] == 20, "animacion: keyFrames");
+        recordKey(*n, 10, true, false, false);  // sustituye, no duplica
+        check(n->animPos.keys.size() == 3, "animacion: grabar dos veces el mismo fotograma");
+
+        const std::string text = serializeScene(root, {});
+        SceneNode back("cargada");
+        std::vector<Material> mats;
+        std::string err;
+        check(deserializeScene(text, back, mats, &err), "animacion: el .iron se vuelve a leer");
+        const SceneNode* bn = back.children().empty() ? nullptr : back.children().front().get();
+        check(bn && bn->animPos.keys.size() == 3 && bn->animRot.keys.size() == 1 && bn->animScale.keys.size() == 1,
+              "animacion: claves guardadas y leidas");
+        check(bn && bn->animPos.keys[2].frame == 20 && nearly(bn->animPos.keys[2].value, {10.0f, 5.0f, 0.0f}),
+              "animacion: valor de la clave tras guardar");
+        SceneNode copyParent("p");
+        const SceneNode* dup = duplicateSubtree(copyParent, *n);
+        check(dup->animPos.keys.size() == 3, "animacion: Duplicar copia las pistas");
     }
 
     if (g_failures == 0) std::printf("c4d_geometry: todo correcto\n");

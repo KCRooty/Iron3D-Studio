@@ -6,6 +6,35 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-07 (4) — Animación por fotogramas clave (F9)
+
+**Añadido**
+- **Grabar Objetos Activos (F9)**: graba una clave de los objetos seleccionados en el
+  fotograma actual. Hay una pista por canal (Posición, Rotación, Escala), y los botones
+  Grabar Posición/Escala/Rotación de la Línea de Tiempo eligen qué canales se graban.
+- **Reproducción** (F8/F6 o la Línea de Tiempo): al cambiar de fotograma los objetos toman
+  los valores de sus pistas. Entre claves la curva es spline con tangentes automáticas que
+  no rebasan las claves (dos claves dan una S con aceleración y frenada). Antes de la
+  primera clave y después de la última el valor se queda fijo. Lo que se mueve sin grabar
+  se pierde al cambiar de fotograma, como en C4D.
+- **Fotogramas Clave Automáticos (Ctrl+F9)**: al soltar el gizmo se graba la clave sola.
+- **Ir a la Clave Anterior/Siguiente (Ctrl+F / Ctrl+G)** y las claves del objeto activo
+  marcadas en la regla.
+- **Animación > Eliminar Animación del Objeto**. Grabar y eliminar se pueden deshacer.
+- Duplicar copia también las pistas.
+
+**Cambiado**: el formato `.iron` pasa a la versión 5 (guarda las claves). Las escenas
+anteriores se abren igual, pero una versión anterior de Iron3D no abre las nuevas.
+
+**Limitaciones conocidas**: no hay editor de curvas ni forma de mover o borrar una clave
+suelta, y Grabar Parámetro y Nivel de Puntos siguen sin hacer nada.
+
+**Probado**: build Debug sin avisos, ctest 2/2 (pruebas nuevas: claves por canal, curva
+en S, sin rebasar, valores fijos fuera del rango, grabar dos veces el mismo fotograma,
+guardar y leer el `.iron` y Duplicar), captura de una clave grabada en el fotograma 45.
+**Sin probar**: reproducir una animación viéndola en el visor y las claves automáticas al
+arrastrar.
+
 ### 2026-11-07 (3) — Ruedas de opciones en los menús
 
 **Añadido**

@@ -13,7 +13,7 @@ namespace {
 // v2 = Fase 5: bloque MATERIALS + materialIndex; v3 = mallas (MESH);
 // v4 (2026-11-06) = rotaciones en HPB de C4D. Al cargar v1-v3 se convierten
 // (misma orientacion, otros numeros), ver convertLegacyRotations.
-constexpr int kFormatVersion = 4;
+constexpr int kFormatVersion = 5;  // 5: pistas de animacion (KEY)
 
 void convertLegacyRotations(SceneNode& n) {
     n.rotationDeg = mat3ToHpb(legacyXyzToMat3(n.rotationDeg));
@@ -64,6 +64,11 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
     if (hasMesh && meshRefs) out << " meshref=" << meshRefs->ref(node.mesh);
     out << " {\n";
     if (hasMesh && !meshRefs) writeMesh(out, *node.mesh, indent);
+    const std::pair<const char*, const AnimTrack*> tracks[] = {{"p", &node.animPos}, {"r", &node.animRot}, {"s", &node.animScale}};
+    for (const auto& [ch, track] : tracks)
+        for (const AnimKey& k : track->keys)
+            out << indent << "  KEY ch=" << ch << " f=" << k.frame << " x=" << k.value.x << " y=" << k.value.y
+                << " z=" << k.value.z << "\n";
     for (const auto& child : node.children()) writeNode(out, *child, depth + 1, meshRefs);
     out << indent << "}\n";
 }
@@ -196,6 +201,32 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     }
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras los atributos de NODE"; return false; }
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
+    // Claves de animacion (formato 5): KEY ch=p|r|s f=N x= y= z=
+    while (!p.atEnd() && p.peek() == "KEY") {
+        p.next();
+        std::string ch;
+        int frame = 0;
+        glm::vec3 v(0.0f);
+        for (int i = 0; i < 5 && !p.atEnd(); ++i) {
+            const std::string tok = p.next();
+            const size_t eq = tok.find('=');
+            if (eq == std::string::npos) { err = "clave de animacion malformada"; return false; }
+            const std::string k = tok.substr(0, eq), val = tok.substr(eq + 1);
+            try {
+                if (k == "ch") ch = val;
+                else if (k == "f") frame = std::stoi(val);
+                else if (k == "x") v.x = std::stof(val);
+                else if (k == "y") v.y = std::stof(val);
+                else if (k == "z") v.z = std::stof(val);
+            } catch (const std::exception&) {
+                err = "valor invalido en una clave de animacion";
+                return false;
+            }
+        }
+        if (ch == "p") node.animPos.set(frame, v);
+        else if (ch == "r") node.animRot.set(frame, v);
+        else if (ch == "s") node.animScale.set(frame, v);
+    }
 
     node.setName(name);
     node.primitive = prim;
@@ -312,6 +343,9 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.renderVis = temp.renderVis;
     root.materialIndex = temp.materialIndex;
     root.mesh = temp.mesh;
+    root.animPos = temp.animPos;
+    root.animRot = temp.animRot;
+    root.animScale = temp.animScale;
     root.clearChildren();
     root.adoptChildrenFrom(temp);
     materials = std::move(tempMaterials);

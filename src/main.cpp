@@ -722,6 +722,7 @@ int main(int argc, char** argv) {
                     }
                 }
             } else {
+                if (gizmo.isDragging()) iron3d::notifyTransformEdited(sceneRoot);
                 gizmo.endDrag();
                 gizmo.updateHover(mouseRay, gizmoTarget, eye, mouseX - viewport.x, mouseY - viewport.y,
                                   (int)viewport.w, (int)viewport.h, viewProj);

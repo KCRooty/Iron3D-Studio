@@ -86,7 +86,7 @@ enum class AttrFocus { Object, Material, Tag, Project };
 // menu contextual del visor) y se ejecutan al principio del frame siguiente.
 enum class UiCmd { None, MakeEditable, FrameSelected, FrameAll, ResetView, Group, SelectChildren,
                    CurrentState, Connect, ConnectDelete, SelectAll, ViewPersp, ViewTop, ViewRight, ViewFront,
-                   ViewLeft, ViewBack, ViewBottom, ViewQuad };
+                   ViewLeft, ViewBack, ViewBottom, ViewQuad, ClearAnimation };
 
 struct UiState {
     UiCmd pendingCmd = UiCmd::None;
@@ -186,6 +186,14 @@ struct UiState {
     bool selTolerant = true;       // Seleccion Rectangular/Lazo: tocar basta
     bool connectWeld = true;       // Conectar Objetos: soldar puntos coincidentes
     float connectWeldCm = 0.01f;   // tolerancia de la soldadura, en cm
+
+    // Animacion (F9): canales que se graban, claves automaticas y ultimo
+    // fotograma evaluado (al cambiar de fotograma se recalcula la escena).
+    bool keyPos = true, keyRot = true, keyScl = true;
+    bool autoKey = false;
+    bool recordRequested = false;
+    float lastEvalFrame = -1e9f;
+    std::vector<int> selKeys;  // claves del objeto activo (para la Linea de Tiempo)
     bool showPictureViewer = false;
     bool renderRequested = false;
     struct PictureViewer {
@@ -202,6 +210,43 @@ UiState g;
 // sitios que solo reciben la camara.
 ViewportState* g_vp = nullptr;
 void flashStatus(const std::string& text);
+void collectSelected(SceneNode& node, std::vector<SceneNode*>& out);
+
+// --- Animacion (F9) -------------------------------------------------------------------
+// Graba una clave de los objetos seleccionados en el fotograma actual.
+int recordActiveObjects(SceneNode& root, SceneNode* selected, SceneHistory* history) {
+    std::vector<SceneNode*> nodes;
+    collectSelected(root, nodes);
+    if (nodes.empty() && selected) nodes.push_back(selected);
+    if (nodes.empty()) {
+        flashStatus("Grabar Objetos Activos: no hay ningún objeto seleccionado.");
+        return 0;
+    }
+    if (!g.keyPos && !g.keyRot && !g.keyScl) {
+        flashStatus("Grabar Objetos Activos: Posición, Escala y Rotación están desactivadas.");
+        return 0;
+    }
+    if (history) history->commitBefore(root);
+    const int f = (int)std::lround(g.frame);
+    for (SceneNode* n : nodes) recordKey(*n, f, g.keyPos, g.keyRot, g.keyScl);
+    g.lastEvalFrame = g.frame;  // los valores actuales ya son los de este fotograma
+    flashStatus("Clave grabada en el fotograma " + std::to_string(f) + " (" + std::to_string(nodes.size()) +
+                (nodes.size() == 1 ? " objeto)." : " objetos)."));
+    return (int)nodes.size();
+}
+
+// Ctrl+F / Ctrl+G: clave anterior / siguiente del objeto activo.
+void jumpToKey(int dir) {
+    const int cur = (int)std::lround(g.frame);
+    if (dir < 0) {
+        for (auto it = g.selKeys.rbegin(); it != g.selKeys.rend(); ++it)
+            if (*it < cur) { g.frame = (float)*it; g.playDir = 0; return; }
+    } else {
+        for (int k : g.selKeys)
+            if (k > cur) { g.frame = (float)k; g.playDir = 0; return; }
+    }
+}
+
 // Abre la ventanita de opciones de una herramienta junto al raton.
 void openToolOptions(int which) {
     g.optWin = (UiState::OptWin)which;
@@ -1631,6 +1676,7 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
         }
         if (pressed(ImGuiKey_F6)) g.playDir = g.playDir == -1 ? 0 : -1;
         if (pressed(ImGuiKey_F7)) g.playDir = 0;
+        if (pressed(ImGuiKey_F9) && !shift) recordActiveObjects(root, selected, &history);  // Grabar Objetos Activos
         if (pressed(ImGuiKey_G)) {
             if (io.KeyAlt) groupObjects(root, selected, history, nullptr);       // Alt+G: Agrupar Objetos
             else if (shift && g.objMgrHovered) {                                  // Mayus+G: Expandir Grupo
@@ -1666,6 +1712,12 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
         if (pressed(ImGuiKey_S)) { g.showScene = true; g.sceneLoadMode = false; }
         if (pressed(ImGuiKey_E)) g.showPrefs = true;
         if (pressed(ImGuiKey_D)) { g.focus = AttrFocus::Project; }
+        if (pressed(ImGuiKey_F9)) {  // Fotogramas Clave Automaticos
+            g.autoKey = !g.autoKey;
+            flashStatus(g.autoKey ? "Fotogramas Clave Automáticos: activados" : "Fotogramas Clave Automáticos: desactivados");
+        }
+        if (pressed(ImGuiKey_F)) jumpToKey(-1);  // Ir a la Clave Anterior
+        if (pressed(ImGuiKey_G)) jumpToKey(1);   // Ir a la Clave Siguiente
     }
 }
 
@@ -1734,6 +1786,15 @@ void runPendingCmd(SceneNode& root, SceneNode*& selected, SceneHistory& history,
         case UiCmd::ViewBack: selectView(camera, CamView::Back); break;
         case UiCmd::ViewBottom: selectView(camera, CamView::Bottom); break;
         case UiCmd::ViewQuad: toggleQuad(camera); break;
+        case UiCmd::ClearAnimation: {
+            std::vector<SceneNode*> nodes;
+            collectSelected(root, nodes);
+            if (nodes.empty() && selected) nodes.push_back(selected);
+            history.commitBefore(root);
+            for (SceneNode* n : nodes) n->animPos = n->animRot = n->animScale = AnimTrack{};
+            flashStatus("Animación eliminada.");
+            break;
+        }
         case UiCmd::CurrentState: {
             const int n = currentStateToObject(root, selected, history);
             flashStatus(n ? "Estado Actual a Objeto: " + std::to_string(n) + (n == 1 ? " copia poligonal creada." : " copias poligonales creadas.")
@@ -1785,6 +1846,9 @@ void drawCommander(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scene
         {"Vista Frontal", "F4", [] { g.pendingCmd = UiCmd::ViewFront; }, true},
         {"Todas las Vistas", "F5", [] { g.pendingCmd = UiCmd::ViewQuad; }, true},
         {"Renderizar en Visor de Imágenes", "Mayús+R", [] { g.renderRequested = true; }, true},
+        {"Grabar Objetos Activos", "F9", [] { g.recordRequested = true; }, hasSel},
+        {"Fotogramas Clave Automáticos", "Ctrl+F9", [] { g.autoKey = !g.autoKey; }, true},
+        {"Eliminar Animación del Objeto", "", [] { g.pendingCmd = UiCmd::ClearAnimation; }, hasSel},
         {"Editar Configuración de Render...", "Ctrl+B", [] { g.showRenderSettings = true; }, true},
         {"Visor de Imágenes...", "", [] { g.showPictureViewer = true; }, true},
         {"Sistema de Coordenadas de Mundo", "W", [] { if (g_vp) g_vp->worldCoords = !g_vp->worldCoords; }, true},
@@ -2137,8 +2201,12 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
                          {"Fijación 2.5D", ""}, {"Fijación 3D", ""}, {nullptr, nullptr}, {"Plano de Trabajo", ""}});
 
     if (ImGui::BeginMenu("Animación")) {
-        iconMenuItem(Icon::Record, "Grabar Objetos Activos", "F9", false, false);
-        iconMenuItem(Icon::AutoKey, "Fotogramas Clave Automáticos", "Ctrl+F9", false, false);
+        if (iconMenuItem(Icon::Record, "Grabar Objetos Activos", "F9")) g.recordRequested = true;
+        iconMenuItem(Icon::AutoKey, "Fotogramas Clave Automáticos", "Ctrl+F9", &g.autoKey);
+        if (iconMenuItem(Icon::PrevKey, "Ir a la Clave Anterior", "Ctrl+F", false, !g.selKeys.empty())) jumpToKey(-1);
+        if (iconMenuItem(Icon::NextKey, "Ir a la Clave Siguiente", "Ctrl+G", false, !g.selKeys.empty())) jumpToKey(1);
+        if (ImGui::MenuItemEx("Eliminar Animación del Objeto", kIconGutterText, nullptr, false, !g.selKeys.empty()))
+            g.pendingCmd = UiCmd::ClearAnimation;
         ImGui::Separator();
         if (iconMenuItem(Icon::Play, "Reproducir Hacia Delante", "F8", g.playDir == 1)) g.playDir = g.playDir == 1 ? 0 : 1;
         if (iconMenuItem(Icon::PlayBack, "Reproducir Hacia Atrás", "F6", g.playDir == -1)) g.playDir = g.playDir == -1 ? 0 : -1;
@@ -3707,6 +3775,15 @@ void drawTimeline(ImVec2 pos, ImVec2 size) {
     }
     if (ImGui::IsItemHovered()) g.hint = "Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.";
 
+    // Claves del objeto activo: cuadraditos sobre la regla, como en C4D.
+    for (int k : g.selKeys) {
+        if (k < g.minFrame || k > g.maxFrame) continue;
+        const float x = fx((float)k);
+        const float hw = std::max(2.0f, std::min(5.0f, pxPerFrame * 0.5f));
+        dl->AddRectFilled(ImVec2(x - hw, r1.y - 9), ImVec2(x + hw, r1.y - 1), IM_COL32(110, 160, 230, 255));
+        dl->AddRect(ImVec2(x - hw, r1.y - 9), ImVec2(x + hw, r1.y - 1), IM_COL32(20, 30, 50, 255));
+    }
+
     // Cursor de tiempo
     {
         const int fi = (int)std::lround(g.frame);
@@ -3755,25 +3832,25 @@ void drawTimeline(ImVec2 pos, ImVec2 size) {
         return clicked;
     };
     if (tbtn("tstart", Icon::ToStart, false, true, "Ir al Inicio [Mayús+F]")) g.frame = (float)g.minFrame;
-    tbtn("tprevk", Icon::PrevKey, false, false, "Ir a la Clave Anterior [Ctrl+F] (no hay claves)");
+    if (tbtn("tprevk", Icon::PrevKey, false, !g.selKeys.empty(), "Ir a la Clave Anterior [Ctrl+F]")) jumpToKey(-1);
     if (tbtn("tprev", Icon::StepBack, false, true, "Ir al Fotograma Anterior [F]")) g.frame = std::max((float)g.minFrame, std::ceil(g.frame) - 1);
     if (tbtn("tplayb", Icon::PlayBack, g.playDir == -1, true, "Reproducir Hacia Atrás [F6]")) g.playDir = g.playDir == -1 ? 0 : -1;
     if (tbtn("tplay", g.playDir == 1 ? Icon::Pause : Icon::Play, g.playDir == 1, true, "Reproducir Hacia Delante [F8]")) g.playDir = g.playDir == 1 ? 0 : 1;
     if (tbtn("tnext", Icon::StepFwd, false, true, "Ir al Fotograma Siguiente [G]")) g.frame = std::min((float)g.maxFrame, std::floor(g.frame) + 1);
-    tbtn("tnextk", Icon::NextKey, false, false, "Ir a la Clave Siguiente [Ctrl+G] (no hay claves)");
+    if (tbtn("tnextk", Icon::NextKey, false, !g.selKeys.empty(), "Ir a la Clave Siguiente [Ctrl+G]")) jumpToKey(1);
     if (tbtn("tend", Icon::ToEnd, false, true, "Ir al Final [Mayús+G]")) g.frame = (float)g.maxFrame;
     toolbarSeparator(true, b);
     ImGui::SameLine();
-    tbtn("trec", Icon::Record, false, false, "Grabar Objetos Activos [F9] (animación todavía no implementada)");
-    tbtn("tauto", Icon::AutoKey, false, false, "Fotogramas Clave Automáticos [Ctrl+F9] (animación todavía no implementada)");
-    tbtn("tksel", Icon::KeySel, false, false, "Selección de Claves (animación todavía no implementada)");
+    if (tbtn("trec", Icon::Record, false, true, "Grabar Objetos Activos [F9]")) g.recordRequested = true;
+    if (tbtn("tauto", Icon::AutoKey, g.autoKey, true, "Fotogramas Clave Automáticos [Ctrl+F9]")) g.autoKey = !g.autoKey;
+    tbtn("tksel", Icon::KeySel, false, false, "Selección de Claves (todavía no implementado)");
     toolbarSeparator(true, b);
     ImGui::SameLine();
-    tbtn("tkpos", Icon::KeyPos, true, false, "Grabar Posición (animación todavía no implementada)");
-    tbtn("tkscl", Icon::KeyScale, true, false, "Grabar Escala (animación todavía no implementada)");
-    tbtn("tkrot", Icon::KeyRot, true, false, "Grabar Rotación (animación todavía no implementada)");
-    tbtn("tkpar", Icon::KeyParam, true, false, "Grabar Parámetro (animación todavía no implementada)");
-    tbtn("tkpla", Icon::KeyPLA, false, false, "Grabar Nivel de Puntos (animación todavía no implementada)");
+    if (tbtn("tkpos", Icon::KeyPos, g.keyPos, true, "Grabar Posición")) g.keyPos = !g.keyPos;
+    if (tbtn("tkscl", Icon::KeyScale, g.keyScl, true, "Grabar Escala")) g.keyScl = !g.keyScl;
+    if (tbtn("tkrot", Icon::KeyRot, g.keyRot, true, "Grabar Rotación")) g.keyRot = !g.keyRot;
+    tbtn("tkpar", Icon::KeyParam, false, false, "Grabar Parámetro (todavía no implementado)");
+    tbtn("tkpla", Icon::KeyPLA, false, false, "Grabar Nivel de Puntos (todavía no implementado)");
     ImGui::PopStyleVar();
     // Panel mas alto que la tira de transporte (SFM): el resto es donde ira
     // el editor de curvas; de momento se dice tal cual.
@@ -5018,6 +5095,12 @@ void compensateAxisMove(SceneNode& node, const glm::mat4& beforeWorld) {
     }
 }
 
+void notifyTransformEdited(SceneNode& root) {
+    if (!g.autoKey) return;
+    // Sin paso de deshacer propio: el del arrastre ya guardo el estado anterior.
+    recordActiveObjects(root, nullptr, nullptr);
+}
+
 void releaseUiTextures() {
     freeUiTexture(g.pv.tex);
     g.pv.tex = nullptr;
@@ -5056,6 +5139,17 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     g.frame = std::clamp(g.frame, (float)g.minFrame, (float)g.maxFrame);
     g.previewMin = std::clamp(g.previewMin, g.minFrame, g.maxFrame);
     g.previewMax = std::clamp(g.previewMax, g.previewMin, g.maxFrame);
+    // Animacion: al cambiar de fotograma la escena toma los valores de sus
+    // pistas (lo que se haya movido sin grabar se pierde, como en C4D).
+    if (g.frame != g.lastEvalFrame) {
+        evaluateAnimation(root, g.frame);
+        g.lastEvalFrame = g.frame;
+    }
+    if (g.recordRequested) {
+        g.recordRequested = false;
+        recordActiveObjects(root, selected, &history);
+    }
+    g.selKeys = selected ? keyFrames(*selected) : std::vector<int>{};
 
     handleShortcuts(root, selected, gizmoMode, history, materials, camera, viewport);
     runPendingCmd(root, selected, history, camera);
@@ -5200,6 +5294,8 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "view-bottom") g.cmdQueue.push_back(UiCmd::ViewBottom);
     else if (cmd == "view-quad") g.cmdQueue.push_back(UiCmd::ViewQuad);
     else if (cmd == "render-pv") g.renderRequested = true;
+    else if (cmd == "key") g.recordRequested = true;
+    else if (cmd.rfind("frame=", 0) == 0) { try { g.frame = (float)std::stoi(cmd.substr(6)); } catch (...) { return false; } }
     else if (cmd == "render-settings") g.showRenderSettings = true;
     else if (cmd == "opts-connect") g.optWin = UiState::OptWin::Connect, g.optPos = ImVec2(400, 200);
     else if (cmd == "opts-rect") g.optWin = UiState::OptWin::RectSel, g.optPos = ImVec2(400, 200);
