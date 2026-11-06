@@ -670,6 +670,12 @@ int main(int argc, char** argv) {
         // mientras se arrastra, para que no se escape bajo el cursor).
         gizmo.usePivot = iron3d::selectionCount() > 1;
         gizmo.worldAxes = viewport.worldCoords;
+        // Puntos/Aristas/Poligonos: el gizmo mueve los componentes seleccionados.
+        SceneNode* compProxy = viewport.selectTool ? nullptr : iron3d::componentGizmoTarget(selected, gizmo.isDragging());
+        if (compProxy) {
+            gizmoTarget = compProxy;
+            gizmo.usePivot = false;
+        }
         if (gizmo.usePivot)
             gizmo.pivotWorld = gizmo.isDragging() ? dragPivot : iron3d::selectionPivot(sceneRoot, selected);
         if (!io.WantCaptureMouse && !altHeld && (mouseInViewport || gizmo.isDragging())) {
@@ -684,9 +690,13 @@ int main(int argc, char** argv) {
                     const glm::vec3 beforeScl = selected ? selected->scale : glm::vec3(1.0f);
                     const glm::mat4 beforeWorld = selected ? selected->worldMatrix() : glm::mat4(1.0f);
                     gizmo.updateDrag(mouseRay, mouseX - viewport.x, mouseY - viewport.y);
-                    // L (Activar Eje): solo cambia el eje; geometria e hijos se quedan.
-                    if (selected && viewport.axisMode) iron3d::compensateAxisMove(*selected, beforeWorld);
-                    if (selected && iron3d::selectionCount() > 1) {
+                    if (compProxy) {
+                        if (selected) iron3d::applyComponentDrag(*selected);
+                    } else if (selected && viewport.axisMode) {
+                        // L (Activar Eje): solo cambia el eje; geometria e hijos se quedan.
+                        iron3d::compensateAxisMove(*selected, beforeWorld);
+                    }
+                    if (!compProxy && selected && iron3d::selectionCount() > 1) {
                         glm::vec3 ratio(1.0f);
                         for (int k = 0; k < 3; ++k)
                             if (std::fabs(beforeScl[k]) > 1e-6f) ratio[k] = selected->scale[k] / beforeScl[k];
@@ -708,7 +718,17 @@ int main(int argc, char** argv) {
                     if (gizmo.beginDrag(mouseRay, gizmoTarget, eye, mouseX - viewport.x, mouseY - viewport.y,
                                         (int)viewport.w, (int)viewport.h, viewProj, camRight, camUp)) {
                         history.commit(preDragSnap);
-                    } else if (!(viewport.selectTool && viewport.selectShape != 0)) {
+                        if (compProxy && selected) iron3d::beginComponentDrag(*selected);
+                    } else if (viewport.selectTool && viewport.selectShape != 0) {
+                        // (Rectangular y Lazo seleccionan al soltar, en MainUi.)
+                    } else if (iron3d::componentClick(
+                                   selected, camera, (float)mouseX, (float)mouseY,
+                                   glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+                                       glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS,
+                                   glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+                                       glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)) {
+                        // Puntos/Aristas/Poligonos: el clic elige componentes.
+                    } else {
                         // (Rectangular y Lazo seleccionan al soltar, en MainUi.)
                         SceneNode* hit = nullptr;
                         float bestDist = 1e30f;
@@ -739,7 +759,8 @@ int main(int argc, char** argv) {
         ImGui::Render();
         if (viewport.requestQuit) glfwSetWindowShouldClose(window, GLFW_TRUE);
 
-        gizmo.buildGeometry(viewport.selectTool ? nullptr : selected, eye, gizmoLineVerts, gizmoTriVerts);
+        gizmo.buildGeometry(viewport.selectTool ? nullptr : (compProxy ? compProxy : selected), eye, gizmoLineVerts,
+                            gizmoTriVerts);
 
         // Rectangulo del visor en pixeles de framebuffer (puede diferir de las
         // coordenadas de ventana con escalado DPI).

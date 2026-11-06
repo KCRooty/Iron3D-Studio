@@ -53,6 +53,9 @@ struct ViewportState {
     // L "Activar Eje": mover/rotar/escalar cambia solo el eje del objeto; la
     // geometria (si es un objeto editable) y los hijos se quedan donde estan.
     bool axisMode = false;
+    // Modo de edicion: 0 Modelo, 1 Puntos, 2 Aristas, 3 Poligonos (estos tres
+    // solo hacen algo con un objeto editable -- Objeto Poligono --).
+    int compMode = 0;
     OrbitalCamera quadCams[4];
     float fullX = 0.0f, fullY = 0.0f, fullW = 0.0f, fullH = 0.0f;
 };
@@ -67,6 +70,18 @@ void releaseUiTextures();
 // main.cpp avisa al soltar el gizmo: con Fotogramas Clave Automaticos
 // (Ctrl+F9) se graba una clave de los objetos activos.
 void notifyTransformEdited(SceneNode& root);
+
+// --- Modos Puntos / Aristas / Poligonos (main.cpp) -----------------------------
+// Con componentes seleccionados en el objeto activo, el gizmo agarra un nodo
+// auxiliar en su centro (devuelto aqui; nullptr si no aplica). `dragging`:
+// mientras se arrastra no se recoloca.
+SceneNode* componentGizmoTarget(SceneNode* selected, bool dragging);
+void beginComponentDrag(SceneNode& node);
+// Tras cada paso de arrastre: aplica a los puntos lo que se ha movido el nodo auxiliar.
+void applyComponentDrag(SceneNode& node);
+// Clic en el visor (coordenadas de ventana). true si lo gestiona el modo de
+// componentes (y entonces no se elige objeto).
+bool componentClick(SceneNode* selected, const OrbitalCamera& camera, float mouseX, float mouseY, bool shift, bool ctrl);
 
 // Rectangulo (coordenadas de ventana) del panel i (0-3) de la vista de 4.
 struct QuadRect { float x, y, w, h; };
