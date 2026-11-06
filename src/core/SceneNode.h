@@ -45,6 +45,24 @@ inline bool resolveVisibility(VisMode mode, bool parentVisible) {
     return mode == VisMode::On ? true : (mode == VisMode::Off ? false : parentVisible);
 }
 
+// Animacion por fotogramas clave (F9), como las pistas de C4D: una pista por
+// canal (Posicion, Rotacion H/P/B, Escala), claves ordenadas por fotograma e
+// interpolacion spline con tangentes automaticas recortadas (sin rebasar los
+// valores de las claves, como el "Clamp" de C4D). Antes de la primera clave y
+// despues de la ultima el valor se queda fijo.
+struct AnimKey {
+    int frame = 0;
+    glm::vec3 value{0.0f};
+};
+struct AnimTrack {
+    std::vector<AnimKey> keys;
+    bool empty() const { return keys.empty(); }
+    void set(int frame, const glm::vec3& value);  // anade o sustituye
+    bool remove(int frame);
+    bool hasKeyAt(int frame) const;
+    glm::vec3 evaluate(float frame) const;         // requiere !empty()
+};
+
 class SceneNode {
 public:
     explicit SceneNode(std::string name, PrimitiveType primitive = PrimitiveType::None);
@@ -104,6 +122,10 @@ public:
     // (cuando haya modelado) sera crear una nueva y cambiar el puntero.
     std::shared_ptr<const MeshData> mesh;
 
+    // Pistas de animacion (vacias = sin animar).
+    AnimTrack animPos, animRot, animScale;
+    bool hasAnimation() const { return !animPos.empty() || !animRot.empty() || !animScale.empty(); }
+
 private:
     int id_;
     std::string name_;
@@ -117,5 +139,15 @@ private:
 // conservan su nombre tal cual; solo el nodo de nivel superior lleva el
 // sufijo " copia", para distinguirlo del original en la lista.
 SceneNode* duplicateSubtree(SceneNode& parent, const SceneNode& src);
+
+// Pone posicion/rotacion/escala de todo el arbol en el fotograma `frame`
+// segun sus pistas. Los nodos sin pistas no se tocan.
+void evaluateAnimation(SceneNode& root, float frame);
+// Graba una clave en el fotograma `frame` con los valores actuales del nodo,
+// solo en los canales pedidos (como los botones de Grabar Posicion/Escala/
+// Rotacion de C4D).
+void recordKey(SceneNode& node, int frame, bool position, bool rotation, bool scale);
+// Fotogramas con alguna clave en el nodo, ordenados y sin repetir.
+std::vector<int> keyFrames(const SceneNode& node);
 
 } // namespace iron3d

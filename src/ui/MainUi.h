@@ -64,6 +64,10 @@ void compensateAxisMove(SceneNode& node, const glm::mat4& beforeWorld);
 // Libera las texturas propias de la UI (Visor de Imagenes) antes de apagar el renderer.
 void releaseUiTextures();
 
+// main.cpp avisa al soltar el gizmo: con Fotogramas Clave Automaticos
+// (Ctrl+F9) se graba una clave de los objetos activos.
+void notifyTransformEdited(SceneNode& root);
+
 // Rectangulo (coordenadas de ventana) del panel i (0-3) de la vista de 4.
 struct QuadRect { float x, y, w, h; };
 QuadRect quadPanelRect(const ViewportState& vp, int i);
