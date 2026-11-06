@@ -2,13 +2,11 @@
 
 // Gizmo de transformacion (Fase 2b, siguiente paso tras el Gestor de Objetos
 // de la Fase 2): handles de mover/rotar/escalar sobre el objeto seleccionado,
-// como en cualquier DCC. Diseno propio: ejes SIEMPRE en espacio de mundo
-// (modo "global", el mas simple y robusto de implementar sin componer
-// rotaciones locales acumuladas) -- limitacion conocida y asumida: si el
-// PADRE del nodo seleccionado tiene su propia rotacion, arrastrar un eje no
-// coincide exactamente con el eje local del objeto. Documentado aqui en vez
-// de en el codigo disperso porque es la decision de diseno mas relevante de
-// este archivo.
+// como en cualquier DCC. Ejes del OBJETO por defecto, como C4D; con
+// `worldAxes` (tecla W) los del mundo. Las rotaciones se componen como
+// matrices en el espacio del padre y se vuelven a pasar a H/P/B eligiendo
+// los angulos mas cercanos a los de antes, para que el valor no salte de
+// 180 a -180 a mitad de arrastre.
 //
 // Picking/arrastre: el rayo del raton se compara contra la recta de cada eje
 // (mover/escalar) o contra el plano perpendicular a cada eje (rotar). El
@@ -52,6 +50,9 @@ struct Ray {
 class TransformGizmo {
 public:
     GizmoMode mode = GizmoMode::Translate;
+    // "Usar Sistema de Coordenadas de Mundo" (W de C4D): false = ejes del
+    // objeto (por defecto en C4D), true = ejes del mundo.
+    bool worldAxes = false;
 
     // Con varios objetos seleccionados, C4D pone el gizmo en el centro de la
     // seleccion y no sobre un objeto concreto. `usePivot` cambia el origen de
@@ -106,6 +107,12 @@ private:
     // Congelados al pulsar -- el arrastre completo se mide contra esto.
     glm::vec3 originWorld_{0.0f};
     glm::mat3 parentInverseRot_{1.0f};
+    glm::mat3 parentRot_{1.0f};      // rotacion pura del padre (columnas normalizadas)
+    glm::vec3 axes_[3];              // ejes del gizmo congelados al pulsar
+
+    void axesFor(const SceneNode* node, glm::vec3 out[3]) const;
+    // Aplica una rotacion de MUNDO `d` sobre la orientacion de partida.
+    void applyWorldRotation(const glm::mat3& d);
     glm::vec3 startPosition_{0.0f};
     glm::vec3 startRotationDeg_{0.0f};
     glm::vec3 startScale_{1.0f};

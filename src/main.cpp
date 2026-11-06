@@ -669,6 +669,7 @@ int main(int argc, char** argv) {
         // Gizmo en el centro con varios objetos seleccionados (congelado
         // mientras se arrastra, para que no se escape bajo el cursor).
         gizmo.usePivot = iron3d::selectionCount() > 1;
+        gizmo.worldAxes = viewport.worldCoords;
         if (gizmo.usePivot)
             gizmo.pivotWorld = gizmo.isDragging() ? dragPivot : iron3d::selectionPivot(sceneRoot, selected);
         if (!io.WantCaptureMouse && !altHeld && (mouseInViewport || gizmo.isDragging())) {
@@ -681,7 +682,10 @@ int main(int argc, char** argv) {
                     const glm::vec3 beforePos = selected ? glm::vec3(selected->worldMatrix()[3]) : glm::vec3(0.0f);
                     const glm::vec3 beforeRot = selected ? selected->rotationDeg : glm::vec3(0.0f);
                     const glm::vec3 beforeScl = selected ? selected->scale : glm::vec3(1.0f);
+                    const glm::mat4 beforeWorld = selected ? selected->worldMatrix() : glm::mat4(1.0f);
                     gizmo.updateDrag(mouseRay, mouseX - viewport.x, mouseY - viewport.y);
+                    // L (Activar Eje): solo cambia el eje; geometria e hijos se quedan.
+                    if (selected && viewport.axisMode) iron3d::compensateAxisMove(*selected, beforeWorld);
                     if (selected && iron3d::selectionCount() > 1) {
                         glm::vec3 ratio(1.0f);
                         for (int k = 0; k < 3; ++k)
@@ -833,6 +837,7 @@ int main(int argc, char** argv) {
     // todavia los estaba usando -- validation error + crash en vez de cierre
     // limpio.
     iron3d::releaseContentBrowserTextures();
+    iron3d::releaseUiTextures();
     renderer->shutdown();
     renderer.reset();
 

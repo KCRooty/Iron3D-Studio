@@ -282,6 +282,26 @@ int main() {
         check(parent->indexOf(moved) == 0 && root.indexOf(moved) == root.children().size(), "indexOf");
     }
 
+    {
+        // Render de camara (Mayus+R): un suelo grande que pasa por detras de
+        // la camara se recorta en el plano cercano en vez de desaparecer.
+        SceneNode root("root");
+        SceneNode* floor = root.addChild("Suelo", PrimitiveType::Plane);
+        floor->scale = glm::vec3(50.0f);
+        const glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, -5.0f), glm::vec3(0, 1, 0));
+        const glm::mat4 proj = glm::perspective(glm::radians(50.0f), 4.0f / 3.0f, 0.05f, 100.0f);
+        const Thumbnail img = renderCameraImage(root, {}, view, proj, 64, 48, 1, glm::vec3(0.0f), glm::vec3(0.0f));
+        check(img.width == 64 && img.height == 48 && img.rgba.size() == 64u * 48u * 4u, "render de camara: tamano");
+        check(img.triangles > 0, "render de camara: suelo recortado (no descartado)");
+        const uint8_t* bottom = &img.rgba[((size_t)47 * 64 + 32) * 4];
+        const uint8_t* top = &img.rgba[((size_t)0 * 64 + 32) * 4];
+        check(bottom[0] > 0, "render de camara: suelo visible abajo");
+        check(top[0] == 0, "render de camara: fondo arriba");
+        floor->renderVis = VisMode::Off;
+        const Thumbnail hidden = renderCameraImage(root, {}, view, proj, 32, 24, 1, glm::vec3(0.0f), glm::vec3(0.0f));
+        check(hidden.triangles == 0, "render de camara: respeta la visibilidad de render");
+    }
+
     if (g_failures == 0) std::printf("c4d_geometry: todo correcto\n");
     return g_failures == 0 ? 0 : 1;
 }

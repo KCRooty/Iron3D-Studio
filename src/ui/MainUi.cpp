@@ -4,6 +4,13 @@
 #include "UiTheme.h"
 #include "core/SceneSerializer.h"
 #include "core/MeshData.h"
+#include "core/ThumbnailRenderer.h"
+
+#define STBI_WRITE_NO_STDIO
+#include <stb_image_write.h>
+#include <chrono>
+#include <ctime>
+#include <fstream>
 #include "FileDialog.h"
 #include "core/Paths.h"
 #include "importers/cineware/CinewareImporter.h"
@@ -158,11 +165,33 @@ struct UiState {
     int layoutPreset = 0;
 
     std::string hint; // texto de ayuda del elemento bajo el raton (barra de estado)
+
+    // Configuracion de Render (Ctrl+B) y Visor de Imagenes (Mayus+R).
+    struct RenderSettings {
+        int width = 800, height = 600;  // como el preset por defecto de C4D
+        int antialias = 2;              // NxN muestras por pixel (1-4)
+        bool useViewportSize = false;
+        float bgTop[3] = {0.0f, 0.0f, 0.0f};    // C4D renderiza sobre negro
+        float bgBottom[3] = {0.0f, 0.0f, 0.0f};
+    } render;
+    bool showRenderSettings = false;
+    bool pendingWorldCoords = false, pendingAxisMode = false;  // --ui-cmd antes del primer frame
+    bool showPictureViewer = false;
+    bool renderRequested = false;
+    struct PictureViewer {
+        Thumbnail image;
+        void* tex = nullptr;
+        double seconds = 0.0;
+        int aa = 1;
+        float zoom = 0.0f;  // 0 = ajustar a la ventana
+        std::string viewName;
+    } pv;
 };
 UiState g;
 // Visor del frame actual (lo fija drawMainUi): selectView lo necesita desde
 // sitios que solo reciben la camara.
 ViewportState* g_vp = nullptr;
+void flashStatus(const std::string& text);
 
 // --- Vistas y vista de 4 paneles (F1-F5) ----------------------------------------------
 using CamView = OrbitalCamera::View;
@@ -1445,7 +1474,18 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
 
     if (!ctrl) {
         if (pressed(ImGuiKey_E)) { mode = GizmoMode::Translate; vp.selectTool = false; }
-        if (pressed(ImGuiKey_R)) { mode = GizmoMode::Rotate; vp.selectTool = false; }
+        if (pressed(ImGuiKey_R)) {
+            if (shift) g.renderRequested = true;  // Mayus+R: Renderizar en Visor de Imagenes
+            else { mode = GizmoMode::Rotate; vp.selectTool = false; }
+        }
+        if (pressed(ImGuiKey_W) && !shift) {
+            vp.worldCoords = !vp.worldCoords;
+            flashStatus(vp.worldCoords ? "Sistema de coordenadas: Mundo" : "Sistema de coordenadas: Objeto");
+        }
+        if (pressed(ImGuiKey_L) && !shift) {
+            vp.axisMode = !vp.axisMode;
+            flashStatus(vp.axisMode ? "Activar Eje: se mueve el eje, no el objeto" : "Activar Eje: desactivado");
+        }
         if (pressed(ImGuiKey_T)) { mode = GizmoMode::Scale; vp.selectTool = false; }
         if (pressed(ImGuiKey_9)) { vp.selectTool = true; vp.selectShape = 0; }
         if (pressed(ImGuiKey_0)) { vp.selectTool = true; vp.selectShape = 1; }
@@ -1516,6 +1556,7 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
             }
         }
         if (pressed(ImGuiKey_R)) vp.renderView = true;
+        if (pressed(ImGuiKey_B)) g.showRenderSettings = true;  // Editar Configuracion de Render
         if (pressed(ImGuiKey_N)) newScene(root, selected, history, materials);
         if (pressed(ImGuiKey_O)) {
             if (shift) mergeSceneFile(root, selected, history, materials);
@@ -1642,6 +1683,11 @@ void drawCommander(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scene
         {"Vista Derecha", "F3", [] { g.pendingCmd = UiCmd::ViewRight; }, true},
         {"Vista Frontal", "F4", [] { g.pendingCmd = UiCmd::ViewFront; }, true},
         {"Todas las Vistas", "F5", [] { g.pendingCmd = UiCmd::ViewQuad; }, true},
+        {"Renderizar en Visor de Imágenes", "Mayús+R", [] { g.renderRequested = true; }, true},
+        {"Editar Configuración de Render...", "Ctrl+B", [] { g.showRenderSettings = true; }, true},
+        {"Visor de Imágenes...", "", [] { g.showPictureViewer = true; }, true},
+        {"Sistema de Coordenadas de Mundo", "W", [] { if (g_vp) g_vp->worldCoords = !g_vp->worldCoords; }, true},
+        {"Activar Eje", "L", [] { if (g_vp) g_vp->axisMode = !g_vp->axisMode; }, true},
         {"Vista Izquierda", "", [] { g.pendingCmd = UiCmd::ViewLeft; }, true},
         {"Vista Trasera", "", [] { g.pendingCmd = UiCmd::ViewBack; }, true},
         {"Vista Inferior", "", [] { g.pendingCmd = UiCmd::ViewBottom; }, true},
@@ -1937,7 +1983,8 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         iconMenuItem(Icon::AxisX, "Eje X / Encabezado", "X", false, false);
         iconMenuItem(Icon::AxisY, "Eje Y / Inclinación", "Y", false, false);
         iconMenuItem(Icon::AxisZ, "Eje Z / Alabeo", "Z", false, false);
-        iconMenuItem(Icon::CoordSystem, "Sistema de Coordenadas", "W", false, false);
+        if (g_vp && iconMenuItem(Icon::CoordSystem, "Sistema de Coordenadas de Mundo", "W", g_vp->worldCoords))
+            g_vp->worldCoords = !g_vp->worldCoords;
         ImGui::Separator();
         ImGui::MenuItemEx("Medir y Construir", kIconGutterText, "", false, false);
         ImGui::MenuItemEx("Desplazamiento", kIconGutterText, "", false, false);
@@ -1989,15 +2036,15 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         if (iconMenuItem(Icon::RenderView, "Renderizar Vista Activa", "Ctrl+R")) vp.renderView = true;
         iconMenuItem(Icon::MnuRenderRegion, "Renderizar Región", "Alt+R", false, false);
         ImGui::MenuItemEx("Renderizar Seleccionados en Visor de Imágenes", kIconGutterText, "", false, false);
-        iconMenuItem(Icon::RenderPicture, "Renderizar en Visor de Imágenes", "Mayús+R", false, false);
+        if (iconMenuItem(Icon::RenderPicture, "Renderizar en Visor de Imágenes", "Mayús+R")) g.renderRequested = true;
         iconMenuItem(Icon::MnuInteractiveRegion, "Región de Render Interactivo", "Alt+R", false, false);
         iconMenuItem(Icon::MnuMakePreview, "Crear Previsualización...", "Alt+B", false, false);
         ImGui::Separator();
         ImGui::MenuItemEx("Añadir a la Cola de Render...", kIconGutterText, "", false, false);
         iconMenuItem(Icon::MnuRenderQueue, "Cola de Render...", "", false, false);
         ImGui::Separator();
-        iconMenuItem(Icon::RenderSettings, "Editar Configuración de Render...", "Ctrl+B", false, false);
-        iconMenuItem(Icon::MnuPictureViewer, "Visor de Imágenes...", "", false, false);
+        if (iconMenuItem(Icon::RenderSettings, "Editar Configuración de Render...", "Ctrl+B")) g.showRenderSettings = true;
+        if (iconMenuItem(Icon::MnuPictureViewer, "Visor de Imágenes...", "")) g.showPictureViewer = true;
         ImGui::EndMenu();
     }
     stubTop("Esculpir", {{"Subdividir", ""}, {"Reducir", ""}, {nullptr, nullptr}, {"Tirar", ""}, {"Suavizar", ""},
@@ -2110,7 +2157,11 @@ void drawTopToolbar(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scen
     ImGui::SameLine();
     iconButton("az", Icon::AxisZ, b, true, false, "Eje Z / Alabeo [Z]\n(todavía no implementado)", "Bloqueo de eje Z: todavía no implementado.");
     ImGui::SameLine();
-    iconButton("coord", Icon::CoordSystem, b, false, false, "Usar Sistema de Coordenadas de Mundo/Objeto [W]\n(todavía no implementado)", "Sistema de coordenadas: todavía no implementado.");
+    if (iconButton("coord", Icon::CoordSystem, b, vp.worldCoords, true,
+                   vp.worldCoords ? "Usar Sistema de Coordenadas de Objeto [W]\n(ahora: Mundo)"
+                                  : "Usar Sistema de Coordenadas de Mundo [W]\n(ahora: Objeto)",
+                   "Cambia los ejes del gizmo entre los del objeto y los del mundo.") == BtnResult::Click)
+        vp.worldCoords = !vp.worldCoords;
     ImGui::SameLine();
     toolbarSeparator(true, b);
     ImGui::SameLine();
@@ -2120,9 +2171,14 @@ void drawTopToolbar(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scen
                    "Renderiza la vista activa en el propio visor.") == BtnResult::Click)
         vp.renderView = true;
     ImGui::SameLine();
-    iconButton("rpv", Icon::RenderPicture, b, false, false, "Renderizar en Visor de Imágenes [Mayús+R]\n(todavía no implementado)", "Render: todavía no implementado en Iron3D.");
+    if (iconButton("rpv", Icon::RenderPicture, b, false, true,
+                   "Renderizar en Visor de Imágenes [Mayús+R]\nRenderiza la cámara activa con la Configuración de Render.",
+                   "Renderiza la cámara activa en el Visor de Imágenes.") == BtnResult::Click)
+        g.renderRequested = true;
     ImGui::SameLine();
-    iconButton("rset", Icon::RenderSettings, b, false, false, "Editar Configuración de Render... [Ctrl+B]\n(todavía no implementado)", "Render: todavía no implementado en Iron3D.");
+    if (iconButton("rset", Icon::RenderSettings, b, g.showRenderSettings, true, "Editar Configuración de Render... [Ctrl+B]",
+                   "Resolución, antialiasing y fondo del render.") == BtnResult::Click)
+        g.showRenderSettings = !g.showRenderSettings;
     ImGui::SameLine();
     toolbarSeparator(true, b);
     ImGui::SameLine();
@@ -2180,7 +2236,11 @@ void drawLeftToolbar(ImVec2 pos, ImVec2 size) {
     toolbarSeparator(false, b);
     iconButton("model", Icon::ModelMode, b, true, true, "Usar Modo Modelo", "Modo Modelo: se editan objetos enteros (el único modo disponible por ahora).");
     iconButton("texmode", Icon::TextureMode, b, false, false, "Usar Modo Textura\n(todavía no implementado)", "Modo Textura: todavía no implementado.");
-    iconButton("axmode", Icon::AxisMode, b, false, false, "Activar Eje [L]\n(todavía no implementado)", "Modo Eje: todavía no implementado.");
+    if (iconButton("axmode", Icon::AxisMode, b, g_vp && g_vp->axisMode, g_vp != nullptr, "Activar Eje [L]",
+                   "Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.") ==
+            BtnResult::Click &&
+        g_vp)
+        g_vp->axisMode = !g_vp->axisMode;
     toolbarSeparator(false, b);
     iconButton("pts", Icon::Points, b, false, false, "Usar Modo Puntos\n(necesita malla editable)", "Modo Puntos: Iron3D todavía no tiene mallas editables.");
     iconButton("edg", Icon::Edges, b, false, false, "Usar Modo Aristas\n(necesita malla editable)", "Modo Aristas: Iron3D todavía no tiene mallas editables.");
@@ -4637,11 +4697,180 @@ void applyPreset(const UiPreset& preset) {
     c[ImGuiCol_ModalWindowDimBg] = ImVec4(0, 0, 0, 0.35f);
 }
 
+
+// --- Render en el Visor de Imagenes (Mayus+R) y Configuracion de Render (Ctrl+B) ------
+void renderToPictureViewer(const SceneNode& root, const std::vector<Material>& materials, const OrbitalCamera& camera,
+                           const ViewportState& vp) {
+    auto& rs = g.render;
+    int w = rs.width, h = rs.height;
+    if (rs.useViewportSize) {
+        w = std::max(16, (int)vp.w);
+        h = std::max(16, (int)vp.h);
+    }
+    const auto t0 = std::chrono::steady_clock::now();
+    const glm::mat4 proj = camera.projectionMatrix((float)w / (float)h, false);
+    Thumbnail img = renderCameraImage(root, materials, camera.viewMatrix(), proj, w, h, rs.antialias,
+                                      glm::vec3(rs.bgTop[0], rs.bgTop[1], rs.bgTop[2]),
+                                      glm::vec3(rs.bgBottom[0], rs.bgBottom[1], rs.bgBottom[2]));
+    auto& pv = g.pv;
+    pv.seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    pv.aa = rs.antialias;
+    pv.viewName = viewLabel(camera.view(), "Perspectiva");
+    freeUiTexture(pv.tex);
+    pv.image = std::move(img);
+    pv.tex = makeUiTexture(pv.image.rgba.data(), pv.image.width, pv.image.height);
+    g.showPictureViewer = true;
+    char buf[160];
+    std::snprintf(buf, sizeof(buf), "Render: %d x %d en %.2f s", pv.image.width, pv.image.height, pv.seconds);
+    flashStatus(buf);
+}
+
+void pngToStream(void* ctx, void* data, int size) { static_cast<std::ofstream*>(ctx)->write((const char*)data, size); }
+
+bool savePng(const std::filesystem::path& file, const Thumbnail& img) {
+    std::ofstream f(file, std::ios::binary);
+    if (!f) return false;
+    const int ok = stbi_write_png_to_func(pngToStream, &f, img.width, img.height, 4, img.rgba.data(), img.width * 4);
+    return ok != 0 && f.good();
+}
+
+void drawPictureViewer(const SceneNode& root, const std::vector<Material>& materials, const OrbitalCamera& camera,
+                       const ViewportState& vp) {
+    if (!g.showPictureViewer) return;
+    auto& pv = g.pv;
+    ImGui::SetNextWindowSize(ImVec2(860, 640), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Visor de Imágenes", &g.showPictureViewer, ImGuiWindowFlags_MenuBar)) {
+        ImGui::End();
+        return;
+    }
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("Archivo")) {
+            if (ImGui::MenuItem("Guardar como...", nullptr, false, !pv.image.rgba.empty())) {
+                std::time_t now = std::time(nullptr);
+                std::tm tmNow{};
+#ifdef _WIN32
+                localtime_s(&tmNow, &now);
+#else
+                localtime_r(&now, &tmNow);
+#endif
+                char name[64];
+                std::strftime(name, sizeof(name), "render_%Y%m%d_%H%M%S.png", &tmNow);
+                if (auto path = saveFileDialog("Guardar render", {{"Imagen PNG", "*.png"}}, name, "png")) {
+                    flashStatus(savePng(*path, pv.image) ? "Render guardado: " + path->filename().string()
+                                                         : std::string("No se pudo guardar el render."));
+                }
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Ver")) {
+            if (ImGui::MenuItem("Ajustar a la Ventana", nullptr, pv.zoom == 0.0f)) pv.zoom = 0.0f;
+            if (ImGui::MenuItem("50 %", nullptr, pv.zoom == 0.5f)) pv.zoom = 0.5f;
+            if (ImGui::MenuItem("100 %", nullptr, pv.zoom == 1.0f)) pv.zoom = 1.0f;
+            if (ImGui::MenuItem("200 %", nullptr, pv.zoom == 2.0f)) pv.zoom = 2.0f;
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
+    if (ImGui::Button("Renderizar")) renderToPictureViewer(root, materials, camera, vp);
+    ImGui::SameLine();
+    if (ImGui::Button("Configuración...")) g.showRenderSettings = true;
+    ImGui::SameLine();
+    if (pv.image.rgba.empty()) ImGui::TextDisabled("Todavía no hay ningún render (Mayús+R).");
+    else
+        ImGui::TextDisabled("%s · %d x %d · antialiasing %dx%d · %.2f s · %d triángulos", pv.viewName.c_str(),
+                            pv.image.width, pv.image.height, pv.aa, pv.aa, pv.seconds, pv.image.triangles);
+    ImGui::Separator();
+    ImGui::BeginChild("##pvimg", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+    if (pv.tex && pv.image.width > 0) {
+        const ImVec2 avail = ImGui::GetContentRegionAvail();
+        float z = pv.zoom;
+        if (z == 0.0f)
+            z = std::min({1.0f, avail.x / (float)pv.image.width, avail.y / (float)pv.image.height});
+        const ImVec2 sz((float)pv.image.width * z, (float)pv.image.height * z);
+        const ImVec2 cur = ImGui::GetCursorPos();
+        if (pv.zoom == 0.0f)
+            ImGui::SetCursorPos(ImVec2(cur.x + std::max(0.0f, (avail.x - sz.x) * 0.5f),
+                                       cur.y + std::max(0.0f, (avail.y - sz.y) * 0.5f)));
+        ImGui::Image((ImTextureID)pv.tex, sz);
+    }
+    ImGui::EndChild();
+    ImGui::End();
+}
+
+void drawRenderSettings() {
+    if (!g.showRenderSettings) return;
+    auto& rs = g.render;
+    ImGui::SetNextWindowSize(ImVec2(440, 400), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Configuración de Render", &g.showRenderSettings)) {
+        ImGui::End();
+        return;
+    }
+    ImGui::SeparatorText("Salida");
+    struct Preset { const char* name; int w, h; };
+    static const Preset kPresets[] = {{"800 x 600", 800, 600},   {"640 x 480 (VGA)", 640, 480},
+                                      {"1280 x 720 (HD 720)", 1280, 720}, {"1920 x 1080 (HD 1080)", 1920, 1080},
+                                      {"3840 x 2160 (UHD 4K)", 3840, 2160}, {"1080 x 1080 (cuadrado)", 1080, 1080}};
+    if (ImGui::BeginCombo("Preestablecido", "Elegir...")) {
+        for (const Preset& p : kPresets)
+            if (ImGui::Selectable(p.name)) { rs.width = p.w; rs.height = p.h; rs.useViewportSize = false; }
+        ImGui::EndCombo();
+    }
+    ImGui::Checkbox("Usar el tamaño del visor", &rs.useViewportSize);
+    ImGui::BeginDisabled(rs.useViewportSize);
+    ImGui::InputInt("Anchura (px)", &rs.width, 10, 100);
+    ImGui::InputInt("Altura (px)", &rs.height, 10, 100);
+    rs.width = std::clamp(rs.width, 16, 8192);
+    rs.height = std::clamp(rs.height, 16, 8192);
+    ImGui::EndDisabled();
+    ImGui::SeparatorText("Antialiasing");
+    const char* aaNames[] = {"Ninguno (1x1)", "Geometría (2x2)", "3x3", "Mejor (4x4)"};
+    int aaIdx = std::clamp(rs.antialias, 1, 4) - 1;
+    if (ImGui::Combo("Antialiasing", &aaIdx, aaNames, 4)) rs.antialias = aaIdx + 1;
+    ImGui::SeparatorText("Fondo");
+    ImGui::ColorEdit3("Arriba", rs.bgTop);
+    ImGui::ColorEdit3("Abajo", rs.bgBottom);
+    ImGui::Spacing();
+    ImGui::TextDisabled("Render por CPU con el sombreado de las miniaturas:\nsin sombras ni texturas todavía.");
+    if (ImGui::Button("Renderizar en Visor de Imágenes")) g.renderRequested = true;
+    ImGui::End();
+}
+
+// --- Modo Eje (L) -----------------------------------------------------------------------
+void compensateAxisMove(SceneNode& node, const glm::mat4& beforeWorld) {
+    const glm::mat4 after = node.worldMatrix();
+    if (std::fabs(glm::determinant(glm::mat3(after))) < 1e-12f) return;
+    const glm::mat4 t = glm::inverse(after) * beforeWorld;  // local nuevo <- local viejo
+    bool same = true;
+    for (int c = 0; c < 4 && same; ++c)
+        for (int r = 0; r < 4; ++r)
+            if (std::fabs(t[c][r] - (c == r ? 1.0f : 0.0f)) > 1e-6f) { same = false; break; }
+    if (same) return;
+    for (const auto& child : node.children()) child->setLocalMatrix(t * child->localMatrix());
+    if (node.primitive == PrimitiveType::Mesh && node.mesh) {
+        MeshData m = *node.mesh;
+        const glm::mat3 nt = glm::transpose(glm::inverse(glm::mat3(t)));
+        for (Vertex& v : m.vertices) {
+            v.position = glm::vec3(t * glm::vec4(v.position, 1.0f));
+            const glm::vec3 n = nt * v.normal;
+            if (glm::length(n) > 1e-8f) v.normal = glm::normalize(n);
+        }
+        updateBounds(m);
+        node.mesh = std::make_shared<const MeshData>(std::move(m));
+    }
+}
+
+void releaseUiTextures() {
+    freeUiTexture(g.pv.tex);
+    g.pv.tex = nullptr;
+}
+
 void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
                  const std::filesystem::path& scenesDir, SceneHistory& history, float framerate,
                  RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath,
                  std::vector<Material>& materials, OrbitalCamera& camera, ViewportState& viewport) {
     g_vp = &viewport;
+    if (g.pendingWorldCoords) { viewport.worldCoords = true; g.pendingWorldCoords = false; }
+    if (g.pendingAxisMode) { viewport.axisMode = true; g.pendingAxisMode = false; }
     g.hint.clear();
 
     // Seleccionar un objeto (en el visor o en el Gestor) devuelve el Gestor de
@@ -4755,6 +4984,12 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     drawExportReport();
     drawSavePresetDialog();
     drawCommander(root, selected, gizmoMode, history, materials, camera, viewport);
+    if (g.renderRequested) {
+        g.renderRequested = false;
+        renderToPictureViewer(root, materials, camera, viewport);
+    }
+    drawRenderSettings();
+    drawPictureViewer(root, materials, camera, viewport);
 
     drawStatusBar(framerate, gizmoMode, viewport, activeBackend, L.status.pos, L.status.size);
 }
@@ -4804,6 +5039,10 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "view-back") g.cmdQueue.push_back(UiCmd::ViewBack);
     else if (cmd == "view-bottom") g.cmdQueue.push_back(UiCmd::ViewBottom);
     else if (cmd == "view-quad") g.cmdQueue.push_back(UiCmd::ViewQuad);
+    else if (cmd == "render-pv") g.renderRequested = true;
+    else if (cmd == "render-settings") g.showRenderSettings = true;
+    else if (cmd == "world-coords") { if (g_vp) g_vp->worldCoords = true; else g.pendingWorldCoords = true; }
+    else if (cmd == "axis-mode") { if (g_vp) g_vp->axisMode = true; else g.pendingAxisMode = true; }
     else if (cmd == "vp-menu") g.openVpMenu = 30;
     else if (cmd.rfind("commander", 0) == 0) {
         g.showCommander = true;

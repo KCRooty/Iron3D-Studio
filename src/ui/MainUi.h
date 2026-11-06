@@ -48,9 +48,21 @@ struct ViewportState {
     // fullX/fullY/fullW/fullH los del visor entero.
     bool quad = false;
     int quadActive = 0;
+    // W: ejes del gizmo en el mundo (si no, los del objeto, como C4D por defecto).
+    bool worldCoords = false;
+    // L "Activar Eje": mover/rotar/escalar cambia solo el eje del objeto; la
+    // geometria (si es un objeto editable) y los hijos se quedan donde estan.
+    bool axisMode = false;
     OrbitalCamera quadCams[4];
     float fullX = 0.0f, fullY = 0.0f, fullW = 0.0f, fullH = 0.0f;
 };
+
+// Modo Eje (L): tras mover el eje de `node` (su matriz de mundo era
+// `beforeWorld`), deja sus hijos y, si es editable, su malla donde estaban.
+void compensateAxisMove(SceneNode& node, const glm::mat4& beforeWorld);
+
+// Libera las texturas propias de la UI (Visor de Imagenes) antes de apagar el renderer.
+void releaseUiTextures();
 
 // Rectangulo (coordenadas de ventana) del panel i (0-3) de la vista de 4.
 struct QuadRect { float x, y, w, h; };

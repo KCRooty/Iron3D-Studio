@@ -903,6 +903,14 @@ std::string statusText(const std::vector<Entry>& entries) {
 
 // --- API -------------------------------------------------------------------------------
 
+void* makeUiTexture(const uint8_t* rgba, int width, int height) {
+    return g_createTex ? g_createTex(rgba, width, height) : nullptr;
+}
+
+void freeUiTexture(void* texture) {
+    if (texture && g_destroyTex) g_destroyTex(texture);
+}
+
 void setUiTextureFactory(UiTextureCreate create, UiTextureDestroy destroy) {
     g_createTex = std::move(create);
     g_destroyTex = std::move(destroy);
