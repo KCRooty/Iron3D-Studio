@@ -307,20 +307,21 @@ TRS toIronTRS(const glm::dvec3& off, const glm::dvec3& v1, const glm::dvec3& v2,
     if (det < 0.0) scl.x = -scl.x; // escala negativa (espejo): se pone en X
     for (int i = 0; i < 3; ++i) col[i] = std::fabs(scl[i]) > 1e-12 ? col[i] / scl[i] : glm::dvec3(i == 0, i == 1, i == 2);
 
-    // R = Rz(c) * Ry(b) * Rx(a); col[j][i] = fila i, columna j.
-    const double r20 = col[0].z, r21 = col[1].z, r22 = col[2].z;
-    const double r10 = col[0].y, r00 = col[0].x, r12 = col[2].y, r11 = col[1].y;
-    const double b = std::asin(std::clamp(-r20, -1.0, 1.0));
-    double a, c;
-    if (std::cos(b) > 1e-6) {
-        a = std::atan2(r21, r22);
-        c = std::atan2(r10, r00);
-    } else { // bloqueo de cardan: toda la rotacion restante va a X
-        a = std::atan2(-r12, r11);
-        c = 0.0;
+    // HPB de C4D, misma convencion que SceneNode (hpbToMat3):
+    // R = Ry(h) * Rx(p) * Rz(b); col[j][i] = fila i, columna j.
+    const double r12 = col[2].y, r02 = col[2].x, r22 = col[2].z;
+    const double r10 = col[0].y, r11 = col[1].y, r20 = col[0].z, r00 = col[0].x;
+    const double p = std::asin(std::clamp(-r12, -1.0, 1.0));
+    double h, b;
+    if (std::cos(p) > 1e-6) {
+        h = std::atan2(r02, r22);
+        b = std::atan2(r10, r11);
+    } else { // bloqueo de cardan (P = +-90): el Banco se fija a 0
+        h = std::atan2(-r20, r00);
+        b = 0.0;
     }
     const double toDeg = 180.0 / kPi;
-    out.rotationDeg = glm::vec3((float)(a * toDeg), (float)(b * toDeg), (float)(c * toDeg));
+    out.rotationDeg = glm::vec3((float)(p * toDeg), (float)(h * toDeg), (float)(b * toDeg));
     out.scale = glm::vec3(scl);
     return out;
 }
@@ -328,15 +329,15 @@ TRS toIronTRS(const glm::dvec3& off, const glm::dvec3& v1, const glm::dvec3& v2,
 // --- Exportar ---------------------------------------------------------------------
 
 Matrix fromIronTRS(const glm::vec3& position, const glm::vec3& rotationDeg, const glm::vec3& scale) {
-    // Misma matriz que SceneNode::localMatrix (T * Rz * Ry * Rx * S), en double.
+    // Misma matriz que SceneNode::localMatrix (T * Ry(h) * Rx(p) * Rz(b) * S), en double.
     const double toRad = kPi / 180.0;
-    const double a = rotationDeg.x * toRad, b = rotationDeg.y * toRad, c = rotationDeg.z * toRad;
-    const double ca = std::cos(a), sa = std::sin(a), cb = std::cos(b), sb = std::sin(b), cc = std::cos(c), sc = std::sin(c);
-    // Columnas de R = Rz(c) * Ry(b) * Rx(a).
+    const double p = rotationDeg.x * toRad, h = rotationDeg.y * toRad, b = rotationDeg.z * toRad;
+    const double cp = std::cos(p), sp = std::sin(p), ch = std::cos(h), sh = std::sin(h), cb = std::cos(b), sb = std::sin(b);
+    // Columnas de R = Ry(h) * Rx(p) * Rz(b).
     glm::dvec3 col[3] = {
-        {cc * cb, sc * cb, -sb},
-        {cc * sb * sa - sc * ca, sc * sb * sa + cc * ca, cb * sa},
-        {cc * sb * ca + sc * sa, sc * sb * ca - cc * sa, cb * ca},
+        {ch * cb + sh * sp * sb, cp * sb, -sh * cb + ch * sp * sb},
+        {-ch * sb + sh * sp * cb, cp * cb, sh * sb + ch * sp * cb},
+        {sh * cp, -sp, ch * cp},
     };
     for (int i = 0; i < 3; ++i) col[i] *= (double)scale[i];
     // Espejo S = diag(1, 1, -1): A_c4d = S A S, off_c4d = S t (en cm).

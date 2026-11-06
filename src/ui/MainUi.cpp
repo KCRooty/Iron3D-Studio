@@ -75,10 +75,15 @@ enum class AttrFocus { Object, Material, Tag, Project };
 
 // Ordenes que se piden desde sitios sin acceso a la escena (barra izquierda,
 // menu contextual del visor) y se ejecutan al principio del frame siguiente.
-enum class UiCmd { None, MakeEditable, FrameSelected, FrameAll, ResetView, Group, SelectChildren };
+enum class UiCmd { None, MakeEditable, FrameSelected, FrameAll, ResetView, Group, SelectChildren,
+                   CurrentState, Connect, ConnectDelete, SelectAll, ViewPersp, ViewTop, ViewRight, ViewFront };
 
 struct UiState {
     UiCmd pendingCmd = UiCmd::None;
+    std::vector<UiCmd> cmdQueue;  // --ui-cmd (varias seguidas)
+    // Seleccion Rectangular / Lazo en curso (puntos en coordenadas de ventana).
+    bool marquee = false;
+    std::vector<ImVec2> marqueePts;
     bool showCommander = false;  // Mayus+C
     std::string commanderPreset; // texto inicial (solo --ui-cmd=commander:texto)
     int openVpMenu = 0;          // --ui-cmd=vp-menu: frames que faltan para abrirlo
@@ -879,6 +884,8 @@ void forSubtree(SceneNode& n, const std::function<void(SceneNode&)>& fn) {
 // con la misma malla que se ve en el visor. Conserva nombre, hijos, material y
 // transformacion, como en C4D. Actua sobre toda la seleccion (o sobre el
 // objeto del clic derecho si no esta seleccionado).
+bool nodeEditorVisible(const SceneNode* n);
+
 bool isParametric(PrimitiveType t) {
     return t == PrimitiveType::Cube || t == PrimitiveType::Sphere || t == PrimitiveType::Plane;
 }
@@ -911,6 +918,236 @@ int makeEditable(SceneNode& root, SceneNode* selected, SceneHistory& history, Sc
         n->primitive = PrimitiveType::Mesh;
     }
     return (int)nodes.size();
+}
+
+// Malla en el espacio local del nodo tal como se ve (parametricos incluidos).
+bool nodeMeshData(const SceneNode& n, MeshData& out) {
+    switch (n.primitive) {
+        case PrimitiveType::Cube: out = makeCubeMesh(); break;
+        case PrimitiveType::Sphere: out = makeSphereMesh(); break;
+        case PrimitiveType::Plane: out = makePlaneMesh(); break;
+        case PrimitiveType::Mesh:
+            if (!n.mesh || n.mesh->indices.empty()) return false;
+            out = *n.mesh;
+            break;
+        default: return false;
+    }
+    updateBounds(out);
+    return true;
+}
+
+void selectAllObjects(SceneNode& root, SceneNode*& selected) {
+    g.selIds.clear();
+    SceneNode* first = nullptr;
+    for (const auto& c : root.children())
+        forSubtree(*c, [&](SceneNode& n) {
+            g.selIds.insert(n.id());
+            if (!first) first = &n;
+        });
+    if (!selected) selected = first;
+    g.lastSelectedId = selected ? selected->id() : -1;
+}
+
+// Estado Actual a Objeto: copia poligonal al lado de cada seleccionado (con
+// sus hijos, tambien convertidos); el original no se toca.
+int currentStateToObject(SceneNode& root, SceneNode*& selected, SceneHistory& history) {
+    const std::vector<SceneNode*> nodes = topLevelSelection(root, selected);
+    bool any = false;
+    for (SceneNode* n : nodes)
+        forSubtree(*n, [&](SceneNode& s) { any = any || isParametric(s.primitive) || s.primitive == PrimitiveType::Mesh; });
+    if (!any) return 0;
+    history.commitBefore(root);
+    int count = 0;
+    SceneNode* last = nullptr;
+    g.selIds.clear();
+    for (SceneNode* n : nodes) {
+        if (!n->parent()) continue;
+        SceneNode* parent = n->parent();
+        SceneNode* copy = duplicateSubtree(*parent, *n);
+        copy = parent->insertChild(parent->detachChild(copy), parent->indexOf(n) + 1);  // justo debajo del original
+        copy->setName(n->name());
+        forSubtree(*copy, [&](SceneNode& s) {
+            if (!isParametric(s.primitive)) return;
+            MeshData m;
+            if (!nodeMeshData(s, m)) return;
+            s.mesh = std::make_shared<const MeshData>(std::move(m));
+            s.primitive = PrimitiveType::Mesh;
+        });
+        g.selIds.insert(copy->id());
+        last = copy;
+        ++count;
+    }
+    if (last) {
+        selected = last;
+        g.lastSelectedId = last->id();
+    }
+    return count;
+}
+
+// Conectar Objetos: une la geometria de la seleccion (y sus hijos) en un solo
+// Objeto Polígono, con el eje y el material del primero. Con `removeSources`
+// (Conectar+Eliminar) los originales desaparecen.
+int connectObjects(SceneNode& root, SceneNode*& selected, SceneHistory& history, bool removeSources) {
+    const std::vector<SceneNode*> nodes = topLevelSelection(root, selected);
+    struct Part { const SceneNode* n; glm::mat4 world; };
+    std::vector<Part> parts;
+    for (SceneNode* n : nodes)
+        forSubtree(*n, [&](SceneNode& s) {
+            if (hasGeometry(s.primitive) && nodeEditorVisible(&s)) parts.push_back({&s, s.worldMatrix()});
+        });
+    if (parts.empty() || !nodes.front()->parent()) return 0;
+    SceneNode* first = nodes.front();
+    SceneNode* parent = first->parent();
+    const glm::mat4 newWorld = first->worldMatrix();
+    const glm::mat4 toNew = glm::inverse(newWorld);
+
+    MeshData out;
+    for (const Part& p : parts) {
+        MeshData m;
+        if (!nodeMeshData(*p.n, m)) continue;
+        const glm::mat4 xf = toNew * p.world;
+        const glm::mat3 nxf = glm::transpose(glm::inverse(glm::mat3(xf)));
+        const bool flip = glm::determinant(glm::mat3(xf)) < 0.0f;  // escala negativa: invertir el orden
+        const uint32_t base = (uint32_t)out.vertices.size();
+        for (Vertex v : m.vertices) {
+            v.position = glm::vec3(xf * glm::vec4(v.position, 1.0f));
+            const glm::vec3 nn = nxf * v.normal;
+            v.normal = glm::length(nn) > 1e-8f ? glm::normalize(nn) : v.normal;
+            out.vertices.push_back(v);
+        }
+        for (size_t i = 0; i + 2 < m.indices.size(); i += 3) {
+            out.indices.push_back(base + m.indices[i]);
+            out.indices.push_back(base + (flip ? m.indices[i + 2] : m.indices[i + 1]));
+            out.indices.push_back(base + (flip ? m.indices[i + 1] : m.indices[i + 2]));
+        }
+    }
+    if (out.indices.empty()) return 0;
+    updateBounds(out);
+
+    history.commitBefore(root);
+    int material = -1;
+    for (const Part& p : parts)
+        if (p.n->materialIndex >= 0) { material = p.n->materialIndex; break; }
+    const std::string name = first->name();
+    auto made = std::make_unique<SceneNode>(name, PrimitiveType::Mesh);
+    made->mesh = std::make_shared<const MeshData>(std::move(out));
+    made->materialIndex = material;
+    SceneNode* result = parent->insertChild(std::move(made), parent->indexOf(first) + 1);
+    result->setLocalMatrix(glm::inverse(parent->worldMatrix()) * newWorld);
+    if (removeSources)
+        for (SceneNode* n : nodes)
+            if (n->parent()) n->parent()->removeChild(n);
+    selectOnly(selected, result);
+    return (int)parts.size();
+}
+
+// Seleccion Rectangular (0) y Lazo (8): arrastrar en el visor dibuja la zona;
+// al soltar se eligen los objetos que la toquen (rectangulo) o que tengan
+// algun punto dentro (lazo). Mayus anade, Ctrl quita, sin nada sustituye.
+bool pointInPolygon(const std::vector<ImVec2>& poly, ImVec2 p) {
+    bool in = false;
+    for (size_t i = 0, j = poly.size() - 1; i < poly.size(); j = i++) {
+        const ImVec2 a = poly[i], b = poly[j];
+        if ((a.y > p.y) != (b.y > p.y) && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y + 1e-12f) + a.x) in = !in;
+    }
+    return in;
+}
+
+void handleMarqueeSelection(SceneNode& root, SceneNode*& selected, const OrbitalCamera& camera, const ViewportState& vp) {
+    ImGuiIO& io = ImGui::GetIO();
+    if (!vp.selectTool || vp.selectShape == 0) {
+        g.marquee = false;
+        return;
+    }
+    const ImVec2 m = io.MousePos;
+    const bool inVp = m.x >= vp.x && m.y >= vp.y && m.x < vp.x + vp.w && m.y < vp.y + vp.h;
+    if (!g.marquee) {
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && inVp && !io.WantCaptureMouse && !io.KeyAlt) {
+            g.marquee = true;
+            g.marqueePts.assign(1, m);
+        }
+        return;
+    }
+    const ImVec2 clamped(std::clamp(m.x, vp.x, vp.x + vp.w), std::clamp(m.y, vp.y, vp.y + vp.h));
+    if (vp.selectShape == 1) {
+        if (g.marqueePts.size() < 2) g.marqueePts.push_back(clamped);
+        else g.marqueePts[1] = clamped;
+    } else {
+        const ImVec2 l = g.marqueePts.back();
+        if ((l.x - clamped.x) * (l.x - clamped.x) + (l.y - clamped.y) * (l.y - clamped.y) > 9.0f) g.marqueePts.push_back(clamped);
+    }
+    ImDrawList* dl = ImGui::GetForegroundDrawList();
+    const ImU32 line = IM_COL32(255, 255, 255, 220), fill = IM_COL32(120, 160, 255, 40);
+    if (vp.selectShape == 1 && g.marqueePts.size() == 2) {
+        const ImVec2 a(std::min(g.marqueePts[0].x, g.marqueePts[1].x), std::min(g.marqueePts[0].y, g.marqueePts[1].y));
+        const ImVec2 b(std::max(g.marqueePts[0].x, g.marqueePts[1].x), std::max(g.marqueePts[0].y, g.marqueePts[1].y));
+        dl->AddRectFilled(a, b, fill);
+        dl->AddRect(a, b, line);
+    } else if (vp.selectShape == 2 && g.marqueePts.size() > 1) {
+        dl->AddPolyline(g.marqueePts.data(), (int)g.marqueePts.size(), line, ImDrawFlags_None, 1.0f);
+        dl->AddLine(g.marqueePts.back(), g.marqueePts.front(), IM_COL32(255, 255, 255, 110));
+    }
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) return;
+
+    // Al soltar: elegir.
+    g.marquee = false;
+    const std::vector<ImVec2> zone = g.marqueePts;
+    g.marqueePts.clear();
+    ImVec2 ra(0, 0), rb(0, 0);
+    if (vp.selectShape == 1) {
+        if (zone.size() < 2) return;
+        ra = ImVec2(std::min(zone[0].x, zone[1].x), std::min(zone[0].y, zone[1].y));
+        rb = ImVec2(std::max(zone[0].x, zone[1].x), std::max(zone[0].y, zone[1].y));
+        if (rb.x - ra.x < 3.0f && rb.y - ra.y < 3.0f) return;  // clic sin arrastre
+    } else if (zone.size() < 3) return;
+
+    const glm::mat4 vpm = camera.projectionMatrix(vp.w / vp.h, false) * camera.viewMatrix();
+    auto project = [&](const glm::vec3& w, ImVec2& out) {
+        const glm::vec4 c = vpm * glm::vec4(w, 1.0f);
+        if (c.w <= 1e-4f) return false;
+        out = ImVec2(vp.x + (c.x / c.w * 0.5f + 0.5f) * vp.w, vp.y + (0.5f - c.y / c.w * 0.5f) * vp.h);
+        return true;
+    };
+    std::vector<SceneNode*> hits;
+    for (const auto& c : root.children())
+        forSubtree(*c, [&](SceneNode& n) {
+            if (!nodeEditorVisible(&n)) return;
+            std::vector<glm::vec3> local;
+            if (n.primitive == PrimitiveType::Mesh && n.mesh) {
+                const glm::vec3 lo = n.mesh->boundsMin, hi = n.mesh->boundsMax;
+                for (int i = 0; i < 8; ++i) local.emplace_back(i & 1 ? hi.x : lo.x, i & 2 ? hi.y : lo.y, i & 4 ? hi.z : lo.z);
+            } else if (n.primitive == PrimitiveType::Cube || n.primitive == PrimitiveType::Sphere) {
+                for (int i = 0; i < 8; ++i) local.emplace_back(i & 1 ? 0.5f : -0.5f, i & 2 ? 0.5f : -0.5f, i & 4 ? 0.5f : -0.5f);
+            } else if (n.primitive == PrimitiveType::Plane) {
+                for (int i = 0; i < 4; ++i) local.emplace_back(i & 1 ? 0.5f : -0.5f, 0.0f, i & 2 ? 0.5f : -0.5f);
+            }
+            local.emplace_back(0.0f);  // el eje (luces y nulos solo tienen esto)
+            const glm::mat4 w = n.worldMatrix();
+            ImVec2 mn(FLT_MAX, FLT_MAX), mx(-FLT_MAX, -FLT_MAX);
+            bool any = false, inside = false;
+            for (const glm::vec3& l : local) {
+                ImVec2 p;
+                if (!project(glm::vec3(w * glm::vec4(l, 1.0f)), p)) continue;
+                any = true;
+                mn = ImVec2(std::min(mn.x, p.x), std::min(mn.y, p.y));
+                mx = ImVec2(std::max(mx.x, p.x), std::max(mx.y, p.y));
+                if (vp.selectShape == 2 && pointInPolygon(zone, p)) inside = true;
+            }
+            if (!any) return;
+            const bool hit = vp.selectShape == 1 ? (mn.x <= rb.x && mx.x >= ra.x && mn.y <= rb.y && mx.y >= ra.y) : inside;
+            if (hit) hits.push_back(&n);
+        });
+
+    if (io.KeyCtrl) {
+        for (SceneNode* n : hits) g.selIds.erase(n->id());
+        if (selected && !g.selIds.count(selected->id())) selected = firstSelected(root);
+    } else {
+        if (!io.KeyShift) g.selIds.clear();
+        for (SceneNode* n : hits) g.selIds.insert(n->id());
+        if (!hits.empty() && (!selected || !g.selIds.count(selected->id()))) selected = hits.front();
+        if (hits.empty() && !io.KeyShift) selected = nullptr;
+    }
+    g.lastSelectedId = selected ? selected->id() : -1;
 }
 
 void newMaterial(std::vector<Material>& materials) {
@@ -1152,7 +1389,9 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
         if (pressed(ImGuiKey_E)) { mode = GizmoMode::Translate; vp.selectTool = false; }
         if (pressed(ImGuiKey_R)) { mode = GizmoMode::Rotate; vp.selectTool = false; }
         if (pressed(ImGuiKey_T)) { mode = GizmoMode::Scale; vp.selectTool = false; }
-        if (pressed(ImGuiKey_9)) vp.selectTool = true;
+        if (pressed(ImGuiKey_9)) { vp.selectTool = true; vp.selectShape = 0; }
+        if (pressed(ImGuiKey_0)) { vp.selectTool = true; vp.selectShape = 1; }
+        if (pressed(ImGuiKey_8)) { vp.selectTool = true; vp.selectShape = 2; }
         if (pressed(ImGuiKey_H)) {
             if (shift) camera.resetView();
             else frameNodes(camera, root, false);
@@ -1163,8 +1402,9 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
         if (pressed(ImGuiKey_C) && shift) g.showCommander = true;                              // Mayus+C: Commander
         if (pressed(ImGuiKey_Space) && g.lastTool >= 0) {                                      // ultima herramienta
             const int t = g.lastTool;
-            vp.selectTool = t == 3;
-            if (t < 3) mode = (GizmoMode)t;
+            vp.selectTool = t >= 3;
+            if (t >= 3) vp.selectShape = t - 3;
+            else mode = (GizmoMode)t;
         }
         if (pressed(ImGuiKey_Delete) || pressed(ImGuiKey_Backspace)) {
             if (g.focus == AttrFocus::Material && g.selectedMat >= 0 && (size_t)g.selectedMat < materials.size()) {
@@ -1181,6 +1421,13 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
             else g.playDir = g.playDir == 1 ? 0 : 1;
         }
         if (shift && pressed(ImGuiKey_F1)) g.browserOpen = false; // Mayus+F1: Gestor de Objetos
+        // F1-F4: Vista 1-4 de C4D (Perspectiva, Superior, Derecha, Frontal).
+        if (!shift && !io.KeyAlt) {
+            if (pressed(ImGuiKey_F1)) camera.setView(OrbitalCamera::View::Perspective);
+            if (pressed(ImGuiKey_F2)) camera.setView(OrbitalCamera::View::Top);
+            if (pressed(ImGuiKey_F3)) camera.setView(OrbitalCamera::View::Right);
+            if (pressed(ImGuiKey_F4)) camera.setView(OrbitalCamera::View::Front);
+        }
         if (pressed(ImGuiKey_F6)) g.playDir = g.playDir == -1 ? 0 : -1;
         if (pressed(ImGuiKey_F7)) g.playDir = 0;
         if (pressed(ImGuiKey_G)) {
@@ -1199,17 +1446,7 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
             if (history.redo(root)) selected = nullptr;
         }
         if (pressed(ImGuiKey_C) && selected) g.clipboardNodeId = selected->id();
-        if (pressed(ImGuiKey_A)) {  // Seleccionar Todo (objetos)
-            g.selIds.clear();
-            SceneNode* first = nullptr;
-            for (const auto& c : root.children())
-                forSubtree(*c, [&](SceneNode& n) {
-                    g.selIds.insert(n.id());
-                    if (!first) first = &n;
-                });
-            if (!selected) selected = first;
-            if (selected) g.lastSelectedId = selected->id();
-        }
+        if (pressed(ImGuiKey_A)) g.pendingCmd = UiCmd::SelectAll;  // Seleccionar Todo (objetos)
         if (pressed(ImGuiKey_I)) g.focus = AttrFocus::Project;  // Informacion del Proyecto
         if (pressed(ImGuiKey_V)) {
             SceneNode* src = g.clipboardNodeId >= 0 ? findById(root, g.clipboardNodeId) : nullptr;
@@ -1260,6 +1497,10 @@ void frameSelection(OrbitalCamera& camera, SceneNode& root, SceneNode* selected)
 }
 
 void runPendingCmd(SceneNode& root, SceneNode*& selected, SceneHistory& history, OrbitalCamera& camera) {
+    if (g.pendingCmd == UiCmd::None && !g.cmdQueue.empty()) {
+        g.pendingCmd = g.cmdQueue.front();
+        g.cmdQueue.erase(g.cmdQueue.begin());
+    }
     const UiCmd cmd = g.pendingCmd;
     g.pendingCmd = UiCmd::None;
     switch (cmd) {
@@ -1282,6 +1523,24 @@ void runPendingCmd(SceneNode& root, SceneNode*& selected, SceneHistory& history,
                 for (SceneNode* r : roots) forSubtree(*r, [](SceneNode& n) { g.selIds.insert(n.id()); });
             }
             break;
+        case UiCmd::SelectAll: selectAllObjects(root, selected); break;
+        case UiCmd::ViewPersp: camera.setView(OrbitalCamera::View::Perspective); break;
+        case UiCmd::ViewTop: camera.setView(OrbitalCamera::View::Top); break;
+        case UiCmd::ViewRight: camera.setView(OrbitalCamera::View::Right); break;
+        case UiCmd::ViewFront: camera.setView(OrbitalCamera::View::Front); break;
+        case UiCmd::CurrentState: {
+            const int n = currentStateToObject(root, selected, history);
+            flashStatus(n ? "Estado Actual a Objeto: " + std::to_string(n) + (n == 1 ? " copia poligonal creada." : " copias poligonales creadas.")
+                          : std::string("Estado Actual a Objeto: la selección no tiene geometría."));
+            break;
+        }
+        case UiCmd::Connect:
+        case UiCmd::ConnectDelete: {
+            const int n = connectObjects(root, selected, history, cmd == UiCmd::ConnectDelete);
+            flashStatus(n ? "Conectar Objetos: " + std::to_string(n) + " mallas unidas en un Objeto Polígono."
+                          : std::string("Conectar Objetos: la selección no tiene geometría."));
+            break;
+        }
         case UiCmd::None: break;
     }
 }
@@ -1293,17 +1552,31 @@ void drawCommander(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scene
     if (!g.showCommander) return;
     struct Cmd { const char* name; const char* key; std::function<void()> run; bool enabled; };
     const bool hasSel = selected != nullptr;
-    auto tool = [&](int t) { vp.selectTool = t == 3; if (t < 3) mode = (GizmoMode)t; };
+    auto tool = [&](int t) {
+        vp.selectTool = t >= 3;
+        if (t >= 3) vp.selectShape = t - 3;
+        else mode = (GizmoMode)t;
+    };
     const std::vector<Cmd> cmds = {
         {"Hacer Editable", "C", [] { g.pendingCmd = UiCmd::MakeEditable; }, canMakeEditable(root, selected)},
         {"Mover", "E", [&] { tool(0); }, true},
         {"Rotar", "R", [&] { tool(1); }, true},
         {"Escalar", "T", [&] { tool(2); }, true},
         {"Selección en Vivo", "9", [&] { tool(3); }, true},
+        {"Selección Rectangular", "0", [&] { tool(4); }, true},
+        {"Selección con Lazo", "8", [&] { tool(5); }, true},
+        {"Seleccionar Todo", "Ctrl+A", [] { g.pendingCmd = UiCmd::SelectAll; }, true},
+        {"Estado Actual a Objeto", "", [] { g.pendingCmd = UiCmd::CurrentState; }, hasSel},
+        {"Conectar Objetos", "", [] { g.pendingCmd = UiCmd::Connect; }, hasSel},
+        {"Conectar Objetos + Eliminar", "", [] { g.pendingCmd = UiCmd::ConnectDelete; }, hasSel},
         {"Encuadrar Geometría", "H", [] { g.pendingCmd = UiCmd::FrameAll; }, true},
         {"Encuadrar Todo", "Alt+H", [] { g.pendingCmd = UiCmd::FrameAll; }, true},
         {"Encuadrar Seleccionados", "S", [] { g.pendingCmd = UiCmd::FrameSelected; }, hasSel},
         {"Encuadre por Defecto", "Mayús+H", [] { g.pendingCmd = UiCmd::ResetView; }, true},
+        {"Vista Perspectiva", "F1", [] { g.pendingCmd = UiCmd::ViewPersp; }, true},
+        {"Vista Superior", "F2", [] { g.pendingCmd = UiCmd::ViewTop; }, true},
+        {"Vista Derecha", "F3", [] { g.pendingCmd = UiCmd::ViewRight; }, true},
+        {"Vista Frontal", "F4", [] { g.pendingCmd = UiCmd::ViewFront; }, true},
         {"Agrupar Objetos", "Alt+G", [] { g.pendingCmd = UiCmd::Group; }, hasSel},
         {"Seleccionar Hijos", "", [] { g.pendingCmd = UiCmd::SelectChildren; }, hasSel},
         {"Deseleccionar Todo", "Esc", [&] { selected = nullptr; }, hasSel},
@@ -1431,7 +1704,9 @@ void drawViewportContextMenu(SceneNode& root, SceneNode*& selected, GizmoMode& m
     ImGui::Separator();
     if (iconMenuItem(Icon::MakeEditable, "Hacer Editable", "C", false, canMakeEditable(root, selected)))
         g.pendingCmd = UiCmd::MakeEditable;
-    disabledItems({{"Estado Actual a Objeto", ""}, {"Conectar Objetos", ""}, {"Conectar+Eliminar", ""}});
+    if (ImGui::MenuItem("Estado Actual a Objeto", nullptr, false, hasSel)) g.pendingCmd = UiCmd::CurrentState;
+    if (ImGui::MenuItem("Conectar Objetos", nullptr, false, hasSel)) g.pendingCmd = UiCmd::Connect;
+    if (ImGui::MenuItem("Conectar+Eliminar", nullptr, false, hasSel)) g.pendingCmd = UiCmd::ConnectDelete;
     if (iconMenuItem(Icon::Null, "Agrupar Objetos", "Alt+G", false, hasSel)) g.pendingCmd = UiCmd::Group;
     ImGui::Separator();
     if (ImGui::BeginMenu("Nueva Etiqueta", false)) ImGui::EndMenu();
@@ -1454,9 +1729,9 @@ void drawViewportContextMenu(SceneNode& root, SceneNode*& selected, GizmoMode& m
         vp.selectTool = false;
     }
     ImGui::Separator();
-    if (iconMenuItem(Icon::LiveSelect, "Selección en Vivo", "9", vp.selectTool)) vp.selectTool = true;
-    iconMenuItem(Icon::MnuRectSelect, "Selección Rectangular", "0", false, false);
-    iconMenuItem(Icon::MnuLassoSelect, "Selección con Lazo", "8", false, false);
+    if (iconMenuItem(Icon::LiveSelect, "Selección en Vivo", "9", vp.selectTool && vp.selectShape == 0)) { vp.selectTool = true; vp.selectShape = 0; }
+    if (iconMenuItem(Icon::MnuRectSelect, "Selección Rectangular", "0", vp.selectTool && vp.selectShape == 1)) { vp.selectTool = true; vp.selectShape = 1; }
+    if (iconMenuItem(Icon::MnuLassoSelect, "Selección con Lazo", "8", vp.selectTool && vp.selectShape == 2)) { vp.selectTool = true; vp.selectShape = 2; }
     ImGui::EndPopup();
 }
 
@@ -1520,7 +1795,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         }
         if (iconMenuItem(Icon::MnuDelete, "Eliminar", "Supr", false, selected != nullptr)) deleteSelected(root, selected, history);
         ImGui::Separator();
-        iconMenuItem(Icon::MnuSelectAll, "Seleccionar Todo", "Ctrl+A", false, false);
+        if (iconMenuItem(Icon::MnuSelectAll, "Seleccionar Todo", "Ctrl+A")) g.pendingCmd = UiCmd::SelectAll;
         if (iconMenuItem(Icon::MnuDeselect, "Deseleccionar Todo", "Esc", false, selected != nullptr)) selected = nullptr;
         ImGui::Separator();
         if (iconMenuItem(Icon::MnuProject, "Configuración del Proyecto...", "Ctrl+D")) g.focus = AttrFocus::Project;
@@ -1567,9 +1842,9 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
 
     if (ImGui::BeginMenu("Selección")) {
         ImGui::BeginMenuEx("Filtro de Selección", kIconGutterText, false);
-        if (iconMenuItem(Icon::LiveSelect, "Selección en Vivo", "9", vp.selectTool)) vp.selectTool = true;
-        iconMenuItem(Icon::MnuRectSelect, "Selección Rectangular", "0", false, false);
-        iconMenuItem(Icon::MnuLassoSelect, "Selección Lazo", "8", false, false);
+        if (iconMenuItem(Icon::LiveSelect, "Selección en Vivo", "9", vp.selectTool && vp.selectShape == 0)) { vp.selectTool = true; vp.selectShape = 0; }
+        if (iconMenuItem(Icon::MnuRectSelect, "Selección Rectangular", "0", vp.selectTool && vp.selectShape == 1)) { vp.selectTool = true; vp.selectShape = 1; }
+        if (iconMenuItem(Icon::MnuLassoSelect, "Selección Lazo", "8", vp.selectTool && vp.selectShape == 2)) { vp.selectTool = true; vp.selectShape = 2; }
         iconMenuItem(Icon::MnuPolySelect, "Selección de Polígono", "", false, false);
         ImGui::Separator();
         iconMenuItem(Icon::MnuLoop, "Selección de Bucle", "U~L", false, false);
@@ -1577,7 +1852,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
                  {"Selección de Anillo", "U~B"}, {"Selección Contorno", "U~Q"}, {"Rellenar Selección", "U~F"}})
             ImGui::MenuItemEx(it.first, kIconGutterText, it.second, false, false);
         ImGui::Separator();
-        iconMenuItem(Icon::MnuSelectAll, "Seleccionar Todo", "Ctrl+A", false, false);
+        if (iconMenuItem(Icon::MnuSelectAll, "Seleccionar Todo", "Ctrl+A")) g.pendingCmd = UiCmd::SelectAll;
         if (iconMenuItem(Icon::MnuDeselect, "Deseleccionar Todo", "Esc", false, selected != nullptr)) selected = nullptr;
         for (const auto& it : std::initializer_list<std::pair<const char*, const char*>>{
                  {"Invertir Selección", "U~I"}, {"Seleccionar Conectados", "U~W"},
@@ -1612,7 +1887,10 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
     if (ImGui::BeginMenu("Malla")) {
         if (iconMenuItem(Icon::MakeEditable, "Hacer Editable", "C", false, canMakeEditable(root, selected)))
             g.pendingCmd = UiCmd::MakeEditable;
-        disabledItems({{"Estado Actual a Objeto", ""}, {"Conectar Objetos", ""}, {nullptr, nullptr},
+        if (ImGui::MenuItem("Estado Actual a Objeto", nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::CurrentState;
+        if (ImGui::MenuItem("Conectar Objetos", nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::Connect;
+        if (ImGui::MenuItem("Conectar Objetos + Eliminar", nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::ConnectDelete;
+        disabledItems({{nullptr, nullptr},
                        {"Cuchillo", "K~K"}, {"Extrusión", "D"}, {"Extrusión Interna", "I"}, {"Bisel", "M~S"},
                        {"Puente", "M~B"}, {"Soldar", "M~Q"}, {"Pincel", "M~C"}, {"Planchar", "M~G"},
                        {nullptr, nullptr}, {"Invertir Normales", "U~R"}, {"Alinear Normales", "U~A"}});
@@ -1732,8 +2010,10 @@ void drawTopToolbar(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scen
     ImGui::SameLine();
 
     if (iconButton("live", Icon::LiveSelect, b, vp.selectTool, true, "Selección en Vivo [Atajo de Teclado 9]",
-                   "Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.") == BtnResult::Click)
+                   "Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.") == BtnResult::Click) {
         vp.selectTool = true;
+        vp.selectShape = 0;
+    }
     ImGui::SameLine();
     struct ToolDef { const char* id; Icon icon; GizmoMode m; const char* tip; const char* hint; };
     const ToolDef tools[] = {
@@ -1874,9 +2154,16 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
                 ImGui::EndMenu();
             }
             ImGui::Separator();
-            ImGui::MenuItem("Perspectiva", nullptr, true);
-            disabledItems({{"Paralela", ""}, {"Izquierda", ""}, {"Derecha", ""}, {"Frontal", ""}, {"Trasera", ""},
-                           {"Superior", ""}, {"Inferior", ""}, {nullptr, nullptr}, {"Axonométrica", ""}});
+            using CV = OrbitalCamera::View;
+            const CV cv = camera.view();
+            if (ImGui::MenuItem("Perspectiva", nullptr, cv == CV::Perspective)) camera.setView(CV::Perspective);
+            ImGui::MenuItem("Paralela", nullptr, false, false);
+            ImGui::MenuItem("Izquierda", nullptr, false, false);
+            if (ImGui::MenuItem("Derecha", nullptr, cv == CV::Right)) camera.setView(CV::Right);
+            if (ImGui::MenuItem("Frontal", nullptr, cv == CV::Front)) camera.setView(CV::Front);
+            ImGui::MenuItem("Trasera", nullptr, false, false);
+            if (ImGui::MenuItem("Superior", nullptr, cv == CV::Top)) camera.setView(CV::Top);
+            disabledItems({{"Inferior", ""}, {nullptr, nullptr}, {"Axonométrica", ""}});
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Mostrar")) {
@@ -1922,8 +2209,15 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
                 ImGui::EndMenu();
             }
             ImGui::Separator();
-            ImGui::MenuItem("Vista 1", "F1", true);
-            disabledItems({{"Vista 2", "F2"}, {"Vista 3", "F3"}, {"Vista 4", "F4"}, {"Todas las Vistas", "F5"}});
+            {
+                using CV = OrbitalCamera::View;
+                const CV cv = camera.view();
+                if (ImGui::MenuItem("Vista 1 (Perspectiva)", "F1", cv == CV::Perspective)) camera.setView(CV::Perspective);
+                if (ImGui::MenuItem("Vista 2 (Superior)", "F2", cv == CV::Top)) camera.setView(CV::Top);
+                if (ImGui::MenuItem("Vista 3 (Derecha)", "F3", cv == CV::Right)) camera.setView(CV::Right);
+                if (ImGui::MenuItem("Vista 4 (Frontal)", "F4", cv == CV::Front)) camera.setView(CV::Front);
+                ImGui::MenuItem("Todas las Vistas", "F5", false, false);
+            }
             ImGui::EndMenu();
         }
         ImGui::BeginMenu("ProRender", false);
@@ -2036,7 +2330,14 @@ void drawViewportOverlay(const OrbitalCamera& camera, const ViewportState& vp, c
     const ImVec2 a(vp.x, vp.y), b(vp.x + vp.w, vp.y + vp.h);
     dl->PushClipRect(a, b, true);
     if (!vp.renderView) outlineSelected(dl, root, camera, vp);
-    dl->AddText(ImVec2(a.x + 8, a.y + 5), IM_COL32(230, 230, 230, 255), names().viewport);
+    const char* viewName = names().viewport;
+    switch (camera.view()) {
+        case OrbitalCamera::View::Top: viewName = "Superior"; break;
+        case OrbitalCamera::View::Right: viewName = "Derecha"; break;
+        case OrbitalCamera::View::Front: viewName = "Frontal"; break;
+        default: break;
+    }
+    dl->AddText(ImVec2(a.x + 8, a.y + 5), IM_COL32(230, 230, 230, 255), viewName);
 
     // Triedro de ejes (esquina inf-izq, seccion 12): rotacion de la vista sin traslacion.
     const glm::mat3 rot(camera.viewMatrix());
@@ -2413,7 +2714,9 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
                 const int n = makeEditable(root, selected, history, node);
                 if (n > 0) flashStatus("Hacer Editable: " + std::to_string(n) + (n == 1 ? " objeto convertido." : " objetos convertidos."));
             }
-            disabledItems({{"Estado Actual del Objeto", ""}, {"Conectar Objetos", ""}, {"Conectar+Eliminar", ""}});
+            if (ImGui::MenuItem("Estado Actual del Objeto")) { if (!g.selIds.count(node->id())) selectOnly(selected, node); g.pendingCmd = UiCmd::CurrentState; }
+            if (ImGui::MenuItem("Conectar Objetos")) { if (!g.selIds.count(node->id())) selectOnly(selected, node); g.pendingCmd = UiCmd::Connect; }
+            if (ImGui::MenuItem("Conectar+Eliminar")) { if (!g.selIds.count(node->id())) selectOnly(selected, node); g.pendingCmd = UiCmd::ConnectDelete; }
             ImGui::Separator();
             if (iconMenuItem(Icon::Null, "Agrupar Objetos", "Alt+G")) pendingGroup = node;
             if (ImGui::MenuItem("Expandir Grupo de Objetos", "Mayús+G", false, !node->children().empty()))
@@ -3480,7 +3783,11 @@ void drawStatusBar(float framerate, GizmoMode mode, const ViewportState& vp, Ren
     std::string text = g.hint;
     if (text.empty() && ImGui::GetTime() < g.statusUntil) text = g.status;
     if (text.empty()) {
-        if (vp.selectTool) text = "Selección en Vivo: Haga clic para seleccionar elementos.";
+        if (vp.selectTool && vp.selectShape == 1)
+            text = "Selección Rectangular: arrastre para seleccionar los objetos que toque el rectángulo. MAYÚSCULAS añade, CTRL quita.";
+        else if (vp.selectTool && vp.selectShape == 2)
+            text = "Selección con Lazo: dibuje una zona para seleccionar los objetos que queden dentro. MAYÚSCULAS añade, CTRL quita.";
+        else if (vp.selectTool) text = "Selección en Vivo: Haga clic para seleccionar elementos.";
         else if (mode == GizmoMode::Translate)
             text = "Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.";
         else if (mode == GizmoMode::Rotate)
@@ -4044,12 +4351,8 @@ void applySelectionDrag(SceneNode& root, SceneNode* active, const glm::vec3& piv
     const bool rotating = rotDeltaDeg != glm::vec3(0.0f);
     const bool scaling = scaleRatio != glm::vec3(1.0f);
     if (!moving && !rotating && !scaling) return;
-    // Misma composicion que SceneNode::localMatrix (rz * ry * rx).
-    glm::mat4 r(1.0f);
-    r = glm::rotate(r, glm::radians(rotDeltaDeg.z), glm::vec3(0, 0, 1));
-    r = glm::rotate(r, glm::radians(rotDeltaDeg.y), glm::vec3(0, 1, 0));
-    r = glm::rotate(r, glm::radians(rotDeltaDeg.x), glm::vec3(1, 0, 0));
-    const glm::mat3 rot(r);
+    // Misma composicion que SceneNode::localMatrix (HPB de C4D).
+    const glm::mat3 rot = hpbToMat3(rotDeltaDeg);
     std::vector<SceneNode*> sel;
     collectSelected(root, sel);
     for (SceneNode* n : sel) {
@@ -4267,7 +4570,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     handleShortcuts(root, selected, gizmoMode, history, materials, camera, viewport);
     runPendingCmd(root, selected, history, camera);
     {   // Ultima herramienta (Espacio): se apunta cualquier cambio, venga de donde venga.
-        const int cur = viewport.selectTool ? 3 : (int)gizmoMode;
+        const int cur = viewport.selectTool ? 3 + viewport.selectShape : (int)gizmoMode;
         if (cur != g.curTool) {
             g.lastTool = g.curTool;
             g.curTool = cur;
@@ -4297,6 +4600,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     tickCamTrip(camera);
     drawOffscreenArrow(camera, viewport, selected);
     drawViewportContextMenu(root, selected, gizmoMode, history, viewport);
+    handleMarqueeSelection(root, selected, camera, viewport);
 
     if (g.browserOpen) {
         ContentBrowserCallbacks cb;
@@ -4382,8 +4686,17 @@ void openPreferencesDialog() { g.showPrefs = true; }
 void openContentBrowser() { g.browserOpen = true; }
 
 bool queueUiCommand(const std::string& cmd) {
-    if (cmd == "make-editable") g.pendingCmd = UiCmd::MakeEditable;
-    else if (cmd == "frame-selected") g.pendingCmd = UiCmd::FrameSelected;
+    // Se encolan en orden (una por frame): --ui-cmd=select-all --ui-cmd=connect.
+    if (cmd == "make-editable") g.cmdQueue.push_back(UiCmd::MakeEditable);
+    else if (cmd == "frame-selected") g.cmdQueue.push_back(UiCmd::FrameSelected);
+    else if (cmd == "select-all") g.cmdQueue.push_back(UiCmd::SelectAll);
+    else if (cmd == "current-state") g.cmdQueue.push_back(UiCmd::CurrentState);
+    else if (cmd == "connect") g.cmdQueue.push_back(UiCmd::Connect);
+    else if (cmd == "connect-delete") g.cmdQueue.push_back(UiCmd::ConnectDelete);
+    else if (cmd == "view-persp") g.cmdQueue.push_back(UiCmd::ViewPersp);
+    else if (cmd == "view-top") g.cmdQueue.push_back(UiCmd::ViewTop);
+    else if (cmd == "view-right") g.cmdQueue.push_back(UiCmd::ViewRight);
+    else if (cmd == "view-front") g.cmdQueue.push_back(UiCmd::ViewFront);
     else if (cmd == "vp-menu") g.openVpMenu = 30;
     else if (cmd.rfind("commander", 0) == 0) {
         g.showCommander = true;

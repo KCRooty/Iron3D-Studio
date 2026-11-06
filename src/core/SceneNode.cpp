@@ -12,6 +12,40 @@ int nextId() {
 }
 } // namespace
 
+glm::mat3 hpbToMat3(const glm::vec3& deg) {
+    const glm::mat4 ry = glm::rotate(glm::mat4(1.0f), glm::radians(deg.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    const glm::mat4 rx = glm::rotate(glm::mat4(1.0f), glm::radians(deg.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    const glm::mat4 rz = glm::rotate(glm::mat4(1.0f), glm::radians(deg.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    return glm::mat3(ry * rx * rz);
+}
+
+glm::vec3 mat3ToHpb(const glm::mat3& m) {
+    // R = Ry(h) Rx(p) Rz(b). glm indexa m[columna][fila]:
+    //   fila 1 = (cp*sb, cp*cb, -sp); columna 2 = (sh*cp, -sp, ch*cp).
+    const float sp = std::clamp(-m[2][1], -1.0f, 1.0f);
+    const float p = std::asin(sp);
+    float h, b;
+    if (std::abs(sp) < 0.9999f) {
+        h = std::atan2(m[2][0], m[2][2]);
+        b = std::atan2(m[0][1], m[1][1]);
+    } else {  // bloqueo de cardan (P = +-90): el Banco se fija a 0
+        b = 0.0f;
+        h = std::atan2(-m[0][2], m[0][0]);
+    }
+    glm::vec3 deg = glm::degrees(glm::vec3(p, h, b));
+    // Sin "-0.0" ni restos de redondeo en el Gestor de Coordenadas.
+    for (int i = 0; i < 3; ++i)
+        if (std::abs(deg[i]) < 1e-4f) deg[i] = 0.0f;
+    return deg;
+}
+
+glm::mat3 legacyXyzToMat3(const glm::vec3& deg) {
+    const glm::mat4 rx = glm::rotate(glm::mat4(1.0f), glm::radians(deg.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    const glm::mat4 ry = glm::rotate(glm::mat4(1.0f), glm::radians(deg.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    const glm::mat4 rz = glm::rotate(glm::mat4(1.0f), glm::radians(deg.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    return glm::mat3(rz * ry * rx);
+}
+
 const char* primitiveTypeName(PrimitiveType type) {
     switch (type) {
         case PrimitiveType::Cube: return "Cubo";
@@ -89,30 +123,14 @@ void SceneNode::setLocalMatrix(const glm::mat4& m) {
     if (s.y != 0.0f) c1 /= s.y;
     if (s.z != 0.0f) c2 /= s.z;
     scale = s;
-    // R = Rz*Ry*Rx: columna 0 = (cy*cz, cy*sz, -sy); fila 2 = (-sy, sx*cy, cx*cy).
-    const float sy = std::clamp(-c0.z, -1.0f, 1.0f);
-    const float y = std::asin(sy);
-    float x, z;
-    if (std::abs(sy) < 0.9999f) {
-        x = std::atan2(c1.z, c2.z);
-        z = std::atan2(c0.y, c0.x);
-    } else { // bloqueo de cardan: se fija X = 0
-        x = 0.0f;
-        z = std::atan2(-c1.x, c1.y);
-    }
-    rotationDeg = glm::degrees(glm::vec3(x, y, z));
-    // Sin "-0.0" ni restos de redondeo en el Gestor de Coordenadas.
-    for (int i = 0; i < 3; ++i)
-        if (std::abs(rotationDeg[i]) < 1e-4f) rotationDeg[i] = 0.0f;
+    rotationDeg = mat3ToHpb(glm::mat3(c0, c1, c2));
 }
 
 glm::mat4 SceneNode::localMatrix() const {
-    glm::mat4 t = glm::translate(glm::mat4(1.0f), position);
-    glm::mat4 rx = glm::rotate(glm::mat4(1.0f), glm::radians(rotationDeg.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    glm::mat4 ry = glm::rotate(glm::mat4(1.0f), glm::radians(rotationDeg.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 rz = glm::rotate(glm::mat4(1.0f), glm::radians(rotationDeg.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    glm::mat4 s = glm::scale(glm::mat4(1.0f), scale);
-    return t * rz * ry * rx * s;
+    const glm::mat4 t = glm::translate(glm::mat4(1.0f), position);
+    const glm::mat4 r(hpbToMat3(rotationDeg));
+    const glm::mat4 s = glm::scale(glm::mat4(1.0f), scale);
+    return t * r * s;
 }
 
 glm::mat4 SceneNode::parentWorldMatrix() const {

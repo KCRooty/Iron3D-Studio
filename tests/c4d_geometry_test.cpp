@@ -243,6 +243,26 @@ int main() {
         SceneNode g2("g2");
         g2.setLocalMatrix(gimbal.localMatrix());
         check(sameMat(g2.localMatrix(), gimbal.localMatrix()), "setLocalMatrix: bloqueo de cardan");
+        // En HPB el bloqueo de cardan es con P = +-90 (rotationDeg.x).
+        SceneNode gp("gp");
+        gp.rotationDeg = {90.0f, 35.0f, 20.0f};
+        SceneNode gp2("gp2");
+        gp2.setLocalMatrix(gp.localMatrix());
+        check(sameMat(gp2.localMatrix(), gp.localMatrix()), "HPB: bloqueo de cardan con P = 90");
+
+        // Orden HPB de C4D: R = Ry(H) * Rx(P) * Rz(B) (primero Banco, luego Pitch, luego Heading).
+        {
+            const glm::vec3 hpb(30.0f, 45.0f, 60.0f);  // P, H, B
+            const glm::mat4 ry = glm::rotate(glm::mat4(1.0f), glm::radians(45.0f), glm::vec3(0, 1, 0));
+            const glm::mat4 rx = glm::rotate(glm::mat4(1.0f), glm::radians(30.0f), glm::vec3(1, 0, 0));
+            const glm::mat4 rz = glm::rotate(glm::mat4(1.0f), glm::radians(60.0f), glm::vec3(0, 0, 1));
+            check(sameMat(glm::mat4(hpbToMat3(hpb)), ry * rx * rz), "HPB: orden Ry * Rx * Rz");
+            check(nearly(mat3ToHpb(hpbToMat3(hpb)), hpb, 1e-3f), "HPB: ida y vuelta");
+            // Escena vieja (orden Rz*Ry*Rx): misma orientacion tras convertir.
+            const glm::vec3 old(20.0f, 10.0f, 30.0f);
+            const glm::vec3 conv = mat3ToHpb(legacyXyzToMat3(old));
+            check(sameMat(glm::mat4(hpbToMat3(conv)), glm::mat4(legacyXyzToMat3(old))), "HPB: conversion de escenas v3");
+        }
 
         // Agrupar bajo un padre girado y volver a sacar: el hijo no se mueve en mundo.
         SceneNode root("root");

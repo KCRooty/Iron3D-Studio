@@ -20,7 +20,7 @@
 #define MyAppName "Iron3D Studio"
 #define MyAppVersion "0.1.0"
 #define MyAppPublisher "Static Forge"
-#define MyAppURL "https://staticforge.dpdns.org/i3ds.html"
+#define MyAppURL "https://staticforge.me/i3ds.html"
 #define MyAppExeName "Iron3DStudio.exe"
 
 [Setup]
@@ -48,12 +48,20 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 UninstallDisplayIcon={app}\{#MyAppExeName}
+; Asociaciones de archivo (tareas assoc*): avisa al Explorador al terminar.
+ChangesAssociations=yes
 
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+; Doble clic / "Abrir con": .iron abre la escena, .lib4d abre el Navegador de
+; Contenido con esa libreria (main.cpp). .c4d va desmarcado: si Cinema 4D esta
+; instalado, quitarle su asociacion sin preguntar seria una faena.
+Name: "associron"; Description: "Abrir las escenas .iron con Iron3D Studio"; GroupDescription: "Asociar archivos:"
+Name: "assoclib4d"; Description: "Abrir las librerías .lib4d en el Navegador de Contenido"; GroupDescription: "Asociar archivos:"
+Name: "assocc4d"; Description: "Abrir los .c4d con Iron3D Studio (quita la asociación de Cinema 4D)"; GroupDescription: "Asociar archivos:"; Flags: unchecked
 
 [Types]
 Name: "full"; Description: "Completa"
@@ -77,6 +85,25 @@ Source: "..\LICENSE-APACHE"; DestDir: "{app}"; Components: docs; Flags: ignoreve
 Name: "{group}\Iron3D Studio"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\{cm:UninstallProgram,Iron3D Studio}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\Iron3D Studio"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+[Registry]
+; ProgIDs propios + "Abrir con" (OpenWithProgids) para las tres extensiones;
+; el valor por defecto de la extension solo se cambia si se marco la tarea.
+Root: HKA; Subkey: "Software\Classes\Iron3D.Scene"; ValueType: string; ValueName: ""; ValueData: "Escena de Iron3D Studio"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\Iron3D.Scene\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKA; Subkey: "Software\Classes\Iron3D.Scene\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKA; Subkey: "Software\Classes\Iron3D.Library"; ValueType: string; ValueName: ""; ValueData: "Librería de Preestablecidos (.lib4d)"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\Iron3D.Library\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKA; Subkey: "Software\Classes\Iron3D.Library\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKA; Subkey: "Software\Classes\Iron3D.C4D"; ValueType: string; ValueName: ""; ValueData: "Escena de Cinema 4D (Iron3D Studio)"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\Iron3D.C4D\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKA; Subkey: "Software\Classes\Iron3D.C4D\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKA; Subkey: "Software\Classes\.iron\OpenWithProgids"; ValueType: string; ValueName: "Iron3D.Scene"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKA; Subkey: "Software\Classes\.lib4d\OpenWithProgids"; ValueType: string; ValueName: "Iron3D.Library"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKA; Subkey: "Software\Classes\.c4d\OpenWithProgids"; ValueType: string; ValueName: "Iron3D.C4D"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKA; Subkey: "Software\Classes\.iron"; ValueType: string; ValueName: ""; ValueData: "Iron3D.Scene"; Flags: uninsdeletevalue; Tasks: associron
+Root: HKA; Subkey: "Software\Classes\.lib4d"; ValueType: string; ValueName: ""; ValueData: "Iron3D.Library"; Flags: uninsdeletevalue; Tasks: assoclib4d
+Root: HKA; Subkey: "Software\Classes\.c4d"; ValueType: string; ValueName: ""; ValueData: "Iron3D.C4D"; Flags: uninsdeletevalue; Tasks: assocc4d
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,Iron3D Studio}"; Flags: nowait postinstall skipifsilent
