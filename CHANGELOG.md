@@ -6,6 +6,23 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-07 (3) — Ruedas de opciones en los menús
+
+**Añadido**
+- **Rueda dentada de opciones** a la derecha de algunas entradas de menú, como en C4D R19:
+  clic en el texto ejecuta la orden y clic en la rueda abre sus opciones.
+  - **Selección Rectangular / con Lazo**: opción **Tolerante** (activada por defecto: basta
+    con tocar la zona; desactivada: el objeto tiene que quedar dentro entero).
+  - **Conectar Objetos**: **Soldar** (activada) con **Tolerancia** en cm: une los puntos que
+    coinciden en posición, normal y color, y quita los triángulos que quedan degenerados.
+  - **Renderizar Vista Activa** y **Renderizar en Visor de Imágenes**: la rueda abre la
+    Configuración de Render.
+
+**Probado**: build Debug sin avisos, ctest 2/2, capturas del menú del visor con las ruedas,
+de la ventana de opciones de Conectar y de Conectar+Eliminar con la soldadura activada
+(228 vértices). **Sin probar**: clic real sobre la rueda y la opción Tolerante arrastrando
+la zona.
+
 ### 2026-11-07 (2) — Ejes de objeto/mundo (W), Activar Eje (L), render en Visor de Imágenes y Configuración de Render
 
 **Añadido**
