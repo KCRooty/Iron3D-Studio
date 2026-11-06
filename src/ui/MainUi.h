@@ -31,6 +31,9 @@ struct ViewportState {
     bool showGrid = true;
     // Herramienta "Seleccion en Vivo" activa: sin gizmo, el clic solo selecciona.
     bool selectTool = false;
+    // Con selectTool: 0 Seleccion en Vivo (9), 1 Rectangular (0), 2 Lazo (8).
+    // En 1 y 2 el clic no elige objeto: arrastrar dibuja la zona (MainUi).
+    int selectShape = 0;
     // Archivo > Salir: main.cpp cierra la ventana al ver esto.
     bool requestQuit = false;
     // Render > Renderizar Vista Activa (Ctrl+R): el visor muestra el "render"

@@ -691,7 +691,8 @@ int main(int argc, char** argv) {
                     if (gizmo.beginDrag(mouseRay, gizmoTarget, eye, mouseX - viewport.x, mouseY - viewport.y,
                                         (int)viewport.w, (int)viewport.h, viewProj, camRight, camUp)) {
                         history.commit(preDragSnap);
-                    } else {
+                    } else if (!(viewport.selectTool && viewport.selectShape != 0)) {
+                        // (Rectangular y Lazo seleccionan al soltar, en MainUi.)
                         SceneNode* hit = nullptr;
                         float bestDist = 1e30f;
                         for (const auto& child : sceneRoot.children())

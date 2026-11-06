@@ -10,7 +10,15 @@ namespace iron3d {
 
 namespace {
 
-constexpr int kFormatVersion = 3; // v2 = Fase 5: bloque MATERIALS + materialIndex; v3 = mallas (MESH)
+// v2 = Fase 5: bloque MATERIALS + materialIndex; v3 = mallas (MESH);
+// v4 (2026-11-06) = rotaciones en HPB de C4D. Al cargar v1-v3 se convierten
+// (misma orientacion, otros numeros), ver convertLegacyRotations.
+constexpr int kFormatVersion = 4;
+
+void convertLegacyRotations(SceneNode& n) {
+    n.rotationDeg = mat3ToHpb(legacyXyzToMat3(n.rotationDeg));
+    for (const auto& c : n.children()) convertLegacyRotations(*c);
+}
 
 const char* primitiveCode(PrimitiveType type) {
     switch (type) {
@@ -291,6 +299,9 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
         if (outError) *outError = err;
         return false;
     }
+    int version = kFormatVersion;
+    try { version = std::stoi(tokens[1]); } catch (...) {}
+    if (version < 4) convertLegacyRotations(temp);
 
     root.setName(temp.name());
     root.primitive = temp.primitive;

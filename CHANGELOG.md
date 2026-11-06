@@ -6,6 +6,41 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-06 (2) — Selección Rectangular y Lazo, vistas F1–F4, Conectar, HPB e instalador
+
+**Añadido (funciona de verdad)**
+- **Selección Rectangular (0)** y **Selección con Lazo (8)**: arrastrar en el visor dibuja la
+  zona y al soltar se eligen los objetos que toca el rectángulo o que tienen algún punto
+  dentro del lazo. Mayús añade, Ctrl quita. También en el menú Selección, el clic derecho
+  del visor y el Commander. **9** vuelve a Selección en Vivo.
+- **Vistas F1–F4**: Perspectiva, Superior, Derecha y Frontal (ortográficas). También en
+  Cámaras y en Paneles del visor; el nombre de la vista sale arriba a la izquierda. En las
+  ortográficas no se orbita (como en C4D); el paneo y el zoom sí. El clic sobre objetos
+  funciona en todas.
+- **Estado Actual a Objeto**: copia poligonal del objeto (y sus hijos) justo debajo del
+  original, que no se toca.
+- **Conectar Objetos** y **Conectar+Eliminar**: une la geometría de la selección (y sus
+  hijos) en un solo Objeto Polígono con el eje y el material del primero.
+- **Seleccionar Todo** (Ctrl+A) también en el menú Edición.
+- Instalador: tareas para asociar **.iron** y **.lib4d** (doble clic abre la escena o el
+  Navegador de Contenido) y **.c4d** (desmarcada por defecto, para no quitársela a Cinema
+  4D). Todas aparecen además en "Abrir con". La URL del instalador pasa a staticforge.me.
+
+**Cambiado**
+- **Rotación en HPB de C4D**: el orden es primero Banco, luego Pitch y por último Heading,
+  como en C4D, así los números H/P/B de un objeto girado en varios ejes coinciden con los
+  de Cinema 4D. Las escenas `.iron` anteriores se convierten al abrirlas (misma
+  orientación, otros números); el formato pasa a la versión 4.
+
+**Probado**: build Debug sin avisos, ctest 2/2 (con pruebas nuevas del orden HPB, el bloqueo
+de cardán y la conversión de escenas viejas), capturas de Conectar+Eliminar, Estado Actual,
+vistas Superior y Frontal, y el instalador compila con Inno Setup 6.
+**Sin probar**: arrastrar de verdad la selección rectangular y el lazo, F1–F4 pulsadas, el
+instalador ejecutado (tocaría el registro) y comparar H/P/B con un objeto real girado en
+los tres ejes dentro de Cinema 4D R19.
+**Pendiente**: en Frontal y Derecha la rejilla se ve de canto (C4D la dibuja en el plano de
+la vista); Todas las Vistas (F5); Izquierda, Trasera e Inferior.
+
 ### 2026-11-06 — Hacer Editable, menú del clic derecho en el visor y Commander
 
 **Añadido (funciona de verdad)**

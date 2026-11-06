@@ -28,6 +28,16 @@ namespace iron3d {
 enum class PrimitiveType { None, Cube, Sphere, Plane, Light, Mesh };
 const char* primitiveTypeName(PrimitiveType type); // nombre para la UI, en espanol
 
+// Rotacion HPB de C4D (2026-11-06): R = Ry(H) * Rx(P) * Rz(B), es decir,
+// primero Banco (Z), luego Pitch (X) y por ultimo Heading (Y). `deg` va en
+// SceneNode::rotationDeg: x = P, y = H, z = B. Todo el que componga o
+// descomponga rotaciones (nodo, gizmo, importador/exportador .c4d) usa estas
+// dos funciones, asi los numeros H/P/B salen como en C4D.
+glm::mat3 hpbToMat3(const glm::vec3& deg);
+glm::vec3 mat3ToHpb(const glm::mat3& rotation); // `rotation` sin escala
+// La convencion anterior (escenas .iron de version < 4): R = Rz * Ry * Rx.
+glm::mat3 legacyXyzToMat3(const glm::vec3& deg);
+
 // Estado de visibilidad de C4D: Por Defecto (gris, hereda del padre),
 // Activado (verde, visible aunque el padre este oculto) o Apagado (rojo).
 enum class VisMode { Default = 0, On = 1, Off = 2 };

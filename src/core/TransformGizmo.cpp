@@ -104,25 +104,12 @@ void pushCube(std::vector<Vertex>& out, const glm::vec3& center, float halfExten
     for (int i : idx) out.push_back({c[i], color});
 }
 
-// Compone Euler XYZ (grados) -> matriz, MISMA convencion que
-// SceneNode::localMatrix() (R = Rz*Ry*Rx) -- tiene que ser identica o la
-// rotacion "salta" al pasar por el anillo View.
-glm::mat3 eulerDegToMat3(const glm::vec3& deg) {
-    const glm::mat4 rx = glm::rotate(glm::mat4(1.0f), glm::radians(deg.x), glm::vec3(1, 0, 0));
-    const glm::mat4 ry = glm::rotate(glm::mat4(1.0f), glm::radians(deg.y), glm::vec3(0, 1, 0));
-    const glm::mat4 rz = glm::rotate(glm::mat4(1.0f), glm::radians(deg.z), glm::vec3(0, 0, 1));
-    return glm::mat3(rz * ry * rx);
-}
+// Angulos (grados) <-> matriz con la MISMA convencion que
+// SceneNode::localMatrix() (HPB de C4D, hpbToMat3) -- tiene que ser identica
+// o la rotacion "salta" al pasar por el anillo View.
+glm::mat3 eulerDegToMat3(const glm::vec3& deg) { return hpbToMat3(deg); }
 
-// Inversa de eulerDegToMat3 -- formula estandar para R = Rz*Ry*Rx (ver p.ej.
-// Shoemake, "Euler Angle Conversion", Graphics Gems IV). glm indexa
-// m[columna][fila].
-glm::vec3 mat3ToEulerDeg(const glm::mat3& m) {
-    const float y = std::asin(std::clamp(-m[0][2], -1.0f, 1.0f));
-    const float x = std::atan2(m[1][2], m[2][2]);
-    const float z = std::atan2(m[0][1], m[0][0]);
-    return glm::degrees(glm::vec3(x, y, z));
-}
+glm::vec3 mat3ToEulerDeg(const glm::mat3& m) { return mat3ToHpb(m); }
 
 // Proyecta un punto de mundo a pixeles de pantalla (mismo sistema de
 // coordenadas que usa screenRay: origen arriba-izquierda, sin flip de Y --
@@ -266,6 +253,10 @@ Ray TransformGizmo::screenRay(double mouseX, double mouseY, int width, int heigh
     // punto) -- asi da igual si el NDC z=0/1 corresponde al near/far real:
     // la recta que pasa por ambos puntos es la correcta de todos modos.
     ray.direction = glm::normalize(glm::vec3(far4) - glm::vec3(near4));
+    // Proyeccion ortografica (proj[3][3] == 1): los rayos son paralelos y no
+    // salen del ojo. El origen va sobre la recta de este pixel, bien atras,
+    // para que tambien se puedan elegir objetos detras del ojo (vistas F2-F4).
+    if (std::fabs(proj[3][3] - 1.0f) < 1e-6f) ray.origin = glm::vec3(near4) - ray.direction * 200.0f;
     return ray;
 }
 
