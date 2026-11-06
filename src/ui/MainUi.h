@@ -105,6 +105,11 @@ void openPreferencesDialog();
 // lo usa al abrir Iron3D con un .lib4d).
 void openContentBrowser();
 
+// "--ui-cmd=<orden>" (verificacion por captura sin clics): make-editable,
+// frame-selected, commander[:texto] o vp-menu (menu del clic derecho en el
+// centro del visor). Devuelve false si la orden no existe.
+bool queueUiCommand(const std::string& cmd);
+
 // Carga un modelo de una libreria .lib4d en la escena, como un doble clic en
 // el navegador (se puede deshacer). main.cpp lo usa con "--load-preset=".
 class PresetLibrary;
