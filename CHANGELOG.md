@@ -6,6 +6,39 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-07 (2) — Ejes de objeto/mundo (W), Activar Eje (L), render en Visor de Imágenes y Configuración de Render
+
+**Añadido**
+- **Sistema de coordenadas (W)**: el gizmo usa ahora los ejes del objeto, como C4D por
+  defecto; W (o el botón de la barra) cambia a los del mundo y vuelta.
+- **Activar Eje (L)**: mover, rotar o escalar cambia solo el eje del objeto. Los hijos se
+  quedan donde estaban y, en un objeto editable (Objeto Polígono), también la malla. En una
+  primitiva paramétrica se mueve el objeto entero, como en C4D.
+- **Renderizar en Visor de Imágenes (Mayús+R)**: render por CPU de la cámara activa, con la
+  visibilidad de render de cada objeto, en una ventana propia con zoom (ajustar, 50, 100,
+  200 %), "Renderizar" otra vez y **Archivo > Guardar como...** PNG.
+- **Editar Configuración de Render (Ctrl+B)**: resolución (con preestablecidos o la del
+  visor), antialiasing de 1x1 a 4x4 y fondo en degradado. También en el menú Render, la
+  barra superior y el Commander.
+
+**Cambiado / arreglado**
+- Rotar con los aros del gizmo compone la rotación de verdad y la vuelve a pasar a H/P/B
+  sin saltos de 180 a −180 durante el arrastre (antes sumaba el ángulo a un solo
+  componente, correcto solo si los otros dos eran 0).
+- Mover un hijo de un padre girado: la flecha y el movimiento ya coinciden (se usaba la
+  rotación del padre en vez de su inversa).
+- El rasterizador de miniaturas recorta los triángulos contra el plano cercano: un suelo
+  que pasa por detrás de la cámara ya no desaparece entero.
+
+**Limitaciones conocidas**: el render no tiene sombras, texturas ni la luz de la escena
+(usa la iluminación de estudio de las miniaturas) y sale más claro que el visor.
+
+**Probado**: build Debug sin avisos, ctest 2/2 (pruebas nuevas del render de cámara:
+recorte del suelo y visibilidad de render), capturas de los ejes de objeto y de mundo sobre
+el Cubo girado, del Visor de Imágenes con un render y de la Configuración de Render.
+**Sin probar**: arrastrar con el ratón (ejes de objeto, aros, modo Eje), guardar el PNG
+desde el diálogo y el backend OpenGL.
+
 ### 2026-11-07 — Todas las Vistas (F5), vistas Izquierda/Trasera/Inferior, rejilla ortográfica
 
 **Añadido**

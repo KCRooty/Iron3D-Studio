@@ -28,4 +28,12 @@ struct Thumbnail {
 Thumbnail renderThumbnail(const std::vector<const SceneNode*>& roots, const std::vector<Material>& materials,
                           int size = 256);
 
+// "Renderizar en Visor de Imagenes" (Mayus+R): la escena entera (visibilidad
+// de RENDER, no la del visor) vista desde una camara concreta, con el mismo
+// sombreado que las miniaturas. `proj` sin la inversion Y de Vulkan.
+// `supersample` = antialiasing NxN (1-4). Fondo en degradado vertical (lineal).
+Thumbnail renderCameraImage(const SceneNode& root, const std::vector<Material>& materials, const glm::mat4& view,
+                            const glm::mat4& proj, int width, int height, int supersample,
+                            const glm::vec3& bgTop, const glm::vec3& bgBottom);
+
 } // namespace iron3d

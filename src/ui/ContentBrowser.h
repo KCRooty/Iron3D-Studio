@@ -28,6 +28,9 @@ namespace iron3d {
 using UiTextureCreate = std::function<void*(const uint8_t* rgba, int width, int height)>;
 using UiTextureDestroy = std::function<void(void*)>;
 void setUiTextureFactory(UiTextureCreate create, UiTextureDestroy destroy);
+// Las mismas, para otras ventanas (Visor de Imagenes). nullptr si no hay renderer.
+void* makeUiTexture(const uint8_t* rgba, int width, int height);
+void freeUiTexture(void* texture);
 // Libera todas las miniaturas (llamar antes de apagar el renderer).
 void releaseContentBrowserTextures();
 

@@ -260,12 +260,41 @@ Ray TransformGizmo::screenRay(double mouseX, double mouseY, int width, int heigh
     return ray;
 }
 
+void TransformGizmo::axesFor(const SceneNode* node, glm::vec3 out[3]) const {
+    for (int i = 0; i < 3; ++i) out[i] = kAxisDir[i];
+    if (worldAxes || !node) return;
+    const glm::mat3 m(node->worldMatrix());
+    for (int i = 0; i < 3; ++i)
+        if (glm::length(m[i]) > 1e-8f) out[i] = glm::normalize(m[i]);
+}
+
+namespace {
+// Angulo equivalente (+-360) mas cercano a `ref`.
+float nearestAngle(float a, float ref) { return a + 360.0f * std::round((ref - a) / 360.0f); }
+} // namespace
+
+void TransformGizmo::applyWorldRotation(const glm::mat3& d) {
+    // Orientacion local L respecto al padre P: mundo = P*L. Girar en mundo
+    // con d da P*L' = d*P*L, o sea L' = P^T * d * P * L.
+    const glm::mat3 l = glm::transpose(parentRot_) * d * parentRot_ * eulerDegToMat3(startRotationDeg_);
+    const glm::vec3 a = mat3ToEulerDeg(l);  // (P, H, B)
+    const glm::vec3 cur = target_->rotationDeg;
+    // Las dos soluciones H/P/B de la misma orientacion; se queda la mas
+    // cercana a la actual (continuidad durante el arrastre).
+    glm::vec3 s1(nearestAngle(a.x, cur.x), nearestAngle(a.y, cur.y), nearestAngle(a.z, cur.z));
+    glm::vec3 s2(nearestAngle(180.0f - a.x, cur.x), nearestAngle(a.y + 180.0f, cur.y), nearestAngle(a.z + 180.0f, cur.z));
+    const glm::vec3 d1 = glm::abs(s1 - cur), d2 = glm::abs(s2 - cur);
+    target_->rotationDeg = (d2.x + d2.y + d2.z) + 1e-3f < (d1.x + d1.y + d1.z) ? s2 : s1;
+}
+
 GizmoAxis TransformGizmo::pickAxis(const Ray& ray, const SceneNode* node, const glm::vec3& eye,
                                     double mouseX, double mouseY, int viewportW, int viewportH,
                                     const glm::mat4& viewProj, float* outParam) const {
     if (!node) return GizmoAxis::None;
     const glm::vec3 originWorld = originFor(node);
     const float size = gizmoWorldSize(originWorld, eye);
+    glm::vec3 ax[3];
+    axesFor(node, ax);
 
     GizmoAxis best = GizmoAxis::None;
     float bestScore = 1e30f;
@@ -274,7 +303,7 @@ GizmoAxis TransformGizmo::pickAxis(const Ray& ray, const SceneNode* node, const 
     if (mode == GizmoMode::Translate || mode == GizmoMode::Scale) {
         const float threshold = size * 0.12f;
         for (int i = 0; i < 3; ++i) {
-            const glm::vec3& dir = kAxisDir[i];
+            const glm::vec3& dir = ax[i];
             const float t = closestLineParam(ray, originWorld, dir);
             if (t < -size * 0.1f || t > size * 1.3f) continue; // fuera del segmento visible del eje
             const glm::vec3 pointOnLine = originWorld + dir * t;
@@ -305,7 +334,7 @@ GizmoAxis TransformGizmo::pickAxis(const Ray& ray, const SceneNode* node, const 
         int bestAxisIdx = -1;
 
         for (int i = 0; i < 3; ++i) {
-            const float d = ringScreenDist(originWorld, kAxisDir[i], size, viewProj, viewportW, viewportH,
+            const float d = ringScreenDist(originWorld, ax[i], size, viewProj, viewportW, viewportH,
                                             cursor, kRingSegments);
             if (d < bestPixelDist) {
                 bestPixelDist = d;
@@ -314,7 +343,7 @@ GizmoAxis TransformGizmo::pickAxis(const Ray& ray, const SceneNode* node, const 
         }
 
         if (bestAxisIdx >= 0) {
-            const glm::vec3& dir = kAxisDir[bestAxisIdx];
+            const glm::vec3& dir = ax[bestAxisIdx];
             glm::vec3 hit;
             if (rayPlaneIntersect(ray, originWorld, dir, hit)) {
                 glm::vec3 u, v;
@@ -361,12 +390,18 @@ bool TransformGizmo::beginDrag(const Ray& ray, SceneNode* node, const glm::vec3&
     active_ = axis;
     dragging_ = true;
     originWorld_ = originFor(node);
-    parentInverseRot_ = glm::inverseTranspose(glm::mat3(node->parentWorldMatrix()));
-    // inverseTranspose deshace solo la parte de ROTACION de forma estable
-    // incluso si el padre tiene escala -- para convertir un delta de
-    // DIRECCION de mundo a espacio del padre (no un punto), que es lo que
-    // necesitamos aqui, el inverso simple ya sirve en el caso sin escala no
-    // uniforme; se usa inverseTranspose por ser la forma robusta estandar.
+    // Un desplazamiento de mundo pasa al espacio del padre con la INVERSA de
+    // su 3x3 (antes era la inversa-traspuesta, que para una rotacion pura es
+    // la propia rotacion: con un padre girado el hijo se movia en otra
+    // direccion que la flecha).
+    {
+        const glm::mat3 pm(node->parentWorldMatrix());
+        parentInverseRot_ = std::fabs(glm::determinant(pm)) > 1e-12f ? glm::inverse(pm) : glm::mat3(1.0f);
+        parentRot_ = glm::mat3(1.0f);
+        for (int i = 0; i < 3; ++i)
+            if (glm::length(pm[i]) > 1e-8f) parentRot_[i] = glm::normalize(pm[i]);
+    }
+    axesFor(node, axes_);
     startPosition_ = node->position;
     startRotationDeg_ = node->rotationDeg;
     startScale_ = node->scale;
@@ -442,9 +477,7 @@ void TransformGizmo::updateDrag(const Ray& ray, double mouseX, double mouseY) {
         // Rotacion compuesta (no se puede escribir en un solo componente
         // Euler como con X/Y/Z): delta alrededor del eje de vista congelado,
         // aplicada ENCIMA de la rotacion que tenia el objeto al empezar.
-        const glm::mat3 deltaRot = glm::mat3(glm::rotate(glm::mat4(1.0f), glm::radians(deltaDeg), viewAxisWorld_));
-        const glm::mat3 startRot = eulerDegToMat3(startRotationDeg_);
-        target_->rotationDeg = mat3ToEulerDeg(deltaRot * startRot);
+        applyWorldRotation(glm::mat3(glm::rotate(glm::mat4(1.0f), glm::radians(deltaDeg), viewAxisWorld_)));
         return;
     }
 
@@ -464,9 +497,7 @@ void TransformGizmo::updateDrag(const Ray& ray, double mouseX, double mouseY) {
             const float axisLen = glm::length(axisWorld);
             if (axisLen > 1e-6f) {
                 axisWorld /= axisLen;
-                const glm::mat3 deltaRot = glm::mat3(glm::rotate(glm::mat4(1.0f), angle, axisWorld));
-                const glm::mat3 startRot = eulerDegToMat3(startRotationDeg_);
-                target_->rotationDeg = mat3ToEulerDeg(deltaRot * startRot);
+                applyWorldRotation(glm::mat3(glm::rotate(glm::mat4(1.0f), angle, axisWorld)));
             }
         }
         return;
@@ -498,7 +529,7 @@ void TransformGizmo::updateDrag(const Ray& ray, double mouseX, double mouseY) {
     }
 
     const int idx = axisIndex(active_);
-    const glm::vec3& dir = kAxisDir[idx];
+    const glm::vec3& dir = axes_[idx];
 
     if (mode == GizmoMode::Translate) {
         const float t = closestLineParam(ray, originWorld_, dir);
@@ -523,9 +554,7 @@ void TransformGizmo::updateDrag(const Ray& ray, double mouseX, double mouseY) {
         const glm::vec3 local = hit - originWorld_;
         const float angle = std::atan2(glm::dot(local, v), glm::dot(local, u));
         const float deltaDeg = glm::degrees(angle - startAngle_);
-        glm::vec3 newRot = startRotationDeg_;
-        newRot[idx] = startRotationDeg_[idx] + deltaDeg;
-        target_->rotationDeg = newRot;
+        applyWorldRotation(glm::mat3(glm::rotate(glm::mat4(1.0f), glm::radians(deltaDeg), dir)));
     }
 }
 
@@ -544,9 +573,12 @@ void TransformGizmo::buildGeometry(const SceneNode* node, const glm::vec3& eye,
     const glm::vec3 originWorld = originFor(node);
     const float size = gizmoWorldSize(originWorld, eye);
     const GizmoAxis shown = dragging_ ? active_ : hovered_;
+    glm::vec3 ax[3];
+    if (dragging_) for (int i = 0; i < 3; ++i) ax[i] = axes_[i];
+    else axesFor(node, ax);
 
     for (int i = 0; i < 3; ++i) {
-        const glm::vec3& dir = kAxisDir[i];
+        const glm::vec3& dir = ax[i];
         const bool isShown = (shown == axisFromIndex(i));
         const glm::vec3 color = isShown ? kHighlightColor : kAxisColor[i];
 
