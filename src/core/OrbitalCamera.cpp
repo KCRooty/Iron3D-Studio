@@ -44,6 +44,9 @@ void OrbitalCamera::setView(View v) {
         case View::Top: yaw_ = 0.0f; pitch_ = glm::radians(90.0f); break;   // desde +Y
         case View::Right: yaw_ = glm::radians(90.0f); pitch_ = 0.0f; break; // desde +X
         case View::Front: yaw_ = 0.0f; pitch_ = 0.0f; break;                // desde +Z
+        case View::Left: yaw_ = glm::radians(-90.0f); pitch_ = 0.0f; break; // desde -X
+        case View::Back: yaw_ = glm::radians(180.0f); pitch_ = 0.0f; break; // desde -Z
+        case View::Bottom: yaw_ = 0.0f; pitch_ = glm::radians(-90.0f); break; // desde -Y
         case View::Perspective: yaw_ = glm::radians(45.0f); pitch_ = glm::radians(30.0f); break;
     }
 }
@@ -104,8 +107,11 @@ glm::vec3 OrbitalCamera::eyePosition() const {
 }
 
 glm::mat4 OrbitalCamera::viewMatrix() const {
-    // Mirando en vertical, "arriba" en pantalla es -Z (como la vista Superior de C4D).
-    const glm::vec3 up = view_ == View::Top ? glm::vec3(0.0f, 0.0f, -1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+    // Mirando en vertical, "arriba" en pantalla es -Z en la Superior (como en
+    // C4D) y +Z en la Inferior (su espejo).
+    const glm::vec3 up = view_ == View::Top      ? glm::vec3(0.0f, 0.0f, -1.0f)
+                         : view_ == View::Bottom ? glm::vec3(0.0f, 0.0f, 1.0f)
+                                                 : glm::vec3(0.0f, 1.0f, 0.0f);
     return glm::lookAt(eyePosition(), target_, up);
 }
 

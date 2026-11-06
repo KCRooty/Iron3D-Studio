@@ -76,7 +76,8 @@ enum class AttrFocus { Object, Material, Tag, Project };
 // Ordenes que se piden desde sitios sin acceso a la escena (barra izquierda,
 // menu contextual del visor) y se ejecutan al principio del frame siguiente.
 enum class UiCmd { None, MakeEditable, FrameSelected, FrameAll, ResetView, Group, SelectChildren,
-                   CurrentState, Connect, ConnectDelete, SelectAll, ViewPersp, ViewTop, ViewRight, ViewFront };
+                   CurrentState, Connect, ConnectDelete, SelectAll, ViewPersp, ViewTop, ViewRight, ViewFront,
+                   ViewLeft, ViewBack, ViewBottom, ViewQuad };
 
 struct UiState {
     UiCmd pendingCmd = UiCmd::None;
@@ -159,6 +160,63 @@ struct UiState {
     std::string hint; // texto de ayuda del elemento bajo el raton (barra de estado)
 };
 UiState g;
+// Visor del frame actual (lo fija drawMainUi): selectView lo necesita desde
+// sitios que solo reciben la camara.
+ViewportState* g_vp = nullptr;
+
+// --- Vistas y vista de 4 paneles (F1-F5) ----------------------------------------------
+using CamView = OrbitalCamera::View;
+constexpr CamView kQuadViews[4] = {CamView::Perspective, CamView::Top, CamView::Right, CamView::Front};
+
+int quadPanelOf(CamView v) {
+    for (int i = 0; i < 4; ++i)
+        if (kQuadViews[i] == v) return i;
+    return -1;
+}
+
+void enterQuad(OrbitalCamera& camera, ViewportState& vp) {
+    if (vp.quad) return;
+    const int cur = quadPanelOf(camera.view());
+    for (int i = 0; i < 4; ++i) {
+        vp.quadCams[i] = camera;  // mismo objetivo y distancia
+        if (i != cur) vp.quadCams[i].setView(kQuadViews[i]);
+    }
+    vp.quadActive = cur >= 0 ? cur : 0;
+    camera = vp.quadCams[vp.quadActive];
+    vp.quad = true;
+}
+
+// Sale de la vista de 4 maximizando el panel de `v` (o la activa cambiada a `v`).
+void exitQuad(OrbitalCamera& camera, ViewportState& vp, CamView v) {
+    vp.quadCams[vp.quadActive] = camera;
+    const int p = quadPanelOf(v);
+    if (p >= 0) camera = vp.quadCams[p];
+    else camera.setView(v);
+    vp.quad = false;
+}
+
+void selectView(OrbitalCamera& camera, CamView v) {
+    if (g_vp && g_vp->quad) exitQuad(camera, *g_vp, v);
+    else camera.setView(v);
+}
+
+void toggleQuad(OrbitalCamera& camera) {
+    if (!g_vp) return;
+    if (g_vp->quad) exitQuad(camera, *g_vp, camera.view());
+    else enterQuad(camera, *g_vp);
+}
+
+const char* viewLabel(CamView v, const char* perspName) {
+    switch (v) {
+        case CamView::Top: return "Superior";
+        case CamView::Right: return "Derecha";
+        case CamView::Front: return "Frontal";
+        case CamView::Left: return "Izquierda";
+        case CamView::Back: return "Trasera";
+        case CamView::Bottom: return "Inferior";
+        default: return perspName;
+    }
+}
 
 // --- Utilidades -----------------------------------------------------------------
 
@@ -1421,12 +1479,14 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
             else g.playDir = g.playDir == 1 ? 0 : 1;
         }
         if (shift && pressed(ImGuiKey_F1)) g.browserOpen = false; // Mayus+F1: Gestor de Objetos
-        // F1-F4: Vista 1-4 de C4D (Perspectiva, Superior, Derecha, Frontal).
+        // F1-F4: Vista 1-4 de C4D (Perspectiva, Superior, Derecha, Frontal);
+        // F5: las cuatro a la vez (otra vez F5 maximiza la activa).
         if (!shift && !io.KeyAlt) {
-            if (pressed(ImGuiKey_F1)) camera.setView(OrbitalCamera::View::Perspective);
-            if (pressed(ImGuiKey_F2)) camera.setView(OrbitalCamera::View::Top);
-            if (pressed(ImGuiKey_F3)) camera.setView(OrbitalCamera::View::Right);
-            if (pressed(ImGuiKey_F4)) camera.setView(OrbitalCamera::View::Front);
+            if (pressed(ImGuiKey_F1)) selectView(camera, CamView::Perspective);
+            if (pressed(ImGuiKey_F2)) selectView(camera, CamView::Top);
+            if (pressed(ImGuiKey_F3)) selectView(camera, CamView::Right);
+            if (pressed(ImGuiKey_F4)) selectView(camera, CamView::Front);
+            if (pressed(ImGuiKey_F5)) toggleQuad(camera);
         }
         if (pressed(ImGuiKey_F6)) g.playDir = g.playDir == -1 ? 0 : -1;
         if (pressed(ImGuiKey_F7)) g.playDir = 0;
@@ -1524,10 +1584,14 @@ void runPendingCmd(SceneNode& root, SceneNode*& selected, SceneHistory& history,
             }
             break;
         case UiCmd::SelectAll: selectAllObjects(root, selected); break;
-        case UiCmd::ViewPersp: camera.setView(OrbitalCamera::View::Perspective); break;
-        case UiCmd::ViewTop: camera.setView(OrbitalCamera::View::Top); break;
-        case UiCmd::ViewRight: camera.setView(OrbitalCamera::View::Right); break;
-        case UiCmd::ViewFront: camera.setView(OrbitalCamera::View::Front); break;
+        case UiCmd::ViewPersp: selectView(camera, CamView::Perspective); break;
+        case UiCmd::ViewTop: selectView(camera, CamView::Top); break;
+        case UiCmd::ViewRight: selectView(camera, CamView::Right); break;
+        case UiCmd::ViewFront: selectView(camera, CamView::Front); break;
+        case UiCmd::ViewLeft: selectView(camera, CamView::Left); break;
+        case UiCmd::ViewBack: selectView(camera, CamView::Back); break;
+        case UiCmd::ViewBottom: selectView(camera, CamView::Bottom); break;
+        case UiCmd::ViewQuad: toggleQuad(camera); break;
         case UiCmd::CurrentState: {
             const int n = currentStateToObject(root, selected, history);
             flashStatus(n ? "Estado Actual a Objeto: " + std::to_string(n) + (n == 1 ? " copia poligonal creada." : " copias poligonales creadas.")
@@ -1577,6 +1641,10 @@ void drawCommander(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scene
         {"Vista Superior", "F2", [] { g.pendingCmd = UiCmd::ViewTop; }, true},
         {"Vista Derecha", "F3", [] { g.pendingCmd = UiCmd::ViewRight; }, true},
         {"Vista Frontal", "F4", [] { g.pendingCmd = UiCmd::ViewFront; }, true},
+        {"Todas las Vistas", "F5", [] { g.pendingCmd = UiCmd::ViewQuad; }, true},
+        {"Vista Izquierda", "", [] { g.pendingCmd = UiCmd::ViewLeft; }, true},
+        {"Vista Trasera", "", [] { g.pendingCmd = UiCmd::ViewBack; }, true},
+        {"Vista Inferior", "", [] { g.pendingCmd = UiCmd::ViewBottom; }, true},
         {"Agrupar Objetos", "Alt+G", [] { g.pendingCmd = UiCmd::Group; }, hasSel},
         {"Seleccionar Hijos", "", [] { g.pendingCmd = UiCmd::SelectChildren; }, hasSel},
         {"Deseleccionar Todo", "Esc", [&] { selected = nullptr; }, hasSel},
@@ -2156,14 +2224,15 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
             ImGui::Separator();
             using CV = OrbitalCamera::View;
             const CV cv = camera.view();
-            if (ImGui::MenuItem("Perspectiva", nullptr, cv == CV::Perspective)) camera.setView(CV::Perspective);
+            if (ImGui::MenuItem("Perspectiva", nullptr, cv == CV::Perspective)) selectView(camera, CV::Perspective);
             ImGui::MenuItem("Paralela", nullptr, false, false);
-            ImGui::MenuItem("Izquierda", nullptr, false, false);
-            if (ImGui::MenuItem("Derecha", nullptr, cv == CV::Right)) camera.setView(CV::Right);
-            if (ImGui::MenuItem("Frontal", nullptr, cv == CV::Front)) camera.setView(CV::Front);
-            ImGui::MenuItem("Trasera", nullptr, false, false);
-            if (ImGui::MenuItem("Superior", nullptr, cv == CV::Top)) camera.setView(CV::Top);
-            disabledItems({{"Inferior", ""}, {nullptr, nullptr}, {"Axonométrica", ""}});
+            if (ImGui::MenuItem("Izquierda", nullptr, cv == CV::Left)) selectView(camera, CV::Left);
+            if (ImGui::MenuItem("Derecha", nullptr, cv == CV::Right)) selectView(camera, CV::Right);
+            if (ImGui::MenuItem("Frontal", nullptr, cv == CV::Front)) selectView(camera, CV::Front);
+            if (ImGui::MenuItem("Trasera", nullptr, cv == CV::Back)) selectView(camera, CV::Back);
+            if (ImGui::MenuItem("Superior", nullptr, cv == CV::Top)) selectView(camera, CV::Top);
+            if (ImGui::MenuItem("Inferior", nullptr, cv == CV::Bottom)) selectView(camera, CV::Bottom);
+            disabledItems({{nullptr, nullptr}, {"Axonométrica", ""}});
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Mostrar")) {
@@ -2204,19 +2273,21 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
         }
         if (ImGui::BeginMenu("Paneles")) {
             if (ImGui::BeginMenu("Disposición")) {
-                ImGui::MenuItem("Vista Simple", nullptr, true);
-                disabledItems({{"2 Vistas Apiladas", ""}, {"2 Vistas Lado a Lado", ""}, {"4 Vistas", ""}});
+                if (ImGui::MenuItem("Vista Simple", nullptr, !vp.quad) && vp.quad)
+                    exitQuad(camera, vp, camera.view());
+                disabledItems({{"2 Vistas Apiladas", ""}, {"2 Vistas Lado a Lado", ""}});
+                if (ImGui::MenuItem("4 Vistas", nullptr, vp.quad) && !vp.quad) enterQuad(camera, vp);
                 ImGui::EndMenu();
             }
             ImGui::Separator();
             {
                 using CV = OrbitalCamera::View;
                 const CV cv = camera.view();
-                if (ImGui::MenuItem("Vista 1 (Perspectiva)", "F1", cv == CV::Perspective)) camera.setView(CV::Perspective);
+                if (ImGui::MenuItem("Vista 1 (Perspectiva)", "F1", cv == CV::Perspective)) selectView(camera, CV::Perspective);
                 if (ImGui::MenuItem("Vista 2 (Superior)", "F2", cv == CV::Top)) camera.setView(CV::Top);
                 if (ImGui::MenuItem("Vista 3 (Derecha)", "F3", cv == CV::Right)) camera.setView(CV::Right);
-                if (ImGui::MenuItem("Vista 4 (Frontal)", "F4", cv == CV::Front)) camera.setView(CV::Front);
-                ImGui::MenuItem("Todas las Vistas", "F5", false, false);
+                if (ImGui::MenuItem("Vista 4 (Frontal)", "F4", cv == CV::Front)) selectView(camera, CV::Front);
+                if (ImGui::MenuItem("Todas las Vistas", "F5", vp.quad)) toggleQuad(camera);
             }
             ImGui::EndMenu();
         }
@@ -2325,18 +2396,48 @@ void outlineSelected(ImDrawList* dl, const SceneNode& node, const OrbitalCamera&
     }
 }
 
+void drawViewportOverlay(const OrbitalCamera& camera, const ViewportState& vp, const SceneNode& root);
+
+// Vista de 4: un clic (cualquier boton) en otro panel lo activa -- su camara
+// pasa a ser la `camera` de siempre --, se dibujan los overlays de los tres
+// inactivos y x/y/w/h quedan en el panel activo para todo lo demas.
+void drawQuadPanels(OrbitalCamera& camera, ViewportState& vp, const SceneNode& root) {
+    const ImGuiIO& io = ImGui::GetIO();
+    const bool click = ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
+                       ImGui::IsMouseClicked(ImGuiMouseButton_Middle);
+    if (click && !io.WantCaptureMouse) {
+        for (int i = 0; i < 4; ++i) {
+            const QuadRect r = quadPanelRect(vp, i);
+            if (i == vp.quadActive || io.MousePos.x < r.x || io.MousePos.y < r.y || io.MousePos.x >= r.x + r.w ||
+                io.MousePos.y >= r.y + r.h)
+                continue;
+            vp.quadCams[vp.quadActive] = camera;
+            camera = vp.quadCams[i];
+            camera.resetMouseDelta(io.MousePos.x, io.MousePos.y);
+            vp.quadActive = i;
+            break;
+        }
+    }
+    ImDrawList* dl = ImGui::GetBackgroundDrawList();
+    for (int i = 0; i < 4; ++i) {
+        if (i == vp.quadActive) continue;
+        const QuadRect r = quadPanelRect(vp, i);
+        ViewportState pv = vp;
+        pv.x = r.x; pv.y = r.y; pv.w = r.w; pv.h = r.h;
+        drawViewportOverlay(vp.quadCams[i], pv, root);
+    }
+    const QuadRect a = quadPanelRect(vp, vp.quadActive);
+    vp.x = a.x; vp.y = a.y; vp.w = a.w; vp.h = a.h;
+    // Marco claro alrededor del panel activo (en C4D el activo se resalta).
+    dl->AddRect(ImVec2(a.x - 1, a.y - 1), ImVec2(a.x + a.w + 1, a.y + a.h + 1), IM_COL32(200, 200, 200, 255));
+}
+
 void drawViewportOverlay(const OrbitalCamera& camera, const ViewportState& vp, const SceneNode& root) {
     ImDrawList* dl = ImGui::GetBackgroundDrawList();
     const ImVec2 a(vp.x, vp.y), b(vp.x + vp.w, vp.y + vp.h);
     dl->PushClipRect(a, b, true);
     if (!vp.renderView) outlineSelected(dl, root, camera, vp);
-    const char* viewName = names().viewport;
-    switch (camera.view()) {
-        case OrbitalCamera::View::Top: viewName = "Superior"; break;
-        case OrbitalCamera::View::Right: viewName = "Derecha"; break;
-        case OrbitalCamera::View::Front: viewName = "Frontal"; break;
-        default: break;
-    }
+    const char* viewName = viewLabel(camera.view(), names().viewport);
     dl->AddText(ImVec2(a.x + 8, a.y + 5), IM_COL32(230, 230, 230, 255), viewName);
 
     // Triedro de ejes (esquina inf-izq, seccion 12): rotacion de la vista sin traslacion.
@@ -4540,6 +4641,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
                  const std::filesystem::path& scenesDir, SceneHistory& history, float framerate,
                  RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath,
                  std::vector<Material>& materials, OrbitalCamera& camera, ViewportState& viewport) {
+    g_vp = &viewport;
     g.hint.clear();
 
     // Seleccionar un objeto (en el visor o en el Gestor) devuelve el Gestor de
@@ -4592,10 +4694,11 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     drawLeftToolbar(L.left.pos, L.left.size);
 
     drawViewportHeader(root, selected, camera, viewport, L.viewport.pos, ImVec2(L.viewport.size.x, vpHeaderH));
-    viewport.x = L.viewport.pos.x;
-    viewport.y = L.viewport.pos.y + vpHeaderH;
-    viewport.w = std::max(1.0f, L.viewport.size.x);
-    viewport.h = std::max(1.0f, L.viewport.size.y - vpHeaderH);
+    viewport.x = viewport.fullX = L.viewport.pos.x;
+    viewport.y = viewport.fullY = L.viewport.pos.y + vpHeaderH;
+    viewport.w = viewport.fullW = std::max(1.0f, L.viewport.size.x);
+    viewport.h = viewport.fullH = std::max(1.0f, L.viewport.size.y - vpHeaderH);
+    if (viewport.quad) drawQuadPanels(camera, viewport, root);
     drawViewportOverlay(camera, viewport, root);
     tickCamTrip(camera);
     drawOffscreenArrow(camera, viewport, selected);
@@ -4697,6 +4800,10 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "view-top") g.cmdQueue.push_back(UiCmd::ViewTop);
     else if (cmd == "view-right") g.cmdQueue.push_back(UiCmd::ViewRight);
     else if (cmd == "view-front") g.cmdQueue.push_back(UiCmd::ViewFront);
+    else if (cmd == "view-left") g.cmdQueue.push_back(UiCmd::ViewLeft);
+    else if (cmd == "view-back") g.cmdQueue.push_back(UiCmd::ViewBack);
+    else if (cmd == "view-bottom") g.cmdQueue.push_back(UiCmd::ViewBottom);
+    else if (cmd == "view-quad") g.cmdQueue.push_back(UiCmd::ViewQuad);
     else if (cmd == "vp-menu") g.openVpMenu = 30;
     else if (cmd.rfind("commander", 0) == 0) {
         g.showCommander = true;
@@ -4710,4 +4817,14 @@ void loadPresetIntoScene(const PresetLibrary& lib, const PresetItem& item, Scene
     loadPresetImpl(lib, item, root, selected, history, materials);
 }
 
+} // namespace iron3d
+
+namespace iron3d {
+QuadRect quadPanelRect(const ViewportState& vp, int i) {
+    constexpr float gap = 2.0f;
+    const float hw = std::max(1.0f, (vp.fullW - gap) * 0.5f);
+    const float hh = std::max(1.0f, (vp.fullH - gap) * 0.5f);
+    const int col = i % 2, row = i / 2;
+    return {vp.fullX + col * (hw + gap), vp.fullY + row * (hh + gap), hw, hh};
+}
 } // namespace iron3d

@@ -6,6 +6,25 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-07 — Todas las Vistas (F5), vistas Izquierda/Trasera/Inferior, rejilla ortográfica
+
+**Añadido**
+- **Todas las Vistas (F5)**: el visor se parte en cuatro paneles (Perspectiva, Superior,
+  Derecha, Frontal), cada uno con su propia cámara. Un clic en un panel lo activa (marco
+  claro): ahí van el gizmo, el clic sobre objetos, la selección por zona y la navegación.
+  F5 otra vez, o F1–F4, maximiza ese panel conservando su encuadre. También en Paneles
+  (Disposición > 4 Vistas, Todas las Vistas) y en el Commander.
+- **Vistas Izquierda, Trasera e Inferior** en el menú Cámaras y en el Commander.
+- **Rejilla en el plano de la vista**: en Frontal/Trasera la rejilla es XY y en
+  Derecha/Izquierda es YZ, como en C4D (antes siempre era el suelo XZ y se veía de canto).
+
+**Limitaciones conocidas**
+- Con cuatro paneles no hay oclusión ambiental (SSAO): el G-buffer es de una sola cámara.
+- El gizmo solo se dibuja en el panel activo.
+
+**Probado**: build Debug sin avisos, ctest 2/2, capturas de Frontal, Izquierda y los cuatro
+paneles (Vulkan). **Sin probar**: cambiar de panel con el ratón, el backend OpenGL con F5.
+
 ### 2026-11-06 (2) — Selección Rectangular y Lazo, vistas F1–F4, Conectar, HPB e instalador
 
 **Añadido (funciona de verdad)**

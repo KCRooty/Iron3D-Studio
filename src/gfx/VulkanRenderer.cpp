@@ -221,6 +221,16 @@ void VulkanRenderer::setViewportRect(int x, int y, int width, int height) {
     vpH_ = height < 0 ? 0 : height;
 }
 
+void VulkanRenderer::setDrawRect(int x, int y, int width, int height) {
+    if (currentCmd_ == VK_NULL_HANDLE || width <= 0 || height <= 0) return;
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+    VkViewport viewport{(float)x, (float)y, (float)width, (float)height, 0.0f, 1.0f};
+    VkRect2D scissor{{x, y}, {(uint32_t)width, (uint32_t)height}};
+    vkCmdSetViewport(currentCmd_, 0, 1, &viewport);
+    vkCmdSetScissor(currentCmd_, 0, 1, &scissor);
+}
+
 void VulkanRenderer::drawGrid(const std::vector<Vertex>& lineVerts, const glm::mat4& viewProj) {
     gridMesh_.upload(lineVerts, {});
     gizmoLinePipeline_.bind(currentCmd_);

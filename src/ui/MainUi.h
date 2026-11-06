@@ -40,7 +40,21 @@ struct ViewportState {
     // (fondo negro, sin rejilla, gizmo ni contorno) hasta la siguiente
     // interaccion con el visor, como en C4D.
     bool renderView = false;
+
+    // F5 "Todas las Vistas": cuatro paneles (Perspectiva, Superior, Derecha,
+    // Frontal), cada uno con su propia camara. La activa es la `camera` de
+    // siempre; las otras tres esperan en quadCams. Con quad, x/y/w/h son los
+    // del panel activo (picking, gizmo y seleccion por zona van ahi) y
+    // fullX/fullY/fullW/fullH los del visor entero.
+    bool quad = false;
+    int quadActive = 0;
+    OrbitalCamera quadCams[4];
+    float fullX = 0.0f, fullY = 0.0f, fullW = 0.0f, fullH = 0.0f;
 };
+
+// Rectangulo (coordenadas de ventana) del panel i (0-3) de la vista de 4.
+struct QuadRect { float x, y, w, h; };
+QuadRect quadPanelRect(const ViewportState& vp, int i);
 
 // Muestra la ventana con el resultado de importar un .c4d (main.cpp la usa al
 // abrir un .c4d pasado por linea de comandos).
