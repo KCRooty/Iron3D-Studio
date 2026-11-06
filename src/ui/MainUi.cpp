@@ -9,6 +9,8 @@
 #define STBI_WRITE_NO_STDIO
 #include <stb_image_write.h>
 #include <chrono>
+#include <map>
+#include <tuple>
 #include <ctime>
 #include <fstream>
 #include "FileDialog.h"
@@ -176,6 +178,14 @@ struct UiState {
     } render;
     bool showRenderSettings = false;
     bool pendingWorldCoords = false, pendingAxisMode = false;  // --ui-cmd antes del primer frame
+
+    // Opciones de herramienta (la rueda dentada de los menus, como en C4D).
+    enum class OptWin { None, RectSel, LassoSel, Connect };
+    OptWin optWin = OptWin::None;
+    ImVec2 optPos{0.0f, 0.0f};
+    bool selTolerant = true;       // Seleccion Rectangular/Lazo: tocar basta
+    bool connectWeld = true;       // Conectar Objetos: soldar puntos coincidentes
+    float connectWeldCm = 0.01f;   // tolerancia de la soldadura, en cm
     bool showPictureViewer = false;
     bool renderRequested = false;
     struct PictureViewer {
@@ -192,6 +202,11 @@ UiState g;
 // sitios que solo reciben la camara.
 ViewportState* g_vp = nullptr;
 void flashStatus(const std::string& text);
+// Abre la ventanita de opciones de una herramienta junto al raton.
+void openToolOptions(int which) {
+    g.optWin = (UiState::OptWin)which;
+    g.optPos = ImGui::GetIO().MousePos;
+}
 
 // --- Vistas y vista de 4 paneles (F1-F5) ----------------------------------------------
 using CamView = OrbitalCamera::View;
@@ -509,6 +524,28 @@ bool iconMenuItem(Icon icon, const char* label, const char* shortcut, bool* p_se
     const bool r = ImGui::MenuItemEx(label, kIconGutterText, shortcut, p_selected ? *p_selected : false, enabled);
     if (r && p_selected) *p_selected = !*p_selected;
     slot.draw(icon, enabled);
+    return r;
+}
+
+// Entrada de menu con la rueda dentada de opciones a la derecha (C4D R19):
+// clic en el texto ejecuta la orden; clic en la rueda pone `*gear` a true y
+// devuelve false (quien llama abre las opciones). `icon` puede ser nullptr.
+bool gearMenuItem(const Icon* icon, const char* label, const char* shortcut, bool selected, bool enabled, bool* gear) {
+    const MenuIconSlot slot;
+    const std::string sc = std::string(shortcut ? shortcut : "") + "      ";  // hueco para la rueda
+    const bool r = ImGui::MenuItemEx(label, kIconGutterText, sc.c_str(), selected, enabled);
+    if (icon) slot.draw(*icon, enabled);
+    const ImVec2 mn = ImGui::GetItemRectMin(), mx = ImGui::GetItemRectMax();
+    const float sz = std::min(14.0f, mx.y - mn.y - 2.0f);
+    const ImVec2 gp(mx.x - sz - 4.0f, mn.y + (mx.y - mn.y - sz) * 0.5f);
+    const bool overGear = ImGui::IsItemHovered() && ImGui::GetIO().MousePos.x >= gp.x - 3.0f;
+    if (overGear) ImGui::GetWindowDrawList()->AddRect(ImVec2(gp.x - 2, gp.y - 2), ImVec2(gp.x + sz + 2, gp.y + sz + 2),
+                                                      IM_COL32(200, 200, 200, 160), 2.0f);
+    icons::draw(ImGui::GetWindowDrawList(), Icon::Gear, gp, sz, enabled);
+    if (r && overGear) {
+        if (gear) *gear = true;
+        return false;
+    }
     return r;
 }
 
@@ -1074,6 +1111,59 @@ int currentStateToObject(SceneNode& root, SceneNode*& selected, SceneHistory& hi
 // Conectar Objetos: une la geometria de la seleccion (y sus hijos) en un solo
 // Objeto Polígono, con el eje y el material del primero. Con `removeSources`
 // (Conectar+Eliminar) los originales desaparecen.
+// Soldar (opcion de Conectar Objetos): une los vertices que coinciden en
+// posicion (dentro de `tol`), normal y color -- las costuras que deja
+// conectar piezas que se tocan --, y quita los triangulos que quedan
+// degenerados. Las aristas vivas no se tocan: ahi la normal es distinta.
+int weldMesh(MeshData& m, float tol) {
+    const float cell = std::max(tol, 1e-6f);
+    auto key = [&](const glm::vec3& p) {
+        return std::make_tuple((long long)std::floor(p.x / cell), (long long)std::floor(p.y / cell),
+                               (long long)std::floor(p.z / cell));
+    };
+    std::map<std::tuple<long long, long long, long long>, std::vector<uint32_t>> grid;
+    std::vector<Vertex> verts;
+    std::vector<uint32_t> remap(m.vertices.size());
+    for (size_t i = 0; i < m.vertices.size(); ++i) {
+        const Vertex& v = m.vertices[i];
+        const auto k = key(v.position);
+        uint32_t found = UINT32_MAX;
+        for (long long dx = -1; dx <= 1 && found == UINT32_MAX; ++dx)
+            for (long long dy = -1; dy <= 1 && found == UINT32_MAX; ++dy)
+                for (long long dz = -1; dz <= 1 && found == UINT32_MAX; ++dz) {
+                    auto it = grid.find({std::get<0>(k) + dx, std::get<1>(k) + dy, std::get<2>(k) + dz});
+                    if (it == grid.end()) continue;
+                    for (uint32_t c : it->second) {
+                        const Vertex& o = verts[c];
+                        if (glm::length(o.position - v.position) <= tol && glm::dot(o.normal, v.normal) > 0.9995f &&
+                            glm::length(o.color - v.color) < 1e-4f) {
+                            found = c;
+                            break;
+                        }
+                    }
+                }
+        if (found == UINT32_MAX) {
+            found = (uint32_t)verts.size();
+            verts.push_back(v);
+            grid[k].push_back(found);
+        }
+        remap[i] = found;
+    }
+    std::vector<uint32_t> idx;
+    idx.reserve(m.indices.size());
+    for (size_t i = 0; i + 2 < m.indices.size(); i += 3) {
+        const uint32_t a = remap[m.indices[i]], b = remap[m.indices[i + 1]], c = remap[m.indices[i + 2]];
+        if (a == b || b == c || a == c) continue;
+        idx.push_back(a);
+        idx.push_back(b);
+        idx.push_back(c);
+    }
+    const int removed = (int)(m.vertices.size() - verts.size());
+    m.vertices = std::move(verts);
+    m.indices = std::move(idx);
+    return removed;
+}
+
 int connectObjects(SceneNode& root, SceneNode*& selected, SceneHistory& history, bool removeSources) {
     const std::vector<SceneNode*> nodes = topLevelSelection(root, selected);
     struct Part { const SceneNode* n; glm::mat4 world; };
@@ -1109,6 +1199,7 @@ int connectObjects(SceneNode& root, SceneNode*& selected, SceneHistory& history,
         }
     }
     if (out.indices.empty()) return 0;
+    if (g.connectWeld) weldMesh(out, std::max(0.0f, g.connectWeldCm) / kCmPerUnit);
     updateBounds(out);
 
     history.commitBefore(root);
@@ -1211,17 +1302,27 @@ void handleMarqueeSelection(SceneNode& root, SceneNode*& selected, const Orbital
             local.emplace_back(0.0f);  // el eje (luces y nulos solo tienen esto)
             const glm::mat4 w = n.worldMatrix();
             ImVec2 mn(FLT_MAX, FLT_MAX), mx(-FLT_MAX, -FLT_MAX);
-            bool any = false, inside = false;
+            bool any = false, inside = false, allInside = true;
             for (const glm::vec3& l : local) {
                 ImVec2 p;
                 if (!project(glm::vec3(w * glm::vec4(l, 1.0f)), p)) continue;
                 any = true;
                 mn = ImVec2(std::min(mn.x, p.x), std::min(mn.y, p.y));
                 mx = ImVec2(std::max(mx.x, p.x), std::max(mx.y, p.y));
-                if (vp.selectShape == 2 && pointInPolygon(zone, p)) inside = true;
+                if (vp.selectShape == 2) {
+                    if (pointInPolygon(zone, p)) inside = true;
+                    else allInside = false;
+                }
             }
             if (!any) return;
-            const bool hit = vp.selectShape == 1 ? (mn.x <= rb.x && mx.x >= ra.x && mn.y <= rb.y && mx.y >= ra.y) : inside;
+            // Tolerante (por defecto): basta con tocar la zona. Sin ella, el
+            // objeto tiene que quedar dentro entero (opciones de la rueda).
+            bool hit;
+            if (vp.selectShape == 1)
+                hit = g.selTolerant ? (mn.x <= rb.x && mx.x >= ra.x && mn.y <= rb.y && mx.y >= ra.y)
+                                    : (mn.x >= ra.x && mx.x <= rb.x && mn.y >= ra.y && mx.y <= rb.y);
+            else
+                hit = g.selTolerant ? inside : allInside;
             if (hit) hits.push_back(&n);
         });
 
@@ -1819,7 +1920,11 @@ void drawViewportContextMenu(SceneNode& root, SceneNode*& selected, GizmoMode& m
     if (iconMenuItem(Icon::MakeEditable, "Hacer Editable", "C", false, canMakeEditable(root, selected)))
         g.pendingCmd = UiCmd::MakeEditable;
     if (ImGui::MenuItem("Estado Actual a Objeto", nullptr, false, hasSel)) g.pendingCmd = UiCmd::CurrentState;
-    if (ImGui::MenuItem("Conectar Objetos", nullptr, false, hasSel)) g.pendingCmd = UiCmd::Connect;
+    {
+        bool gc = false;
+        if (gearMenuItem(nullptr, "Conectar Objetos", nullptr, false, hasSel, &gc)) g.pendingCmd = UiCmd::Connect;
+        if (gc) openToolOptions((int)UiState::OptWin::Connect);
+    }
     if (ImGui::MenuItem("Conectar+Eliminar", nullptr, false, hasSel)) g.pendingCmd = UiCmd::ConnectDelete;
     if (iconMenuItem(Icon::Null, "Agrupar Objetos", "Alt+G", false, hasSel)) g.pendingCmd = UiCmd::Group;
     ImGui::Separator();
@@ -1844,8 +1949,14 @@ void drawViewportContextMenu(SceneNode& root, SceneNode*& selected, GizmoMode& m
     }
     ImGui::Separator();
     if (iconMenuItem(Icon::LiveSelect, "Selección en Vivo", "9", vp.selectTool && vp.selectShape == 0)) { vp.selectTool = true; vp.selectShape = 0; }
-    if (iconMenuItem(Icon::MnuRectSelect, "Selección Rectangular", "0", vp.selectTool && vp.selectShape == 1)) { vp.selectTool = true; vp.selectShape = 1; }
-    if (iconMenuItem(Icon::MnuLassoSelect, "Selección con Lazo", "8", vp.selectTool && vp.selectShape == 2)) { vp.selectTool = true; vp.selectShape = 2; }
+    {
+        bool gr = false, gl = false;
+        const Icon ir = Icon::MnuRectSelect, il = Icon::MnuLassoSelect;
+        if (gearMenuItem(&ir, "Selección Rectangular", "0", vp.selectTool && vp.selectShape == 1, true, &gr)) { vp.selectTool = true; vp.selectShape = 1; }
+        if (gearMenuItem(&il, "Selección con Lazo", "8", vp.selectTool && vp.selectShape == 2, true, &gl)) { vp.selectTool = true; vp.selectShape = 2; }
+        if (gr) { vp.selectTool = true; vp.selectShape = 1; openToolOptions((int)UiState::OptWin::RectSel); }
+        if (gl) { vp.selectTool = true; vp.selectShape = 2; openToolOptions((int)UiState::OptWin::LassoSel); }
+    }
     ImGui::EndPopup();
 }
 
@@ -1957,8 +2068,14 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
     if (ImGui::BeginMenu("Selección")) {
         ImGui::BeginMenuEx("Filtro de Selección", kIconGutterText, false);
         if (iconMenuItem(Icon::LiveSelect, "Selección en Vivo", "9", vp.selectTool && vp.selectShape == 0)) { vp.selectTool = true; vp.selectShape = 0; }
-        if (iconMenuItem(Icon::MnuRectSelect, "Selección Rectangular", "0", vp.selectTool && vp.selectShape == 1)) { vp.selectTool = true; vp.selectShape = 1; }
-        if (iconMenuItem(Icon::MnuLassoSelect, "Selección Lazo", "8", vp.selectTool && vp.selectShape == 2)) { vp.selectTool = true; vp.selectShape = 2; }
+        {
+            bool gr = false, gl = false;
+            const Icon ir = Icon::MnuRectSelect, il = Icon::MnuLassoSelect;
+            if (gearMenuItem(&ir, "Selección Rectangular", "0", vp.selectTool && vp.selectShape == 1, true, &gr)) { vp.selectTool = true; vp.selectShape = 1; }
+            if (gearMenuItem(&il, "Selección con Lazo", "8", vp.selectTool && vp.selectShape == 2, true, &gl)) { vp.selectTool = true; vp.selectShape = 2; }
+            if (gr) { vp.selectTool = true; vp.selectShape = 1; openToolOptions((int)UiState::OptWin::RectSel); }
+            if (gl) { vp.selectTool = true; vp.selectShape = 2; openToolOptions((int)UiState::OptWin::LassoSel); }
+        }
         iconMenuItem(Icon::MnuPolySelect, "Selección de Polígono", "", false, false);
         ImGui::Separator();
         iconMenuItem(Icon::MnuLoop, "Selección de Bucle", "U~L", false, false);
@@ -2003,7 +2120,12 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         if (iconMenuItem(Icon::MakeEditable, "Hacer Editable", "C", false, canMakeEditable(root, selected)))
             g.pendingCmd = UiCmd::MakeEditable;
         if (ImGui::MenuItem("Estado Actual a Objeto", nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::CurrentState;
-        if (ImGui::MenuItem("Conectar Objetos", nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::Connect;
+        {
+            bool gc = false;
+            const Icon ic = Icon::ModConnect;
+            if (gearMenuItem(&ic, "Conectar Objetos", nullptr, false, selected != nullptr, &gc)) g.pendingCmd = UiCmd::Connect;
+            if (gc) openToolOptions((int)UiState::OptWin::Connect);
+        }
         if (ImGui::MenuItem("Conectar Objetos + Eliminar", nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::ConnectDelete;
         disabledItems({{nullptr, nullptr},
                        {"Cuchillo", "K~K"}, {"Extrusión", "D"}, {"Extrusión Interna", "I"}, {"Bisel", "M~S"},
@@ -2033,10 +2155,20 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
     stubTop("Simulación", {{"Partículas", ""}, {"Thinking Particles", ""}, {"Dinámicas", ""}, {"Cloth", ""},
                            {"Hair", ""}});
     if (ImGui::BeginMenu("Render")) {
-        if (iconMenuItem(Icon::RenderView, "Renderizar Vista Activa", "Ctrl+R")) vp.renderView = true;
+        {
+            bool g1 = false;
+            const Icon iv = Icon::RenderView;
+            if (gearMenuItem(&iv, "Renderizar Vista Activa", "Ctrl+R", false, true, &g1)) vp.renderView = true;
+            if (g1) g.showRenderSettings = true;
+        }
         iconMenuItem(Icon::MnuRenderRegion, "Renderizar Región", "Alt+R", false, false);
         ImGui::MenuItemEx("Renderizar Seleccionados en Visor de Imágenes", kIconGutterText, "", false, false);
-        if (iconMenuItem(Icon::RenderPicture, "Renderizar en Visor de Imágenes", "Mayús+R")) g.renderRequested = true;
+        {
+            bool g2 = false;
+            const Icon ip = Icon::RenderPicture;
+            if (gearMenuItem(&ip, "Renderizar en Visor de Imágenes", "Mayús+R", false, true, &g2)) g.renderRequested = true;
+            if (g2) g.showRenderSettings = true;
+        }
         iconMenuItem(Icon::MnuInteractiveRegion, "Región de Render Interactivo", "Alt+R", false, false);
         iconMenuItem(Icon::MnuMakePreview, "Crear Previsualización...", "Alt+B", false, false);
         ImGui::Separator();
@@ -4698,6 +4830,33 @@ void applyPreset(const UiPreset& preset) {
 }
 
 
+// --- Opciones de herramienta (rueda dentada de los menus) ------------------------------
+void drawToolOptions() {
+    if (g.optWin == UiState::OptWin::None) return;
+    const char* title = g.optWin == UiState::OptWin::RectSel   ? "Selección Rectangular###toolopts"
+                        : g.optWin == UiState::OptWin::LassoSel ? "Selección con Lazo###toolopts"
+                                                                : "Conectar Objetos###toolopts";
+    ImGui::SetNextWindowPos(g.optPos, ImGuiCond_Appearing);
+    bool open = true;
+    if (ImGui::Begin(title, &open, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
+        if (g.optWin == UiState::OptWin::Connect) {
+            ImGui::Checkbox("Soldar", &g.connectWeld);
+            ImGui::BeginDisabled(!g.connectWeld);
+            ImGui::SetNextItemWidth(120.0f);
+            ImGui::InputFloat("Tolerancia (cm)", &g.connectWeldCm, 0.01f, 0.1f, "%.3f");
+            g.connectWeldCm = std::clamp(g.connectWeldCm, 0.0f, 1000.0f);
+            ImGui::EndDisabled();
+            ImGui::TextDisabled("Une los puntos que coinciden (misma posición,\nnormal y color) al conectar.");
+        } else {
+            ImGui::Checkbox("Tolerante", &g.selTolerant);
+            ImGui::TextDisabled(g.selTolerant ? "Se elige todo lo que toque la zona."
+                                              : "Solo se elige lo que queda dentro entero.");
+        }
+    }
+    ImGui::End();
+    if (!open) g.optWin = UiState::OptWin::None;
+}
+
 // --- Render en el Visor de Imagenes (Mayus+R) y Configuracion de Render (Ctrl+B) ------
 void renderToPictureViewer(const SceneNode& root, const std::vector<Material>& materials, const OrbitalCamera& camera,
                            const ViewportState& vp) {
@@ -4990,6 +5149,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     }
     drawRenderSettings();
     drawPictureViewer(root, materials, camera, viewport);
+    drawToolOptions();
 
     drawStatusBar(framerate, gizmoMode, viewport, activeBackend, L.status.pos, L.status.size);
 }
@@ -5041,6 +5201,8 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "view-quad") g.cmdQueue.push_back(UiCmd::ViewQuad);
     else if (cmd == "render-pv") g.renderRequested = true;
     else if (cmd == "render-settings") g.showRenderSettings = true;
+    else if (cmd == "opts-connect") g.optWin = UiState::OptWin::Connect, g.optPos = ImVec2(400, 200);
+    else if (cmd == "opts-rect") g.optWin = UiState::OptWin::RectSel, g.optPos = ImVec2(400, 200);
     else if (cmd == "world-coords") { if (g_vp) g_vp->worldCoords = true; else g.pendingWorldCoords = true; }
     else if (cmd == "axis-mode") { if (g_vp) g_vp->axisMode = true; else g.pendingAxisMode = true; }
     else if (cmd == "vp-menu") g.openVpMenu = 30;
