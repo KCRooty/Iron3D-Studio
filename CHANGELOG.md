@@ -6,6 +6,35 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-07 (5) — Modos Puntos, Aristas y Polígonos
+
+**Añadido**
+- Los botones **Puntos / Aristas / Polígonos** de la barra izquierda ya funcionan con
+  objetos editables (Objeto Polígono: importados o convertidos con C). Modelo vuelve a
+  editar objetos enteros.
+- Se dibujan los componentes del objeto activo encima del visor. Los puntos son los
+  vértices unidos por posición: un cubo de 24 vértices de render da 8 puntos.
+- **Selección**: con clic, Mayús+clic para añadir o quitar y Ctrl+clic para quitar. Con
+  Rectangular y Lazo, la opción Tolerante decide si basta un punto dentro o hacen falta todos.
+- El **gizmo** mueve, gira y escala lo seleccionado alrededor de su centro, con los ejes
+  del objeto. Las normales de los triángulos tocados se recalculan: las aristas vivas
+  siguen vivas. Se puede deshacer.
+- **Supr** borra los polígonos seleccionados, o los que usan los puntos o aristas
+  seleccionados.
+
+**Probado**: compila sin avisos, pasan los tests y está verificado por captura. Se hizo
+editable el Cubo, que dio 8 puntos. En modo Polígonos, 4 triángulos salen en naranja y el
+gizmo queda en su centro; en modo Puntos, 3 puntos seleccionados.
+**Sin probar**: nada con el ratón de verdad (clic, arrastre del gizmo, marco, Supr) ni con
+OpenGL.
+
+**Limitaciones conocidas**:
+- Se dibujan también las aristas ocultas, porque no hay oclusión.
+- Los polígonos son triángulos: un quad de C4D aparece como dos.
+- En estos modos el clic en el visor no cambia de objeto; eso se hace en el Gestor de Objetos.
+- No dibuja componentes en mallas de más de 60 000 puntos o aristas.
+- No hay herramientas de modelado: ni extruir, ni biselar, ni cuchillo.
+
 ### 2026-11-07 (4) — Animación por fotogramas clave (F9)
 
 **Añadido**

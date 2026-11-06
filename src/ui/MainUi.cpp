@@ -8,7 +8,10 @@
 
 #define STBI_WRITE_NO_STDIO
 #include <stb_image_write.h>
+#include <array>
 #include <chrono>
+#include <sstream>
+#include <set>
 #include <map>
 #include <tuple>
 #include <ctime>
@@ -38,6 +41,11 @@
 #include <vector>
 
 namespace iron3d {
+
+// Modos Puntos/Aristas/Poligonos (definidas mas abajo, fuera del namespace anonimo).
+bool componentMarquee(SceneNode* selected, const OrbitalCamera& camera, const ViewportState& vp,
+                      const std::function<bool(ImVec2)>& inside, bool shift, bool ctrl);
+bool deleteComponents(SceneNode& root, SceneNode* selected, SceneHistory& history);
 
 namespace {
 
@@ -178,6 +186,8 @@ struct UiState {
     } render;
     bool showRenderSettings = false;
     bool pendingWorldCoords = false, pendingAxisMode = false;  // --ui-cmd antes del primer frame
+    int pendingCompMode = 0;
+    std::vector<int> pendingCompSel;
 
     // Opciones de herramienta (la rueda dentada de los menus, como en C4D).
     enum class OptWin { None, RectSel, LassoSel, Connect };
@@ -194,6 +204,22 @@ struct UiState {
     bool recordRequested = false;
     float lastEvalFrame = -1e9f;
     std::vector<int> selKeys;  // claves del objeto activo (para la Linea de Tiempo)
+
+    // Modos Puntos/Aristas/Poligonos: topologia del objeto activo (puntos =
+    // vertices de render unidos por posicion; poligonos = triangulos),
+    // seleccion de componentes y estado del arrastre.
+    struct Components {
+        const MeshData* mesh = nullptr;     // malla de la que se saco la topologia
+        std::vector<glm::vec3> pts;         // posicion local de cada punto
+        std::vector<int> vpt;               // vertice de render -> punto
+        std::vector<std::pair<int, int>> edges;
+        std::vector<std::array<int, 3>> tris;  // en puntos
+        int nodeId = -1, mode = 0;
+        std::set<int> sel;
+        std::unique_ptr<SceneNode> proxy;
+        glm::mat4 dragStartProxy{1.0f};
+        std::shared_ptr<const MeshData> dragStartMesh;
+    } comp;
     bool showPictureViewer = false;
     bool renderRequested = false;
     struct PictureViewer {
@@ -1324,6 +1350,13 @@ void handleMarqueeSelection(SceneNode& root, SceneNode*& selected, const Orbital
         if (rb.x - ra.x < 3.0f && rb.y - ra.y < 3.0f) return;  // clic sin arrastre
     } else if (zone.size() < 3) return;
 
+    {
+        const bool shape1 = vp.selectShape == 1;
+        auto inside = [&](ImVec2 p) {
+            return shape1 ? (p.x >= ra.x && p.x <= rb.x && p.y >= ra.y && p.y <= rb.y) : pointInPolygon(zone, p);
+        };
+        if (componentMarquee(selected, camera, vp, inside, io.KeyShift, io.KeyCtrl)) return;
+    }
     const glm::mat4 vpm = camera.projectionMatrix(vp.w / vp.h, false) * camera.viewMatrix();
     auto project = [&](const glm::vec3& w, ImVec2& out) {
         const glm::vec4 c = vpm * glm::vec4(w, 1.0f);
@@ -1656,7 +1689,7 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
                 fixupMaterialIndicesAfterRemoval(root, g.selectedMat);
                 materials.erase(materials.begin() + g.selectedMat);
                 g.selectedMat = -1;
-            } else {
+            } else if (!deleteComponents(root, selected, history)) {
                 deleteSelected(root, selected, history);
             }
         }
@@ -2434,7 +2467,10 @@ void drawLeftToolbar(ImVec2 pos, ImVec2 size) {
         BtnResult::Click)
         g.pendingCmd = UiCmd::MakeEditable;
     toolbarSeparator(false, b);
-    iconButton("model", Icon::ModelMode, b, true, true, "Usar Modo Modelo", "Modo Modelo: se editan objetos enteros (el único modo disponible por ahora).");
+    const int cm = g_vp ? g_vp->compMode : 0;
+    if (iconButton("model", Icon::ModelMode, b, cm == 0, true, "Usar Modo Modelo", "Modo Modelo: se editan objetos enteros.") ==
+            BtnResult::Click && g_vp)
+        g_vp->compMode = 0;
     iconButton("texmode", Icon::TextureMode, b, false, false, "Usar Modo Textura\n(todavía no implementado)", "Modo Textura: todavía no implementado.");
     if (iconButton("axmode", Icon::AxisMode, b, g_vp && g_vp->axisMode, g_vp != nullptr, "Activar Eje [L]",
                    "Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.") ==
@@ -2442,9 +2478,15 @@ void drawLeftToolbar(ImVec2 pos, ImVec2 size) {
         g_vp)
         g_vp->axisMode = !g_vp->axisMode;
     toolbarSeparator(false, b);
-    iconButton("pts", Icon::Points, b, false, false, "Usar Modo Puntos\n(necesita malla editable)", "Modo Puntos: Iron3D todavía no tiene mallas editables.");
-    iconButton("edg", Icon::Edges, b, false, false, "Usar Modo Aristas\n(necesita malla editable)", "Modo Aristas: Iron3D todavía no tiene mallas editables.");
-    iconButton("pol", Icon::Polygons, b, false, false, "Usar Modo Polígonos\n(necesita malla editable)", "Modo Polígonos: Iron3D todavía no tiene mallas editables.");
+    if (iconButton("pts", Icon::Points, b, cm == 1, true, "Usar Modo Puntos",
+                   "Modo Puntos: elige y mueve puntos de un objeto editable (C para hacerlo editable).") == BtnResult::Click && g_vp)
+        g_vp->compMode = 1;
+    if (iconButton("edg", Icon::Edges, b, cm == 2, true, "Usar Modo Aristas",
+                   "Modo Aristas: elige y mueve aristas de un objeto editable.") == BtnResult::Click && g_vp)
+        g_vp->compMode = 2;
+    if (iconButton("pol", Icon::Polygons, b, cm == 3, true, "Usar Modo Polígonos",
+                   "Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.") == BtnResult::Click && g_vp)
+        g_vp->compMode = 3;
     toolbarSeparator(false, b);
     iconButton("tweak", Icon::Tweak, b, false, false, "Modo Ajuste\n(todavía no implementado)", "Modo Ajuste: todavía no implementado.");
     iconButton("solo", Icon::Solo, b, false, false, "Vista Solo\n(todavía no implementado)", "Vista Solo: todavía no implementado.");
@@ -3527,7 +3569,7 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                 roFloat("Vértices", m ? (float)m->vertices.size() : 0.0f, "%.0f");
                 roFloat("Triángulos", m ? (float)(m->indices.size() / 3) : 0.0f, "%.0f");
                 ImGui::TextDisabled("  Objeto Poligonal (importado o hecho editable con C).");
-                ImGui::TextDisabled("  Editar puntos, aristas y polígonos llegará con el modo Modelado.");
+                ImGui::TextDisabled("  Puntos, aristas y polígonos: botones de la barra izquierda (Supr borra).");
             } else if (node.primitive == PrimitiveType::Sphere) {
                 roFloat("Radio", 100, "%.0f cm");
                 roFloat("Segmentos", 24, "%.0f");
@@ -5096,9 +5138,329 @@ void compensateAxisMove(SceneNode& node, const glm::mat4& beforeWorld) {
 }
 
 void notifyTransformEdited(SceneNode& root) {
+    g.comp.dragStartMesh.reset();  // fin de un arrastre de componentes (si lo era)
     if (!g.autoKey) return;
     // Sin paso de deshacer propio: el del arrastre ya guardo el estado anterior.
     recordActiveObjects(root, nullptr, nullptr);
+}
+
+// --- Modos Puntos / Aristas / Poligonos -------------------------------------------------
+const MeshData* editableMesh(const SceneNode* n) {
+    return n && n->primitive == PrimitiveType::Mesh && n->mesh ? n->mesh.get() : nullptr;
+}
+
+// Topologia del objeto activo (se rehace si cambia de objeto o de malla) y
+// limpieza de la seleccion si cambia el objeto o el modo.
+bool syncComponents(const SceneNode* n) {
+    auto& c = g.comp;
+    const int mode = g_vp ? g_vp->compMode : 0;
+    const MeshData* m = mode ? editableMesh(n) : nullptr;
+    if (!m) {
+        c.sel.clear();
+        c.nodeId = -1;
+        return false;
+    }
+    if (c.nodeId != n->id() || c.mode != mode) c.sel.clear();
+    c.nodeId = n->id();
+    c.mode = mode;
+    if (c.mesh == m) return true;
+    const size_t oldPts = c.pts.size();
+    c.mesh = m;
+    c.pts.clear();
+    c.vpt.assign(m->vertices.size(), 0);
+    std::map<std::tuple<long long, long long, long long>, int> byPos;
+    for (size_t i = 0; i < m->vertices.size(); ++i) {
+        const glm::vec3 p = m->vertices[i].position;
+        const auto k = std::make_tuple((long long)std::llround(p.x * 1e5), (long long)std::llround(p.y * 1e5),
+                                       (long long)std::llround(p.z * 1e5));
+        auto it = byPos.find(k);
+        if (it == byPos.end()) {
+            it = byPos.emplace(k, (int)c.pts.size()).first;
+            c.pts.push_back(p);
+        }
+        c.vpt[i] = it->second;
+    }
+    c.tris.clear();
+    std::set<std::pair<int, int>> es;
+    for (size_t i = 0; i + 2 < m->indices.size(); i += 3) {
+        std::array<int, 3> t{};
+        bool ok = true;
+        for (int k = 0; k < 3; ++k) {
+            const uint32_t v = m->indices[i + (size_t)k];
+            if (v >= m->vertices.size()) { ok = false; break; }
+            t[(size_t)k] = c.vpt[v];
+        }
+        if (!ok) continue;
+        c.tris.push_back(t);
+        for (int k = 0; k < 3; ++k) {
+            const int a = t[(size_t)k], b = t[(size_t)((k + 1) % 3)];
+            if (a != b) es.insert({std::min(a, b), std::max(a, b)});
+        }
+    }
+    c.edges.assign(es.begin(), es.end());
+    if (c.pts.size() != oldPts) c.sel.clear();  // otra topologia: la seleccion ya no vale
+    return true;
+}
+
+// Puntos afectados por la seleccion actual (segun el modo).
+std::set<int> selectedPoints() {
+    const auto& c = g.comp;
+    std::set<int> out;
+    for (int i : c.sel) {
+        if (c.mode == 1 && i < (int)c.pts.size()) out.insert(i);
+        else if (c.mode == 2 && i < (int)c.edges.size()) { out.insert(c.edges[(size_t)i].first); out.insert(c.edges[(size_t)i].second); }
+        else if (c.mode == 3 && i < (int)c.tris.size()) for (int p : c.tris[(size_t)i]) out.insert(p);
+    }
+    return out;
+}
+
+struct CompProjector {
+    glm::mat4 mvp;
+    float x, y, w, h;
+    bool operator()(const glm::vec3& local, ImVec2& out, float* depth = nullptr) const {
+        const glm::vec4 c = mvp * glm::vec4(local, 1.0f);
+        if (c.w <= 1e-5f) return false;
+        out = ImVec2(x + (c.x / c.w * 0.5f + 0.5f) * w, y + (0.5f - c.y / c.w * 0.5f) * h);
+        if (depth) *depth = c.z / c.w;
+        return true;
+    }
+};
+
+CompProjector compProjector(const SceneNode& n, const OrbitalCamera& camera, const ViewportState& vp) {
+    return {camera.projectionMatrix(vp.w / std::max(1.0f, vp.h), false) * camera.viewMatrix() * n.worldMatrix(), vp.x, vp.y,
+            vp.w, vp.h};
+}
+
+float segDist(ImVec2 p, ImVec2 a, ImVec2 b) {
+    const float dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+    const float t = l2 > 1e-9f ? std::clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / l2, 0.0f, 1.0f) : 0.0f;
+    const float qx = a.x + t * dx - p.x, qy = a.y + t * dy - p.y;
+    return std::sqrt(qx * qx + qy * qy);
+}
+
+constexpr size_t kMaxCompDraw = 60000;  // por encima no se dibujan (rendimiento de ImGui)
+
+void drawComponentOverlay(const SceneNode* selected, const OrbitalCamera& camera, const ViewportState& vp) {
+    if (!syncComponents(selected)) return;
+    const auto& c = g.comp;
+    ImDrawList* dl = ImGui::GetBackgroundDrawList();
+    dl->PushClipRect(ImVec2(vp.x, vp.y), ImVec2(vp.x + vp.w, vp.y + vp.h), true);
+    const CompProjector proj = compProjector(*selected, camera, vp);
+    const ImU32 wire = IM_COL32(150, 170, 200, 150), sel = IM_COL32(255, 140, 30, 255), pt = IM_COL32(110, 160, 255, 255);
+    if (c.edges.size() > kMaxCompDraw || c.pts.size() > kMaxCompDraw) {
+        dl->AddText(ImVec2(vp.x + 8, vp.y + 24), IM_COL32(255, 200, 120, 255), "Malla demasiado grande para dibujar sus componentes.");
+        dl->PopClipRect();
+        return;
+    }
+    std::vector<ImVec2> sp(c.pts.size());
+    std::vector<char> ok(c.pts.size());
+    for (size_t i = 0; i < c.pts.size(); ++i) ok[i] = proj(c.pts[i], sp[i]);
+    if (c.mode == 3)
+        for (int i : c.sel) {
+            if (i >= (int)c.tris.size()) continue;
+            const auto& t = c.tris[(size_t)i];
+            if (ok[(size_t)t[0]] && ok[(size_t)t[1]] && ok[(size_t)t[2]])
+                dl->AddTriangleFilled(sp[(size_t)t[0]], sp[(size_t)t[1]], sp[(size_t)t[2]], IM_COL32(255, 140, 30, 90));
+        }
+    for (size_t i = 0; i < c.edges.size(); ++i) {
+        const auto [a, b] = c.edges[i];
+        if (!ok[(size_t)a] || !ok[(size_t)b]) continue;
+        const bool s = c.mode == 2 && c.sel.count((int)i);
+        dl->AddLine(sp[(size_t)a], sp[(size_t)b], s ? sel : wire, s ? 2.5f : 1.0f);
+    }
+    if (c.mode == 1)
+        for (size_t i = 0; i < c.pts.size(); ++i) {
+            if (!ok[i]) continue;
+            const bool s = c.sel.count((int)i) > 0;
+            const float r = s ? 3.5f : 2.5f;
+            dl->AddRectFilled(ImVec2(sp[i].x - r, sp[i].y - r), ImVec2(sp[i].x + r, sp[i].y + r), s ? sel : pt);
+        }
+    const char* names[] = {"", "Puntos", "Aristas", "Polígonos"};
+    char buf[96];
+    std::snprintf(buf, sizeof(buf), "%s: %zu seleccionados", names[c.mode], c.sel.size());
+    dl->AddText(ImVec2(vp.x + 8, vp.y + 24), IM_COL32(230, 230, 230, 220), buf);
+    dl->PopClipRect();
+}
+
+bool componentClick(SceneNode* selected, const OrbitalCamera& camera, float mx, float my, bool shift, bool ctrl) {
+    if (!g_vp || !syncComponents(selected)) return false;
+    auto& c = g.comp;
+    const CompProjector proj = compProjector(*selected, camera, *g_vp);
+    const ImVec2 m(mx, my);
+    int best = -1;
+    float bestScore = 1e30f;
+    if (c.mode == 1) {
+        for (size_t i = 0; i < c.pts.size(); ++i) {
+            ImVec2 p;
+            float z;
+            if (!proj(c.pts[i], p, &z)) continue;
+            const float d = std::hypot(p.x - m.x, p.y - m.y);
+            if (d < 9.0f && d + z < bestScore) { bestScore = d + z; best = (int)i; }
+        }
+    } else if (c.mode == 2) {
+        for (size_t i = 0; i < c.edges.size(); ++i) {
+            ImVec2 a, b;
+            if (!proj(c.pts[(size_t)c.edges[i].first], a) || !proj(c.pts[(size_t)c.edges[i].second], b)) continue;
+            const float d = segDist(m, a, b);
+            if (d < 6.0f && d < bestScore) { bestScore = d; best = (int)i; }
+        }
+    } else {
+        for (size_t i = 0; i < c.tris.size(); ++i) {
+            ImVec2 p[3];
+            float z[3];
+            bool vis = true;
+            for (int k = 0; k < 3; ++k) vis = vis && proj(c.pts[(size_t)c.tris[i][(size_t)k]], p[k], &z[k]);
+            if (!vis || !pointInPolygon({p[0], p[1], p[2]}, m)) continue;
+            const float depth = (z[0] + z[1] + z[2]) / 3.0f;
+            if (depth < bestScore) { bestScore = depth; best = (int)i; }
+        }
+    }
+    if (ctrl) {
+        if (best >= 0) c.sel.erase(best);
+    } else {
+        if (!shift) c.sel.clear();
+        if (best >= 0) {
+            if (shift && c.sel.count(best)) c.sel.erase(best);
+            else c.sel.insert(best);
+        }
+    }
+    return true;
+}
+
+// Seleccion Rectangular/Lazo en modo de componentes. true si la gestiona.
+bool componentMarquee(SceneNode* selected, const OrbitalCamera& camera, const ViewportState& vp,
+                      const std::function<bool(ImVec2)>& inside, bool shift, bool ctrl) {
+    if (!syncComponents(selected)) return false;
+    auto& c = g.comp;
+    const CompProjector proj = compProjector(*selected, camera, vp);
+    std::vector<char> in(c.pts.size(), 0);
+    for (size_t i = 0; i < c.pts.size(); ++i) {
+        ImVec2 p;
+        in[i] = proj(c.pts[i], p) && inside(p);
+    }
+    std::vector<int> hits;
+    if (c.mode == 1) {
+        for (size_t i = 0; i < c.pts.size(); ++i) if (in[i]) hits.push_back((int)i);
+    } else if (c.mode == 2) {
+        for (size_t i = 0; i < c.edges.size(); ++i) {
+            const bool a = in[(size_t)c.edges[i].first], b = in[(size_t)c.edges[i].second];
+            if (g.selTolerant ? (a || b) : (a && b)) hits.push_back((int)i);
+        }
+    } else {
+        for (size_t i = 0; i < c.tris.size(); ++i) {
+            const auto& t = c.tris[i];
+            const int n = in[(size_t)t[0]] + in[(size_t)t[1]] + in[(size_t)t[2]];
+            if (g.selTolerant ? n > 0 : n == 3) hits.push_back((int)i);
+        }
+    }
+    if (ctrl) for (int h : hits) c.sel.erase(h);
+    else {
+        if (!shift) c.sel.clear();
+        c.sel.insert(hits.begin(), hits.end());
+    }
+    return true;
+}
+
+// Borrar (Supr) en modo de componentes: quita los poligonos seleccionados o
+// los que usan los puntos/aristas seleccionados.
+bool deleteComponents(SceneNode& root, SceneNode* selected, SceneHistory& history) {
+    if (!syncComponents(selected) || g.comp.sel.empty()) return false;
+    auto& c = g.comp;
+    const std::set<int> pts = selectedPoints();
+    std::set<std::pair<int, int>> selEdges;
+    if (c.mode == 2)
+        for (int i : c.sel) if (i < (int)c.edges.size()) selEdges.insert(c.edges[(size_t)i]);
+    MeshData m = *selected->mesh;
+    std::vector<uint32_t> idx;
+    size_t ti = 0;
+    for (size_t i = 0; i + 2 < m.indices.size(); i += 3, ++ti) {
+        bool drop = false;
+        if (ti < c.tris.size()) {
+            const auto& t = c.tris[ti];
+            if (c.mode == 3) drop = c.sel.count((int)ti) > 0;
+            else if (c.mode == 1) drop = pts.count(t[0]) || pts.count(t[1]) || pts.count(t[2]);
+            else
+                for (int k = 0; k < 3 && !drop; ++k) {
+                    const int a = t[(size_t)k], b = t[(size_t)((k + 1) % 3)];
+                    drop = selEdges.count({std::min(a, b), std::max(a, b)}) > 0;
+                }
+        }
+        if (drop) continue;
+        idx.insert(idx.end(), m.indices.begin() + (ptrdiff_t)i, m.indices.begin() + (ptrdiff_t)i + 3);
+    }
+    history.commitBefore(root);
+    const size_t removed = (m.indices.size() - idx.size()) / 3;
+    m.indices = std::move(idx);
+    updateBounds(m);
+    selected->mesh = std::make_shared<const MeshData>(std::move(m));
+    c.sel.clear();
+    flashStatus("Eliminados " + std::to_string(removed) + (removed == 1 ? " polígono." : " polígonos."));
+    return true;
+}
+
+SceneNode* componentGizmoTarget(SceneNode* selected, bool dragging) {
+    auto& c = g.comp;
+    if (dragging && c.proxy && c.dragStartMesh) return c.proxy.get();
+    if (!syncComponents(selected) || c.sel.empty()) return nullptr;
+    const std::set<int> pts = selectedPoints();
+    if (pts.empty()) return nullptr;
+    glm::vec3 center(0.0f);
+    for (int p : pts) center += c.pts[(size_t)p];
+    center /= (float)pts.size();
+    if (!c.proxy) c.proxy = std::make_unique<SceneNode>("componentes");
+    const glm::mat4 w = selected->worldMatrix();
+    glm::mat3 r(w);
+    for (int i = 0; i < 3; ++i) r[i] = glm::length(r[i]) > 1e-8f ? glm::normalize(r[i]) : glm::vec3(i == 0, i == 1, i == 2);
+    c.proxy->position = glm::vec3(w * glm::vec4(center, 1.0f));
+    c.proxy->rotationDeg = mat3ToHpb(r);
+    c.proxy->scale = glm::vec3(1.0f);
+    return c.proxy.get();
+}
+
+void beginComponentDrag(SceneNode& node) {
+    auto& c = g.comp;
+    if (!c.proxy || !node.mesh) return;
+    c.dragStartProxy = c.proxy->worldMatrix();
+    c.dragStartMesh = node.mesh;
+}
+
+void applyComponentDrag(SceneNode& node) {
+    auto& c = g.comp;
+    if (!c.proxy || !c.dragStartMesh || c.dragStartMesh->vertices.size() != c.vpt.size()) return;
+    const glm::mat4 w = node.worldMatrix();
+    const glm::mat4 l = glm::inverse(w) * c.proxy->worldMatrix() * glm::inverse(c.dragStartProxy) * w;
+    const std::set<int> pts = selectedPoints();
+    MeshData m = *c.dragStartMesh;
+    std::vector<char> moved(m.vertices.size(), 0);
+    for (size_t v = 0; v < m.vertices.size(); ++v)
+        if (pts.count(c.vpt[v])) {
+            m.vertices[v].position = glm::vec3(l * glm::vec4(m.vertices[v].position, 1.0f));
+            moved[v] = 1;
+        }
+    // Normales: se recalculan solo en los vertices de los triangulos tocados,
+    // sumando las normales de cara (ponderadas por area) de cada vertice de
+    // render -- las aristas vivas siguen vivas y las suaves, suaves.
+    std::vector<char> touched(m.vertices.size(), 0);
+    for (size_t i = 0; i + 2 < m.indices.size(); i += 3)
+        if (moved[m.indices[i]] || moved[m.indices[i + 1]] || moved[m.indices[i + 2]])
+            for (int k = 0; k < 3; ++k) touched[m.indices[i + (size_t)k]] = 1;
+    std::vector<glm::vec3> acc(m.vertices.size(), glm::vec3(0.0f));
+    for (size_t i = 0; i + 2 < m.indices.size(); i += 3) {
+        const uint32_t a = m.indices[i], b = m.indices[i + 1], cc = m.indices[i + 2];
+        if (!touched[a] && !touched[b] && !touched[cc]) continue;
+        const glm::vec3 n = glm::cross(m.vertices[b].position - m.vertices[a].position, m.vertices[cc].position - m.vertices[a].position);
+        acc[a] += n;
+        acc[b] += n;
+        acc[cc] += n;
+    }
+    for (size_t v = 0; v < m.vertices.size(); ++v)
+        if (touched[v] && glm::length(acc[v]) > 1e-12f) m.vertices[v].normal = glm::normalize(acc[v]);
+    updateBounds(m);
+    node.mesh = std::make_shared<const MeshData>(std::move(m));
+    // La topologia no cambia: se conserva la seleccion, y los puntos se
+    // actualizan para el dibujo y el centro del gizmo.
+    c.mesh = node.mesh.get();
+    for (size_t v = 0; v < node.mesh->vertices.size(); ++v) c.pts[(size_t)c.vpt[v]] = node.mesh->vertices[v].position;
 }
 
 void releaseUiTextures() {
@@ -5153,6 +5515,12 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
 
     handleShortcuts(root, selected, gizmoMode, history, materials, camera, viewport);
     runPendingCmd(root, selected, history, camera);
+    // --ui-cmd=comp=...: despues de los demas comandos (p. ej. make-editable).
+    if (g.pendingCompMode && g.cmdQueue.empty() && g.pendingCmd == UiCmd::None) {
+        viewport.compMode = std::clamp(g.pendingCompMode, 0, 3);
+        g.pendingCompMode = 0;
+        if (syncComponents(selected)) g.comp.sel.insert(g.pendingCompSel.begin(), g.pendingCompSel.end());
+    }
     {   // Ultima herramienta (Espacio): se apunta cualquier cambio, venga de donde venga.
         const int cur = viewport.selectTool ? 3 + viewport.selectShape : (int)gizmoMode;
         if (cur != g.curTool) {
@@ -5182,6 +5550,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     viewport.h = viewport.fullH = std::max(1.0f, L.viewport.size.y - vpHeaderH);
     if (viewport.quad) drawQuadPanels(camera, viewport, root);
     drawViewportOverlay(camera, viewport, root);
+    drawComponentOverlay(selected, camera, viewport);
     tickCamTrip(camera);
     drawOffscreenArrow(camera, viewport, selected);
     drawViewportContextMenu(root, selected, gizmoMode, history, viewport);
@@ -5295,6 +5664,18 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "view-quad") g.cmdQueue.push_back(UiCmd::ViewQuad);
     else if (cmd == "render-pv") g.renderRequested = true;
     else if (cmd == "key") g.recordRequested = true;
+    else if (cmd.rfind("comp=", 0) == 0) {  // comp=<modo 1-3>[:indices separados por coma]
+        try {
+            const size_t colon = cmd.find(':');
+            g.pendingCompMode = std::stoi(cmd.substr(5, colon == std::string::npos ? std::string::npos : colon - 5));
+            g.pendingCompSel.clear();
+            if (colon != std::string::npos) {
+                std::stringstream ss(cmd.substr(colon + 1));
+                std::string part;
+                while (std::getline(ss, part, ',')) g.pendingCompSel.push_back(std::stoi(part));
+            }
+        } catch (...) { return false; }
+    }
     else if (cmd.rfind("frame=", 0) == 0) { try { g.frame = (float)std::stoi(cmd.substr(6)); } catch (...) { return false; } }
     else if (cmd == "render-settings") g.showRenderSettings = true;
     else if (cmd == "opts-connect") g.optWin = UiState::OptWin::Connect, g.optPos = ImVec2(400, 200);
