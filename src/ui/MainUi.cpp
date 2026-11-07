@@ -5,6 +5,7 @@
 #include "core/SceneSerializer.h"
 #include "core/MeshData.h"
 #include "core/MeshTopology.h"
+#include "core/MeshEdit.h"
 #include "core/ThumbnailRenderer.h"
 
 #define STBI_WRITE_NO_STDIO
@@ -47,6 +48,7 @@ namespace iron3d {
 bool componentMarquee(SceneNode* selected, const OrbitalCamera& camera, const ViewportState& vp,
                       const std::function<bool(ImVec2)>& inside, bool shift, bool ctrl);
 bool deleteComponents(SceneNode& root, SceneNode* selected, SceneHistory& history);
+const MeshData* editableMesh(const SceneNode* n);
 
 namespace {
 
@@ -191,6 +193,23 @@ struct UiState {
     std::vector<int> pendingCompSel;
     bool compDeleteRequested = false;  // --ui-cmd=comp-del
     int compSelectAllRequested = 0;    // --ui-cmd=sel-all-visible|sel-all-through
+    // Herramientas de modelado (Malla).
+    enum class ModelTool { None, Extrude, InnerExtrude, Bevel, Knife };
+    ModelTool modelTool = ModelTool::None;
+    float extrudeCm = 20.0f, innerInsetCm = 10.0f, bevelInsetCm = 10.0f, bevelExtrudeCm = 10.0f;
+    bool knifeVisibleOnly = true;
+    int chordM = -1000;  // fotograma en que se pulso M (atajos M~S)
+    struct ToolDrag {
+        bool active = false, applied = false;
+        float startX = 0, startY = 0, curX = 0, curY = 0;
+        float base = 0;                         // valor al empezar el arrastre
+        float lastValue = 1e30f;
+        std::shared_ptr<const MeshData> startMesh;
+        MeshTopology startTopo;
+        std::set<int> startSel;
+    } tdrag;
+    std::string pendingTool;  // --ui-cmd=tool=...|knife=...
+    bool toolApplyRequested = false;  // boton Aplicar de la ventana de la herramienta
 
     // Opciones de herramienta (la rueda dentada de los menus, como en C4D).
     enum class OptWin { None, RectSel, LassoSel, Connect };
@@ -280,6 +299,28 @@ void jumpToKey(int dir) {
 }
 
 // Abre la ventanita de opciones de una herramienta junto al raton.
+const char* modelToolName(UiState::ModelTool t) {
+    switch (t) {
+        case UiState::ModelTool::Extrude: return "Extrusión";
+        case UiState::ModelTool::InnerExtrude: return "Extrusión Interna";
+        case UiState::ModelTool::Bevel: return "Bisel";
+        case UiState::ModelTool::Knife: return "Cuchillo";
+        default: return "";
+    }
+}
+
+void setModelTool(UiState::ModelTool t) {
+    g.modelTool = t;
+    g.tdrag = {};
+    if (t == UiState::ModelTool::None) return;
+    if (g_vp) g_vp->selectTool = false;
+    // Extruir y Biselar trabajan con poligonos: se pasa a ese modo (como C4D).
+    if (t != UiState::ModelTool::Knife && g_vp) g_vp->compMode = 3;
+    flashStatus(std::string(modelToolName(t)) + (t == UiState::ModelTool::Knife
+                                                    ? ": arrastra en el visor para dibujar la línea de corte."
+                                                    : ": arrastra en horizontal en el visor (o usa Aplicar)."));
+}
+
 void openToolOptions(int which) {
     g.optWin = (UiState::OptWin)which;
     g.optPos = ImGui::GetIO().MousePos;
@@ -1684,6 +1725,15 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
             flashStatus(vp.axisMode ? "Activar Eje: se mueve el eje, no el objeto" : "Activar Eje: desactivado");
         }
         if (pressed(ImGuiKey_T)) { mode = GizmoMode::Scale; vp.selectTool = false; }
+        // Herramientas de modelado: D Extruir, I Extrusion Interna, M~S Biselar, K Cuchillo.
+        if (pressed(ImGuiKey_M)) g.chordM = ImGui::GetFrameCount();
+        const bool chord = ImGui::GetFrameCount() - g.chordM < 90 && !pressed(ImGuiKey_M);
+        if (!shift && pressed(ImGuiKey_D)) setModelTool(UiState::ModelTool::Extrude);
+        if (!shift && pressed(ImGuiKey_I)) setModelTool(UiState::ModelTool::InnerExtrude);
+        if (!shift && pressed(ImGuiKey_K)) setModelTool(UiState::ModelTool::Knife);
+        if (chord && pressed(ImGuiKey_S)) { setModelTool(UiState::ModelTool::Bevel); g.chordM = -1000; }
+        if (pressed(ImGuiKey_Escape) && g.modelTool != UiState::ModelTool::None) setModelTool(UiState::ModelTool::None);
+        if (pressed(ImGuiKey_E) || pressed(ImGuiKey_T) || (pressed(ImGuiKey_R) && !shift)) g.modelTool = UiState::ModelTool::None;
         if (pressed(ImGuiKey_9)) { vp.selectTool = true; vp.selectShape = 0; }
         if (pressed(ImGuiKey_0)) { vp.selectTool = true; vp.selectShape = 1; }
         if (pressed(ImGuiKey_8)) { vp.selectTool = true; vp.selectShape = 2; }
@@ -1692,7 +1742,7 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
             else frameNodes(camera, root, false);
         }
         if (pressed(ImGuiKey_O) && selected) frameNodes(camera, *selected, true);
-        if (pressed(ImGuiKey_S) && !shift && !io.KeyAlt) g.pendingCmd = UiCmd::FrameSelected; // Encuadrar Seleccionados
+        if (pressed(ImGuiKey_S) && !shift && !io.KeyAlt && !chord) g.pendingCmd = UiCmd::FrameSelected; // Encuadrar Seleccionados
         if (pressed(ImGuiKey_C) && !shift && !io.KeyAlt) g.pendingCmd = UiCmd::MakeEditable;  // Hacer Editable
         if (pressed(ImGuiKey_C) && shift) g.showCommander = true;                              // Mayus+C: Commander
         if (pressed(ImGuiKey_Space) && g.lastTool >= 0) {                                      // ultima herramienta
@@ -2242,9 +2292,17 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
             if (gc) openToolOptions((int)UiState::OptWin::Connect);
         }
         if (ImGui::MenuItem("Conectar Objetos + Eliminar", nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::ConnectDelete;
-        disabledItems({{nullptr, nullptr},
-                       {"Cuchillo", "K~K"}, {"Extrusión", "D"}, {"Extrusión Interna", "I"}, {"Bisel", "M~S"},
-                       {"Puente", "M~B"}, {"Soldar", "M~Q"}, {"Pincel", "M~C"}, {"Planchar", "M~G"},
+        ImGui::Separator();
+        {
+            using MT = UiState::ModelTool;
+            const bool editable = editableMesh(selected) != nullptr;
+            if (ImGui::MenuItemEx("Cuchillo", kIconGutterText, "K", g.modelTool == MT::Knife, editable)) setModelTool(MT::Knife);
+            if (ImGui::MenuItemEx("Extrusión", kIconGutterText, "D", g.modelTool == MT::Extrude, editable)) setModelTool(MT::Extrude);
+            if (ImGui::MenuItemEx("Extrusión Interna", kIconGutterText, "I", g.modelTool == MT::InnerExtrude, editable))
+                setModelTool(MT::InnerExtrude);
+            if (ImGui::MenuItemEx("Bisel", kIconGutterText, "M~S", g.modelTool == MT::Bevel, editable)) setModelTool(MT::Bevel);
+        }
+        disabledItems({{"Puente", "M~B"}, {"Soldar", "M~Q"}, {"Pincel", "M~C"}, {"Planchar", "M~G"},
                        {nullptr, nullptr}, {"Invertir Normales", "U~R"}, {"Alinear Normales", "U~A"}});
         ImGui::EndMenu();
     }
@@ -5506,6 +5564,225 @@ void applyComponentDrag(SceneNode& node) {
     refreshTopologyPositions(c.topo, *node.mesh);
 }
 
+// --- Herramientas de modelado --------------------------------------------------------
+bool modelToolActive() { return g.modelTool != UiState::ModelTool::None; }
+
+// Aplica la herramienta con un valor (cm) a la seleccion de partida y deja
+// seleccionado el resultado. `start` y su topologia no se tocan.
+bool applyPolyTool(SceneNode& node, const std::shared_ptr<const MeshData>& start, const MeshTopology& topo,
+                   const std::set<int>& sel, float a, float b) {
+    MeshEditResult r;
+    switch (g.modelTool) {
+        case UiState::ModelTool::Extrude: r = extrudePolygons(*start, topo, sel, a / kCmPerUnit); break;
+        case UiState::ModelTool::InnerExtrude: r = bevelPolygons(*start, topo, sel, a / kCmPerUnit, 0.0f); break;
+        case UiState::ModelTool::Bevel: r = bevelPolygons(*start, topo, sel, a / kCmPerUnit, b / kCmPerUnit); break;
+        default: return false;
+    }
+    if (!r.changed) return false;
+    const std::vector<int> selTris = r.selectTris;
+    node.mesh = std::make_shared<const MeshData>(std::move(r.mesh));
+    if (syncComponents(&node)) g.comp.sel = polysFromTris(g.comp.topo, selTris);
+    return true;
+}
+
+// Cantidad principal de la herramienta (la que cambia al arrastrar).
+float& toolValue() {
+    switch (g.modelTool) {
+        case UiState::ModelTool::InnerExtrude: return g.innerInsetCm;
+        case UiState::ModelTool::Bevel: return g.bevelInsetCm;
+        default: return g.extrudeCm;
+    }
+}
+
+// Aplicar con los valores de la ventana sobre la seleccion actual.
+bool applyToolNow(SceneNode& root, SceneNode* selected, SceneHistory& history) {
+    if (!syncComponents(selected) || g.comp.mode != 3 || g.comp.sel.empty()) {
+        flashStatus(std::string(modelToolName(g.modelTool)) + ": selecciona polígonos de un objeto editable.");
+        return false;
+    }
+    const std::shared_ptr<const MeshData> start = selected->mesh;
+    const MeshTopology topo = g.comp.topo;
+    const std::set<int> sel = g.comp.sel;
+    history.commitBefore(root);
+    const float b = g.bevelExtrudeCm;
+    return applyPolyTool(*selected, start, topo, sel, toolValue(), b);
+}
+
+// Cuchillo en modo Linea: plano que pasa por la camara y el tramo dibujado.
+// (sx0,sy0)-(sx1,sy1) en coordenadas de ventana.
+int knifeLine(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, const ViewportState& vp,
+              SceneHistory& history, ImVec2 s0, ImVec2 s1) {
+    if (!editableMesh(selected)) {
+        flashStatus("Cuchillo: selecciona un objeto editable (C).");
+        return 0;
+    }
+    const float len2 = (s1.x - s0.x) * (s1.x - s0.x) + (s1.y - s0.y) * (s1.y - s0.y);
+    if (len2 < 16.0f) return 0;
+    const glm::mat4 view = camera.viewMatrix();
+    const glm::mat4 proj = camera.projectionMatrix(vp.w / std::max(1.0f, vp.h), false);
+    const glm::vec3 eye = glm::vec3(glm::inverse(view)[3]);
+    const Ray r0 = TransformGizmo::screenRay(s0.x - vp.x, s0.y - vp.y, (int)vp.w, (int)vp.h, view, proj, eye);
+    const Ray r1 = TransformGizmo::screenRay(s1.x - vp.x, s1.y - vp.y, (int)vp.w, (int)vp.h, view, proj, eye);
+    const glm::vec3 between = r1.origin - r0.origin;
+    // Perspectiva: los dos rayos salen del ojo; ortografica: son paralelos.
+    glm::vec3 nW = glm::length(between) > 1e-6f ? glm::cross(r0.direction, between) : glm::cross(r0.direction, r1.direction);
+    if (glm::length(nW) < 1e-12f) return 0;
+    const glm::mat4 W = selected->worldMatrix();
+    const glm::vec3 pL = glm::vec3(glm::inverse(W) * glm::vec4(r0.origin, 1.0f));
+    const glm::vec3 nL = glm::transpose(glm::mat3(W)) * nW;
+    const MeshTopology topo = buildMeshTopology(*selected->mesh);
+    std::vector<char> allowed;
+    const bool polySel = g_vp && g_vp->compMode == 3 && syncComponents(selected) && !g.comp.sel.empty();
+    if (polySel) {
+        allowed.assign(topo.polys.size(), 0);
+        for (int p : g.comp.sel) if (p < (int)allowed.size()) allowed[(size_t)p] = 1;
+    } else if (g.knifeVisibleOnly) {
+        const glm::mat4 mvp = proj * view * W;
+        allowed = computeComponentVisibility(*selected->mesh, topo, mvp, (int)vp.w, (int)vp.h).polys;
+    }
+    const CompProjector pr{proj * view * W, vp.x, vp.y, vp.w, vp.h};
+    auto inRange = [&](const glm::vec3& local) {
+        ImVec2 p;
+        if (!pr(local, p)) return false;
+        const float t = ((p.x - s0.x) * (s1.x - s0.x) + (p.y - s0.y) * (s1.y - s0.y)) / len2;
+        return t >= -0.01f && t <= 1.01f;
+    };
+    MeshEditResult r = knifeCut(*selected->mesh, topo, pL, nL, allowed, inRange);
+    if (!r.changed) {
+        flashStatus("Cuchillo: la línea no corta ningún polígono.");
+        return 0;
+    }
+    history.commitBefore(root);
+    selected->mesh = std::make_shared<const MeshData>(std::move(r.mesh));
+    if (g_vp) g.comp.sel.clear();
+    flashStatus("Cuchillo: " + std::to_string(r.changed) + (r.changed == 1 ? " polígono cortado." : " polígonos cortados."));
+    return r.changed;
+}
+
+void modelToolMouse(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, float mx, float my,
+                    bool leftDown, bool leftPressed, SceneHistory& history) {
+    auto& d = g.tdrag;
+    if (!g_vp) return;
+    if (leftPressed) {
+        d = {};
+        d.startX = d.curX = mx;
+        d.startY = d.curY = my;
+        if (g.modelTool == UiState::ModelTool::Knife) {
+            d.active = editableMesh(selected) != nullptr;
+            if (!d.active) flashStatus("Cuchillo: selecciona un objeto editable (C).");
+            return;
+        }
+        if (!syncComponents(selected) || g.comp.mode != 3 || g.comp.sel.empty()) {
+            flashStatus(std::string(modelToolName(g.modelTool)) + ": selecciona polígonos de un objeto editable.");
+            return;
+        }
+        d.active = true;
+        d.startMesh = selected->mesh;
+        d.startTopo = g.comp.topo;
+        d.startSel = g.comp.sel;
+        d.base = toolValue();
+        return;
+    }
+    if (!d.active) return;
+    if (leftDown) {
+        d.curX = mx;
+        d.curY = my;
+        if (g.modelTool == UiState::ModelTool::Knife || !selected || (!d.applied && selected->mesh != d.startMesh))
+            return;
+        // Pixeles -> cm a la profundidad de la seleccion.
+        glm::vec3 c(0.0f);
+        for (int p : d.startSel) c += polyCenter(d.startTopo, p);
+        c /= (float)std::max<size_t>(1, d.startSel.size());
+        const glm::mat4 proj = camera.projectionMatrix(g_vp->w / std::max(1.0f, g_vp->h), false);
+        const glm::vec4 clip = proj * camera.viewMatrix() * selected->worldMatrix() * glm::vec4(c, 1.0f);
+        const float unitsPerPx = 2.0f * std::max(1e-4f, clip.w) / (std::max(1e-6f, proj[1][1]) * std::max(1.0f, g_vp->h));
+        float v = d.base + (mx - d.startX) * unitsPerPx * kCmPerUnit;
+        if (g.modelTool != UiState::ModelTool::Extrude) v = std::max(0.0f, v);
+        v = std::round(v * 10.0f) / 10.0f;
+        if (v == d.lastValue) return;
+        if (!d.applied) {
+            history.commitBefore(root);  // un paso de deshacer por arrastre
+            d.applied = true;
+        }
+        d.lastValue = v;
+        toolValue() = v;
+        applyPolyTool(*selected, d.startMesh, d.startTopo, d.startSel, v, g.bevelExtrudeCm);
+        return;
+    }
+    // Soltar.
+    if (g.modelTool == UiState::ModelTool::Knife)
+        knifeLine(root, selected, camera, *g_vp, history, ImVec2(d.startX, d.startY), ImVec2(d.curX, d.curY));
+    d = {};
+}
+
+void drawModelToolUi(SceneNode* selected, const ViewportState& vp) {
+    using MT = UiState::ModelTool;
+    if (g.modelTool == MT::None) return;
+    if (g.modelTool == MT::Knife && g.tdrag.active) {
+        ImDrawList* dl = ImGui::GetForegroundDrawList();
+        dl->AddLine(ImVec2(g.tdrag.startX, g.tdrag.startY), ImVec2(g.tdrag.curX, g.tdrag.curY), IM_COL32(255, 220, 60, 255), 2.0f);
+    }
+    ImGui::SetNextWindowPos(ImVec2(vp.x + vp.w - 12.0f, vp.y + 36.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+    ImGui::SetNextWindowBgAlpha(0.92f);
+    bool open = true;
+    const std::string title = std::string(modelToolName(g.modelTool)) + "###modeltool";
+    if (ImGui::Begin(title.c_str(), &open,
+                     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings)) {
+        ImGui::SetNextItemWidth(120.0f);
+        if (g.modelTool == MT::Extrude) {
+            ImGui::DragFloat("Desplazamiento (cm)", &g.extrudeCm, 0.5f, -10000.0f, 10000.0f, "%.1f");
+        } else if (g.modelTool == MT::InnerExtrude) {
+            ImGui::DragFloat("Desplazamiento (cm)", &g.innerInsetCm, 0.5f, 0.0f, 10000.0f, "%.1f");
+        } else if (g.modelTool == MT::Bevel) {
+            ImGui::DragFloat("Desplazamiento de Inserción (cm)", &g.bevelInsetCm, 0.5f, 0.0f, 10000.0f, "%.1f");
+            ImGui::SetNextItemWidth(120.0f);
+            ImGui::DragFloat("Extrusión (cm)", &g.bevelExtrudeCm, 0.5f, -10000.0f, 10000.0f, "%.1f");
+        } else {
+            ImGui::Checkbox("Solo Visibles", &g.knifeVisibleOnly);
+            ImGui::TextDisabled("Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos.");
+        }
+        if (g.modelTool != MT::Knife) {
+            if (ImGui::Button("Aplicar")) g.toolApplyRequested = true;
+            ImGui::SameLine();
+            ImGui::TextDisabled(editableMesh(selected) ? "o arrastra en el visor" : "(objeto editable)");
+        }
+    }
+    ImGui::End();
+    if (!open) setModelTool(MT::None);
+}
+
+// --ui-cmd: tool=extrude:<cm> | tool=inner:<cm> | tool=bevel:<cm>,<cm> | knife=x0,y0,x1,y1 (fracciones del visor)
+void runPendingToolCmd(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, const ViewportState& vp,
+                       SceneHistory& history) {
+    const std::string cmd = g.pendingTool;
+    std::vector<float> nums;
+    {
+        const size_t at = cmd.find_first_of(":=", cmd.rfind("tool=", 0) == 0 ? 5 : 0);
+        std::stringstream ss(at == std::string::npos ? "" : cmd.substr(at + 1));
+        std::string part;
+        try {
+            while (std::getline(ss, part, ',')) nums.push_back(std::stof(part));
+        } catch (...) { return; }
+    }
+    using MT = UiState::ModelTool;
+    if (cmd.rfind("knife=", 0) == 0) {
+        if (nums.size() != 4) return;
+        setModelTool(MT::Knife);
+        knifeLine(root, selected, camera, vp, history, ImVec2(vp.x + nums[0] * vp.w, vp.y + nums[1] * vp.h),
+                  ImVec2(vp.x + nums[2] * vp.w, vp.y + nums[3] * vp.h));
+        return;
+    }
+    if (nums.empty()) return;
+    if (cmd.rfind("tool=extrude", 0) == 0) { setModelTool(MT::Extrude); g.extrudeCm = nums[0]; }
+    else if (cmd.rfind("tool=inner", 0) == 0) { setModelTool(MT::InnerExtrude); g.innerInsetCm = nums[0]; }
+    else if (cmd.rfind("tool=bevel", 0) == 0) {
+        setModelTool(MT::Bevel);
+        g.bevelInsetCm = nums[0];
+        if (nums.size() > 1) g.bevelExtrudeCm = nums[1];
+    } else return;
+    applyToolNow(root, selected, history);
+}
+
 void releaseUiTextures() {
     freeUiTexture(g.pv.tex);
     g.pv.tex = nullptr;
@@ -5571,6 +5848,15 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
         g.selVisibleOnly = keepVis;
         g.compSelectAllRequested = 0;
     }
+    if (g.toolApplyRequested) {
+        g.toolApplyRequested = false;
+        applyToolNow(root, selected, history);
+    }
+    if (!g.pendingTool.empty() && !g.pendingCompMode && !g.compSelectAllRequested && viewport.w > 64.0f &&
+        ImGui::GetFrameCount() > 5) {
+        runPendingToolCmd(root, selected, camera, viewport, history);
+        g.pendingTool.clear();
+    }
     if (g.compDeleteRequested && !g.pendingCompMode) {
         g.compDeleteRequested = false;
         deleteComponents(root, selected, history);
@@ -5605,6 +5891,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     if (viewport.quad) drawQuadPanels(camera, viewport, root);
     drawViewportOverlay(camera, viewport, root);
     drawComponentOverlay(selected, camera, viewport);
+    drawModelToolUi(selected, viewport);
     tickCamTrip(camera);
     drawOffscreenArrow(camera, viewport, selected);
     drawViewportContextMenu(root, selected, gizmoMode, history, viewport);
@@ -5719,6 +6006,7 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "render-pv") g.renderRequested = true;
     else if (cmd == "key") g.recordRequested = true;
     else if (cmd == "comp-del") g.compDeleteRequested = true;
+    else if (cmd.rfind("tool=", 0) == 0 || cmd.rfind("knife=", 0) == 0) g.pendingTool = cmd;
     else if (cmd == "sel-all-visible") g.compSelectAllRequested = 1;   // marco que cubre todo el visor
     else if (cmd == "sel-all-through") g.compSelectAllRequested = 2;
     else if (cmd.rfind("comp=", 0) == 0) {  // comp=<modo 1-3>[:indices separados por coma]

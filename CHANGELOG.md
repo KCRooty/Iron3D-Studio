@@ -6,6 +6,51 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-07 (8) — Herramientas de modelado: Extrusión, Extrusión Interna, Bisel y Cuchillo
+
+**Añadido** (menú Malla y atajos; con una herramienta activa no hay gizmo):
+- **Extrusión (D)**: separa los polígonos seleccionados como una región y los desplaza por
+  la normal media de cada punto. En el borde de la región salen paredes; entre caras
+  vecinas seleccionadas no. Al terminar queda seleccionada la tapa.
+- **Extrusión Interna (I)**: encoge cada polígono seleccionado hacia su centro y crea un
+  anillo de cuadriláteros.
+- **Bisel (M~S)**, en modo Polígonos: lo mismo con Desplazamiento de Inserción y
+  Extrusión. Es el «bisel de polígonos» de C4D sin redondeo ni subdivisiones.
+- **Cuchillo (K)**, modo Línea: arrastrar dibuja la línea y al soltar corta por el plano
+  de la cámara que pasa por ella. Si hay polígonos seleccionados, corta solo esos; si
+  no, todos los que cruza, o solo los visibles con «Solo Visibles» (activa por defecto).
+  Solo corta un polígono si los dos puntos de corte caen dentro del tramo dibujado.
+- Extrusión y Bisel se usan arrastrando en horizontal en el visor, que cambia la
+  cantidad con vista previa, o con el botón Aplicar de la ventana de la herramienta.
+  Todas pasan al modo Polígonos y se pueden deshacer: un paso por arrastre o corte.
+- Núcleo en `src/core/MeshEdit.*`, con tests. Las mallas resultantes guardan sus
+  polígonos (`FACES`), así que un corte no se vuelve a juntar.
+- Esc suelta la herramienta; E/R/T vuelven a Mover/Rotar/Escalar.
+
+**Probado**: compila sin avisos y pasan los tests:
+- extruir una cara del cubo: 12/20/10 y cerrada;
+- extruir una región de 2 caras: sin pared interior;
+- biselar: 10 polígonos, con el interior arriba;
+- cuchillo por x = 0: 4 caras, 20 aristas y cerrada; también solo con los polígonos
+  permitidos y solo dentro del tramo.
+
+Verificado por captura limpia, sin input del usuario y con `--ui-cmd`:
+- extruir 100 cm: «1 de 10», con la caja alargada;
+- biselar 30/40: «1 de 10»;
+- cuchillo con una línea horizontal: el corte se ve en las caras visibles (19 aristas).
+
+**Sin probar**: el arrastre en el visor para fijar la cantidad, la línea del Cuchillo
+dibujada con el ratón, los atajos D/I/M~S/K y OpenGL.
+
+**Limitaciones conocidas**:
+- Bisel y Extrusión Interna van por polígono: no hay «Conservar Grupos» para insertar
+  una región entera.
+- No hay bisel de aristas ni de puntos.
+- Al Cuchillo le faltan los modos Bucle, Plano y Polígono.
+- Si un polígono vecino no entra en el corte (fuera del tramo o tapado), queda un punto
+  en T en su arista.
+- La cantidad que se arrastra no tiene en cuenta la escala del objeto.
+
 ### 2026-11-07 (7) — Componentes tapados: no se ven ni se eligen
 
 **Añadido**

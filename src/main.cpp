@@ -676,12 +676,21 @@ int main(int argc, char** argv) {
             gizmoTarget = compProxy;
             gizmo.usePivot = false;
         }
+        // Extruir / Biselar / Cuchillo: sin gizmo, el raton es de la herramienta.
+        const bool modelTool = iron3d::modelToolActive() && !gizmo.isDragging();
+        if (modelTool) {
+            gizmoTarget = nullptr;
+            compProxy = nullptr;
+        }
         if (gizmo.usePivot)
             gizmo.pivotWorld = gizmo.isDragging() ? dragPivot : iron3d::selectionPivot(sceneRoot, selected);
         if (!io.WantCaptureMouse && !altHeld && (mouseInViewport || gizmo.isDragging())) {
             const Ray mouseRay = TransformGizmo::screenRay(mouseX - viewport.x, mouseY - viewport.y,
                                                            (int)viewport.w, (int)viewport.h, view, proj, eye);
-            if (leftDown) {
+            if (modelTool) {
+                iron3d::modelToolMouse(sceneRoot, selected, camera, (float)mouseX, (float)mouseY, leftDown, leftPressed,
+                                       history);
+            } else if (leftDown) {
                 if (gizmo.isDragging()) {
                     // Con varios objetos seleccionados, cada paso del arrastre
                     // del activo se reparte al resto alrededor del pivote comun.
@@ -749,6 +758,8 @@ int main(int argc, char** argv) {
             }
         } else {
             gizmo.endDrag();
+            if (modelTool)
+                iron3d::modelToolMouse(sceneRoot, selected, camera, (float)mouseX, (float)mouseY, false, false, history);
         }
 
         if (iconSheet)
@@ -759,7 +770,7 @@ int main(int argc, char** argv) {
         ImGui::Render();
         if (viewport.requestQuit) glfwSetWindowShouldClose(window, GLFW_TRUE);
 
-        gizmo.buildGeometry(viewport.selectTool ? nullptr : (compProxy ? compProxy : selected), eye, gizmoLineVerts,
+        gizmo.buildGeometry(viewport.selectTool || modelTool ? nullptr : (compProxy ? compProxy : selected), eye, gizmoLineVerts,
                             gizmoTriVerts);
 
         // Rectangulo del visor en pixeles de framebuffer (puede diferir de las
