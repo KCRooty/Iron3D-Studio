@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <functional>
+#include <set>
 
 using namespace iron3d;
 
@@ -403,6 +404,26 @@ int main() {
         check(deserializeScene(text, back, mats, &err), "FACES: el .iron se vuelve a leer");
         const SceneNode* bn = back.children().empty() ? nullptr : back.children().front().get();
         check(bn && bn->mesh && bn->mesh->faceTris == std::vector<uint32_t>{3}, "FACES: poligonos guardados y leidos");
+    }
+
+    // --- Visibilidad de componentes (Solo Seleccionar Visibles) ---------------
+    {
+        const MeshData cube = makeCubeMesh();
+        const MeshTopology t = buildMeshTopology(cube);
+        const glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f), glm::vec3(0, 1, 0));
+        const glm::mat4 proj = glm::perspective(glm::radians(40.0f), 1.0f, 0.1f, 100.0f);
+        const ComponentVisibility v = computeComponentVisibility(cube, t, proj * view, 400, 400);
+        int visPolys = 0, frontVis = 0, backVis = 0;
+        for (size_t p = 0; p < t.polys.size(); ++p) {
+            visPolys += v.polys[p];
+            if (t.polyNormals[p].z > 0.9f) frontVis = v.polys[p];
+            if (t.polyNormals[p].z < -0.9f) backVis = v.polys[p];
+        }
+        check(frontVis == 1 && backVis == 0, "visibilidad: la cara de delante se ve, la de detras no");
+        int visPts = 0;
+        for (size_t i = 0; i < t.points.size(); ++i) visPts += v.points[i];
+        check(visPts == 4, "visibilidad: de frente se ven 4 puntos del cubo");
+        (void)visPolys;
     }
 
     if (g_failures == 0) std::printf("c4d_geometry: todo correcto\n");

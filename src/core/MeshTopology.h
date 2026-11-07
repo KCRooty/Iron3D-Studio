@@ -49,5 +49,17 @@ MeshData keepPolygons(const MeshData& mesh, const MeshTopology& topo, const std:
 // Quita los vertices que no usa ningun triangulo (renumera los indices).
 void removeUnusedVertices(MeshData& mesh);
 
+// Visibilidad de los componentes desde una camara: z-buffer en CPU con los
+// triangulos de la propia malla (a la mitad de resolucion). `mvp` =
+// proyeccion * vista * mundo del objeto; width/height = visor en pixeles. Un
+// componente se ve si su punto de muestra (el punto, el centro de la arista o
+// del poligono) no queda detras de la superficie (con un margen de un pixel
+// y de un 1 % de profundidad, para que lo que esta EN la superficie cuente
+// como visible). Los triangulos que cruzan el plano de la camara no tapan.
+struct ComponentVisibility {
+    std::vector<char> points, edges, polys;
+};
+ComponentVisibility computeComponentVisibility(const MeshData& mesh, const MeshTopology& topo, const glm::mat4& mvp,
+                                               int width, int height);
 
 } // namespace iron3d

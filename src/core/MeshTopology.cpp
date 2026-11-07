@@ -216,6 +216,69 @@ void removeUnusedVertices(MeshData& mesh) {
     mesh.vertices = std::move(verts);
 }
 
+ComponentVisibility computeComponentVisibility(const MeshData& mesh, const MeshTopology& topo, const glm::mat4& mvp,
+                                               int width, int height) {
+    ComponentVisibility vis;
+    const int W = std::max(1, width / 2), H = std::max(1, height / 2);
+    // Se guarda 1/w (mas grande = mas cerca); 0 = fondo.
+    std::vector<float> zinv((size_t)W * (size_t)H, 0.0f);
+    struct SV { float x, y, iw; bool ok; };
+    auto project = [&](const glm::vec3& p) {
+        const glm::vec4 c = mvp * glm::vec4(p, 1.0f);
+        if (c.w <= 1e-4f) return SV{0, 0, 0, false};
+        return SV{(c.x / c.w * 0.5f + 0.5f) * (float)W, (0.5f - c.y / c.w * 0.5f) * (float)H, 1.0f / c.w, true};
+    };
+    std::vector<SV> sv(mesh.vertices.size());
+    for (size_t i = 0; i < mesh.vertices.size(); ++i) sv[i] = project(mesh.vertices[i].position);
+    for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
+        const uint32_t ia = mesh.indices[i], ib = mesh.indices[i + 1], ic = mesh.indices[i + 2];
+        if (ia >= sv.size() || ib >= sv.size() || ic >= sv.size()) continue;
+        const SV a = sv[ia], b = sv[ib], c = sv[ic];
+        if (!a.ok || !b.ok || !c.ok) continue;
+        const float area = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+        if (std::fabs(area) < 1e-12f) continue;
+        const int x0 = std::max(0, (int)std::floor(std::min({a.x, b.x, c.x})));
+        const int x1 = std::min(W - 1, (int)std::ceil(std::max({a.x, b.x, c.x})));
+        const int y0 = std::max(0, (int)std::floor(std::min({a.y, b.y, c.y})));
+        const int y1 = std::min(H - 1, (int)std::ceil(std::max({a.y, b.y, c.y})));
+        for (int y = y0; y <= y1; ++y)
+            for (int x = x0; x <= x1; ++x) {
+                const float px = (float)x + 0.5f, py = (float)y + 0.5f;
+                const float w0 = ((b.x - px) * (c.y - py) - (b.y - py) * (c.x - px)) / area;
+                const float w1 = ((c.x - px) * (a.y - py) - (c.y - py) * (a.x - px)) / area;
+                const float w2 = 1.0f - w0 - w1;
+                if (w0 < 0.0f || w1 < 0.0f || w2 < 0.0f) continue;
+                const float iw = w0 * a.iw + w1 * b.iw + w2 * c.iw;
+                float& z = zinv[(size_t)y * (size_t)W + (size_t)x];
+                if (iw > z) z = iw;
+            }
+    }
+    auto visible = [&](const glm::vec3& p) -> char {
+        const SV s = project(p);
+        if (!s.ok) return 0;
+        const int cx = (int)std::floor(s.x), cy = (int)std::floor(s.y);
+        if (cx < -1 || cy < -1 || cx > W || cy > H) return 1;  // fuera del visor: no lo tapa nada de lo dibujado
+        // Lo mas lejano del entorno de 3x3 pixeles: un punto en una silueta no
+        // queda tapado por la propia cara a la que pertenece.
+        float farthest = 1e30f;
+        for (int dy = -1; dy <= 1; ++dy)
+            for (int dx = -1; dx <= 1; ++dx) {
+                const int x = cx + dx, y = cy + dy;
+                const float z = (x < 0 || y < 0 || x >= W || y >= H) ? 0.0f : zinv[(size_t)y * (size_t)W + (size_t)x];
+                farthest = std::min(farthest, z);
+            }
+        return s.iw >= farthest * 0.99f ? 1 : 0;
+    };
+    vis.points.resize(topo.points.size());
+    for (size_t i = 0; i < topo.points.size(); ++i) vis.points[i] = visible(topo.points[i]);
+    vis.edges.resize(topo.edges.size());
+    for (size_t i = 0; i < topo.edges.size(); ++i)
+        vis.edges[i] = visible((topo.points[(size_t)topo.edges[i].first] + topo.points[(size_t)topo.edges[i].second]) * 0.5f);
+    vis.polys.resize(topo.polys.size());
+    for (size_t i = 0; i < topo.polys.size(); ++i) vis.polys[i] = visible(polyCenter(topo, (int)i));
+    return vis;
+}
+
 MeshData keepPolygons(const MeshData& mesh, const MeshTopology& topo, const std::vector<char>& keep) {
     MeshData out;
     out.vertices = mesh.vertices;

@@ -190,12 +190,14 @@ struct UiState {
     int pendingCompMode = 0;
     std::vector<int> pendingCompSel;
     bool compDeleteRequested = false;  // --ui-cmd=comp-del
+    int compSelectAllRequested = 0;    // --ui-cmd=sel-all-visible|sel-all-through
 
     // Opciones de herramienta (la rueda dentada de los menus, como en C4D).
     enum class OptWin { None, RectSel, LassoSel, Connect };
     OptWin optWin = OptWin::None;
     ImVec2 optPos{0.0f, 0.0f};
     bool selTolerant = true;       // Seleccion Rectangular/Lazo: tocar basta
+    bool selVisibleOnly = true;    // Solo Seleccionar Visibles (componentes tapados no cuentan)
     bool connectWeld = true;       // Conectar Objetos: soldar puntos coincidentes
     float connectWeldCm = 0.01f;   // tolerancia de la soldadura, en cm
 
@@ -213,6 +215,11 @@ struct UiState {
     struct Components {
         std::shared_ptr<const MeshData> mesh;  // malla de la que se saco la topologia (se retiene: sin punteros reciclados)
         MeshTopology topo;
+        // Visibilidad (z-buffer en CPU), en cache mientras no cambien malla, camara ni visor.
+        ComponentVisibility vis;
+        const MeshData* visMesh = nullptr;
+        glm::mat4 visMvp{0.0f};
+        int visW = 0, visH = 0;
         int nodeId = -1, mode = 0;
         std::set<int> sel;
         std::unique_ptr<SceneNode> proxy;
@@ -4981,6 +4988,9 @@ void drawToolOptions() {
             ImGui::Checkbox("Tolerante", &g.selTolerant);
             ImGui::TextDisabled(g.selTolerant ? "Se elige todo lo que toque la zona."
                                               : "Solo se elige lo que queda dentro entero.");
+            ImGui::Checkbox("Solo Seleccionar Visibles", &g.selVisibleOnly);
+            ImGui::TextDisabled(g.selVisibleOnly ? "Puntos, aristas y polígonos tapados por la malla no se eligen."
+                                                 : "También se eligen los tapados (a través de la malla).");
         }
     }
     ImGui::End();
@@ -5227,6 +5237,21 @@ float segDist(ImVec2 p, ImVec2 a, ImVec2 b) {
 
 constexpr size_t kMaxCompDraw = 60000;  // por encima no se dibujan (rendimiento de ImGui)
 
+// Que componentes del objeto activo se ven desde la camara (lo tapado por la
+// propia malla no se dibuja ni se elige).
+const ComponentVisibility& compVisibility(const SceneNode& n, const OrbitalCamera& camera, const ViewportState& vp) {
+    auto& c = g.comp;
+    const glm::mat4 mvp = compProjector(n, camera, vp).mvp;
+    if (c.visMesh != c.mesh.get() || c.visMvp != mvp || c.visW != (int)vp.w || c.visH != (int)vp.h) {
+        c.vis = computeComponentVisibility(*c.mesh, c.topo, mvp, (int)vp.w, (int)vp.h);
+        c.visMesh = c.mesh.get();
+        c.visMvp = mvp;
+        c.visW = (int)vp.w;
+        c.visH = (int)vp.h;
+    }
+    return c.vis;
+}
+
 void drawComponentOverlay(const SceneNode* selected, const OrbitalCamera& camera, const ViewportState& vp) {
     if (!syncComponents(selected)) return;
     const auto& c = g.comp;
@@ -5240,19 +5265,20 @@ void drawComponentOverlay(const SceneNode* selected, const OrbitalCamera& camera
         dl->PopClipRect();
         return;
     }
+    const ComponentVisibility& vis = compVisibility(*selected, camera, vp);
     std::vector<ImVec2> sp(t.points.size());
     std::vector<char> ok(t.points.size());
     for (size_t i = 0; i < t.points.size(); ++i) ok[i] = proj(t.points[i], sp[i]);
     if (c.mode == 3) {
         const MeshData& m = *c.mesh;
         for (int i : c.sel) {
-            if (i >= (int)t.polys.size()) continue;
+            if (i >= (int)t.polys.size() || !vis.polys[(size_t)i]) continue;
             for (int tri : t.polyTris[(size_t)i]) {
                 ImVec2 q[3];
-                bool vis = true;
+                bool inFront = true;
                 for (int k = 0; k < 3; ++k)
-                    vis = vis && proj(m.vertices[m.indices[3 * (size_t)tri + (size_t)k]].position, q[k]);
-                if (vis) dl->AddTriangleFilled(q[0], q[1], q[2], IM_COL32(255, 140, 30, 90));
+                    inFront = inFront && proj(m.vertices[m.indices[3 * (size_t)tri + (size_t)k]].position, q[k]);
+                if (inFront) dl->AddTriangleFilled(q[0], q[1], q[2], IM_COL32(255, 140, 30, 90));
             }
         }
     }
@@ -5268,13 +5294,13 @@ void drawComponentOverlay(const SceneNode* selected, const OrbitalCamera& camera
         }
     for (size_t i = 0; i < t.edges.size(); ++i) {
         const auto [a, b] = t.edges[i];
-        if (!ok[(size_t)a] || !ok[(size_t)b]) continue;
+        if (!ok[(size_t)a] || !ok[(size_t)b] || !vis.edges[i]) continue;
         const bool s = (c.mode == 2 && c.sel.count((int)i)) || selEdges.count(t.edges[i]);
         dl->AddLine(sp[(size_t)a], sp[(size_t)b], s ? sel : wire, s ? 2.0f : 1.0f);
     }
     if (c.mode == 1)
         for (size_t i = 0; i < t.points.size(); ++i) {
-            if (!ok[i]) continue;
+            if (!ok[i] || !vis.points[i]) continue;
             const bool s = c.sel.count((int)i) > 0;
             const float r = s ? 3.5f : 2.5f;
             dl->AddRectFilled(ImVec2(sp[i].x - r, sp[i].y - r), ImVec2(sp[i].x + r, sp[i].y + r), s ? sel : pt);
@@ -5291,6 +5317,8 @@ bool componentClick(SceneNode* selected, const OrbitalCamera& camera, float mx, 
     auto& c = g.comp;
     const auto& t = c.topo;
     const CompProjector proj = compProjector(*selected, camera, *g_vp);
+    const ComponentVisibility& vis = compVisibility(*selected, camera, *g_vp);
+    const bool onlyVis = g.selVisibleOnly;
     const ImVec2 m(mx, my);
     int best = -1;
     float bestScore = 1e30f;
@@ -5298,6 +5326,7 @@ bool componentClick(SceneNode* selected, const OrbitalCamera& camera, float mx, 
         for (size_t i = 0; i < t.points.size(); ++i) {
             ImVec2 p;
             float z;
+            if (onlyVis && !vis.points[i]) continue;
             if (!proj(t.points[i], p, &z)) continue;
             const float d = std::hypot(p.x - m.x, p.y - m.y);
             if (d < 9.0f && d + z < bestScore) { bestScore = d + z; best = (int)i; }
@@ -5305,20 +5334,22 @@ bool componentClick(SceneNode* selected, const OrbitalCamera& camera, float mx, 
     } else if (c.mode == 2) {
         for (size_t i = 0; i < t.edges.size(); ++i) {
             ImVec2 a, b;
+            if (onlyVis && !vis.edges[i]) continue;
             if (!proj(t.points[(size_t)t.edges[i].first], a) || !proj(t.points[(size_t)t.edges[i].second], b)) continue;
             const float d = segDist(m, a, b);
             if (d < 6.0f && d < bestScore) { bestScore = d; best = (int)i; }
         }
     } else {
         for (size_t i = 0; i < t.polys.size(); ++i) {
+            if (onlyVis && !vis.polys[i]) continue;
             std::vector<ImVec2> sp;
-            bool vis = true;
+            bool inFront = true;
             for (int q : t.polys[i]) {
                 ImVec2 p;
-                vis = vis && proj(t.points[(size_t)q], p);
+                inFront = inFront && proj(t.points[(size_t)q], p);
                 sp.push_back(p);
             }
-            if (!vis || !pointInPolygon(sp, m)) continue;
+            if (!inFront || !pointInPolygon(sp, m)) continue;
             ImVec2 dummy;
             float depth = 0.0f;
             proj(polyCenter(t, (int)i), dummy, &depth);
@@ -5344,6 +5375,8 @@ bool componentMarquee(SceneNode* selected, const OrbitalCamera& camera, const Vi
     auto& c = g.comp;
     const auto& t = c.topo;
     const CompProjector proj = compProjector(*selected, camera, vp);
+    const ComponentVisibility& vis = compVisibility(*selected, camera, vp);
+    const bool onlyVis = g.selVisibleOnly;
     std::vector<char> in(t.points.size(), 0);
     for (size_t i = 0; i < t.points.size(); ++i) {
         ImVec2 p;
@@ -5351,14 +5384,17 @@ bool componentMarquee(SceneNode* selected, const OrbitalCamera& camera, const Vi
     }
     std::vector<int> hits;
     if (c.mode == 1) {
-        for (size_t i = 0; i < t.points.size(); ++i) if (in[i]) hits.push_back((int)i);
+        for (size_t i = 0; i < t.points.size(); ++i)
+            if (in[i] && (!onlyVis || vis.points[i])) hits.push_back((int)i);
     } else if (c.mode == 2) {
         for (size_t i = 0; i < t.edges.size(); ++i) {
+            if (onlyVis && !vis.edges[i]) continue;
             const bool a = in[(size_t)t.edges[i].first], b = in[(size_t)t.edges[i].second];
             if (g.selTolerant ? (a || b) : (a && b)) hits.push_back((int)i);
         }
     } else {
         for (size_t i = 0; i < t.polys.size(); ++i) {
+            if (onlyVis && !vis.polys[i]) continue;
             size_t n = 0;
             for (int q : t.polys[i]) n += in[(size_t)q] ? 1 : 0;
             if (g.selTolerant ? n > 0 : n == t.polys[i].size()) hits.push_back((int)i);
@@ -5528,6 +5564,13 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
         g.pendingCompMode = 0;
         if (syncComponents(selected)) g.comp.sel.insert(g.pendingCompSel.begin(), g.pendingCompSel.end());
     }
+    if (g.compSelectAllRequested && !g.pendingCompMode && viewport.w > 64.0f && ImGui::GetFrameCount() > 5) {
+        const bool keepVis = g.selVisibleOnly;
+        g.selVisibleOnly = g.compSelectAllRequested == 1;
+        componentMarquee(selected, camera, viewport, [](ImVec2) { return true; }, false, false);
+        g.selVisibleOnly = keepVis;
+        g.compSelectAllRequested = 0;
+    }
     if (g.compDeleteRequested && !g.pendingCompMode) {
         g.compDeleteRequested = false;
         deleteComponents(root, selected, history);
@@ -5676,6 +5719,8 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "render-pv") g.renderRequested = true;
     else if (cmd == "key") g.recordRequested = true;
     else if (cmd == "comp-del") g.compDeleteRequested = true;
+    else if (cmd == "sel-all-visible") g.compSelectAllRequested = 1;   // marco que cubre todo el visor
+    else if (cmd == "sel-all-through") g.compSelectAllRequested = 2;
     else if (cmd.rfind("comp=", 0) == 0) {  // comp=<modo 1-3>[:indices separados por coma]
         try {
             const size_t colon = cmd.find(':');

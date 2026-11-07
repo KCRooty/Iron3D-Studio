@@ -6,6 +6,35 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-07 (7) — Componentes tapados: no se ven ni se eligen
+
+**Añadido**
+- En los modos Puntos/Aristas/Polígonos ya no se dibuja lo que queda detrás de la propia
+  malla. Se calcula con un z-buffer en CPU a media resolución, que se guarda en caché
+  mientras no cambien la malla, la cámara ni el visor.
+- **Solo Seleccionar Visibles** en la rueda de opciones de Selección Rectangular/Lazo,
+  activa por defecto como en C4D. Con ella, el clic y el marco ignoran lo tapado. Sin
+  ella, el marco elige también a través de la malla.
+
+**Arreglado**: en la primera tanda de capturas del bloque anterior, los clics reales del
+usuario entraban en la ventana de prueba. El script de captura ahora espera a que no se
+toque el PC y descarta la captura si hubo input.
+
+**Probado**: compila sin avisos y pasan los tests. De frente, la cara de delante se ve
+y la de detrás no; se ven 4 puntos.
+Verificado por captura limpia, sin input del usuario:
+- cubo editable en Polígonos: «2 de 6», sin diagonales ni aristas ocultas;
+- seleccionar todo con Solo Visibles: 7 de 8 puntos (el de detrás no);
+- sin la opción: 6 de 6 polígonos.
+
+**Sin probar**: con el ratón de verdad y con OpenGL.
+
+**Limitaciones conocidas**:
+- Solo tapa la propia malla, no otros objetos.
+- Los triángulos que cruzan el plano de la cámara no tapan.
+- Una arista o un polígono cuenta como visible o tapado según su punto medio o su centro:
+  uno tapado a medias puede quedar del lado equivocado.
+
 ### 2026-11-07 (6) — Polígonos de cuatro lados en los modos de componentes
 
 **Añadido**
