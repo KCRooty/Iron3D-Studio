@@ -83,6 +83,15 @@ void applyComponentDrag(SceneNode& node);
 // componentes (y entonces no se elige objeto).
 bool componentClick(SceneNode* selected, const OrbitalCamera& camera, float mouseX, float mouseY, bool shift, bool ctrl);
 
+// --- Herramientas de modelado (Extruir D, Extrusion Interna I, Biselar M~S, Cuchillo K)
+// Con una herramienta activa no hay gizmo: arrastrar en el visor la aplica
+// (en horizontal cambia la cantidad; el Cuchillo dibuja la linea de corte).
+bool modelToolActive();
+// Raton en el visor (coordenadas de ventana). Se llama cada fotograma con
+// la herramienta activa; tambien con leftDown=false fuera del visor (suelta).
+void modelToolMouse(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, float mouseX, float mouseY,
+                    bool leftDown, bool leftPressed, SceneHistory& history);
+
 // Rectangulo (coordenadas de ventana) del panel i (0-3) de la vista de 4.
 struct QuadRect { float x, y, w, h; };
 QuadRect quadPanelRect(const ViewportState& vp, int i);

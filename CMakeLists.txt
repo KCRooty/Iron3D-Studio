@@ -111,6 +111,7 @@ add_executable(Iron3DStudio
     src/gfx/gl/GLLoader.cpp
     src/core/MeshData.cpp
     src/core/MeshTopology.cpp
+    src/core/MeshEdit.cpp
     src/core/PrimitiveMesh.cpp
     src/core/OrbitalCamera.cpp
     src/core/SceneNode.cpp
@@ -263,6 +264,7 @@ add_executable(iron3d_tests
     src/importers/c4d_compat/C4DGeometry.cpp
     src/core/MeshData.cpp
     src/core/MeshTopology.cpp
+    src/core/MeshEdit.cpp
     src/core/SceneNode.cpp
     src/core/Material.cpp
     src/core/SceneSerializer.cpp

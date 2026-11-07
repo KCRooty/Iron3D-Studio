@@ -2,6 +2,7 @@
 // ni Cineware: se ejecutan en el CI de Windows y Linux.
 
 #include "core/SceneNode.h"
+#include "core/MeshEdit.h"
 #include "core/MeshTopology.h"
 #include "core/SceneSerializer.h"
 #include "core/ThumbnailRenderer.h"
@@ -424,6 +425,67 @@ int main() {
         for (size_t i = 0; i < t.points.size(); ++i) visPts += v.points[i];
         check(visPts == 4, "visibilidad: de frente se ven 4 puntos del cubo");
         (void)visPolys;
+    }
+
+
+    // --- Herramientas de modelado (Extruir, Biselar, Cuchillo) ------------------
+    {
+        const MeshData cube = makeCubeMesh();
+        const MeshTopology t = buildMeshTopology(cube);
+        int top = -1;
+        for (size_t p = 0; p < t.polyNormals.size(); ++p)
+            if (t.polyNormals[p].y > 0.9f) top = (int)p;
+        check(top >= 0, "cubo: hay cara superior");
+
+        // Extruir la cara de arriba 0.5: 12 puntos, 20 aristas, 10 poligonos;
+        // la tapa sube a y = 1 y queda seleccionada.
+        const MeshEditResult e = extrudePolygons(cube, t, {top}, 0.5f);
+        const MeshTopology et = buildMeshTopology(e.mesh);
+        check(e.changed == 1, "extruir: 1 poligono");
+        check(et.points.size() == 12 && et.edges.size() == 20 && et.polys.size() == 10,
+              "extruir cara del cubo: 12 puntos, 20 aristas, 10 poligonos");
+        const std::set<int> cap = polysFromTris(et, e.selectTris);
+        check(cap.size() == 1 && std::fabs(polyCenter(et, *cap.begin()).y - 1.0f) < 1e-5f, "extruir: la tapa sube y queda seleccionada");
+        bool outward = true;
+        for (size_t p = 0; p < et.polys.size(); ++p) {
+            const glm::vec3 c = polyCenter(et, (int)p) - glm::vec3(0.0f, 0.25f, 0.0f);
+            outward = outward && glm::dot(et.polyNormals[p], c) > 0.0f;
+        }
+        check(outward, "extruir: paredes y tapa hacia fuera");
+        check((int)et.points.size() - (int)et.edges.size() + (int)et.polys.size() == 2, "extruir: sigue cerrada (V - A + P = 2)");
+
+        // Extruir dos caras vecinas como region: sin pared entre ellas.
+        int front = -1;
+        for (size_t p = 0; p < t.polyNormals.size(); ++p)
+            if (t.polyNormals[p].z > 0.9f) front = (int)p;
+        const MeshTopology rt = buildMeshTopology(extrudePolygons(cube, t, {top, front}, 0.25f).mesh);
+        check(rt.polys.size() == 6 - 2 + 2 + 6, "extruir region de 2 caras: 6 paredes, 2 tapas");
+
+        // Biselar (insercion 0.1 + extrusion 0.2): el cuadrado de arriba da
+        // 1 interior + 4 del anillo.
+        const MeshEditResult b = bevelPolygons(cube, t, {top}, 0.1f, 0.2f);
+        const MeshTopology bt = buildMeshTopology(b.mesh);
+        check(bt.polys.size() == 10 && bt.points.size() == 12, "biselar cara del cubo: 10 poligonos, 12 puntos");
+        const std::set<int> inner = polysFromTris(bt, b.selectTris);
+        check(inner.size() == 1 && std::fabs(polyCenter(bt, *inner.begin()).y - 0.7f) < 1e-5f,
+              "biselar: el interior sube 0.2 y queda seleccionado");
+        check((int)bt.points.size() - (int)bt.edges.size() + (int)bt.polys.size() == 2, "biselar: sigue cerrada");
+
+        // Cuchillo: plano x = 0 corta las 4 caras que lo cruzan (no las de x = +-0.5).
+        const MeshEditResult k = knifeCut(cube, t, glm::vec3(0.0f), glm::vec3(1.0f, 0.0f, 0.0f), {}, nullptr);
+        const MeshTopology kt = buildMeshTopology(k.mesh);
+        check(k.changed == 4, "cuchillo: 4 caras cortadas");
+        check(kt.polys.size() == 10 && kt.points.size() == 12 && kt.edges.size() == 20,
+              "cuchillo: 10 poligonos, 12 puntos, 20 aristas");
+        check((int)kt.points.size() - (int)kt.edges.size() + (int)kt.polys.size() == 2, "cuchillo: sigue cerrada");
+        std::vector<char> only(t.polys.size(), 0);
+        only[(size_t)top] = 1;
+        check(knifeCut(cube, t, glm::vec3(0.0f), glm::vec3(1.0f, 0.0f, 0.0f), only, nullptr).changed == 1,
+              "cuchillo: solo los poligonos permitidos");
+        check(knifeCut(cube, t, glm::vec3(0.0f), glm::vec3(1.0f, 0.0f, 0.0f), {},
+                       [](const glm::vec3& p) { return p.y > 0.0f; })
+                      .changed == 1,
+              "cuchillo: solo donde los dos cortes caen en el tramo");
     }
 
     if (g_failures == 0) std::printf("c4d_geometry: todo correcto\n");
