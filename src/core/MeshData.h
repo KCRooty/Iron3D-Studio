@@ -21,6 +21,11 @@ struct MeshData {
     // seleccion con clic, Encuadrar y el contorno de seleccion.
     glm::vec3 boundsMin{0.0f};
     glm::vec3 boundsMax{0.0f};
+    // Poligonos (2026-11-07): cuantos triangulos consecutivos del indice forma
+    // cada cara (1 = triangulo, 2 = cuadrilatero, n-2 = n-gono). Vacio = se
+    // deducen (MeshTopology). Lo rellenan las herramientas de modelado para
+    // que un corte o una extrusion no se vuelvan a juntar mal.
+    std::vector<uint32_t> faceTris;
 };
 
 void updateBounds(MeshData& mesh);

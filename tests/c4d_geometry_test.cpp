@@ -2,6 +2,7 @@
 // ni Cineware: se ejecutan en el CI de Windows y Linux.
 
 #include "core/SceneNode.h"
+#include "core/MeshTopology.h"
 #include "core/SceneSerializer.h"
 #include "core/ThumbnailRenderer.h"
 #include "importers/c4d_compat/C4DGeometry.h"
@@ -344,6 +345,64 @@ int main() {
         SceneNode copyParent("p");
         const SceneNode* dup = duplicateSubtree(copyParent, *n);
         check(dup->animPos.keys.size() == 3, "animacion: Duplicar copia las pistas");
+    }
+
+    // --- Topologia de componentes (Puntos/Aristas/Poligonos) -------------------
+    {
+        const MeshData cube = makeCubeMesh();
+        const MeshTopology t = buildMeshTopology(cube);
+        check(t.points.size() == 8, "topologia cubo: 8 puntos");
+        check(t.edges.size() == 12, "topologia cubo: 12 aristas (sin diagonales)");
+        check(t.polys.size() == 6, "topologia cubo: 6 poligonos");
+        bool quads = true, out = true;
+        for (size_t p = 0; p < t.polys.size(); ++p) {
+            quads = quads && t.polys[p].size() == 4 && t.polyTris[p].size() == 2;
+            out = out && glm::dot(t.polyNormals[p], polyCenter(t, (int)p)) > 0.0f;
+        }
+        check(quads, "topologia cubo: todo cuadrilateros");
+        check(out, "topologia cubo: normales de poligono hacia fuera");
+
+        const MeshTopology pl = buildMeshTopology(makePlaneMesh());
+        check(pl.points.size() == 4 && pl.edges.size() == 4 && pl.polys.size() == 1, "topologia plano: 1 cuadrilatero");
+
+        const MeshData sphere = makeSphereMesh();
+        const MeshTopology st = buildMeshTopology(sphere);
+        check((int)st.points.size() - (int)st.edges.size() + (int)st.polys.size() == 2,
+              "topologia esfera: V - A + P = 2 (cerrada, sin diagonales)");
+
+        // Borrar una cara del cubo: 5 poligonos, mismos puntos y aristas.
+        std::vector<char> keep(t.polys.size(), 1);
+        keep[0] = 0;
+        const MeshData open = keepPolygons(cube, t, keep);
+        const MeshTopology ot = buildMeshTopology(open);
+        check(open.faceTris.size() == 5 && ot.polys.size() == 5, "borrar poligono: quedan 5");
+        check(ot.points.size() == 8 && ot.edges.size() == 12, "borrar poligono: 8 puntos y 12 aristas");
+
+        // Pentagono explicito (abanico de 3 triangulos): un solo poligono.
+        MeshData pent;
+        for (int i = 0; i < 5; ++i) {
+            const float a = 6.2831853f * (float)i / 5.0f;
+            pent.vertices.push_back({glm::vec3(std::cos(a), 0.0f, -std::sin(a)), glm::vec3(1.0f), glm::vec3(0, 1, 0)});
+        }
+        pent.indices = {0, 1, 2, 0, 2, 3, 0, 3, 4};
+        pent.faceTris = {3};
+        const MeshTopology pt = buildMeshTopology(pent);
+        check(pt.polys.size() == 1 && pt.polys[0].size() == 5 && pt.edges.size() == 5, "pentagono: 1 poligono de 5 lados");
+        pent.faceTris.clear();
+        check(buildMeshTopology(pent).polys.size() == 2, "pentagono sin FACES: se deduce cuadrilatero + triangulo");
+
+        // FACES en el .iron (formato 6).
+        SceneNode root("raiz");
+        SceneNode* node = root.addChild("penta", PrimitiveType::Mesh);
+        pent.faceTris = {3};
+        node->mesh = std::make_shared<const MeshData>(pent);
+        std::vector<Material> mats;
+        const std::string text = serializeScene(root, mats);
+        SceneNode back("x");
+        std::string err;
+        check(deserializeScene(text, back, mats, &err), "FACES: el .iron se vuelve a leer");
+        const SceneNode* bn = back.children().empty() ? nullptr : back.children().front().get();
+        check(bn && bn->mesh && bn->mesh->faceTris == std::vector<uint32_t>{3}, "FACES: poligonos guardados y leidos");
     }
 
     if (g_failures == 0) std::printf("c4d_geometry: todo correcto\n");
