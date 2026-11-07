@@ -13,7 +13,7 @@ namespace {
 // v2 = Fase 5: bloque MATERIALS + materialIndex; v3 = mallas (MESH);
 // v4 (2026-11-06) = rotaciones en HPB de C4D. Al cargar v1-v3 se convierten
 // (misma orientacion, otros numeros), ver convertLegacyRotations.
-constexpr int kFormatVersion = 5;  // 5: pistas de animacion (KEY)
+constexpr int kFormatVersion = 6;  // 5: pistas de animacion (KEY); 6: poligonos (FACES) e interpolacion de claves
 
 void convertLegacyRotations(SceneNode& n) {
     n.rotationDeg = mat3ToHpb(legacyXyzToMat3(n.rotationDeg));
@@ -50,6 +50,12 @@ void writeMesh(std::ostream& out, const MeshData& mesh, const std::string& inden
     for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3)
         out << indent << "    " << mesh.indices[i] << ' ' << mesh.indices[i + 1] << ' ' << mesh.indices[i + 2] << '\n';
     out << indent << "  }\n";
+    // Formato 6: triangulos por poligono (solo si la malla los trae).
+    if (!mesh.faceTris.empty()) {
+        out << indent << "  FACES n=" << mesh.faceTris.size() << " {";
+        for (size_t i = 0; i < mesh.faceTris.size(); ++i) out << (i % 32 == 0 ? "\n" + indent + "    " : " ") << mesh.faceTris[i];
+        out << '\n' << indent << "  }\n";
+    }
 }
 
 void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable* meshRefs) {
@@ -148,6 +154,36 @@ bool parseMesh(Parser& p, std::shared_ptr<const MeshData>& out, std::string& err
         return false;
     }
     if (p.atEnd() || p.next() != "}") { err = "se esperaba '}' de cierre de MESH"; return false; }
+    // Formato 6: FACES n=K { c1 c2 ... } (triangulos por poligono).
+    if (!p.atEnd() && p.peek() == "FACES") {
+        p.next();
+        size_t nf = 0;
+        while (!p.atEnd() && p.peek() != "{") {
+            const std::string tok = p.next();
+            try {
+                if (tok.rfind("n=", 0) == 0) nf = (size_t)std::stoul(tok.substr(2));
+            } catch (const std::exception&) {
+                err = "cabecera FACES invalida";
+                return false;
+            }
+        }
+        if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras FACES"; return false; }
+        if (p.toks.size() - p.pos < nf) { err = "bloque FACES truncado"; return false; }
+        size_t sum = 0;
+        try {
+            for (size_t i = 0; i < nf; ++i) {
+                const unsigned long c = std::stoul(p.next());
+                if (c == 0) { err = "poligono sin triangulos en FACES"; return false; }
+                mesh->faceTris.push_back((uint32_t)c);
+                sum += c;
+            }
+        } catch (const std::exception&) {
+            err = "valor numerico invalido en FACES";
+            return false;
+        }
+        if (p.atEnd() || p.next() != "}") { err = "se esperaba '}' de cierre de FACES"; return false; }
+        if (sum != ni / 3) mesh->faceTris.clear();  // no cuadra: se deducen, como sin FACES
+    }
     updateBounds(*mesh);
     out = std::move(mesh);
     return true;

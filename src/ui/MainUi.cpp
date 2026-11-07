@@ -4,6 +4,7 @@
 #include "UiTheme.h"
 #include "core/SceneSerializer.h"
 #include "core/MeshData.h"
+#include "core/MeshTopology.h"
 #include "core/ThumbnailRenderer.h"
 
 #define STBI_WRITE_NO_STDIO
@@ -188,6 +189,7 @@ struct UiState {
     bool pendingWorldCoords = false, pendingAxisMode = false;  // --ui-cmd antes del primer frame
     int pendingCompMode = 0;
     std::vector<int> pendingCompSel;
+    bool compDeleteRequested = false;  // --ui-cmd=comp-del
 
     // Opciones de herramienta (la rueda dentada de los menus, como en C4D).
     enum class OptWin { None, RectSel, LassoSel, Connect };
@@ -209,11 +211,8 @@ struct UiState {
     // vertices de render unidos por posicion; poligonos = triangulos),
     // seleccion de componentes y estado del arrastre.
     struct Components {
-        const MeshData* mesh = nullptr;     // malla de la que se saco la topologia
-        std::vector<glm::vec3> pts;         // posicion local de cada punto
-        std::vector<int> vpt;               // vertice de render -> punto
-        std::vector<std::pair<int, int>> edges;
-        std::vector<std::array<int, 3>> tris;  // en puntos
+        std::shared_ptr<const MeshData> mesh;  // malla de la que se saco la topologia (se retiene: sin punteros reciclados)
+        MeshTopology topo;
         int nodeId = -1, mode = 0;
         std::set<int> sel;
         std::unique_ptr<SceneNode> proxy;
@@ -1222,16 +1221,26 @@ int weldMesh(MeshData& m, float tol) {
     }
     std::vector<uint32_t> idx;
     idx.reserve(m.indices.size());
-    for (size_t i = 0; i + 2 < m.indices.size(); i += 3) {
-        const uint32_t a = remap[m.indices[i]], b = remap[m.indices[i + 1]], c = remap[m.indices[i + 2]];
-        if (a == b || b == c || a == c) continue;
-        idx.push_back(a);
-        idx.push_back(b);
-        idx.push_back(c);
+    const std::vector<uint32_t> faces = faceTriCounts(m);
+    std::vector<uint32_t> newFaces;
+    size_t tri = 0;
+    for (uint32_t count : faces) {
+        uint32_t kept = 0;
+        for (uint32_t k = 0; k < count; ++k, ++tri) {
+            const size_t i = tri * 3;
+            const uint32_t a = remap[m.indices[i]], b = remap[m.indices[i + 1]], c = remap[m.indices[i + 2]];
+            if (a == b || b == c || a == c) continue;
+            idx.push_back(a);
+            idx.push_back(b);
+            idx.push_back(c);
+            ++kept;
+        }
+        if (kept) newFaces.push_back(kept);
     }
     const int removed = (int)(m.vertices.size() - verts.size());
     m.vertices = std::move(verts);
     m.indices = std::move(idx);
+    m.faceTris = std::move(newFaces);
     return removed;
 }
 
@@ -1263,6 +1272,8 @@ int connectObjects(SceneNode& root, SceneNode*& selected, SceneHistory& history,
             v.normal = glm::length(nn) > 1e-8f ? glm::normalize(nn) : v.normal;
             out.vertices.push_back(v);
         }
+        const std::vector<uint32_t> faces = faceTriCounts(m);
+        out.faceTris.insert(out.faceTris.end(), faces.begin(), faces.end());
         for (size_t i = 0; i + 2 < m.indices.size(); i += 3) {
             out.indices.push_back(base + m.indices[i]);
             out.indices.push_back(base + (flip ? m.indices[i + 2] : m.indices[i + 1]));
@@ -5150,12 +5161,11 @@ const MeshData* editableMesh(const SceneNode* n) {
 }
 
 // Topologia del objeto activo (se rehace si cambia de objeto o de malla) y
-// limpieza de la seleccion si cambia el objeto o el modo.
+// limpieza de la seleccion si cambia el objeto, el modo o la conectividad.
 bool syncComponents(const SceneNode* n) {
     auto& c = g.comp;
     const int mode = g_vp ? g_vp->compMode : 0;
-    const MeshData* m = mode ? editableMesh(n) : nullptr;
-    if (!m) {
+    if (!mode || !editableMesh(n)) {
         c.sel.clear();
         c.nodeId = -1;
         return false;
@@ -5163,53 +5173,30 @@ bool syncComponents(const SceneNode* n) {
     if (c.nodeId != n->id() || c.mode != mode) c.sel.clear();
     c.nodeId = n->id();
     c.mode = mode;
-    if (c.mesh == m) return true;
-    const size_t oldPts = c.pts.size();
-    c.mesh = m;
-    c.pts.clear();
-    c.vpt.assign(m->vertices.size(), 0);
-    std::map<std::tuple<long long, long long, long long>, int> byPos;
-    for (size_t i = 0; i < m->vertices.size(); ++i) {
-        const glm::vec3 p = m->vertices[i].position;
-        const auto k = std::make_tuple((long long)std::llround(p.x * 1e5), (long long)std::llround(p.y * 1e5),
-                                       (long long)std::llround(p.z * 1e5));
-        auto it = byPos.find(k);
-        if (it == byPos.end()) {
-            it = byPos.emplace(k, (int)c.pts.size()).first;
-            c.pts.push_back(p);
-        }
-        c.vpt[i] = it->second;
-    }
-    c.tris.clear();
-    std::set<std::pair<int, int>> es;
-    for (size_t i = 0; i + 2 < m->indices.size(); i += 3) {
-        std::array<int, 3> t{};
-        bool ok = true;
-        for (int k = 0; k < 3; ++k) {
-            const uint32_t v = m->indices[i + (size_t)k];
-            if (v >= m->vertices.size()) { ok = false; break; }
-            t[(size_t)k] = c.vpt[v];
-        }
-        if (!ok) continue;
-        c.tris.push_back(t);
-        for (int k = 0; k < 3; ++k) {
-            const int a = t[(size_t)k], b = t[(size_t)((k + 1) % 3)];
-            if (a != b) es.insert({std::min(a, b), std::max(a, b)});
-        }
-    }
-    c.edges.assign(es.begin(), es.end());
-    if (c.pts.size() != oldPts) c.sel.clear();  // otra topologia: la seleccion ya no vale
+    if (c.mesh == n->mesh) return true;
+    const size_t oldPts = c.topo.points.size(), oldEdges = c.topo.edges.size(), oldPolys = c.topo.polys.size();
+    c.mesh = n->mesh;
+    c.topo = buildMeshTopology(*c.mesh);
+    if (c.topo.points.size() != oldPts || c.topo.edges.size() != oldEdges || c.topo.polys.size() != oldPolys)
+        c.sel.clear();  // otra conectividad: la seleccion ya no vale
     return true;
+}
+
+// Cuantos componentes hay en el modo actual.
+size_t componentCount() {
+    const auto& t = g.comp.topo;
+    return g.comp.mode == 1 ? t.points.size() : g.comp.mode == 2 ? t.edges.size() : t.polys.size();
 }
 
 // Puntos afectados por la seleccion actual (segun el modo).
 std::set<int> selectedPoints() {
     const auto& c = g.comp;
+    const auto& t = c.topo;
     std::set<int> out;
     for (int i : c.sel) {
-        if (c.mode == 1 && i < (int)c.pts.size()) out.insert(i);
-        else if (c.mode == 2 && i < (int)c.edges.size()) { out.insert(c.edges[(size_t)i].first); out.insert(c.edges[(size_t)i].second); }
-        else if (c.mode == 3 && i < (int)c.tris.size()) for (int p : c.tris[(size_t)i]) out.insert(p);
+        if (c.mode == 1 && i < (int)t.points.size()) out.insert(i);
+        else if (c.mode == 2 && i < (int)t.edges.size()) { out.insert(t.edges[(size_t)i].first); out.insert(t.edges[(size_t)i].second); }
+        else if (c.mode == 3 && i < (int)t.polys.size()) for (int q : t.polys[(size_t)i]) out.insert(q);
     }
     return out;
 }
@@ -5243,41 +5230,58 @@ constexpr size_t kMaxCompDraw = 60000;  // por encima no se dibujan (rendimiento
 void drawComponentOverlay(const SceneNode* selected, const OrbitalCamera& camera, const ViewportState& vp) {
     if (!syncComponents(selected)) return;
     const auto& c = g.comp;
+    const auto& t = c.topo;
     ImDrawList* dl = ImGui::GetBackgroundDrawList();
     dl->PushClipRect(ImVec2(vp.x, vp.y), ImVec2(vp.x + vp.w, vp.y + vp.h), true);
     const CompProjector proj = compProjector(*selected, camera, vp);
     const ImU32 wire = IM_COL32(150, 170, 200, 150), sel = IM_COL32(255, 140, 30, 255), pt = IM_COL32(110, 160, 255, 255);
-    if (c.edges.size() > kMaxCompDraw || c.pts.size() > kMaxCompDraw) {
+    if (t.edges.size() > kMaxCompDraw || t.points.size() > kMaxCompDraw) {
         dl->AddText(ImVec2(vp.x + 8, vp.y + 24), IM_COL32(255, 200, 120, 255), "Malla demasiado grande para dibujar sus componentes.");
         dl->PopClipRect();
         return;
     }
-    std::vector<ImVec2> sp(c.pts.size());
-    std::vector<char> ok(c.pts.size());
-    for (size_t i = 0; i < c.pts.size(); ++i) ok[i] = proj(c.pts[i], sp[i]);
+    std::vector<ImVec2> sp(t.points.size());
+    std::vector<char> ok(t.points.size());
+    for (size_t i = 0; i < t.points.size(); ++i) ok[i] = proj(t.points[i], sp[i]);
+    if (c.mode == 3) {
+        const MeshData& m = *c.mesh;
+        for (int i : c.sel) {
+            if (i >= (int)t.polys.size()) continue;
+            for (int tri : t.polyTris[(size_t)i]) {
+                ImVec2 q[3];
+                bool vis = true;
+                for (int k = 0; k < 3; ++k)
+                    vis = vis && proj(m.vertices[m.indices[3 * (size_t)tri + (size_t)k]].position, q[k]);
+                if (vis) dl->AddTriangleFilled(q[0], q[1], q[2], IM_COL32(255, 140, 30, 90));
+            }
+        }
+    }
+    std::set<std::pair<int, int>> selEdges;  // bordes de los poligonos seleccionados, resaltados
     if (c.mode == 3)
         for (int i : c.sel) {
-            if (i >= (int)c.tris.size()) continue;
-            const auto& t = c.tris[(size_t)i];
-            if (ok[(size_t)t[0]] && ok[(size_t)t[1]] && ok[(size_t)t[2]])
-                dl->AddTriangleFilled(sp[(size_t)t[0]], sp[(size_t)t[1]], sp[(size_t)t[2]], IM_COL32(255, 140, 30, 90));
+            if (i >= (int)t.polys.size()) continue;
+            const auto& pl = t.polys[(size_t)i];
+            for (size_t k = 0; k < pl.size(); ++k) {
+                const int a = pl[k], b = pl[(k + 1) % pl.size()];
+                selEdges.insert({std::min(a, b), std::max(a, b)});
+            }
         }
-    for (size_t i = 0; i < c.edges.size(); ++i) {
-        const auto [a, b] = c.edges[i];
+    for (size_t i = 0; i < t.edges.size(); ++i) {
+        const auto [a, b] = t.edges[i];
         if (!ok[(size_t)a] || !ok[(size_t)b]) continue;
-        const bool s = c.mode == 2 && c.sel.count((int)i);
-        dl->AddLine(sp[(size_t)a], sp[(size_t)b], s ? sel : wire, s ? 2.5f : 1.0f);
+        const bool s = (c.mode == 2 && c.sel.count((int)i)) || selEdges.count(t.edges[i]);
+        dl->AddLine(sp[(size_t)a], sp[(size_t)b], s ? sel : wire, s ? 2.0f : 1.0f);
     }
     if (c.mode == 1)
-        for (size_t i = 0; i < c.pts.size(); ++i) {
+        for (size_t i = 0; i < t.points.size(); ++i) {
             if (!ok[i]) continue;
             const bool s = c.sel.count((int)i) > 0;
             const float r = s ? 3.5f : 2.5f;
             dl->AddRectFilled(ImVec2(sp[i].x - r, sp[i].y - r), ImVec2(sp[i].x + r, sp[i].y + r), s ? sel : pt);
         }
     const char* names[] = {"", "Puntos", "Aristas", "Polígonos"};
-    char buf[96];
-    std::snprintf(buf, sizeof(buf), "%s: %zu seleccionados", names[c.mode], c.sel.size());
+    char buf[128];
+    std::snprintf(buf, sizeof(buf), "%s: %zu de %zu seleccionados", names[c.mode], c.sel.size(), componentCount());
     dl->AddText(ImVec2(vp.x + 8, vp.y + 24), IM_COL32(230, 230, 230, 220), buf);
     dl->PopClipRect();
 }
@@ -5285,33 +5289,39 @@ void drawComponentOverlay(const SceneNode* selected, const OrbitalCamera& camera
 bool componentClick(SceneNode* selected, const OrbitalCamera& camera, float mx, float my, bool shift, bool ctrl) {
     if (!g_vp || !syncComponents(selected)) return false;
     auto& c = g.comp;
+    const auto& t = c.topo;
     const CompProjector proj = compProjector(*selected, camera, *g_vp);
     const ImVec2 m(mx, my);
     int best = -1;
     float bestScore = 1e30f;
     if (c.mode == 1) {
-        for (size_t i = 0; i < c.pts.size(); ++i) {
+        for (size_t i = 0; i < t.points.size(); ++i) {
             ImVec2 p;
             float z;
-            if (!proj(c.pts[i], p, &z)) continue;
+            if (!proj(t.points[i], p, &z)) continue;
             const float d = std::hypot(p.x - m.x, p.y - m.y);
             if (d < 9.0f && d + z < bestScore) { bestScore = d + z; best = (int)i; }
         }
     } else if (c.mode == 2) {
-        for (size_t i = 0; i < c.edges.size(); ++i) {
+        for (size_t i = 0; i < t.edges.size(); ++i) {
             ImVec2 a, b;
-            if (!proj(c.pts[(size_t)c.edges[i].first], a) || !proj(c.pts[(size_t)c.edges[i].second], b)) continue;
+            if (!proj(t.points[(size_t)t.edges[i].first], a) || !proj(t.points[(size_t)t.edges[i].second], b)) continue;
             const float d = segDist(m, a, b);
             if (d < 6.0f && d < bestScore) { bestScore = d; best = (int)i; }
         }
     } else {
-        for (size_t i = 0; i < c.tris.size(); ++i) {
-            ImVec2 p[3];
-            float z[3];
+        for (size_t i = 0; i < t.polys.size(); ++i) {
+            std::vector<ImVec2> sp;
             bool vis = true;
-            for (int k = 0; k < 3; ++k) vis = vis && proj(c.pts[(size_t)c.tris[i][(size_t)k]], p[k], &z[k]);
-            if (!vis || !pointInPolygon({p[0], p[1], p[2]}, m)) continue;
-            const float depth = (z[0] + z[1] + z[2]) / 3.0f;
+            for (int q : t.polys[i]) {
+                ImVec2 p;
+                vis = vis && proj(t.points[(size_t)q], p);
+                sp.push_back(p);
+            }
+            if (!vis || !pointInPolygon(sp, m)) continue;
+            ImVec2 dummy;
+            float depth = 0.0f;
+            proj(polyCenter(t, (int)i), dummy, &depth);
             if (depth < bestScore) { bestScore = depth; best = (int)i; }
         }
     }
@@ -5332,25 +5342,26 @@ bool componentMarquee(SceneNode* selected, const OrbitalCamera& camera, const Vi
                       const std::function<bool(ImVec2)>& inside, bool shift, bool ctrl) {
     if (!syncComponents(selected)) return false;
     auto& c = g.comp;
+    const auto& t = c.topo;
     const CompProjector proj = compProjector(*selected, camera, vp);
-    std::vector<char> in(c.pts.size(), 0);
-    for (size_t i = 0; i < c.pts.size(); ++i) {
+    std::vector<char> in(t.points.size(), 0);
+    for (size_t i = 0; i < t.points.size(); ++i) {
         ImVec2 p;
-        in[i] = proj(c.pts[i], p) && inside(p);
+        in[i] = proj(t.points[i], p) && inside(p);
     }
     std::vector<int> hits;
     if (c.mode == 1) {
-        for (size_t i = 0; i < c.pts.size(); ++i) if (in[i]) hits.push_back((int)i);
+        for (size_t i = 0; i < t.points.size(); ++i) if (in[i]) hits.push_back((int)i);
     } else if (c.mode == 2) {
-        for (size_t i = 0; i < c.edges.size(); ++i) {
-            const bool a = in[(size_t)c.edges[i].first], b = in[(size_t)c.edges[i].second];
+        for (size_t i = 0; i < t.edges.size(); ++i) {
+            const bool a = in[(size_t)t.edges[i].first], b = in[(size_t)t.edges[i].second];
             if (g.selTolerant ? (a || b) : (a && b)) hits.push_back((int)i);
         }
     } else {
-        for (size_t i = 0; i < c.tris.size(); ++i) {
-            const auto& t = c.tris[i];
-            const int n = in[(size_t)t[0]] + in[(size_t)t[1]] + in[(size_t)t[2]];
-            if (g.selTolerant ? n > 0 : n == 3) hits.push_back((int)i);
+        for (size_t i = 0; i < t.polys.size(); ++i) {
+            size_t n = 0;
+            for (int q : t.polys[i]) n += in[(size_t)q] ? 1 : 0;
+            if (g.selTolerant ? n > 0 : n == t.polys[i].size()) hits.push_back((int)i);
         }
     }
     if (ctrl) for (int h : hits) c.sel.erase(h);
@@ -5362,37 +5373,31 @@ bool componentMarquee(SceneNode* selected, const OrbitalCamera& camera, const Vi
 }
 
 // Borrar (Supr) en modo de componentes: quita los poligonos seleccionados o
-// los que usan los puntos/aristas seleccionados.
+// los que usan los puntos/aristas seleccionados (y los vertices sueltos).
 bool deleteComponents(SceneNode& root, SceneNode* selected, SceneHistory& history) {
     if (!syncComponents(selected) || g.comp.sel.empty()) return false;
     auto& c = g.comp;
+    const auto& t = c.topo;
     const std::set<int> pts = selectedPoints();
     std::set<std::pair<int, int>> selEdges;
     if (c.mode == 2)
-        for (int i : c.sel) if (i < (int)c.edges.size()) selEdges.insert(c.edges[(size_t)i]);
-    MeshData m = *selected->mesh;
-    std::vector<uint32_t> idx;
-    size_t ti = 0;
-    for (size_t i = 0; i + 2 < m.indices.size(); i += 3, ++ti) {
+        for (int i : c.sel) if (i < (int)t.edges.size()) selEdges.insert(t.edges[(size_t)i]);
+    std::vector<char> keep(t.polys.size(), 1);
+    size_t removed = 0;
+    for (size_t p = 0; p < t.polys.size(); ++p) {
+        const auto& pl = t.polys[p];
         bool drop = false;
-        if (ti < c.tris.size()) {
-            const auto& t = c.tris[ti];
-            if (c.mode == 3) drop = c.sel.count((int)ti) > 0;
-            else if (c.mode == 1) drop = pts.count(t[0]) || pts.count(t[1]) || pts.count(t[2]);
-            else
-                for (int k = 0; k < 3 && !drop; ++k) {
-                    const int a = t[(size_t)k], b = t[(size_t)((k + 1) % 3)];
-                    drop = selEdges.count({std::min(a, b), std::max(a, b)}) > 0;
-                }
-        }
-        if (drop) continue;
-        idx.insert(idx.end(), m.indices.begin() + (ptrdiff_t)i, m.indices.begin() + (ptrdiff_t)i + 3);
+        if (c.mode == 3) drop = c.sel.count((int)p) > 0;
+        else if (c.mode == 1) for (int q : pl) drop = drop || pts.count(q) > 0;
+        else
+            for (size_t k = 0; k < pl.size() && !drop; ++k) {
+                const int a = pl[k], b = pl[(k + 1) % pl.size()];
+                drop = selEdges.count({std::min(a, b), std::max(a, b)}) > 0;
+            }
+        if (drop) { keep[p] = 0; ++removed; }
     }
     history.commitBefore(root);
-    const size_t removed = (m.indices.size() - idx.size()) / 3;
-    m.indices = std::move(idx);
-    updateBounds(m);
-    selected->mesh = std::make_shared<const MeshData>(std::move(m));
+    selected->mesh = std::make_shared<const MeshData>(keepPolygons(*selected->mesh, t, keep));
     c.sel.clear();
     flashStatus("Eliminados " + std::to_string(removed) + (removed == 1 ? " polígono." : " polígonos."));
     return true;
@@ -5405,7 +5410,7 @@ SceneNode* componentGizmoTarget(SceneNode* selected, bool dragging) {
     const std::set<int> pts = selectedPoints();
     if (pts.empty()) return nullptr;
     glm::vec3 center(0.0f);
-    for (int p : pts) center += c.pts[(size_t)p];
+    for (int q : pts) center += c.topo.points[(size_t)q];
     center /= (float)pts.size();
     if (!c.proxy) c.proxy = std::make_unique<SceneNode>("componentes");
     const glm::mat4 w = selected->worldMatrix();
@@ -5426,14 +5431,14 @@ void beginComponentDrag(SceneNode& node) {
 
 void applyComponentDrag(SceneNode& node) {
     auto& c = g.comp;
-    if (!c.proxy || !c.dragStartMesh || c.dragStartMesh->vertices.size() != c.vpt.size()) return;
+    if (!c.proxy || !c.dragStartMesh || c.dragStartMesh->vertices.size() != c.topo.vertexPoint.size()) return;
     const glm::mat4 w = node.worldMatrix();
     const glm::mat4 l = glm::inverse(w) * c.proxy->worldMatrix() * glm::inverse(c.dragStartProxy) * w;
     const std::set<int> pts = selectedPoints();
     MeshData m = *c.dragStartMesh;
     std::vector<char> moved(m.vertices.size(), 0);
     for (size_t v = 0; v < m.vertices.size(); ++v)
-        if (pts.count(c.vpt[v])) {
+        if (pts.count(c.topo.vertexPoint[v])) {
             m.vertices[v].position = glm::vec3(l * glm::vec4(m.vertices[v].position, 1.0f));
             moved[v] = 1;
         }
@@ -5448,7 +5453,9 @@ void applyComponentDrag(SceneNode& node) {
     for (size_t i = 0; i + 2 < m.indices.size(); i += 3) {
         const uint32_t a = m.indices[i], b = m.indices[i + 1], cc = m.indices[i + 2];
         if (!touched[a] && !touched[b] && !touched[cc]) continue;
-        const glm::vec3 n = glm::cross(m.vertices[b].position - m.vertices[a].position, m.vertices[cc].position - m.vertices[a].position);
+        glm::vec3 n = glm::cross(m.vertices[b].position - m.vertices[a].position, m.vertices[cc].position - m.vertices[a].position);
+        // Mismo giro que la normal que ya tenia (algunos triangulos vienen al reves).
+        if (glm::dot(n, m.vertices[a].normal + m.vertices[b].normal + m.vertices[cc].normal) < 0.0f) n = -n;
         acc[a] += n;
         acc[b] += n;
         acc[cc] += n;
@@ -5457,10 +5464,10 @@ void applyComponentDrag(SceneNode& node) {
         if (touched[v] && glm::length(acc[v]) > 1e-12f) m.vertices[v].normal = glm::normalize(acc[v]);
     updateBounds(m);
     node.mesh = std::make_shared<const MeshData>(std::move(m));
-    // La topologia no cambia: se conserva la seleccion, y los puntos se
-    // actualizan para el dibujo y el centro del gizmo.
-    c.mesh = node.mesh.get();
-    for (size_t v = 0; v < node.mesh->vertices.size(); ++v) c.pts[(size_t)c.vpt[v]] = node.mesh->vertices[v].position;
+    // La conectividad no cambia: se conserva la seleccion y solo se ponen al
+    // dia las posiciones (dibujo y centro del gizmo).
+    c.mesh = node.mesh;
+    refreshTopologyPositions(c.topo, *node.mesh);
 }
 
 void releaseUiTextures() {
@@ -5520,6 +5527,10 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
         viewport.compMode = std::clamp(g.pendingCompMode, 0, 3);
         g.pendingCompMode = 0;
         if (syncComponents(selected)) g.comp.sel.insert(g.pendingCompSel.begin(), g.pendingCompSel.end());
+    }
+    if (g.compDeleteRequested && !g.pendingCompMode) {
+        g.compDeleteRequested = false;
+        deleteComponents(root, selected, history);
     }
     {   // Ultima herramienta (Espacio): se apunta cualquier cambio, venga de donde venga.
         const int cur = viewport.selectTool ? 3 + viewport.selectShape : (int)gizmoMode;
@@ -5664,6 +5675,7 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "view-quad") g.cmdQueue.push_back(UiCmd::ViewQuad);
     else if (cmd == "render-pv") g.renderRequested = true;
     else if (cmd == "key") g.recordRequested = true;
+    else if (cmd == "comp-del") g.compDeleteRequested = true;
     else if (cmd.rfind("comp=", 0) == 0) {  // comp=<modo 1-3>[:indices separados por coma]
         try {
             const size_t colon = cmd.find(':');

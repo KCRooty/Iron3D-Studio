@@ -6,6 +6,42 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-07 (6) — Polígonos de cuatro lados en los modos de componentes
+
+**Añadido**
+- Los modos Puntos/Aristas/Polígonos ven la malla como C4D: dos triángulos consecutivos,
+  planos, que comparten arista y forman un cuadrilátero convexo son **un solo polígono**.
+  Las diagonales internas ya no salen como aristas. Un cubo editable da 8 puntos,
+  12 aristas y 6 polígonos.
+- Clic, Rectangular/Lazo y Supr trabajan con esos polígonos. Al borrar se quitan también
+  los vértices que quedan sueltos.
+- Las mallas pueden guardar sus polígonos (cuántos triángulos forma cada uno, también
+  n-gonos). Conectar y Soldar los conservan. Se usará en las herramientas de modelado
+  para que un corte no se vuelva a juntar mal.
+- Nueva topología en `src/core/MeshTopology.*`, con tests.
+
+**Cambiado**: el formato `.iron` pasa a la versión 6 (bloque `FACES` opcional tras
+`MESH`). Las escenas anteriores se abren igual; una versión anterior de Iron3D no abre
+las nuevas que traigan `FACES`.
+
+**Probado**: compila sin avisos y pasan los tests:
+- cubo: 8/12/6;
+- plano: 1 cuadrilátero;
+- esfera cerrada (V − A + P = 2);
+- borrar una cara;
+- pentágono explícito;
+- ida y vuelta de `FACES`.
+
+**Sin probar**: no hay verificación limpia por captura. Mientras capturaba, el usuario
+estaba usando el PC y sus clics entraron en la ventana. En esas capturas se vieron
+«6 polígonos» y «5 tras borrar», pero no las cuento como prueba. Nada probado con el
+ratón ni con OpenGL.
+
+**Limitaciones conocidas**:
+- Solo se deducen cuadriláteros de triángulos **consecutivos**. Una malla importada
+  con otro orden se queda en triángulos.
+- Los n-gonos deducidos no existen: solo los guardados en `FACES`.
+
 ### 2026-11-07 (5) — Modos Puntos, Aristas y Polígonos
 
 **Añadido**

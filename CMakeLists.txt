@@ -110,6 +110,7 @@ add_executable(Iron3DStudio
     src/gfx/OpenGLRenderer.cpp
     src/gfx/gl/GLLoader.cpp
     src/core/MeshData.cpp
+    src/core/MeshTopology.cpp
     src/core/PrimitiveMesh.cpp
     src/core/OrbitalCamera.cpp
     src/core/SceneNode.cpp
@@ -176,6 +177,7 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         src/importers/cineware/CinewareExporter.cpp
         src/importers/c4d_compat/C4DGeometry.cpp
         src/core/MeshData.cpp
+        src/core/MeshTopology.cpp
         src/core/SceneNode.cpp
         src/core/SceneSerializer.cpp
         src/core/Material.cpp
@@ -260,6 +262,7 @@ add_executable(iron3d_tests
     tests/c4d_geometry_test.cpp
     src/importers/c4d_compat/C4DGeometry.cpp
     src/core/MeshData.cpp
+    src/core/MeshTopology.cpp
     src/core/SceneNode.cpp
     src/core/Material.cpp
     src/core/SceneSerializer.cpp
