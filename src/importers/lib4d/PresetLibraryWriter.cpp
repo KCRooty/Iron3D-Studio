@@ -315,6 +315,93 @@ bool scanLibrary(const std::filesystem::path& file, LibState& st, std::string* e
     return true;
 }
 
+// --- Edicion (borrar / mover / reescribir) ---------------------------------------
+
+struct Block {
+    char tag[4];
+    uint32_t id = 0;
+    uint64_t offset = 0, size = 0; // offset = cabecera del bloque
+};
+
+bool scanBlocks(const std::filesystem::path& file, std::vector<Block>& out, std::string* err) {
+    out.clear();
+    std::ifstream in(file, std::ios::binary);
+    if (!in) return fail(err, "No se puede abrir la librería.");
+    in.seekg(0, std::ios::end);
+    const uint64_t size = static_cast<uint64_t>(in.tellg());
+    char head[4] = {};
+    in.seekg(0);
+    in.read(head, 4);
+    if (size < 32 || std::memcmp(head, "dbfh", 4) != 0) return fail(err, "No es una librería .lib4d.");
+    uint64_t off = 16;
+    while (off + 16 <= size) {
+        uint8_t h[16];
+        in.seekg(static_cast<std::streamoff>(off));
+        in.read(reinterpret_cast<char*>(h), 16);
+        if (!in) break;
+        Block b;
+        std::memcpy(b.tag, h, 4);
+        b.id = (uint32_t(h[4]) << 24) | (uint32_t(h[5]) << 16) | (uint32_t(h[6]) << 8) | h[7];
+        for (int k = 8; k < 16; ++k) b.size = (b.size << 8) | h[k];
+        b.offset = off;
+        if (b.size > size - off - 16) return fail(err, "La librería está cortada o dañada.");
+        out.push_back(b);
+        if (std::memcmp(h, "dbfe", 4) == 0) return true;
+        off += 16 + b.size;
+    }
+    return fail(err, "La librería no termina como se esperaba (falta el cierre \"dbfe\").");
+}
+
+bool readBody(std::ifstream& in, const Block& b, Bytes& out) {
+    out.resize(static_cast<size_t>(b.size));
+    in.clear();
+    in.seekg(static_cast<std::streamoff>(b.offset + 16));
+    in.read(reinterpret_cast<char*>(out.data()), static_cast<std::streamsize>(out.size()));
+    return static_cast<uint64_t>(in.gcount()) == b.size;
+}
+
+bool isTag(const Block& b, const char* t) { return std::memcmp(b.tag, t, 4) == 0; }
+
+// Ultimo bloque vigente de cada id con esa etiqueta.
+std::map<uint32_t, size_t> lastOf(const std::vector<Block>& blocks, const char* tag) {
+    std::map<uint32_t, size_t> m;
+    for (size_t i = 0; i < blocks.size(); ++i)
+        if (isTag(blocks[i], tag)) m[blocks[i].id] = i;
+    return m;
+}
+
+// Anula bloques en su sitio: escribe "ivld" encima de la etiqueta.
+bool invalidate(std::fstream& io, const Block& b) {
+    io.seekp(static_cast<std::streamoff>(b.offset));
+    io.write("ivld", 4);
+    return static_cast<bool>(io);
+}
+
+std::string cleanPath(std::string p) {
+    std::replace(p.begin(), p.end(), '\\', '/');
+    return p;
+}
+bool badPath(const std::string& p) {
+    return p.empty() || p.front() == '/' || p.back() == '/' || p.find("//") != std::string::npos;
+}
+// `p` es `root` o esta dentro de `root`.
+bool under(const std::string& p, const std::string& root) {
+    const std::string lp = lowerUtf8(p), lr = lowerUtf8(root);
+    return lp == lr || (lp.size() > lr.size() && lp.compare(0, lr.size(), lr) == 0 && lp[lr.size()] == '/');
+}
+
+void setUrl(lib4d::BcValue& root, const std::string& url) {
+    lib4d::BcValue* k6 = root.find(6);
+    if (!k6) return;
+    if (lib4d::BcValue* u = k6->find(0)) u->setStr(url);
+    if (lib4d::BcValue* h = k6->find(2)) h->i = lib4d::urlHash(url);
+}
+void setNames(lib4d::BcValue& root, const std::string& name) {
+    if (lib4d::BcValue* n = root.find(16))
+        for (auto& kv : n->kids)
+            if (kv.second.type == 130) kv.second.setStr(name);
+}
+
 } // namespace
 
 namespace lib4d {
@@ -477,6 +564,215 @@ bool appendToPresetLibrary(const std::filesystem::path& file, const std::vector<
     io.seekp(static_cast<std::streamoff>(st.endOffset));
     io.write(reinterpret_cast<const char*>(data.data()), static_cast<std::streamsize>(data.size()));
     if (!io) return fail(err, "No se pudo escribir en la librería.");
+    return true;
+}
+
+} // namespace iron3d
+
+namespace iron3d {
+
+bool removeFromPresetLibrary(const std::filesystem::path& file, const std::vector<std::string>& paths,
+                             std::string* err) {
+    PresetLibrary lib;
+    if (!lib.open(file, err)) return false;
+    std::vector<Block> blocks;
+    if (!scanBlocks(file, blocks, err)) return false;
+    std::vector<std::string> roots;
+    for (const std::string& raw : paths) {
+        const std::string p = cleanPath(raw);
+        if (badPath(p) || lib.find(p) < 0) return fail(err, "No existe \"" + raw + "\" en la librería.");
+        roots.push_back(p);
+    }
+    std::set<uint32_t> ids;
+    for (const PresetItem& it : lib.items())
+        for (const std::string& r : roots)
+            if (it.id > 1 && under(it.path, r)) ids.insert(it.id);
+    std::fstream io(file, std::ios::in | std::ios::out | std::ios::binary);
+    if (!io) return fail(err, "No se puede abrir la librería para escribir.");
+    for (const Block& b : blocks)
+        if (ids.count(b.id) && (isTag(b, "ditm") || isTag(b, "bina") || isTag(b, "imag")))
+            if (!invalidate(io, b)) return fail(err, "No se pudo escribir en la librería.");
+    return true;
+}
+
+bool movePresetLibraryItem(const std::filesystem::path& file, const std::string& fromRaw, const std::string& toRaw,
+                           std::string* err) {
+    const std::string from = cleanPath(fromRaw), to = cleanPath(toRaw);
+    if (badPath(from) || badPath(to)) return fail(err, "Ruta no válida.");
+    PresetLibrary lib;
+    if (!lib.open(file, err)) return false;
+    if (lib.find(from) < 0) return fail(err, "No existe \"" + from + "\" en la librería.");
+    if (lowerUtf8(from) == lowerUtf8(to)) {
+        if (from == to) return true; // nada que hacer
+    } else {
+        if (lib.find(to) >= 0) return fail(err, "Ya hay un elemento \"" + to + "\" en la librería.");
+        if (under(to, from)) return fail(err, "No se puede mover una carpeta dentro de sí misma.");
+    }
+    // Carpetas de destino que falten (registros nuevos, al final).
+    const std::string toParent = parentOf(to);
+    if (!toParent.empty() && lib.find(toParent) < 0) {
+        if (!appendToPresetLibrary(file, {lib4d::NewEntry(toParent)}, err)) return false;
+        if (!lib.open(file, err)) return false;
+    }
+    const PresetItem& top = lib.items()[lib.find(from)];
+    const bool renamed = leafOf(from) != leafOf(to);
+
+    std::vector<Block> blocks;
+    if (!scanBlocks(file, blocks, err)) return false;
+    LibState st;
+    if (!scanLibrary(file, st, err)) return false;
+    const auto ditm = lastOf(blocks, "ditm");
+    std::ifstream in(file, std::ios::binary);
+
+    std::vector<size_t> stale;
+    Bytes records;
+    uint32_t nextId = st.maxId + 1;
+    // Una carpeta que solo existia como ruta de otros pasa a tener registro.
+    if (top.id == 0) {
+        putChunk(records, "ditm", nextId, folderRecord(nextId, st.rootUrl + "/" + to, leafOf(to)));
+        ++nextId;
+    }
+    for (const PresetItem& it : lib.items()) {
+        if (it.id <= 1 || !under(it.path, from)) continue;
+        const auto d = ditm.find(it.id);
+        if (d == ditm.end()) continue;
+        Bytes body;
+        lib4d::BcRecord rec;
+        if (!readBody(in, blocks[d->second], body) || !lib4d::parseRecord(body, rec))
+            return fail(err, "No se entiende el registro de \"" + it.path + "\"; la librería no se ha tocado.");
+        const std::string newPath = to + it.path.substr(from.size());
+        setUrl(rec.root, st.rootUrl + "/" + newPath);
+        if (renamed && it.id == top.id) setNames(rec.root, leafOf(to));
+        putChunk(records, "ditm", it.id, lib4d::serializeRecord(rec));
+        stale.push_back(d->second);
+    }
+    in.close();
+    putChunk(records, "dbfe", 0, {});
+    std::fstream io(file, std::ios::in | std::ios::out | std::ios::binary);
+    if (!io) return fail(err, "No se puede abrir la librería para escribir.");
+    // Primero lo nuevo al final; despues se anulan los viejos. Si algo falla a
+    // medias, como mucho queda el registro viejo y el nuevo con el mismo id
+    // (manda el ultimo), nunca un elemento perdido.
+    io.seekp(static_cast<std::streamoff>(st.endOffset));
+    io.write(reinterpret_cast<const char*>(records.data()), static_cast<std::streamsize>(records.size()));
+    if (!io) return fail(err, "No se pudo escribir en la librería.");
+    io.flush();
+    for (size_t i : stale)
+        if (!invalidate(io, blocks[i])) return fail(err, "No se pudo escribir en la librería.");
+    return true;
+}
+
+bool rewritePresetLibrary(const std::filesystem::path& src, const std::filesystem::path& dst,
+                          const std::string& title, std::string* err) {
+    std::error_code ec;
+    if (std::filesystem::exists(dst, ec)) return fail(err, "Ya existe un archivo con ese nombre.");
+    std::vector<Block> blocks;
+    if (!scanBlocks(src, blocks, err)) return false;
+    std::ifstream in(src, std::ios::binary);
+    if (!in) return fail(err, "No se puede abrir la librería.");
+    const std::u8string fname = dst.filename().u8string();
+    const std::string newRoot = "preset://" + std::string(fname.begin(), fname.end());
+
+    // Url raiz vieja (difm, clave 3).
+    std::string oldRoot;
+    lib4d::BcRecord header;
+    bool haveHeader = false;
+    for (const Block& b : blocks) {
+        if (!isTag(b, "difm")) continue;
+        Bytes body;
+        if (readBody(in, b, body) && lib4d::parseRecord(body, header)) {
+            haveHeader = true;
+            if (const auto* u = header.root.find(3)) oldRoot = u->str();
+        }
+    }
+    if (!haveHeader || oldRoot.rfind("preset://", 0) != 0)
+        return fail(err, "La librería no tiene cabecera (difm) legible.");
+    if (lib4d::BcValue* u = header.root.find(3)) u->setStr(newRoot);
+    if (!title.empty())
+        if (lib4d::BcValue* t = header.root.find(4))
+            for (auto& kv : t->kids) kv.second.setStr(title);
+
+    const auto ditm = lastOf(blocks, "ditm");
+    const auto bina = lastOf(blocks, "bina");
+    const auto imag = lastOf(blocks, "imag");
+    // Posicion vieja de cada bina/imag (por cabecera) -> indice del bloque.
+    std::map<uint64_t, size_t> byOffset;
+    for (size_t i = 0; i < blocks.size(); ++i)
+        if (isTag(blocks[i], "bina") || isTag(blocks[i], "imag")) byOffset[blocks[i].offset] = i;
+
+    std::ofstream o(dst, std::ios::binary);
+    if (!o) return fail(err, "No se puede crear el archivo.");
+    Bytes head = {'d', 'b', 'f', 'h'};
+    head.resize(16, 0);
+    // La cabecera de 16 bytes se copia tal cual (version del formato).
+    in.clear();
+    in.seekg(0);
+    in.read(reinterpret_cast<char*>(head.data()), 16);
+    o.write(reinterpret_cast<const char*>(head.data()), 16);
+    uint64_t pos = 16;
+    std::map<uint64_t, uint64_t> moved; // cabecera vieja -> nueva
+    auto copyBlock = [&](const Block& b) -> bool {
+        Bytes body;
+        if (!readBody(in, b, body)) return false;
+        Bytes chunk;
+        putChunk(chunk, b.tag, b.id, body);
+        o.write(reinterpret_cast<const char*>(chunk.data()), static_cast<std::streamsize>(chunk.size()));
+        moved[b.offset] = pos;
+        pos += chunk.size();
+        return static_cast<bool>(o);
+    };
+    auto cleanup = [&](const std::string& why) {
+        o.close();
+        std::error_code e2;
+        std::filesystem::remove(dst, e2);
+        return fail(err, why);
+    };
+    // Datos de los elementos vigentes (los que tienen registro), en el orden del archivo.
+    std::set<size_t> wanted;
+    std::map<uint32_t, lib4d::BcRecord> recs;
+    for (const auto& [id, idx] : ditm) {
+        Bytes body;
+        lib4d::BcRecord rec;
+        if (!readBody(in, blocks[idx], body) || !lib4d::parseRecord(body, rec))
+            return cleanup("No se entiende un registro de la librería; no se ha escrito nada.");
+        if (const auto* d = rec.root.find(14))
+            if (const auto* off = d->find(0))
+                if (auto it = byOffset.find(static_cast<uint64_t>(off->i)); it != byOffset.end()) wanted.insert(it->second);
+        if (const auto* th = rec.root.find(5))
+            for (const auto& kv : th->kids)
+                if (const auto* off = kv.second.find(5))
+                    if (auto it = byOffset.find(static_cast<uint64_t>(off->i)); it != byOffset.end()) wanted.insert(it->second);
+        // Sin claves de posicion (librerias muy viejas): el ultimo bloque de su id.
+        if (!rec.root.find(14))
+            if (auto b = bina.find(id); b != bina.end()) wanted.insert(b->second);
+        if (!rec.root.find(5))
+            if (auto m = imag.find(id); m != imag.end()) wanted.insert(m->second);
+        recs[id] = std::move(rec);
+    }
+    for (size_t i : wanted)
+        if (!copyBlock(blocks[i])) return cleanup("No se pudo escribir el archivo.");
+
+    Bytes tail;
+    for (auto& [id, rec] : recs) {
+        if (lib4d::BcValue* k6 = rec.root.find(6))
+            if (lib4d::BcValue* u = k6->find(0)) {
+                const std::string url = u->str();
+                if (url.size() >= oldRoot.size() && lowerUtf8(url.substr(0, oldRoot.size())) == lowerUtf8(oldRoot))
+                    setUrl(rec.root, newRoot + url.substr(oldRoot.size()));
+            }
+        if (lib4d::BcValue* d = rec.root.find(14))
+            if (lib4d::BcValue* off = d->find(0))
+                if (auto m = moved.find(static_cast<uint64_t>(off->i)); m != moved.end()) off->i = static_cast<int64_t>(m->second);
+        if (lib4d::BcValue* th = rec.root.find(5))
+            for (auto& kv : th->kids)
+                if (lib4d::BcValue* off = kv.second.find(5))
+                    if (auto m = moved.find(static_cast<uint64_t>(off->i)); m != moved.end()) off->i = static_cast<int64_t>(m->second);
+        putChunk(tail, "ditm", id, lib4d::serializeRecord(rec));
+    }
+    putChunk(tail, "difm", 0, lib4d::serializeRecord(header));
+    putChunk(tail, "dbfe", 0, {});
+    o.write(reinterpret_cast<const char*>(tail.data()), static_cast<std::streamsize>(tail.size()));
+    if (!o) return cleanup("No se pudo escribir el archivo.");
     return true;
 }
 

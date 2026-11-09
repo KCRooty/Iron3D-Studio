@@ -6,6 +6,116 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-09 (12) — Librerías .lib4d e importación/exportación exacta
+
+**Librerías .lib4d (cerrado lo pendiente)**
+- **Renombrar, Mover a y Eliminar** en el menú contextual de cualquier elemento o carpeta
+  del Navegador de Contenido. Las carpetas se llevan su contenido; las carpetas de destino
+  que falten se crean. Eliminar pide confirmación.
+- Se edita como lo hace C4D: el bloque viejo pasa a `ivld` en su sitio (4 bytes) y el
+  registro nuevo, con el mismo id, se añade al final. No se reescriben cientos de MB.
+- El lector usa ahora la gramática real de los registros (contenedores con tipos entero,
+  entero de 64 bits, cadena y contenedor) en vez de buscar cadenas por orden. Ya no
+  depende de que el bloque de datos vaya antes del nombre. Las posiciones de datos y
+  miniaturas salen de sus claves (14 y 5). Si un registro no encaja, se usa el método
+  anterior.
+- **Url raíz**: la librería guarda dentro `preset://<archivo>.lib4d` y C4D no la monta si
+  no coincide con el nombre del archivo. Al abrir una renombrada fuera aparece un aviso, y
+  el menú de la librería ofrece **Corregir Url Interna**: deja una copia `.bak` y escribe
+  una limpia. **Hacer Permanente** también la corrige al copiar.
+- Escritor nuevo `rewritePresetLibrary`: copia limpia sin bloques anulados, con otra url
+  raíz y otro título.
+
+**Probado**
+- Tests: los 181 registros de dos librerías reales (`bh2_ffd`, `Crying Child`) se leen y se
+  reescriben idénticos byte a byte. Renombrar, mover (con contenido y carpetas
+  intermedias), borrar y reescribir sobre una librería sintética. Los datos y las
+  miniaturas no cambian.
+- Cinema 4D R19 sin ventana (`Commandline.exe -nogui -iron3d_lib4d`, el extractor como
+  juez): en una librería escrita por Iron3D, renombrada, movida, con una carpeta renombrada
+  y elementos borrados, R19 ve exactamente lo esperado y extrae los modelos y la textura
+  (idéntica byte a byte). En su copia reescrita con otro nombre ve lo mismo, con la url
+  nueva.
+
+**Sin probar**: los diálogos nuevos con el ratón de verdad, y editar dentro del C4D con
+interfaz una librería editada por Iron3D.
+
+**Importar y exportar .c4d / .iron con todos los datos**
+- **Materiales**: Color, Luminancia, Transparencia (con índice de refracción), Normal,
+  Relieve y Alfa, cada uno con su textura. Las capas de Reflectancia de C4D se guardan tal
+  cual (tipo, Fresnel, fuerza, especular, rugosidad, IOR, color y sus texturas) y vuelven
+  igual al exportar. Si el material se edita en Iron3D, se exporta una capa nueva hecha
+  desde metal/rugosidad.
+- **Texturas**: rutas relativas o absolutas. Se buscan junto al .c4d, en `tex/` y en
+  `../tex/`. Las de un preestablecido se sacan de la librería a una carpeta temporal.
+  El "./" que añade C4D al guardar se quita.
+- **Etiquetas de textura**: proyección, desplazamiento, longitud, mosaico, sin costuras y
+  lado. Solo se escribe una etiqueta cuando cambia algo respecto al padre.
+- **UV**: una UV por esquina (etiqueta UVW). Donde hay una costura de UV no se junta en
+  cuadrilátero.
+- **Luces**: los 10 tipos de C4D, color, intensidad, ángulos interior y exterior, sombra,
+  decaimiento y radios, forma y tamaño del área.
+- **Cámaras** (objeto nuevo en Iron3D): focal, sensor, zoom, perspectiva u ortográfica.
+  La etiqueta Objetivo va y vuelve como ruta de nombres.
+- **Transformación**: posición, HPB y escala se escriben tal cual (SetRelPos/Rot/Scale),
+  sin pasar por una matriz.
+- También van jerarquía, nombres y visibilidad.
+- **Animación**: pistas de Posición, Rotación y Escala con los fotogramas por segundo del
+  documento. Las tangentes se escriben a mano para que C4D dibuje la misma curva que
+  Iron3D.
+  La interpolación por clave (Spline, Lineal o Escalón) va y vuelve: el exportador la
+  escribe en cada clave de C4D y el importador la lee. Probado con R19 sin ventana: una
+  escena con tramos Lineal y Escalón se abre, se vuelve a guardar y reimporta igual.
+- **.iron formato 7**: números con todos sus dígitos, cadenas escapadas (comillas, `%` y
+  saltos de línea), UV en las mallas, luces, cámaras, etiquetas de textura y los canales y
+  capas nuevos. Los .iron 6 se siguen leyendo.
+- **Render por CPU** (miniaturas y Visor de Imágenes): textura de Color con UV en
+  perspectiva correcta, muestreo bilineal, mosaico y desplazamiento de la etiqueta.
+  También suma la Luminancia.
+- Arreglo: al importar mallas se perdían todas las UV (`PolySoup::append` con una sopa
+  vacía).
+
+**Probado**
+- `c4d_roundtrip_test` (nuevo, en ctest): exporta una escena con todo lo anterior (3
+  materiales con 6 texturas y 2 capas, 4 luces, 2 cámaras con objetivo, grupo oculto,
+  malla con UV y cubo animado), la reimporta y compara los números con tolerancia 1e-4.
+  Todo coincide. Las curvas de C4D (evaluadas por Cineware) se separan de las de Iron3D
+  como mucho 3·10⁻⁶ en posición y escala y 4·10⁻⁴ grados en rotación, en los fotogramas
+  −5 a 50.
+- **Cinema 4D R19 sin ventana**: el .c4d exportado se mete en una .lib4d, R19 lo abre y lo
+  vuelve a guardar (`Commandline.exe -nogui -iron3d_lib4d`, LoadDocument + SaveDocument).
+  `c4d_roundtrip_test --compare` sobre lo que guardó R19 da los mismos números: materiales,
+  capas, texturas encontradas, luces, cámaras, HPB, visibilidad, claves y curvas.
+- `iron3d_tests`:
+  - ida y vuelta por .iron 7 exacta, y guardar lo leído da el mismo texto;
+  - lectura de un .iron 6;
+  - UV Iron3D → C4D → Iron3D;
+  - capas ↔ PBR;
+  - FOV de la cámara;
+  - textura en el render por CPU (izquierda/derecha, mosaico, archivo que falta).
+- Importar los 8 .c4d de prueba guardados por R19: sin errores.
+
+**Sin probar / limitaciones**
+- **Visor (Vulkan)**: todavía no dibuja texturas. Solo el render por CPU lo hace, y solo
+  con el canal Color. Normal, Relieve, Alfa y Transparencia se guardan y se exportan, pero
+  no se dibujan.
+- **Proyecciones distintas de UVW** (Esférica, Cúbica...): se conservan al ir y volver, pero
+  Iron3D dibuja con las UV.
+- **Tangentes automáticas de C4D**: al importar animaciones de C4D, las claves llegan
+  exactas, pero entre claves Iron3D usa su propia regla. En la prueba la diferencia era de
+  hasta ~5 % del recorrido. Las claves exportadas van sin "Auto", con las tangentes
+  explícitas.
+- Los objetos con transformación congelada se importan por su matriz, con aviso.
+- Los shaders procedurales (Ruido, Degradado...) no se importan. De Capa o Filtro se toma
+  la imagen que llevan dentro.
+- La etiqueta Objetivo solo funciona con un objetivo dentro de lo exportado.
+- Sin probar en el C4D con interfaz:
+  - si el orden de las capas que ve el usuario es el esperado (Iron3D usa el orden de
+    `GetReflectionLayerIndex`);
+  - cómo se ven las luces y cámaras exportadas.
+- Ni el Gestor de Atributos ni el visor tienen todavía controles para editar luces,
+  cámaras ni los canales nuevos.
+
 ### 2026-11-09 (11) — Selección por topología y Soldar, Cerrar Agujero, Subdividir e Invertir Normales
 
 **Añadido** (activo en los modos Puntos, Aristas y Polígonos con un objeto editable):

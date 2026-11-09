@@ -25,7 +25,8 @@ namespace iron3d {
 // tamano fijo, ver drawScene() en main.cpp.
 // `Mesh` (2026-11-04) = Objeto Poligonal de C4D: geometria propia en
 // SceneNode::mesh (la que llega al importar un .c4d).
-enum class PrimitiveType { None, Cube, Sphere, Plane, Light, Mesh };
+// `Camera` (2026-11-07) = Camara de C4D, con sus datos en SceneNode::camera.
+enum class PrimitiveType { None, Cube, Sphere, Plane, Light, Mesh, Camera };
 const char* primitiveTypeName(PrimitiveType type); // nombre para la UI, en espanol
 
 // Rotacion HPB de C4D (2026-11-06): R = Ry(H) * Rx(P) * Rz(B), es decir,
@@ -67,6 +68,52 @@ struct AnimTrack {
     bool remove(int frame);
     bool hasKeyAt(int frame) const;
     glm::vec3 evaluate(float frame) const;         // requiere !empty()
+};
+
+// Datos de una Luz (2026-11-07), con los mismos valores que la Luz de C4D
+// para que un .c4d vaya y vuelva igual. Las distancias en unidades de Iron3D.
+enum class LightKind {
+    Omni = 0, Spot = 1, SpotSquare = 2, Infinite = 3, Parallel = 4, ParallelSpot = 5, ParallelSpotSquare = 6,
+    Tube = 7, Area = 8, Photometric = 9
+};
+const char* lightKindName(LightKind kind); // en espanol
+struct LightData {
+    LightKind kind = LightKind::Omni;
+    glm::vec3 color{1.0f};
+    float intensity = 1.0f;          // 1 = 100 %
+    float outerAngleDeg = 30.0f;     // Foco: angulo exterior (C4D: 30)
+    float innerAngleDeg = 0.0f;      // Foco: angulo interior
+    int shadow = 0;                  // 0 ninguna, 1 suave, 2 trazada (dura), 3 de area
+    int falloff = 0;                 // LIGHT_DETAILS_FALLOFF de C4D (0 ninguno, 10 cuadrado inverso...)
+    float falloffRadius = 2.5f;      // Radio de decaimiento (C4D: 500 cm)
+    float innerRadius = 0.0f;        // Radio interior del decaimiento
+    int areaShape = 1;               // forma de la Luz de Area (1 = rectangulo)
+    glm::vec3 areaSize{1.0f, 1.0f, 1.0f}; // tamano X/Y/Z de la Luz de Area (C4D: 200 cm)
+    bool operator==(const LightData&) const = default;
+};
+
+// Datos de una Camara (2026-11-07), como la Camara de C4D.
+struct CameraData {
+    int projection = 0;              // CAMERA_PROJECTION de C4D (0 perspectiva, 1 paralela...)
+    float focalMm = 36.0f;           // Distancia focal
+    float sensorMm = 36.0f;          // Tamano del sensor (Apertura horizontal)
+    float zoom = 1.0f;               // Zoom (proyecciones paralelas)
+    // Etiqueta Objetivo: ruta por nombres desde la raiz ("Grupo/Cubo"); vacia = sin objetivo.
+    std::string target;
+    float fovDeg() const;            // campo de vision horizontal que sale de focal y sensor
+    bool operator==(const CameraData&) const = default;
+};
+
+// Etiqueta de Textura del nodo (la que asigna materialIndex): proyeccion y
+// mosaico como en C4D (2026-11-07).
+struct TextureTagData {
+    int projection = 6;              // TEXTURETAG_PROJECTION de C4D (6 = UVW)
+    glm::vec2 offset{0.0f};          // Desplazamiento U/V (0..1)
+    glm::vec2 length{1.0f};          // Longitud U/V (mosaico = 1 / longitud)
+    bool tile = true;
+    bool seamless = false;
+    int side = 0;                    // Lado: 0 ambos, 1 frente, 2 detras
+    bool operator==(const TextureTagData&) const = default;
 };
 
 class SceneNode {
@@ -127,6 +174,11 @@ public:
     // pasos de deshacer reutilizan la misma malla sin copiarla; editarla
     // (cuando haya modelado) sera crear una nueva y cambiar el puntero.
     std::shared_ptr<const MeshData> mesh;
+
+    // Solo con primitive == Light / Camera; texTag acompana a materialIndex.
+    LightData light;
+    CameraData camera;
+    TextureTagData texTag;
 
     // Pistas de animacion (vacias = sin animar).
     AnimTrack animPos, animRot, animScale;

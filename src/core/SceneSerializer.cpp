@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iomanip>
+#include <limits>
 #include <sstream>
 #include <vector>
 #include <cctype>
@@ -13,7 +15,39 @@ namespace {
 // v2 = Fase 5: bloque MATERIALS + materialIndex; v3 = mallas (MESH);
 // v4 (2026-11-06) = rotaciones en HPB de C4D. Al cargar v1-v3 se convierten
 // (misma orientacion, otros numeros), ver convertLegacyRotations.
-constexpr int kFormatVersion = 6;  // 5: pistas de animacion (KEY); 6: poligonos (FACES) e interpolacion de claves
+// 5: pistas de animacion (KEY); 6: poligonos (FACES) e interpolacion de claves;
+// 7 (2026-11-07): floats con 9 cifras (ida y vuelta exacta), nombres
+// escapados, UV en MESH, LIGHT / CAMERA / TEXTAG en los nodos y canales,
+// texturas y capas de Reflectancia en los materiales.
+constexpr int kFormatVersion = 7;
+
+// Texto entre comillas: '%', '"' y saltos de linea van como %25, %22, %0A.
+std::string quoted(const std::string& text) {
+    std::string out = "\"";
+    for (char c : text) {
+        if (c == '%') out += "%25";
+        else if (c == '"') out += "%22";
+        else if (c == '\n') out += "%0A";
+        else if (c == '\r') out += "%0D";
+        else out += c;
+    }
+    return out + "\"";
+}
+std::string unescape(const std::string& text) {
+    std::string out;
+    for (size_t i = 0; i < text.size(); ++i) {
+        if (text[i] == '%' && i + 2 < text.size()) {
+            const std::string hex = text.substr(i + 1, 2);
+            if (hex == "25") { out += '%'; i += 2; continue; }
+            if (hex == "22") { out += '"'; i += 2; continue; }
+            if (hex == "0A") { out += '\n'; i += 2; continue; }
+            if (hex == "0D") { out += '\r'; i += 2; continue; }
+        }
+        out += text[i];
+    }
+    return out;
+}
+int g_readVersion = kFormatVersion; // version del archivo que se esta leyendo
 
 void convertLegacyRotations(SceneNode& n) {
     n.rotationDeg = mat3ToHpb(legacyXyzToMat3(n.rotationDeg));
@@ -27,6 +61,7 @@ const char* primitiveCode(PrimitiveType type) {
         case PrimitiveType::Plane: return "plane";
         case PrimitiveType::Light: return "light";
         case PrimitiveType::Mesh: return "mesh";
+        case PrimitiveType::Camera: return "camera";
         case PrimitiveType::None: default: return "none";
     }
 }
@@ -37,16 +72,24 @@ PrimitiveType primitiveFromCode(const std::string& code) {
     if (code == "plane") return PrimitiveType::Plane;
     if (code == "light") return PrimitiveType::Light;
     if (code == "mesh") return PrimitiveType::Mesh;
+    if (code == "camera") return PrimitiveType::Camera;
     return PrimitiveType::None;
 }
 
 // Bloque MESH: nv vertices (posicion + normal, el color no se guarda) y ni
 // indices, todo en una linea por vertice / por triangulo.
 void writeMesh(std::ostream& out, const MeshData& mesh, const std::string& indent) {
-    out << indent << "  MESH nv=" << mesh.vertices.size() << " ni=" << mesh.indices.size() << " {\n";
-    for (const Vertex& v : mesh.vertices)
+    // Formato 7: uv=1 = dos numeros mas por vertice (solo si alguna UV no es 0).
+    const bool uv = std::any_of(mesh.vertices.begin(), mesh.vertices.end(),
+                                [](const Vertex& v) { return v.uv.x != 0.0f || v.uv.y != 0.0f; });
+    out << indent << "  MESH nv=" << mesh.vertices.size() << " ni=" << mesh.indices.size() << (uv ? " uv=1" : "")
+        << " {\n";
+    for (const Vertex& v : mesh.vertices) {
         out << indent << "    " << v.position.x << ' ' << v.position.y << ' ' << v.position.z << ' ' << v.normal.x
-            << ' ' << v.normal.y << ' ' << v.normal.z << '\n';
+            << ' ' << v.normal.y << ' ' << v.normal.z;
+        if (uv) out << ' ' << v.uv.x << ' ' << v.uv.y;
+        out << '\n';
+    }
     for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3)
         out << indent << "    " << mesh.indices[i] << ' ' << mesh.indices[i + 1] << ' ' << mesh.indices[i + 2] << '\n';
     out << indent << "  }\n";
@@ -60,7 +103,7 @@ void writeMesh(std::ostream& out, const MeshData& mesh, const std::string& inden
 
 void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable* meshRefs) {
     const std::string indent((size_t)depth * 2, ' ');
-    out << indent << "NODE name=\"" << node.name() << "\" primitive=" << primitiveCode(node.primitive)
+    out << indent << "NODE name=" << quoted(node.name()) << " primitive=" << primitiveCode(node.primitive)
         << " px=" << node.position.x << " py=" << node.position.y << " pz=" << node.position.z
         << " rx=" << node.rotationDeg.x << " ry=" << node.rotationDeg.y << " rz=" << node.rotationDeg.z
         << " sx=" << node.scale.x << " sy=" << node.scale.y << " sz=" << node.scale.z
@@ -70,6 +113,25 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
     if (hasMesh && meshRefs) out << " meshref=" << meshRefs->ref(node.mesh);
     out << " {\n";
     if (hasMesh && !meshRefs) writeMesh(out, *node.mesh, indent);
+    if (node.primitive == PrimitiveType::Light) {
+        const LightData& l = node.light;
+        out << indent << "  LIGHT kind=" << (int)l.kind << " r=" << l.color.r << " g=" << l.color.g << " b=" << l.color.b
+            << " i=" << l.intensity << " outer=" << l.outerAngleDeg << " inner=" << l.innerAngleDeg
+            << " shadow=" << l.shadow << " falloff=" << l.falloff << " radius=" << l.falloffRadius
+            << " iradius=" << l.innerRadius << " shape=" << l.areaShape << " ax=" << l.areaSize.x
+            << " ay=" << l.areaSize.y << " az=" << l.areaSize.z << "\n";
+    }
+    if (node.primitive == PrimitiveType::Camera) {
+        const CameraData& c = node.camera;
+        out << indent << "  CAMERA proj=" << c.projection << " focal=" << c.focalMm << " sensor=" << c.sensorMm
+            << " zoom=" << c.zoom << " target=" << quoted(c.target) << "\n";
+    }
+    if (node.materialIndex >= 0 && !(node.texTag == TextureTagData{})) {
+        const TextureTagData& t = node.texTag;
+        out << indent << "  TEXTAG proj=" << t.projection << " ou=" << t.offset.x << " ov=" << t.offset.y
+            << " lu=" << t.length.x << " lv=" << t.length.y << " tile=" << (int)t.tile << " seamless=" << (int)t.seamless
+            << " side=" << t.side << "\n";
+    }
     const std::pair<const char*, const AnimTrack*> tracks[] = {{"p", &node.animPos}, {"r", &node.animRot}, {"s", &node.animScale}};
     for (const auto& [ch, track] : tracks)
         for (const AnimKey& k : track->keys)
@@ -87,8 +149,22 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
 void writeMaterials(std::ostream& out, const std::vector<Material>& materials) {
     out << "MATERIALS {\n";
     for (const Material& m : materials) {
-        out << "  MATERIAL name=\"" << m.name << "\" br=" << m.baseColor.r << " bg=" << m.baseColor.g
-            << " bb=" << m.baseColor.b << " metallic=" << m.metallic << " roughness=" << m.roughness << " {\n  }\n";
+        out << "  MATERIAL name=" << quoted(m.name) << " br=" << m.baseColor.r << " bg=" << m.baseColor.g
+            << " bb=" << m.baseColor.b << " metallic=" << m.metallic << " roughness=" << m.roughness
+            << " er=" << m.emission.r << " eg=" << m.emission.g << " eb=" << m.emission.b << " tr=" << m.transparency.r
+            << " tg=" << m.transparency.g << " tb=" << m.transparency.b << " ior=" << m.ior
+            << " ns=" << m.normalStrength << " bs=" << m.bumpStrength;
+        for (int i = 0; i < kTexSlotCount; ++i)
+            if (!m.textures[i].empty()) out << " tex_" << texSlotCode((TexSlot)i) << '=' << quoted(m.textures[i]);
+        if (!m.texBaseDir.empty()) out << " texdir=" << quoted(m.texBaseDir);
+        out << " {\n";
+        for (const ReflectLayer& l : m.layers)
+            out << "    LAYER name=" << quoted(l.name) << " dist=" << l.distribution << " fresnel=" << l.fresnel
+                << " preset=" << l.fresnelPreset << " strength=" << l.strength << " specular=" << l.specular
+                << " rough=" << l.roughness << " ior=" << l.ior << " r=" << l.color.r << " g=" << l.color.g
+                << " b=" << l.color.b << " transp=" << (int)l.transparencyLayer << " rtex=" << quoted(l.roughnessTex)
+                << " ctex=" << quoted(l.colorTex) << "\n";
+        out << "  }\n";
     }
     out << "}\n";
 }
@@ -120,25 +196,45 @@ struct Parser {
 };
 
 std::string unquote(std::string val) {
-    if (val.size() >= 2 && val.front() == '"' && val.back() == '"') return val.substr(1, val.size() - 2);
-    return val;
+    if (val.size() >= 2 && val.front() == '"' && val.back() == '"') val = val.substr(1, val.size() - 2);
+    return g_readVersion >= 7 ? unescape(val) : val;
+}
+
+// Lee "clave=valor" mientras los haya (las lineas LIGHT, CAMERA, TEXTAG, LAYER).
+template <class F>
+bool readAttrs(Parser& p, const char* what, std::string& err, F&& onAttr) {
+    while (!p.atEnd()) {
+        const std::string& tok = p.peek();
+        const size_t eq = tok.find('=');
+        if (eq == std::string::npos || tok.front() == '"') break;
+        const std::string t = p.next();
+        try {
+            onAttr(t.substr(0, eq), t.substr(eq + 1));
+        } catch (const std::exception&) {
+            err = std::string("valor invalido en ") + what + ": '" + t + "'";
+            return false;
+        }
+    }
+    return true;
 }
 
 bool parseMesh(Parser& p, std::shared_ptr<const MeshData>& out, std::string& err) {
     p.next(); // "MESH"
     size_t nv = 0, ni = 0;
+    bool uv = false;
     while (!p.atEnd() && p.peek() != "{") {
         const std::string tok = p.next();
         try {
             if (tok.rfind("nv=", 0) == 0) nv = (size_t)std::stoul(tok.substr(3));
             else if (tok.rfind("ni=", 0) == 0) ni = (size_t)std::stoul(tok.substr(3));
+            else if (tok == "uv=1") uv = true;
         } catch (const std::exception&) {
             err = "cabecera MESH invalida";
             return false;
         }
     }
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras MESH"; return false; }
-    if (p.toks.size() - p.pos < nv * 6 + ni) { err = "bloque MESH truncado"; return false; }
+    if (p.toks.size() - p.pos < nv * (uv ? 8 : 6) + ni) { err = "bloque MESH truncado"; return false; }
     auto mesh = std::make_shared<MeshData>();
     mesh->vertices.resize(nv);
     mesh->indices.resize(ni);
@@ -147,6 +243,7 @@ bool parseMesh(Parser& p, std::shared_ptr<const MeshData>& out, std::string& err
             Vertex& v = mesh->vertices[i];
             v.position.x = std::stof(p.next()); v.position.y = std::stof(p.next()); v.position.z = std::stof(p.next());
             v.normal.x = std::stof(p.next()); v.normal.y = std::stof(p.next()); v.normal.z = std::stof(p.next());
+            if (uv) { v.uv.x = std::stof(p.next()); v.uv.y = std::stof(p.next()); }
             v.color = glm::vec3(0.8f);
         }
         for (size_t i = 0; i < ni; ++i) {
@@ -242,6 +339,52 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     }
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras los atributos de NODE"; return false; }
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
+    while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG")) {
+        const std::string kind = p.next();
+        bool ok = true;
+        if (kind == "LIGHT") {
+            LightData& l = node.light;
+            ok = readAttrs(p, "LIGHT", err, [&](const std::string& k, const std::string& v) {
+                if (k == "kind") l.kind = (LightKind)std::clamp(std::stoi(v), 0, 9);
+                else if (k == "r") l.color.r = std::stof(v);
+                else if (k == "g") l.color.g = std::stof(v);
+                else if (k == "b") l.color.b = std::stof(v);
+                else if (k == "i") l.intensity = std::stof(v);
+                else if (k == "outer") l.outerAngleDeg = std::stof(v);
+                else if (k == "inner") l.innerAngleDeg = std::stof(v);
+                else if (k == "shadow") l.shadow = std::stoi(v);
+                else if (k == "falloff") l.falloff = std::stoi(v);
+                else if (k == "radius") l.falloffRadius = std::stof(v);
+                else if (k == "iradius") l.innerRadius = std::stof(v);
+                else if (k == "shape") l.areaShape = std::stoi(v);
+                else if (k == "ax") l.areaSize.x = std::stof(v);
+                else if (k == "ay") l.areaSize.y = std::stof(v);
+                else if (k == "az") l.areaSize.z = std::stof(v);
+            });
+        } else if (kind == "CAMERA") {
+            CameraData& c = node.camera;
+            ok = readAttrs(p, "CAMERA", err, [&](const std::string& k, const std::string& v) {
+                if (k == "proj") c.projection = std::stoi(v);
+                else if (k == "focal") c.focalMm = std::stof(v);
+                else if (k == "sensor") c.sensorMm = std::stof(v);
+                else if (k == "zoom") c.zoom = std::stof(v);
+                else if (k == "target") c.target = unquote(v);
+            });
+        } else {
+            TextureTagData& t = node.texTag;
+            ok = readAttrs(p, "TEXTAG", err, [&](const std::string& k, const std::string& v) {
+                if (k == "proj") t.projection = std::stoi(v);
+                else if (k == "ou") t.offset.x = std::stof(v);
+                else if (k == "ov") t.offset.y = std::stof(v);
+                else if (k == "lu") t.length.x = std::stof(v);
+                else if (k == "lv") t.length.y = std::stof(v);
+                else if (k == "tile") t.tile = v != "0";
+                else if (k == "seamless") t.seamless = v != "0";
+                else if (k == "side") t.side = std::stoi(v);
+            });
+        }
+        if (!ok) return false;
+    }
     // Claves de animacion (formato 5): KEY ch=p|r|s f=N x= y= z=
     while (!p.atEnd() && p.peek() == "KEY") {
         p.next();
@@ -314,12 +457,48 @@ bool parseMaterial(Parser& p, Material& out, std::string& err) {
             else if (key == "bb") out.baseColor.b = std::stof(val);
             else if (key == "metallic") out.metallic = std::stof(val);
             else if (key == "roughness") out.roughness = std::stof(val);
+            else if (key == "er") out.emission.r = std::stof(val);
+            else if (key == "eg") out.emission.g = std::stof(val);
+            else if (key == "eb") out.emission.b = std::stof(val);
+            else if (key == "tr") out.transparency.r = std::stof(val);
+            else if (key == "tg") out.transparency.g = std::stof(val);
+            else if (key == "tb") out.transparency.b = std::stof(val);
+            else if (key == "ior") out.ior = std::stof(val);
+            else if (key == "ns") out.normalStrength = std::stof(val);
+            else if (key == "bs") out.bumpStrength = std::stof(val);
+            else if (key == "texdir") out.texBaseDir = unquote(val);
+            else if (key.rfind("tex_", 0) == 0) {
+                for (int i = 0; i < kTexSlotCount; ++i)
+                    if (key.compare(4, std::string::npos, texSlotCode((TexSlot)i)) == 0) out.textures[i] = unquote(val);
+            }
         } catch (const std::exception&) {
             err = "valor numerico invalido en '" + tok + "'";
             return false;
         }
     }
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras los atributos de MATERIAL"; return false; }
+    while (!p.atEnd() && p.peek() == "LAYER") {
+        p.next();
+        ReflectLayer l;
+        const bool ok = readAttrs(p, "LAYER", err, [&](const std::string& k, const std::string& v) {
+            if (k == "name") l.name = unquote(v);
+            else if (k == "dist") l.distribution = std::stoi(v);
+            else if (k == "fresnel") l.fresnel = std::stoi(v);
+            else if (k == "preset") l.fresnelPreset = std::stoi(v);
+            else if (k == "strength") l.strength = std::stof(v);
+            else if (k == "specular") l.specular = std::stof(v);
+            else if (k == "rough") l.roughness = std::stof(v);
+            else if (k == "ior") l.ior = std::stof(v);
+            else if (k == "r") l.color.r = std::stof(v);
+            else if (k == "g") l.color.g = std::stof(v);
+            else if (k == "b") l.color.b = std::stof(v);
+            else if (k == "transp") l.transparencyLayer = v != "0";
+            else if (k == "rtex") l.roughnessTex = unquote(v);
+            else if (k == "ctex") l.colorTex = unquote(v);
+        });
+        if (!ok) return false;
+        out.layers.push_back(std::move(l));
+    }
     if (p.atEnd() || p.next() != "}") { err = "se esperaba '}' de cierre de MATERIAL"; return false; }
     return true;
 }
@@ -353,6 +532,7 @@ int MeshRefTable::ref(const std::shared_ptr<const MeshData>& mesh) {
 
 std::string serializeScene(const SceneNode& root, const std::vector<Material>& materials, MeshRefTable* meshRefs) {
     std::ostringstream out;
+    out << std::setprecision(std::numeric_limits<float>::max_digits10);
     out << "IRON3D_SCENE " << kFormatVersion << "\n";
     writeMaterials(out, materials);
     writeNode(out, root, 0, meshRefs);
@@ -369,6 +549,8 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     }
 
     Parser p{tokens, 2}; // salta "IRON3D_SCENE" y el numero de version
+    g_readVersion = kFormatVersion;
+    try { g_readVersion = std::stoi(tokens[1]); } catch (...) {}
     std::vector<Material> tempMaterials;
     std::string err;
     if (!parseMaterialsBlockIfPresent(p, tempMaterials, err)) {
@@ -394,6 +576,9 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.renderVis = temp.renderVis;
     root.materialIndex = temp.materialIndex;
     root.mesh = temp.mesh;
+    root.light = temp.light;
+    root.camera = temp.camera;
+    root.texTag = temp.texTag;
     root.animPos = temp.animPos;
     root.animRot = temp.animRot;
     root.animScale = temp.animScale;
