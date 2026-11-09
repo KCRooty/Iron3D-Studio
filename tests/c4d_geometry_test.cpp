@@ -6,6 +6,7 @@
 #include "core/MeshTopology.h"
 #include "core/SceneSerializer.h"
 #include "core/ThumbnailRenderer.h"
+#include "core/TransformGizmo.h"
 #include "importers/c4d_compat/C4DGeometry.h"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -486,6 +487,54 @@ int main() {
                        [](const glm::vec3& p) { return p.y > 0.0f; })
                       .changed == 1,
               "cuchillo: solo donde los dos cortes caen en el tramo");
+    }
+
+
+    // --- Gizmo: solo los handles de verdad cuentan como handle (pickHandle) ---
+    {
+        SceneNode n("cubo");
+        const glm::vec3 eye(0.0f, 0.0f, 5.0f);
+        const int W = 800, H = 600;
+        const glm::mat4 view = glm::lookAt(eye, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        const glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)W / (float)H, 0.1f, 100.0f);
+        const glm::mat4 vp = proj * view;
+        auto pickAt = [&](TransformGizmo& gz, double x, double y) {
+            const Ray r = TransformGizmo::screenRay(x, y, W, H, view, proj, eye);
+            return gz.pickHandle(r, &n, eye, x, y, W, H, vp);
+        };
+        TransformGizmo gz;
+        gz.mode = GizmoMode::Translate;
+        // Lejos de las flechas: no es handle, aunque beginDrag lo tomaria como Free.
+        check(pickAt(gz, 650.0, 120.0) == GizmoAxis::None, "gizmo: clic lejos de las flechas no es handle");
+        {
+            const Ray r = TransformGizmo::screenRay(650.0, 120.0, W, H, view, proj, eye);
+            check(gz.beginDrag(r, &n, eye, 650.0, 120.0, W, H, vp, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0)),
+                  "gizmo: beginDrag sigue aceptando el clic como Free");
+            gz.endDrag();
+        }
+        bool sawX = false;
+        for (int dx = 4; dx < 300 && !sawX; dx += 2) sawX = pickAt(gz, 400.0 + dx, 300.0) == GizmoAxis::X;
+        check(sawX, "gizmo: la flecha X es handle");
+        // Rotar: el centro (Free) no es handle; el aro Z y el aro de vista si; muy lejos, nada.
+        gz.mode = GizmoMode::Rotate;
+        check(pickAt(gz, 400.0, 300.0) == GizmoAxis::None, "gizmo: el centro de Rotar no es handle");
+        check(pickAt(gz, 790.0, 10.0) == GizmoAxis::None, "gizmo: lejos del aro de vista no es handle");
+        bool sawZ = false, sawView = false;
+        for (int d = 2; d < 280; d += 1) {
+            const GizmoAxis a = pickAt(gz, 400.0 + d * 0.7071, 300.0 - d * 0.7071);
+            sawZ = sawZ || a == GizmoAxis::Z;
+            sawView = sawView || a == GizmoAxis::View;
+        }
+        check(sawZ && sawView, "gizmo: aro Z y aro de vista son handles");
+        // Forzar Free arranca el arrastre aunque el clic no caiga en nada.
+        {
+            const Ray r = TransformGizmo::screenRay(400.0, 300.0, W, H, view, proj, eye);
+            check(gz.beginDrag(r, &n, eye, 400.0, 300.0, W, H, vp, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0),
+                               GizmoAxis::Free) &&
+                      gz.isDragging(),
+                  "gizmo: arrastre Free forzado");
+            gz.endDrag();
+        }
     }
 
     if (g_failures == 0) std::printf("c4d_geometry: todo correcto\n");

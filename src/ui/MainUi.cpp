@@ -4817,6 +4817,15 @@ SceneNode* toggleViewportSelection(SceneNode& root, SceneNode* hit, SceneNode* a
 
 int selectionCount() { return (int)g.selIds.size(); }
 
+void viewportSelectOnly(SceneNode* node) {
+    g.selIds.clear();
+    if (node) g.selIds.insert(node->id());
+}
+
+bool viewportSelectionContains(const SceneNode* node) {
+    return node && (g.selIds.count(node->id()) > 0 || g.lastSelectedId == node->id());
+}
+
 // Centro de la seleccion en mundo: media de las posiciones de los objetos
 // seleccionados (donde C4D planta el gizmo con varios activos).
 glm::vec3 selectionPivot(SceneNode& root, SceneNode* active) {
@@ -5370,8 +5379,8 @@ void drawComponentOverlay(const SceneNode* selected, const OrbitalCamera& camera
     dl->PopClipRect();
 }
 
-bool componentClick(SceneNode* selected, const OrbitalCamera& camera, float mx, float my, bool shift, bool ctrl) {
-    if (!g_vp || !syncComponents(selected)) return false;
+int componentHit(SceneNode* selected, const OrbitalCamera& camera, float mx, float my) {
+    if (!g_vp || !syncComponents(selected)) return -2;
     auto& c = g.comp;
     const auto& t = c.topo;
     const CompProjector proj = compProjector(*selected, camera, *g_vp);
@@ -5414,6 +5423,17 @@ bool componentClick(SceneNode* selected, const OrbitalCamera& camera, float mx, 
             if (depth < bestScore) { bestScore = depth; best = (int)i; }
         }
     }
+    return best;
+}
+
+bool componentSelected(int index) { return g.comp.sel.count(index) > 0; }
+
+void clearComponentSelection() { g.comp.sel.clear(); }
+
+bool componentClick(SceneNode* selected, const OrbitalCamera& camera, float mx, float my, bool shift, bool ctrl) {
+    const int best = componentHit(selected, camera, mx, my);
+    if (best == -2) return false;
+    auto& c = g.comp;
     if (ctrl) {
         if (best >= 0) c.sel.erase(best);
     } else {

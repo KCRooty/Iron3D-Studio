@@ -82,9 +82,20 @@ public:
     // base de camara en espacio de mundo (filas de la matriz view), SOLO
     // para congelar la rotacion "Free"/trackball si el arrastre acaba
     // siendo de ese tipo -- el resto de modos no la usan.
+    // `force` != None: arranca ese modo sin mirar donde cae el clic (main.cpp
+    // lo usa para el arrastre Free que sigue a un clic de seleccion).
     bool beginDrag(const Ray& ray, SceneNode* node, const glm::vec3& eye,
                     double mouseX, double mouseY, int viewportW, int viewportH,
-                    const glm::mat4& viewProj, const glm::vec3& camRight, const glm::vec3& camUp);
+                    const glm::mat4& viewProj, const glm::vec3& camRight, const glm::vec3& camUp,
+                    GizmoAxis force = GizmoAxis::None);
+
+    // Handle de verdad bajo el cursor: flecha X/Y/Z, aro X/Y/Z o, en Rotar,
+    // el aro exterior de vista. None si el clic cae fuera de todos (aunque
+    // beginDrag lo tomaria como Free/View): ahi main.cpp prueba antes a
+    // seleccionar, como C4D.
+    GizmoAxis pickHandle(const Ray& ray, const SceneNode* node, const glm::vec3& eye,
+                          double mouseX, double mouseY, int viewportW, int viewportH,
+                          const glm::mat4& viewProj) const;
     // mouseX/mouseY: solo los usa el modo Free (trackball) para medir el
     // arrastre en pixeles de pantalla; el resto de modos siguen usando
     // unicamente `ray`.

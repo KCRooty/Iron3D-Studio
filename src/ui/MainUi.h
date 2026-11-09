@@ -82,6 +82,11 @@ void applyComponentDrag(SceneNode& node);
 // Clic en el visor (coordenadas de ventana). true si lo gestiona el modo de
 // componentes (y entonces no se elige objeto).
 bool componentClick(SceneNode* selected, const OrbitalCamera& camera, float mouseX, float mouseY, bool shift, bool ctrl);
+// Solo el hit-test del clic: indice del componente bajo el raton, -1 si no hay
+// ninguno y -2 si no se esta en un modo de componentes (no cambia la seleccion).
+int componentHit(SceneNode* selected, const OrbitalCamera& camera, float mouseX, float mouseY);
+bool componentSelected(int index);
+void clearComponentSelection();
 
 // --- Herramientas de modelado (Extruir D, Extrusion Interna I, Biselar M~S, Cuchillo K)
 // Con una herramienta activa no hay gizmo: arrastrar en el visor la aplica
@@ -131,6 +136,11 @@ SceneNode* toggleViewportSelection(SceneNode& root, SceneNode* hit, SceneNode* a
 
 // Cuantos objetos hay seleccionados ahora mismo.
 int selectionCount();
+
+// true si `node` forma parte de la seleccion del visor.
+bool viewportSelectionContains(const SceneNode* node);
+// La seleccion pasa a ser solo `node` (main.cpp asigna luego `selected`).
+void viewportSelectOnly(SceneNode* node);
 
 // Centro de la seleccion en mundo: ahi va el gizmo cuando hay varios objetos.
 glm::vec3 selectionPivot(SceneNode& root, SceneNode* active);

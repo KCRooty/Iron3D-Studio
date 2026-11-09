@@ -370,6 +370,23 @@ GizmoAxis TransformGizmo::pickAxis(const Ray& ray, const SceneNode* node, const 
     return best;
 }
 
+GizmoAxis TransformGizmo::pickHandle(const Ray& ray, const SceneNode* node, const glm::vec3& eye,
+                                     double mouseX, double mouseY, int viewportW, int viewportH,
+                                     const glm::mat4& viewProj) const {
+    const GizmoAxis a = pickAxis(ray, node, eye, mouseX, mouseY, viewportW, viewportH, viewProj, nullptr);
+    if (a == GizmoAxis::X || a == GizmoAxis::Y || a == GizmoAxis::Z) return a;
+    if (a == GizmoAxis::View && node) {
+        // Fuera del circulo: solo cuenta como handle cerca del aro de vista.
+        const glm::vec3 originWorld = originFor(node);
+        const float size = gizmoWorldSize(originWorld, eye);
+        const glm::vec3 viewAxis = glm::normalize(eye - originWorld);
+        const float d = ringScreenDist(originWorld, viewAxis, size * 1.3f, viewProj, viewportW, viewportH,
+                                       glm::vec2((float)mouseX, (float)mouseY), kRingSegments);
+        if (d < 10.0f) return GizmoAxis::View;
+    }
+    return GizmoAxis::None;
+}
+
 void TransformGizmo::updateHover(const Ray& ray, const SceneNode* node, const glm::vec3& eye,
                                   double mouseX, double mouseY, int viewportW, int viewportH,
                                   const glm::mat4& viewProj) {
@@ -380,11 +397,14 @@ void TransformGizmo::updateHover(const Ray& ray, const SceneNode* node, const gl
 
 bool TransformGizmo::beginDrag(const Ray& ray, SceneNode* node, const glm::vec3& eye,
                                 double mouseX, double mouseY, int viewportW, int viewportH,
-                                const glm::mat4& viewProj, const glm::vec3& camRight, const glm::vec3& camUp) {
+                                const glm::mat4& viewProj, const glm::vec3& camRight, const glm::vec3& camUp,
+                                GizmoAxis force) {
     if (!node) return false;
     float param = 0.0f;
-    const GizmoAxis axis = pickAxis(ray, node, eye, mouseX, mouseY, viewportW, viewportH, viewProj, &param);
+    const GizmoAxis picked = pickAxis(ray, node, eye, mouseX, mouseY, viewportW, viewportH, viewProj, &param);
+    const GizmoAxis axis = force != GizmoAxis::None ? force : picked;
     if (axis == GizmoAxis::None) return false;
+    if (axis != picked) param = 0.0f;  // Free/View no usan el parametro
 
     target_ = node;
     active_ = axis;
