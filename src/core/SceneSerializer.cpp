@@ -73,8 +73,13 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
     const std::pair<const char*, const AnimTrack*> tracks[] = {{"p", &node.animPos}, {"r", &node.animRot}, {"s", &node.animScale}};
     for (const auto& [ch, track] : tracks)
         for (const AnimKey& k : track->keys)
+        {
             out << indent << "  KEY ch=" << ch << " f=" << k.frame << " x=" << k.value.x << " y=" << k.value.y
-                << " z=" << k.value.z << "\n";
+                << " z=" << k.value.z;
+            // Formato 6: interpolacion si no es la de siempre (Spline).
+            if (k.interp != KeyInterp::Spline) out << " i=" << (k.interp == KeyInterp::Linear ? "l" : "s");
+            out << "\n";
+        }
     for (const auto& child : node.children()) writeNode(out, *child, depth + 1, meshRefs);
     out << indent << "}\n";
 }
@@ -259,9 +264,19 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
                 return false;
             }
         }
-        if (ch == "p") node.animPos.set(frame, v);
-        else if (ch == "r") node.animRot.set(frame, v);
-        else if (ch == "s") node.animScale.set(frame, v);
+        // Formato 6: i=l (Lineal) | i=s (Escalon); sin i= es Spline.
+        KeyInterp interp = KeyInterp::Spline;
+        if (!p.atEnd() && p.peek().rfind("i=", 0) == 0) {
+            const std::string iv = p.next().substr(2);
+            if (iv == "l") interp = KeyInterp::Linear;
+            else if (iv == "s") interp = KeyInterp::Step;
+        }
+        AnimTrack* track = ch == "p" ? &node.animPos : ch == "r" ? &node.animRot : ch == "s" ? &node.animScale : nullptr;
+        if (track) {
+            track->set(frame, v);
+            for (AnimKey& k : track->keys)
+                if (k.frame == frame) k.interp = interp;
+        }
     }
 
     node.setName(name);

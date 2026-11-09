@@ -54,6 +54,8 @@ namespace {
 
 using icons::Icon;
 
+void drawKeyMenuItems();  // Claves Seleccionadas (Linea de Tiempo), mas abajo
+
 // --- Paleta (c4d_ui_reference_visual.md SS2) ---------------------------------
 // Ya no son constexpr: applyTheme() las recalcula a partir de UiTheme (ver
 // UiTheme.h/.cpp) cada vez que Core cambia un color en Preferencias >
@@ -227,6 +229,20 @@ struct UiState {
     bool recordRequested = false;
     float lastEvalFrame = -1e9f;
     std::vector<int> selKeys;  // claves del objeto activo (para la Linea de Tiempo)
+    // Edicion de claves (Linea de Tiempo / Editor de Curvas): fotogramas
+    // seleccionados y peticiones que se aplican en drawMainUi (alli hay
+    // escena e historia).
+    std::set<int> keySel;
+    int keyDragDelta = 0;        // vista previa mientras se arrastran claves
+    float keyDragStartX = 0.0f;
+    enum class KeyReq { None, Move, Delete, Interp };
+    KeyReq keyReq = KeyReq::None;
+    int keyReqDelta = 0;
+    KeyInterp keyReqInterp = KeyInterp::Spline;
+    bool timelineHovered = false;
+    bool showCurves = false;
+    bool curvesHovered = false;
+    bool curveChan[9] = {true, true, true, false, false, false, false, false, false};
 
     // Modos Puntos/Aristas/Poligonos: topologia del objeto activo (puntos =
     // vertices de render unidos por posicion; poligonos = triangulos),
@@ -1757,6 +1773,8 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
                 fixupMaterialIndicesAfterRemoval(root, g.selectedMat);
                 materials.erase(materials.begin() + g.selectedMat);
                 g.selectedMat = -1;
+            } else if ((g.timelineHovered || g.curvesHovered) && !g.keySel.empty()) {
+                g.keyReq = UiState::KeyReq::Delete;
             } else if (!deleteComponents(root, selected, history)) {
                 deleteSelected(root, selected, history);
             }
@@ -2314,6 +2332,11 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         iconMenuItem(Icon::AutoKey, "Fotogramas Clave Automáticos", "Ctrl+F9", &g.autoKey);
         if (iconMenuItem(Icon::PrevKey, "Ir a la Clave Anterior", "Ctrl+F", false, !g.selKeys.empty())) jumpToKey(-1);
         if (iconMenuItem(Icon::NextKey, "Ir a la Clave Siguiente", "Ctrl+G", false, !g.selKeys.empty())) jumpToKey(1);
+        if (ImGui::MenuItemEx("Editor de Curvas...", kIconGutterText, nullptr, g.showCurves)) g.showCurves = !g.showCurves;
+        if (ImGui::BeginMenu("Claves Seleccionadas", !g.keySel.empty())) {
+            drawKeyMenuItems();
+            ImGui::EndMenu();
+        }
         if (ImGui::MenuItemEx("Eliminar Animación del Objeto", kIconGutterText, nullptr, false, !g.selKeys.empty()))
             g.pendingCmd = UiCmd::ClearAnimation;
         ImGui::Separator();
@@ -3852,6 +3875,204 @@ void drawAttributesManager(SceneNode& root, SceneNode* selected, SceneHistory& h
 
 // --- Linea de Tiempo (secciones 1 y 14) ---------------------------------------------
 
+// Entradas comunes del menu de claves (clic derecho en la regla, menu
+// Animacion y Editor de Curvas).
+void drawKeyMenuItems() {
+    using KR = UiState::KeyReq;
+    const bool any = !g.keySel.empty();
+    ImGui::TextDisabled("%zu clave%s seleccionada%s", g.keySel.size(), g.keySel.size() == 1 ? "" : "s",
+                        g.keySel.size() == 1 ? "" : "s");
+    ImGui::Separator();
+    auto interp = [&](const char* label, KeyInterp ki) {
+        if (ImGui::MenuItem(label, nullptr, false, any)) {
+            g.keyReq = KR::Interp;
+            g.keyReqInterp = ki;
+        }
+    };
+    interp("Interpolación Spline", KeyInterp::Spline);
+    interp("Interpolación Lineal", KeyInterp::Linear);
+    interp("Interpolación Escalón", KeyInterp::Step);
+    ImGui::Separator();
+    if (ImGui::MenuItem("Eliminar Claves", "Supr", false, any)) g.keyReq = KR::Delete;
+}
+
+void applyKeyRequest(SceneNode& root, SceneNode* selected, SceneHistory& history) {
+    using KR = UiState::KeyReq;
+    const KR req = g.keyReq;
+    g.keyReq = KR::None;
+    if (req == KR::None || !selected || g.keySel.empty()) return;
+    const std::vector<int> frames(g.keySel.begin(), g.keySel.end());
+    history.commitBefore(root);
+    int n = 0;
+    if (req == KR::Move) {
+        n = moveKeys(*selected, frames, g.keyReqDelta);
+        std::set<int> moved;
+        for (int f : g.keySel) moved.insert(f + g.keyReqDelta);
+        g.keySel = moved;
+        flashStatus("Claves movidas " + std::to_string(g.keyReqDelta) + " F (" + std::to_string(n) + ").");
+    } else if (req == KR::Delete) {
+        n = deleteKeys(*selected, frames);
+        g.keySel.clear();
+        flashStatus("Eliminadas " + std::to_string(n) + (n == 1 ? " clave." : " claves."));
+    } else {
+        n = setKeyInterp(*selected, frames, g.keyReqInterp);
+        const char* names[] = {"Spline", "Lineal", "Escalón"};
+        flashStatus(std::string("Interpolación ") + names[(int)g.keyReqInterp] + " en " + std::to_string(n) +
+                    (n == 1 ? " clave." : " claves."));
+    }
+    g.lastEvalFrame = -1e9f;  // que la escena tome ya los valores nuevos
+    g.selKeys = keyFrames(*selected);
+}
+
+// Editor de Curvas: las pistas del objeto activo como curvas valor/fotograma.
+// Posicion en cm, rotacion en grados (H/P/B), escala en factor; el eje
+// vertical se ajusta a los canales visibles. Clic en una clave la selecciona
+// (Mayus anade); la interpolacion se cambia con los botones o el clic derecho.
+void drawCurveEditor(SceneNode* selected) {
+    g.curvesHovered = false;
+    if (!g.showCurves) return;
+    ImGui::SetNextWindowSize(ImVec2(760, 340), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(300, 300), ImGuiCond_FirstUseEver);
+    bool open = true;
+    if (!ImGui::Begin("Editor de Curvas###curves", &open, ImGuiWindowFlags_NoCollapse)) {
+        ImGui::End();
+        if (!open) g.showCurves = false;
+        return;
+    }
+    g.curvesHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
+    static const char* kChan[9] = {"Pos. X", "Pos. Y", "Pos. Z", "Rot. H", "Rot. P", "Rot. B", "Esc. X", "Esc. Y", "Esc. Z"};
+    static const ImU32 kCol[9] = {IM_COL32(230, 80, 80, 255), IM_COL32(110, 210, 90, 255), IM_COL32(90, 140, 240, 255),
+                                  IM_COL32(240, 160, 70, 255), IM_COL32(200, 110, 220, 255), IM_COL32(80, 210, 210, 255),
+                                  IM_COL32(230, 130, 130, 255), IM_COL32(150, 220, 130, 255), IM_COL32(130, 170, 240, 255)};
+    // Canal i -> (pista, componente). Rotacion: H = y, P = x, B = z.
+    auto trackOf = [&](int i) -> const AnimTrack* {
+        if (!selected) return nullptr;
+        return i < 3 ? &selected->animPos : i < 6 ? &selected->animRot : &selected->animScale;
+    };
+    auto compOf = [](int i) { static const int c[9] = {0, 1, 2, 1, 0, 2, 0, 1, 2}; return c[i]; };
+    auto unitOf = [](int i) { return i < 3 ? kCmPerUnit : 1.0f; };
+
+    for (int i = 0; i < 9; ++i) {
+        if (i % 3) ImGui::SameLine();
+        else if (i) ImGui::SameLine(0, 18);
+        ImGui::PushStyleColor(ImGuiCol_Text, kCol[i]);
+        ImGui::Checkbox(kChan[i], &g.curveChan[i]);
+        ImGui::PopStyleColor();
+    }
+    ImGui::BeginDisabled(g.keySel.empty());
+    if (ImGui::Button("Spline")) { g.keyReq = UiState::KeyReq::Interp; g.keyReqInterp = KeyInterp::Spline; }
+    ImGui::SameLine();
+    if (ImGui::Button("Lineal")) { g.keyReq = UiState::KeyReq::Interp; g.keyReqInterp = KeyInterp::Linear; }
+    ImGui::SameLine();
+    if (ImGui::Button("Escalón")) { g.keyReq = UiState::KeyReq::Interp; g.keyReqInterp = KeyInterp::Step; }
+    ImGui::SameLine();
+    if (ImGui::Button("Eliminar")) g.keyReq = UiState::KeyReq::Delete;
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    ImGui::TextDisabled(selected ? (g.selKeys.empty() ? "%s: sin claves (F9 graba)" : "%s") : "Sin objeto activo",
+                        selected ? selected->name().c_str() : "");
+
+    const ImVec2 c0 = ImGui::GetCursorScreenPos();
+    const ImVec2 avail = ImGui::GetContentRegionAvail();
+    const ImVec2 c1(c0.x + std::max(50.0f, avail.x), c0.y + std::max(50.0f, avail.y));
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    dl->AddRectFilled(c0, c1, IM_COL32(38, 38, 38, 255));
+    dl->AddRect(c0, c1, kBorderDark);
+    const float lm = 46.0f, pad = 10.0f;
+    const float x0 = c0.x + lm, x1 = c1.x - pad, y0 = c0.y + pad, y1 = c1.y - 18.0f;
+    const int span = std::max(1, g.maxFrame - g.minFrame);
+    auto fx = [&](float f) { return x0 + (f - (float)g.minFrame) / (float)span * (x1 - x0); };
+
+    // Rango vertical de los canales visibles (claves + curva muestreada).
+    float vmin = 1e30f, vmax = -1e30f;
+    for (int i = 0; i < 9; ++i) {
+        const AnimTrack* t = trackOf(i);
+        if (!g.curveChan[i] || !t || t->empty()) continue;
+        for (int f = g.minFrame; f <= g.maxFrame; f += std::max(1, span / 200)) {
+            const float v = t->evaluate((float)f)[compOf(i)] * unitOf(i);
+            vmin = std::min(vmin, v);
+            vmax = std::max(vmax, v);
+        }
+    }
+    if (vmin > vmax) { vmin = -1.0f; vmax = 1.0f; }
+    if (vmax - vmin < 1e-3f) { vmin -= 1.0f; vmax += 1.0f; }
+    const float m = (vmax - vmin) * 0.08f;
+    vmin -= m;
+    vmax += m;
+    auto fy = [&](float v) { return y1 - (v - vmin) / (vmax - vmin) * (y1 - y0); };
+
+    dl->PushClipRect(c0, c1, true);
+    // Rejilla: 0 y 4 divisiones, fotogramas cada pocos.
+    for (int k = 0; k <= 4; ++k) {
+        const float v = vmin + (vmax - vmin) * (float)k / 4.0f;
+        dl->AddLine(ImVec2(x0, fy(v)), ImVec2(x1, fy(v)), IM_COL32(60, 60, 60, 255));
+        char buf[24];
+        std::snprintf(buf, sizeof(buf), "%.1f", v);
+        dl->AddText(ImVec2(c0.x + 4, fy(v) - 7), IM_COL32(150, 150, 150, 255), buf);
+    }
+    int step = 5;
+    while (step * (x1 - x0) / (float)span < 40.0f) step *= 2;
+    for (int f = (g.minFrame / step) * step; f <= g.maxFrame; f += step) {
+        if (f < g.minFrame) continue;
+        dl->AddLine(ImVec2(fx((float)f), y0), ImVec2(fx((float)f), y1), IM_COL32(52, 52, 52, 255));
+        char buf[16];
+        std::snprintf(buf, sizeof(buf), "%d", f);
+        dl->AddText(ImVec2(fx((float)f) + 2, y1 + 2), IM_COL32(150, 150, 150, 255), buf);
+    }
+    dl->AddLine(ImVec2(fx(g.frame), y0), ImVec2(fx(g.frame), y1), kPlayhead, 2.0f);
+
+    // Curvas y claves.
+    int clickedKey = INT32_MIN;
+    const ImVec2 mouse = ImGui::GetIO().MousePos;
+    for (int i = 0; i < 9; ++i) {
+        const AnimTrack* t = trackOf(i);
+        if (!g.curveChan[i] || !t || t->empty()) continue;
+        const int ci = compOf(i);
+        ImVec2 prev;
+        for (float px = x0; px <= x1; px += 2.0f) {
+            const float f = (float)g.minFrame + (px - x0) / (x1 - x0) * (float)span;
+            const ImVec2 q(px, fy(t->evaluate(f)[ci] * unitOf(i)));
+            if (px > x0) dl->AddLine(prev, q, kCol[i], 1.5f);
+            prev = q;
+        }
+        for (const AnimKey& k : t->keys) {
+            if (k.frame < g.minFrame || k.frame > g.maxFrame) continue;
+            const ImVec2 q(fx((float)k.frame), fy(k.value[ci] * unitOf(i)));
+            const bool sel = g.keySel.count(k.frame) > 0;
+            const float r = sel ? 4.5f : 3.5f;
+            dl->AddRectFilled(ImVec2(q.x - r, q.y - r), ImVec2(q.x + r, q.y + r), sel ? IM_COL32(255, 150, 40, 255) : kCol[i]);
+            dl->AddRect(ImVec2(q.x - r, q.y - r), ImVec2(q.x + r, q.y + r), IM_COL32(15, 15, 15, 255));
+            if (k.interp != KeyInterp::Spline)
+                dl->AddText(ImVec2(q.x + 6, q.y - 16), IM_COL32(200, 200, 200, 255), k.interp == KeyInterp::Linear ? "L" : "E");
+            if (std::fabs(mouse.x - q.x) <= r + 2 && std::fabs(mouse.y - q.y) <= r + 2) clickedKey = k.frame;
+        }
+    }
+    dl->PopClipRect();
+    ImGui::SetCursorScreenPos(c0);
+    ImGui::InvisibleButton("##curvecanvas", ImVec2(c1.x - c0.x, c1.y - c0.y));
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+        if (clickedKey != INT32_MIN) {
+            if (ImGui::GetIO().KeyShift) {
+                if (!g.keySel.erase(clickedKey)) g.keySel.insert(clickedKey);
+            } else {
+                g.keySel = {clickedKey};
+            }
+        } else if (!ImGui::GetIO().KeyShift) {
+            g.keySel.clear();
+        }
+    }
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        if (clickedKey != INT32_MIN && !g.keySel.count(clickedKey)) g.keySel = {clickedKey};
+        ImGui::OpenPopup("##curvectx");
+    }
+    if (ImGui::BeginPopup("##curvectx")) {
+        drawKeyMenuItems();
+        ImGui::EndPopup();
+    }
+    ImGui::End();
+    if (!open) g.showCurves = false;
+}
+
 void drawTimeline(ImVec2 pos, ImVec2 size) {
     beginPanel("##timeline", pos, size, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImDrawList* dl = ImGui::GetWindowDrawList();
@@ -3883,8 +4104,11 @@ void drawTimeline(ImVec2 pos, ImVec2 size) {
         }
     }
 
-    // Arrastrar en la regla mueve el fotograma actual.
+    // Arrastrar en la regla mueve el fotograma actual (las claves, dibujadas
+    // despues, tienen prioridad sobre ella).
+    g.timelineHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
     ImGui::SetCursorScreenPos(r0);
+    ImGui::SetNextItemAllowOverlap();
     ImGui::InvisibleButton("##ruler", ImVec2(r1.x - r0.x, r1.y - r0.y));
     if (ImGui::IsItemActive()) {
         const float t = (ImGui::GetIO().MousePos.x - x0) / std::max(1.0f, x1 - x0);
@@ -3893,13 +4117,48 @@ void drawTimeline(ImVec2 pos, ImVec2 size) {
     }
     if (ImGui::IsItemHovered()) g.hint = "Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.";
 
-    // Claves del objeto activo: cuadraditos sobre la regla, como en C4D.
+    // Claves del objeto activo: cuadraditos sobre la regla, como en C4D. Clic
+    // selecciona (Mayus anade/quita), arrastrar mueve las seleccionadas, clic
+    // derecho = interpolacion / eliminar, Supr con el raton en la Linea de
+    // Tiempo borra.
     for (int k : g.selKeys) {
         if (k < g.minFrame || k > g.maxFrame) continue;
-        const float x = fx((float)k);
+        const bool isSel = g.keySel.count(k) > 0;
+        const float x = fx((float)(k + (isSel ? g.keyDragDelta : 0)));
         const float hw = std::max(2.0f, std::min(5.0f, pxPerFrame * 0.5f));
-        dl->AddRectFilled(ImVec2(x - hw, r1.y - 9), ImVec2(x + hw, r1.y - 1), IM_COL32(110, 160, 230, 255));
+        dl->AddRectFilled(ImVec2(x - hw, r1.y - 9), ImVec2(x + hw, r1.y - 1),
+                          isSel ? IM_COL32(255, 150, 40, 255) : IM_COL32(110, 160, 230, 255));
         dl->AddRect(ImVec2(x - hw, r1.y - 9), ImVec2(x + hw, r1.y - 1), IM_COL32(20, 30, 50, 255));
+        ImGui::PushID(k);
+        ImGui::SetCursorScreenPos(ImVec2(fx((float)k) - hw - 1, r1.y - 11));
+        ImGui::InvisibleButton("##key", ImVec2(2 * hw + 2, 11));
+        if (ImGui::IsItemHovered())
+            g.hint = "Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.";
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+            if (ImGui::GetIO().KeyShift) {
+                if (!g.keySel.erase(k)) g.keySel.insert(k);
+            } else if (!isSel) {
+                g.keySel = {k};
+            }
+            g.keyDragStartX = ImGui::GetIO().MousePos.x;
+            g.keyDragDelta = 0;
+        }
+        if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 2.0f) && g.keySel.count(k))
+            g.keyDragDelta = (int)std::lround((ImGui::GetIO().MousePos.x - g.keyDragStartX) / std::max(0.01f, pxPerFrame));
+        if (ImGui::IsItemDeactivated() && g.keyDragDelta != 0) {
+            g.keyReq = UiState::KeyReq::Move;
+            g.keyReqDelta = g.keyDragDelta;
+            g.keyDragDelta = 0;
+        }
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+            if (!isSel) g.keySel = {k};
+            ImGui::OpenPopup("##keyctx");
+        }
+        ImGui::PopID();
+    }
+    if (ImGui::BeginPopup("##keyctx")) {
+        drawKeyMenuItems();
+        ImGui::EndPopup();
     }
 
     // Cursor de tiempo
@@ -5852,6 +6111,9 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
         recordActiveObjects(root, selected, &history);
     }
     g.selKeys = selected ? keyFrames(*selected) : std::vector<int>{};
+    for (auto it = g.keySel.begin(); it != g.keySel.end();)  // solo claves que existen
+        it = std::find(g.selKeys.begin(), g.selKeys.end(), *it) == g.selKeys.end() ? g.keySel.erase(it) : std::next(it);
+    applyKeyRequest(root, selected, history);
 
     handleShortcuts(root, selected, gizmoMode, history, materials, camera, viewport);
     runPendingCmd(root, selected, history, camera);
@@ -5967,6 +6229,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     drawExportReport();
     drawSavePresetDialog();
     drawCommander(root, selected, gizmoMode, history, materials, camera, viewport);
+    drawCurveEditor(selected);
     if (g.renderRequested) {
         g.renderRequested = false;
         renderToPictureViewer(root, materials, camera, viewport);
@@ -6025,6 +6288,26 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "view-quad") g.cmdQueue.push_back(UiCmd::ViewQuad);
     else if (cmd == "render-pv") g.renderRequested = true;
     else if (cmd == "key") g.recordRequested = true;
+    else if (cmd == "curves") g.showCurves = true;
+    else if (cmd == "keys-del") g.keyReq = UiState::KeyReq::Delete;
+    else if (cmd.rfind("keys-sel=", 0) == 0 || cmd.rfind("keys-move=", 0) == 0 || cmd.rfind("keys-interp=", 0) == 0) {
+        const size_t eq = cmd.find('=');
+        const std::string v = cmd.substr(eq + 1);
+        try {
+            if (cmd[5] == 's') {
+                std::stringstream ss(v);
+                std::string part;
+                g.keySel.clear();
+                while (std::getline(ss, part, ',')) g.keySel.insert(std::stoi(part));
+            } else if (cmd[5] == 'm') {
+                g.keyReq = UiState::KeyReq::Move;
+                g.keyReqDelta = std::stoi(v);
+            } else {
+                g.keyReq = UiState::KeyReq::Interp;
+                g.keyReqInterp = v == "l" ? KeyInterp::Linear : v == "s" ? KeyInterp::Step : KeyInterp::Spline;
+            }
+        } catch (...) { return false; }
+    }
     else if (cmd == "comp-del") g.compDeleteRequested = true;
     else if (cmd.rfind("tool=", 0) == 0 || cmd.rfind("knife=", 0) == 0) g.pendingTool = cmd;
     else if (cmd == "sel-all-visible") g.compSelectAllRequested = 1;   // marco que cubre todo el visor
