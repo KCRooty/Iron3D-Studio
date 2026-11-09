@@ -6,6 +6,40 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-07 — Librerías .lib4d e importación/exportación
+
+**Librerías .lib4d (cerrado lo pendiente)**
+- **Renombrar, Mover a y Eliminar** en el menú contextual de cualquier elemento o carpeta
+  del Navegador de Contenido. Las carpetas se llevan su contenido; las carpetas de destino
+  que falten se crean. Eliminar pide confirmación.
+- Se edita como lo hace C4D: el bloque viejo pasa a `ivld` en su sitio (4 bytes) y el
+  registro nuevo, con el mismo id, se añade al final. No se reescriben cientos de MB.
+- El lector usa ahora la gramática real de los registros (contenedores con tipos entero,
+  entero de 64 bits, cadena y contenedor) en vez de buscar cadenas por orden. Ya no
+  depende de que el bloque de datos vaya antes del nombre. Las posiciones de datos y
+  miniaturas salen de sus claves (14 y 5). Si un registro no encaja, se usa el método
+  anterior.
+- **Url raíz**: la librería guarda dentro `preset://<archivo>.lib4d` y C4D no la monta si
+  no coincide con el nombre del archivo. Al abrir una renombrada fuera aparece un aviso, y
+  el menú de la librería ofrece **Corregir Url Interna**: deja una copia `.bak` y escribe
+  una limpia. **Hacer Permanente** también la corrige al copiar.
+- Escritor nuevo `rewritePresetLibrary`: copia limpia sin bloques anulados, con otra url
+  raíz y otro título.
+
+**Probado**
+- Tests: los 181 registros de dos librerías reales (`bh2_ffd`, `Crying Child`) se leen y se
+  reescriben idénticos byte a byte. Renombrar, mover (con contenido y carpetas
+  intermedias), borrar y reescribir sobre una librería sintética. Los datos y las
+  miniaturas no cambian.
+- Cinema 4D R19 sin ventana (`Commandline.exe -nogui -iron3d_lib4d`, el extractor como
+  juez): en una librería escrita por Iron3D, renombrada, movida, con una carpeta renombrada
+  y elementos borrados, R19 ve exactamente lo esperado y extrae los modelos y la textura
+  (idéntica byte a byte). En su copia reescrita con otro nombre ve lo mismo, con la url
+  nueva.
+
+**Sin probar**: los diálogos nuevos con el ratón de verdad, y editar dentro del C4D con
+interfaz una librería editada por Iron3D.
+
 ### 2026-11-07 (7) — Componentes tapados: no se ven ni se eligen
 
 **Añadido**
