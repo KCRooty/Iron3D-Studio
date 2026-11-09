@@ -74,6 +74,10 @@ Name: "docs"; Description: "Documentacion (README, AGENTS.md, licencias)"; Types
 
 [Files]
 Source: "..\build\bin\Release\{#MyAppExeName}"; DestDir: "{app}"; Components: main; Flags: ignoreversion
+; Runtime de Visual C++ (msvcp140, vcruntime140, vcruntime140_1), copiado por CMake en Release.
+Source: "..\build\bin\Release\msvcp140.dll"; DestDir: "{app}"; Components: main; Flags: ignoreversion
+Source: "..\build\bin\Release\vcruntime140.dll"; DestDir: "{app}"; Components: main; Flags: ignoreversion
+Source: "..\build\bin\Release\vcruntime140_1.dll"; DestDir: "{app}"; Components: main; Flags: ignoreversion
 Source: "..\build\bin\Release\shaders\*"; DestDir: "{app}\shaders"; Components: main; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "samples\*.iron"; DestDir: "{app}\scenes"; Components: samples; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Components: docs; Flags: ignoreversion

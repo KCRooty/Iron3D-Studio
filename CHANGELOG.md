@@ -6,6 +6,27 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-09 (13) — El instalador funciona en otros PCs
+
+**Arreglado**
+- El instalador no llevaba el runtime de Visual C++: en un PC sin el «Microsoft Visual C++
+  Redistributable» Iron3D no arrancaba (faltaba `VCRUNTIME140_1.dll`). Ahora
+  `msvcp140.dll`, `vcruntime140.dll` y `vcruntime140_1.dll` van junto al ejecutable.
+- Sin drivers Vulkan, el ejecutable no llegaba ni a abrirse, aunque se eligiera OpenGL.
+  Si los drivers no servían, se cerraba sin avisar. Ahora `vulkan-1.dll` se carga en
+  diferido y, si Vulkan no sirve en ese equipo, Iron3D usa OpenGL para esa sesión sin tocar
+  las preferencias. Si tampoco hay OpenGL 3.3, sale un aviso en vez de cerrarse en
+  silencio.
+
+**Probado**
+- La build Release arranca con Vulkan y con OpenGL en el PC de desarrollo.
+- `dumpbin` confirma que `vulkan-1.dll` se carga en diferido.
+
+**Sin probar**
+- Un PC sin Vulkan de verdad, y un PC sin el runtime de Visual C++ instalado.
+- El instalador no está firmado: Windows SmartScreen avisa al abrirlo («Más información →
+  Ejecutar de todas formas»).
+
 ### 2026-11-09 (12) — Librerías .lib4d e importación/exportación exacta
 
 **Librerías .lib4d (cerrado lo pendiente)**

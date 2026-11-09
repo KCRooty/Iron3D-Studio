@@ -226,6 +226,33 @@ target_link_libraries(Iron3DStudio PRIVATE
     imgui
     vma_impl
     iron3d_lib4d)
+if(MSVC)
+    # vulkan-1.dll en diferido: en un PC sin drivers Vulkan el .exe arranca
+    # igual y usa OpenGL (ver vulkanUsable() en gfx/IRenderer.cpp).
+    target_link_options(Iron3DStudio PRIVATE /DELAYLOAD:vulkan-1.dll)
+    target_link_libraries(Iron3DStudio PRIVATE delayimp)
+endif()
+
+# Runtime de Visual C++ junto al .exe en Release (despliegue local que
+# Microsoft permite): asi el instalador funciona en un PC sin el
+# "Microsoft Visual C++ Redistributable". Las api-ms-win-crt-* vienen con
+# Windows 10/11.
+if(MSVC)
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+    set(CMAKE_INSTALL_DEBUG_LIBRARIES FALSE)
+    include(InstallRequiredSystemLibraries)
+    foreach(_rt IN LISTS CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+        get_filename_component(_rtname "${_rt}" NAME)
+        string(TOLOWER "${_rtname}" _rtlow)
+        if(_rtlow MATCHES "^(msvcp140|vcruntime140|vcruntime140_1)\\.dll$")
+            add_custom_command(TARGET Iron3DStudio POST_BUILD
+                COMMAND "$<$<CONFIG:Release>:${CMAKE_COMMAND}>" "$<$<CONFIG:Release>:-E>"
+                        "$<$<CONFIG:Release>:copy_if_different>" "$<$<CONFIG:Release>:${_rt}>"
+                        "$<$<CONFIG:Release>:$<TARGET_FILE_DIR:Iron3DStudio>>"
+                COMMAND_EXPAND_LISTS VERBATIM)
+        endif()
+    endforeach()
+endif()
 
 target_compile_definitions(Iron3DStudio PRIVATE
     GLM_FORCE_RADIANS
