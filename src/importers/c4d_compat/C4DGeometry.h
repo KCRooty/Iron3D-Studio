@@ -29,6 +29,9 @@ constexpr double kCmPerUnit = 200.0;
 struct PolySoup {
     std::vector<glm::dvec3> points;
     std::vector<std::array<int, 4>> polys; // triangulo si [2] == [3]
+    // UV de cada esquina (a, b, c, d) como la etiqueta UVW de C4D; vacio =
+    // sin UV. Si no esta vacio, tiene el mismo tamano que polys.
+    std::vector<std::array<glm::dvec2, 4>> uvs;
 
     // Anade `other` transformado por `xform` (matriz de C4D como dmat4:
     // columnas v1, v2, v3, off).

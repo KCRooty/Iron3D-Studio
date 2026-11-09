@@ -347,6 +347,7 @@ const char* defaultNameFor(PrimitiveType type) {
         case PrimitiveType::Sphere: return "Esfera";
         case PrimitiveType::Plane: return "Plano";
         case PrimitiveType::Light: return "Luz";
+        case PrimitiveType::Camera: return "Cámara";
         case PrimitiveType::Mesh: return "Polígono";
         case PrimitiveType::None: default: return "Nulo";
     }
@@ -358,6 +359,7 @@ Icon iconFor(PrimitiveType type) {
         case PrimitiveType::Sphere: return Icon::Sphere;
         case PrimitiveType::Plane: return Icon::Plane;
         case PrimitiveType::Light: return Icon::Light;
+        case PrimitiveType::Camera: return Icon::Camera;
         case PrimitiveType::Mesh: return Icon::Polygon;
         case PrimitiveType::None: default: return Icon::Null;
     }
@@ -839,6 +841,44 @@ void openPresetLibraryDialog() {
     if (path) openPresetLibrary(*path);
 }
 
+// Texturas de un preestablecido: viven dentro de la libreria (tex/...). Las
+// que usan los materiales recien importados y no estan en disco se sacan a
+// `dir`/tex, y los materiales pasan a buscarlas ahi.
+void extractPresetTextures(const PresetLibrary& lib, const std::filesystem::path& dir, std::vector<Material>& materials,
+                           size_t firstNew) {
+    auto lower = [](std::string t) {
+        for (char& c : t) c = (char)std::tolower((unsigned char)c);
+        return t;
+    };
+    std::map<std::string, const PresetItem*> byLeaf;
+    for (const PresetItem& it : lib.items())
+        if (it.kind == PresetKind::File) byLeaf.emplace(lower(it.name), &it);
+    const std::string dirUtf8 = pathUtf8(dir);
+    std::error_code ec;
+    for (size_t i = firstNew; i < materials.size(); ++i) {
+        Material& m = materials[i];
+        std::vector<std::string> paths(std::begin(m.textures), std::end(m.textures));
+        for (const ReflectLayer& l : m.layers) paths.insert(paths.end(), {l.roughnessTex, l.colorTex});
+        for (const std::string& t : paths) {
+            if (t.empty() || !resolveTexturePath(t, m.texBaseDir).empty()) continue;
+            std::string leaf = t;
+            std::replace(leaf.begin(), leaf.end(), '\\', '/');
+            leaf = leaf.substr(leaf.rfind('/') + 1);
+            auto it = byLeaf.find(lower(leaf));
+            if (it == byLeaf.end()) continue;
+            const auto out = dir / "tex" / std::filesystem::path(std::u8string(it->second->name.begin(), it->second->name.end()));
+            if (!std::filesystem::exists(out, ec)) {
+                std::vector<uint8_t> bytes;
+                if (!lib.readData(*it->second, bytes)) continue;
+                std::filesystem::create_directories(out.parent_path(), ec);
+                std::ofstream f(out, std::ios::binary | std::ios::trunc);
+                f.write(reinterpret_cast<const char*>(bytes.data()), std::streamsize(bytes.size()));
+            }
+        }
+        m.texBaseDir = dirUtf8;
+    }
+}
+
 // Carga un modelo de una libreria .lib4d en la escena (doble clic en el
 // navegador o arrastrarlo al visor), como en C4D: se fusiona con lo que haya.
 // El modelo es un .c4d completo dentro de la libreria: se descomprime a un
@@ -863,9 +903,11 @@ void loadPresetImpl(const PresetLibrary& lib, const PresetItem& item, SceneNode&
     data.shrink_to_fit();
     const std::string before = history.snapshot(root);
     C4DImportReport rep;
+    const size_t firstNewMaterial = materials.size();
     const bool ok = importC4D(tmp, root, materials, rep, &err);
     std::filesystem::remove(tmp, ec);
     if (!ok) return reportNamedError(item.name, err);
+    extractPresetTextures(lib, dir, materials, firstNewMaterial);
     history.commit(before);
     selected = nullptr;
     noteRecentPreset(lib, item);
@@ -975,7 +1017,7 @@ void exportC4DDialog(const std::vector<const SceneNode*>& roots, const std::vect
     if (!path) return;
     std::string err;
     C4DExportReport rep;
-    if (!exportC4D(*path, roots, materials, allMaterials, rep, &err)) return reportFileError(*path, err);
+    if (!exportC4D(*path, roots, materials, allMaterials, rep, &err, g.fps)) return reportFileError(*path, err);
     g.exportReport = rep;
     g.exportPath = pathUtf8(*path);
     g.showExport = true;

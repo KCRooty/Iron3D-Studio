@@ -157,7 +157,7 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         src/importers/cineware/CinewareExporter.cpp)
     # SYSTEM: los avisos de las cabeceras del SDK no son nuestros (/W4 sigue para nuestro codigo).
     target_include_directories(Iron3DStudio SYSTEM PRIVATE "${IRON3D_CINEWARE_SDK}/includes")
-    set_source_files_properties(src/importers/cineware/CinewareImporter.cpp
+    set_source_files_properties(src/importers/cineware/CinewareImporter.cpp tests/c4d_roundtrip_test.cpp
         src/importers/cineware/CinewareExporter.cpp PROPERTIES
         COMPILE_DEFINITIONS "__PC;_CRT_SECURE_NO_WARNINGS"
         # Las cabeceras del SDK no compilan con /permissive- (el modo estricto que
@@ -190,6 +190,28 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         "$<IF:$<CONFIG:Debug>,${_cwlib}/cinewarelib_2019/cinewarelib_debug.lib,${_cwlib}/cinewarelib_2019/cinewarelib_release.lib>"
         "$<IF:$<CONFIG:Debug>,${_cwlib}/jpeglib_2019/jpeglib_debug.lib,${_cwlib}/jpeglib_2019/jpeglib_release.lib>"
         ws2_32 winmm rpcrt4 iphlpapi)
+
+    # Ida y vuelta Iron3D -> .c4d -> Iron3D comparando valores (necesita Cineware).
+    add_executable(c4d_roundtrip_test
+        tests/c4d_roundtrip_test.cpp
+        src/importers/cineware/CinewareImporter.cpp
+        src/importers/cineware/CinewareExporter.cpp
+        src/importers/c4d_compat/C4DGeometry.cpp
+        src/core/MeshData.cpp
+        src/core/MeshTopology.cpp
+        src/core/SceneNode.cpp
+        src/core/SceneSerializer.cpp
+        src/core/Material.cpp
+        src/core/ThumbnailRenderer.cpp)
+    target_include_directories(c4d_roundtrip_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+    target_include_directories(c4d_roundtrip_test SYSTEM PRIVATE "${IRON3D_CINEWARE_SDK}/includes")
+    target_compile_definitions(c4d_roundtrip_test PRIVATE GLM_FORCE_RADIANS)
+    target_compile_options(c4d_roundtrip_test PRIVATE /W4 /utf-8)
+    target_link_libraries(c4d_roundtrip_test PRIVATE iron3d_lib4d
+        "$<IF:$<CONFIG:Debug>,${_cwlib}/cinewarelib_2019/cinewarelib_debug.lib,${_cwlib}/cinewarelib_2019/cinewarelib_release.lib>"
+        "$<IF:$<CONFIG:Debug>,${_cwlib}/jpeglib_2019/jpeglib_debug.lib,${_cwlib}/jpeglib_2019/jpeglib_release.lib>"
+        ws2_32 winmm rpcrt4 iphlpapi)
+    set(IRON3D_HAS_C4D_ROUNDTRIP ON)
 else()
     if(IRON3D_CINEWARE_SDK)
         message(WARNING "IRON3D_CINEWARE_SDK solo se usa en Windows por ahora; se compila sin importador .c4d")
@@ -268,6 +290,7 @@ add_executable(iron3d_tests
     src/core/SceneSerializer.cpp
     src/core/ThumbnailRenderer.cpp)
 target_include_directories(iron3d_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+target_link_libraries(iron3d_tests PRIVATE iron3d_lib4d) # stb_image: texturas del render por CPU
 target_compile_definitions(iron3d_tests PRIVATE GLM_FORCE_RADIANS)
 if(MSVC)
     target_compile_options(iron3d_tests PRIVATE /W4 /utf-8)
@@ -284,3 +307,6 @@ else()
     target_compile_options(preset_library_test PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME preset_library COMMAND preset_library_test)
+if(IRON3D_HAS_C4D_ROUNDTRIP)
+    add_test(NAME c4d_roundtrip COMMAND c4d_roundtrip_test)
+endif()

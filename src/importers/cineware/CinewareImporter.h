@@ -26,7 +26,11 @@ struct C4DImportReport {
     int primitivesRebuilt = 0;  // primitivas de C4D reconstruidas desde sus parametros
     int generatorsFromCache = 0;// generadores importados con la geometria que guardo C4D
     int lights = 0;
+    int cameras = 0;
     int materials = 0;
+    int textures = 0;           // texturas asignadas a canales
+    int texturesMissing = 0;    // de ellas, las que no estan en disco
+    int animated = 0;           // objetos con pistas de Posicion/Rotacion/Escala
     long long points = 0;
     long long polygons = 0;
     // Lo que no ha llegado tal cual (agrupado: "texto (N)"), para que el
@@ -53,7 +57,9 @@ struct C4DExportReport {
     int meshes = 0;      // Objetos Poligonales
     int primitives = 0;  // Cubo/Esfera/Plano como primitivas de C4D
     int lights = 0;
+    int cameras = 0;
     int materials = 0;
+    int animated = 0;
     long long points = 0;
     long long polygons = 0;
     std::vector<std::string> warnings;
@@ -62,9 +68,10 @@ struct C4DExportReport {
 // Guarda `roots` (cada uno con sus hijos, con su transformacion local) como
 // un .c4d nuevo. Con `allMaterials` van todos los materiales de la lista; si
 // no, solo los que usan esos objetos.
+// `fps` = fotogramas por segundo del documento (las claves van en fotogramas).
 bool exportC4D(const std::filesystem::path& file, const std::vector<const SceneNode*>& roots,
                const std::vector<Material>& materials, bool allMaterials, C4DExportReport& report,
-               std::string* outError = nullptr);
+               std::string* outError = nullptr, int fps = 30);
 
 // Lo mismo, devolviendo los bytes del .c4d (para meterlo en una librería
 // .lib4d como preestablecido).

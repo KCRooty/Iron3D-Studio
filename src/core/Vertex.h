@@ -14,6 +14,9 @@ struct Vertex {
     glm::vec3 position;
     glm::vec3 color;
     glm::vec3 normal{0.0f, 0.0f, 1.0f};
+    // Coordenadas UV (2026-11-07) como en C4D: u a la derecha, v hacia abajo
+    // (v = 0 es la fila de arriba de la imagen).
+    glm::vec2 uv{0.0f};
 };
 
 } // namespace iron3d

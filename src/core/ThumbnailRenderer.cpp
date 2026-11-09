@@ -3,19 +3,84 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <stb_image.h>
+
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <limits>
+#include <map>
+#include <memory>
+#include <mutex>
 
 namespace iron3d {
 
 namespace {
 
+// Textura de Color ya en lineal (PNG/JPEG via stb_image). Soporte minimo
+// del render por CPU: solo el canal Color, muestreo bilineal, mosaico y
+// desplazamiento de la etiqueta de textura (proyeccion UVW).
+struct Image {
+    int w = 0, h = 0;
+    std::vector<glm::vec3> px;
+    glm::vec3 sample(glm::vec2 uv, bool tile) const {
+        if (!tile && (uv.x < 0.0f || uv.x > 1.0f || uv.y < 0.0f || uv.y > 1.0f)) return glm::vec3(-1.0f);
+        const float fx = uv.x * (float)w - 0.5f, fy = uv.y * (float)h - 0.5f;
+        const float x0 = std::floor(fx), y0 = std::floor(fy);
+        const float ax = fx - x0, ay = fy - y0;
+        auto at = [&](float x, float y) {
+            int ix = (int)x, iy = (int)y;
+            ix = ((ix % w) + w) % w;
+            iy = ((iy % h) + h) % h;
+            return px[(size_t)iy * (size_t)w + (size_t)ix];
+        };
+        return glm::mix(glm::mix(at(x0, y0), at(x0 + 1, y0), ax), glm::mix(at(x0, y0 + 1), at(x0 + 1, y0 + 1), ax), ay);
+    }
+};
+
+float srgbToLinear(float v) { return v <= 0.04045f ? v / 12.92f : std::pow((v + 0.055f) / 1.055f, 2.4f); }
+
+// Cache por ruta (las miniaturas se renderizan muchas veces con los mismos
+// materiales). nullptr = no existe o no se puede leer.
+std::shared_ptr<const Image> loadImage(const std::string& path) {
+    static std::mutex mtx;
+    static std::map<std::string, std::shared_ptr<const Image>> cache;
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = cache.find(path);
+    if (it != cache.end()) return it->second;
+    std::shared_ptr<const Image> result;
+    std::ifstream f(std::filesystem::path(std::u8string(path.begin(), path.end())), std::ios::binary);
+    if (f) {
+        const std::vector<unsigned char> bytes((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+        int w = 0, h = 0, comp = 0;
+        if (stbi_uc* data = bytes.empty() ? nullptr : stbi_load_from_memory(bytes.data(), (int)bytes.size(), &w, &h, &comp, 3)) {
+            auto img = std::make_shared<Image>();
+            img->w = w;
+            img->h = h;
+            img->px.resize((size_t)w * (size_t)h);
+            for (size_t i = 0; i < img->px.size(); ++i)
+                img->px[i] = glm::vec3(srgbToLinear(data[i * 3] / 255.0f), srgbToLinear(data[i * 3 + 1] / 255.0f),
+                                       srgbToLinear(data[i * 3 + 2] / 255.0f));
+            stbi_image_free(data);
+            result = img;
+        }
+    }
+    cache.emplace(path, result);
+    return result;
+}
+
 struct Tri {
     glm::vec3 p[3]; // mundo
     glm::vec3 n[3]; // normales en mundo
+    glm::vec2 uv[3];
     glm::vec3 color;
+    glm::vec3 emission;
     float metallic, roughness;
+    const Image* tex = nullptr;      // textura de Color (vive en la cache)
+    glm::vec2 texOffset{0.0f}, texLength{1.0f};
+    bool texTile = true;
 };
 
 const MeshData& primitiveMesh(PrimitiveType type) {
@@ -42,6 +107,12 @@ void collect(const SceneNode& node, const glm::mat4& parentWorld, bool parentVis
         if (mesh && !mesh->indices.empty()) {
             const Material& m = materialOrDefault(materials, node.materialIndex);
             const glm::mat3 nm = glm::inverseTranspose(glm::mat3(world));
+            const Image* tex = nullptr;
+            if (!m.texture(TexSlot::Color).empty() && node.texTag.projection == 6) {
+                const std::string path = resolveTexturePath(m.texture(TexSlot::Color), m.texBaseDir);
+                if (!path.empty())
+                    if (auto img = loadImage(path)) tex = img.get();
+            }
             const size_t nv = mesh->vertices.size();
             for (size_t i = 0; i + 2 < mesh->indices.size(); i += 3) {
                 Tri t{};
@@ -51,9 +122,15 @@ void collect(const SceneNode& node, const glm::mat4& parentWorld, bool parentVis
                     if (idx >= nv) { ok = false; break; }
                     t.p[k] = glm::vec3(world * glm::vec4(mesh->vertices[idx].position, 1.0f));
                     t.n[k] = nm * mesh->vertices[idx].normal;
+                    t.uv[k] = mesh->vertices[idx].uv;
                 }
                 if (!ok) continue;
                 t.color = m.baseColor;
+                t.emission = m.emission;
+                t.tex = tex;
+                t.texOffset = node.texTag.offset;
+                t.texLength = node.texTag.length;
+                t.texTile = node.texTag.tile;
                 t.metallic = m.metallic;
                 t.roughness = m.roughness;
                 out.push_back(t);
@@ -93,6 +170,7 @@ struct Shading {
 struct ClipVert {
     glm::vec4 c;  // espacio de recorte
     glm::vec3 p, n;
+    glm::vec2 uv;
 };
 
 void shadeTriangle(Canvas& cv, const ClipVert (&v)[3], const Tri& t, const Shading& sh) {
@@ -138,10 +216,19 @@ void shadeTriangle(Canvas& cv, const ClipVert (&v)[3], const Tri& t, const Shadi
             const float spec = std::pow(std::max(0.0f, glm::dot(n, glm::normalize(sh.key + vd))), shin) *
                                (1.0f - t.roughness * 0.8f);
             const float rim = std::pow(1.0f - std::max(0.0f, glm::dot(n, vd)), 3.0f) * 0.12f;
-            const glm::vec3 diffuse = t.color * (1.0f - t.metallic);
-            const glm::vec3 specColor = glm::mix(glm::vec3(0.06f), t.color, t.metallic);
+            glm::vec3 base = t.color;
+            if (t.tex) {
+                // UV con correccion de perspectiva (interpoladas en 1/w).
+                const float i0 = w0 / v[0].c.w, i1 = w1 / v[1].c.w, i2 = w2 / v[2].c.w;
+                const glm::vec2 uv = (i0 * v[0].uv + i1 * v[1].uv + i2 * v[2].uv) / (i0 + i1 + i2);
+                const glm::vec2 len = glm::max(glm::abs(t.texLength), glm::vec2(1e-6f)) * glm::sign(t.texLength + glm::vec2(1e-12f));
+                const glm::vec3 texel = t.tex->sample((uv - t.texOffset) / len, t.texTile);
+                if (texel.x >= 0.0f) base = texel;
+            }
+            const glm::vec3 diffuse = base * (1.0f - t.metallic);
+            const glm::vec3 specColor = glm::mix(glm::vec3(0.06f), base, t.metallic);
             cv.color[i] = diffuse * (0.16f + 0.86f * dk + 0.28f * df) +
-                          specColor * (spec * 1.6f + 0.25f * t.metallic) + glm::vec3(rim);
+                          specColor * (spec * 1.6f + 0.25f * t.metallic) + glm::vec3(rim) + t.emission;
         }
     }
 }
@@ -156,7 +243,7 @@ int rasterize(Canvas& cv, const std::vector<Tri>& tris, const glm::mat4& vp, con
         ClipVert in[3];
         int behind = 0;
         for (int k = 0; k < 3; ++k) {
-            in[k] = {vp * glm::vec4(t.p[k], 1.0f), t.p[k], t.n[k]};
+            in[k] = {vp * glm::vec4(t.p[k], 1.0f), t.p[k], t.n[k], t.uv[k]};
             if (in[k].c.w <= kEps) ++behind;
         }
         if (behind == 3) continue;
@@ -173,7 +260,7 @@ int rasterize(Canvas& cv, const std::vector<Tri>& tris, const glm::mat4& vp, con
                 if (aIn) poly[np++] = a;
                 if (aIn != bIn) {
                     const float f = (kEps - a.c.w) / (b.c.w - a.c.w);
-                    poly[np++] = {glm::mix(a.c, b.c, f), glm::mix(a.p, b.p, f), glm::mix(a.n, b.n, f)};
+                    poly[np++] = {glm::mix(a.c, b.c, f), glm::mix(a.p, b.p, f), glm::mix(a.n, b.n, f), glm::mix(a.uv, b.uv, f)};
                 }
             }
         }
