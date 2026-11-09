@@ -6,6 +6,46 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-07 (9) — Arreglo: seleccionar con Mover, Rotar y Escalar
+
+**Corregido**: en los modos Puntos, Aristas y Polígonos solo se podía seleccionar con la
+herramienta de selección. Con Mover, Rotar o Escalar, cualquier clic fuera de las flechas
+arrancaba un arrastre libre del gizmo y nunca llegaba a elegir componentes. En modo Modelo
+pasaba lo mismo con los objetos: con uno seleccionado, un clic en otro no lo elegía.
+
+Ahora funciona como en C4D:
+- Un clic en un handle de verdad (flecha o aro X/Y/Z, o el aro exterior de Rotar) arrastra
+  ese eje, igual que antes.
+- Fuera de los handles:
+  - Un componente u objeto sin seleccionar se elige (Mayús añade, Ctrl quita) y, si se
+    arrastra, se mueve directamente.
+  - Uno que ya estaba seleccionado arrastra la selección tal cual.
+  - En vacío, arrastrar sigue moviendo la selección en modo libre; un clic sin arrastre
+    (menos de 3 px) lo deselecciona todo, salvo con Mayús.
+- Hasta pasar de 3 px no se mueve nada ni se crea paso de deshacer, así que un clic de
+  selección ya no deja un «Deshacer» vacío.
+- `TransformGizmo::pickHandle` dice si el cursor está sobre un handle de verdad, y
+  `beginDrag` admite forzar el modo Free.
+
+**Probado**: compila sin avisos y pasan los tests nuevos del gizmo:
+- lejos de las flechas no hay handle, aunque `beginDrag` lo siga aceptando como Free;
+- la flecha X sí es handle;
+- en Rotar, el centro no es handle y el aro Z y el aro de vista sí;
+- se puede arrancar un arrastre Free forzado.
+
+Verificado por captura limpia (Cubo editable, modo Polígonos con Mover, 2 de 6 caras
+seleccionadas): el gizmo y el resaltado se dibujan igual que antes.
+
+**Sin probar**: el clic real con el ratón en el visor, porque las capturas no generan
+entrada sintética. Falta comprobarlo a mano en los tres modos de componentes y en modo
+Modelo, con Mover, Rotar y Escalar.
+
+**Limitaciones**:
+- Con Ctrl el clic solo quita y no arrastra.
+- Mayús+clic sobre un objeto ya seleccionado lo arrastra en vez de quitarlo de la
+  selección (para quitarlo, Ctrl).
+- El resaltado al pasar el ratón sigue marcando el modo libre fuera de las flechas.
+
 ### 2026-11-07 (8) — Herramientas de modelado: Extrusión, Extrusión Interna, Bisel y Cuchillo
 
 **Añadido** (menú Malla y atajos; con una herramienta activa no hay gizmo):

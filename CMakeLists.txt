@@ -268,7 +268,8 @@ add_executable(iron3d_tests
     src/core/SceneNode.cpp
     src/core/Material.cpp
     src/core/SceneSerializer.cpp
-    src/core/ThumbnailRenderer.cpp)
+    src/core/ThumbnailRenderer.cpp
+    src/core/TransformGizmo.cpp)
 target_include_directories(iron3d_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
 target_compile_definitions(iron3d_tests PRIVATE GLM_FORCE_RADIANS)
 if(MSVC)

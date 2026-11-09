@@ -529,6 +529,14 @@ int main(int argc, char** argv) {
     // picking usan el del frame anterior (un frame de retraso, invisible).
     ViewportState viewport;
     bool prevLeftDown = false;
+    // Clic con Mover/Rotar/Escalar fuera de los handles: selecciona y deja un
+    // arrastre Free pendiente. Hasta pasar de 3 px no mueve nada ni crea paso
+    // de deshacer; si se suelta antes, es un clic (y en vacio deselecciona).
+    bool clickDragPending = false;
+    bool clickDeselect = false;
+    bool clickComp = false;
+    std::string clickSnap;
+    double pressX = 0.0, pressY = 0.0;
     glm::vec3 dragPivot(0.0f); // centro de la seleccion al empezar un arrastre
 
     OrbitalCamera camera;
@@ -691,7 +699,13 @@ int main(int argc, char** argv) {
                 iron3d::modelToolMouse(sceneRoot, selected, camera, (float)mouseX, (float)mouseY, leftDown, leftPressed,
                                        history);
             } else if (leftDown) {
-                if (gizmo.isDragging()) {
+                if (gizmo.isDragging() && clickDragPending && std::hypot(mouseX - pressX, mouseY - pressY) < 3.0) {
+                    // Todavia es un clic: no se mueve nada.
+                } else if (gizmo.isDragging()) {
+                    if (clickDragPending) {
+                        history.commit(clickSnap);
+                        clickDragPending = false;
+                    }
                     // Con varios objetos seleccionados, cada paso del arrastre
                     // del activo se reparte al resto alrededor del pivote comun.
                     const glm::vec3 beforePos = selected ? glm::vec3(selected->worldMatrix()[3]) : glm::vec3(0.0f);
@@ -724,39 +738,104 @@ int main(int argc, char** argv) {
                     // de `view`), solo para el modo Free/trackball del gizmo.
                     const glm::vec3 camRight(view[0][0], view[1][0], view[2][0]);
                     const glm::vec3 camUp(view[0][1], view[1][1], view[2][1]);
-                    if (gizmo.beginDrag(mouseRay, gizmoTarget, eye, mouseX - viewport.x, mouseY - viewport.y,
-                                        (int)viewport.w, (int)viewport.h, viewProj, camRight, camUp)) {
+                    const bool shiftHeld = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+                                           glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+                    const bool ctrlHeld = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+                                          glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+                    const double lx = mouseX - viewport.x, ly = mouseY - viewport.y;
+                    auto startDrag = [&](SceneNode* target, GizmoAxis force) {
+                        return gizmo.beginDrag(mouseRay, target, eye, lx, ly, (int)viewport.w, (int)viewport.h,
+                                               viewProj, camRight, camUp, force);
+                    };
+                    // Arrastre Free que empieza como clic (ver clickDragPending).
+                    auto startClickDrag = [&](SceneNode* target, bool comp, bool deselectOnClick) {
+                        if (!startDrag(target, GizmoAxis::Free)) return false;
+                        clickDragPending = true;
+                        clickSnap = preDragSnap;
+                        clickComp = comp;
+                        clickDeselect = deselectOnClick;
+                        pressX = mouseX;
+                        pressY = mouseY;
+                        return true;
+                    };
+                    // Mover/Rotar/Escalar: el gizmo solo se lleva el clic si cae
+                    // en un handle de verdad; fuera de ellos se selecciona primero
+                    // y luego se arrastra lo seleccionado (como C4D).
+                    const bool transformTool = !viewport.selectTool;
+                    const GizmoAxis handle =
+                        gizmoTarget ? gizmo.pickHandle(mouseRay, gizmoTarget, eye, lx, ly, (int)viewport.w,
+                                                       (int)viewport.h, viewProj)
+                                    : GizmoAxis::None;
+                    const int compHit = iron3d::componentHit(selected, camera, (float)mouseX, (float)mouseY);
+                    if (handle != GizmoAxis::None && startDrag(gizmoTarget, handle)) {
                         history.commit(preDragSnap);
                         if (compProxy && selected) iron3d::beginComponentDrag(*selected);
                     } else if (viewport.selectTool && viewport.selectShape != 0) {
                         // (Rectangular y Lazo seleccionan al soltar, en MainUi.)
-                    } else if (iron3d::componentClick(
-                                   selected, camera, (float)mouseX, (float)mouseY,
-                                   glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-                                       glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS,
-                                   glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
-                                       glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)) {
+                    } else if (compHit != -2) {
                         // Puntos/Aristas/Poligonos: el clic elige componentes.
+                        if (!transformTool) {
+                            iron3d::componentClick(selected, camera, (float)mouseX, (float)mouseY, shiftHeld, ctrlHeld);
+                        } else {
+                            // Uno sin seleccionar: se elige (Mayus anade, Ctrl quita).
+                            // Uno ya seleccionado: se arrastra la seleccion tal cual.
+                            if (compHit >= 0 && (ctrlHeld || !iron3d::componentSelected(compHit)))
+                                iron3d::componentClick(selected, camera, (float)mouseX, (float)mouseY, shiftHeld,
+                                                       ctrlHeld);
+                            SceneNode* proxy = ctrlHeld ? nullptr : iron3d::componentGizmoTarget(selected, false);
+                            if (proxy && startClickDrag(proxy, true, compHit < 0 && !shiftHeld))
+                                iron3d::beginComponentDrag(*selected);
+                            else if (compHit < 0 && !shiftHeld && !ctrlHeld)
+                                iron3d::clearComponentSelection();
+                        }
                     } else {
-                        // (Rectangular y Lazo seleccionan al soltar, en MainUi.)
                         SceneNode* hit = nullptr;
                         float bestDist = 1e30f;
                         for (const auto& child : sceneRoot.children())
                             pickNode(*child, glm::mat4(1.0f), mouseRay, hit, bestDist);
-                        // Mayus+clic: anade o quita de la seleccion (C4D).
-                        const bool shiftHeld = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-                                               glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
-                        if (shiftHeld) selected = iron3d::toggleViewportSelection(sceneRoot, hit, selected);
-                        else selected = hit;
+                        const bool hitSelected = hit && (hit == selected || iron3d::viewportSelectionContains(hit));
+                        if (!transformTool) {
+                            // Mayus+clic: anade o quita de la seleccion (C4D).
+                            if (shiftHeld) selected = iron3d::toggleViewportSelection(sceneRoot, hit, selected);
+                            else selected = hit;
+                        } else if (ctrlHeld) {
+                            // Ctrl+clic: quita ese objeto de la seleccion; no arrastra.
+                            if (hitSelected) selected = iron3d::toggleViewportSelection(sceneRoot, hit, selected);
+                        } else {
+                            if (hit && !hitSelected) {
+                                if (shiftHeld) {
+                                    selected = iron3d::toggleViewportSelection(sceneRoot, hit, selected);
+                                } else {
+                                    iron3d::viewportSelectOnly(hit);
+                                    selected = hit;
+                                }
+                            }
+                            // Arrastre Free de la seleccion (nueva o la que ya habia).
+                            gizmo.usePivot = iron3d::selectionCount() > 1;
+                            dragPivot = iron3d::selectionPivot(sceneRoot, selected);
+                            if (gizmo.usePivot) gizmo.pivotWorld = dragPivot;
+                            if (!(selected && startClickDrag(selected, false, !hit && !shiftHeld)) && !hit &&
+                                !shiftHeld)
+                                selected = nullptr;
+                        }
                     }
                 }
             } else {
-                if (gizmo.isDragging()) iron3d::notifyTransformEdited(sceneRoot);
+                if (gizmo.isDragging()) {
+                    if (!clickDragPending) iron3d::notifyTransformEdited(sceneRoot);
+                    else if (clickDeselect) {
+                        // Clic sin arrastre en vacio: deselecciona.
+                        if (clickComp) iron3d::clearComponentSelection();
+                        else selected = nullptr;
+                    }
+                }
+                clickDragPending = false;
                 gizmo.endDrag();
                 gizmo.updateHover(mouseRay, gizmoTarget, eye, mouseX - viewport.x, mouseY - viewport.y,
                                   (int)viewport.w, (int)viewport.h, viewProj);
             }
         } else {
+            clickDragPending = false;
             gizmo.endDrag();
             if (modelTool)
                 iron3d::modelToolMouse(sceneRoot, selected, camera, (float)mouseX, (float)mouseY, false, false, history);
