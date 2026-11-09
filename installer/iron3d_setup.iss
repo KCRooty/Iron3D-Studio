@@ -18,7 +18,7 @@
 ;   ISCC.exe iron3d_setup.iss
 
 #define MyAppName "Iron3D Studio"
-#define MyAppVersion "0.1.0"
+#define MyAppVersion "0.2.0"
 #define MyAppPublisher "Static Forge"
 #define MyAppURL "https://staticforge.me/i3ds.html"
 #define MyAppExeName "Iron3DStudio.exe"
