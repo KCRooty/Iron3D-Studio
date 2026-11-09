@@ -34,6 +34,12 @@ constexpr MeshHandle kInvalidMesh = UINT32_MAX;
 // no se puede crear la ventana antes de saber cual se va a usar.
 void configureWindowHints(RendererBackend backend);
 
+// Comprueba, sin crear ventana, si este PC puede usar el backend Vulkan:
+// cargador vulkan-1.dll presente, instancia 1.3 y una GPU con cola grafica.
+// Llamar despues de glfwInit(). Si da false, main usa OpenGL en vez de
+// cerrarse sin avisar (VulkanContext aborta si algo de esto falla).
+bool vulkanUsable();
+
 class IRenderer {
 public:
     virtual ~IRenderer() = default;

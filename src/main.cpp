@@ -8,6 +8,10 @@
 // Permite anadir un backend OpenGL (Fase 3b) sin tocar esta logica.
 
 #define GLFW_INCLUDE_NONE
+#if defined(_WIN32)
+extern "C" __declspec(dllimport) int __stdcall MessageBoxW(void* hWnd, const wchar_t* text, const wchar_t* caption,
+                                                         unsigned int type);
+#endif
 #include <GLFW/glfw3.h>
 
 #include <imgui.h>
@@ -476,6 +480,13 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    // Sin Vulkan utilizable (drivers viejos, GPU integrada antigua, maquina
+    // virtual): OpenGL para esta sesion, sin tocar preferences.cfg.
+    if (backend == RendererBackend::Vulkan && !vulkanUsable()) {
+        std::fprintf(stderr, "[Iron3D] Vulkan no esta disponible en este equipo: se usa OpenGL.\n");
+        backend = RendererBackend::OpenGL;
+    }
+
     configureWindowHints(backend);
     // La interfaz de C4D esta pensada para pantalla completa: se abre maximizada.
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
@@ -486,6 +497,13 @@ int main(int argc, char** argv) {
     GLFWwindow* window = glfwCreateWindow(1600, 900, "Iron3D Studio", nullptr, nullptr);
     if (!window) {
         std::fprintf(stderr, "[Iron3D] glfwCreateWindow fallo.\n");
+#if defined(_WIN32)
+        MessageBoxW(nullptr,
+                    L"Iron3D Studio no ha podido abrir su ventana.\n\n"
+                    L"Necesita una tarjeta gr\u00e1fica con Vulkan 1.3 u OpenGL 3.3. "
+                    L"Prueba a actualizar los drivers de la tarjeta gr\u00e1fica.",
+                    L"Iron3D Studio", 0x10 /* MB_ICONERROR */);
+#endif
         return 1;
     }
     glfwSetScrollCallback(window, glfwScrollCallback);
