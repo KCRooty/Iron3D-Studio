@@ -6,6 +6,67 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-09 (11) — Selección por topología y Soldar, Cerrar Agujero, Subdividir e Invertir Normales
+
+**Añadido** (activo en los modos Puntos, Aristas y Polígonos con un objeto editable):
+- **Menú Selección**:
+  - **Selección de Bucle** (modo Aristas): sigue cada arista seleccionada por los puntos de
+    cuatro aristas hasta cerrar la vuelta o llegar a un polo. Si la arista es de borde,
+    sigue el borde abierto.
+  - **Selección de Anillo** (modo Aristas): de cuadrilátero en cuadrilátero, por la arista
+    opuesta.
+  - **Aumentar**, **Reducir**, **Invertir** y **Seleccionar Conectados**: en los tres
+    modos. Los vecinos son los puntos unidos por una arista, y las aristas o polígonos que
+    comparten un punto.
+- **Menú Malla**:
+  - **Cerrar Agujero Poligonal**: crea un polígono por cada borde abierto que toque la
+    selección; sin selección, cierra todos.
+  - **Soldar**: junta los puntos seleccionados en su centro. Las caras que se quedan con
+    menos de 3 puntos desaparecen.
+  - **Subdividir**: lineal, sin suavizar. Parte cada polígono de n lados en n
+    cuadriláteros por los puntos medios y el centro. Los vecinos sin seleccionar reciben
+    el punto medio, así que no quedan puntos en T.
+  - **Invertir Normales**.
+  - Subdividir e Invertir Normales actúan sobre los polígonos seleccionados o, si no hay
+    ninguno, sobre toda la malla.
+- Las operaciones de malla se pueden deshacer, con un paso cada una. Las de selección no
+  crean paso de deshacer, igual que el resto de la selección de componentes.
+- Núcleo en `src/core/MeshEdit.*`. Para probarlo: `--ui-cmd=meshop=loop|ring|grow|shrink|connected|invert|weld|close|subdiv|flip`.
+- Análisis de lo que falta respecto a las páginas de modelado y MoGraph de C4D, con coste
+  estimado, en la nota del proyecto en el vault.
+
+**Probado**: compila sin avisos y pasan los tests nuevos:
+- en el cubo, el anillo da 4 aristas y el bucle no avanza (sus puntos tienen 3 aristas);
+- en la esfera, el bucle del ecuador da 18 aristas y el anillo vertical también 18;
+- aumentar, reducir y conectados sobre la cara de arriba del cubo;
+- soldar la cara de arriba deja una pirámide de 5 puntos y 5 polígonos, cerrada;
+- cerrar el agujero del cubo abierto da 6 polígonos, con la tapa nueva hacia arriba y
+  solo si el borde toca la selección;
+- subdividir la cara de arriba da 13 puntos y 9 polígonos, cerrada; subdividir todo da
+  26 puntos y 24 polígonos;
+- invertir normales.
+
+Verificado por captura limpia, con `--ui-cmd`, sobre el Cubo hecho editable:
+- Subdividir una cara da «Polígonos: 4 de 9»;
+- borrar una cara y Cerrar Agujero da «1 de 6»;
+- Soldar 2 puntos da «Puntos: 0 de 7».
+
+La captura de Selección de Bucle en la esfera se invalidó dos veces porque hubo entrada del
+usuario mientras corría; esa parte solo la cubren los tests.
+
+**Sin probar**: los menús con el ratón y OpenGL.
+
+**Limitaciones**:
+- Bucle y Anillo no funcionan en modo Polígonos ni de forma interactiva al pasar el
+  ratón: amplían la selección de aristas que ya hay.
+- Los acordes U~L, U~B, U~Y, U~K, U~I, U~W, U~S, U~R, M~D y M~Q se ven en el menú pero
+  todavía no funcionan con el teclado.
+- Cerrar Agujero triangula en abanico: un agujero cóncavo puede salir con triángulos
+  cruzados.
+- Subdividir no suaviza (no es Subdivisión de Superficie).
+- Soldar no tiene la opción de soldar al punto activo, solo al centro.
+- Siguen sin hacerse Puente, Puntada y Cosido, y MoGraph: ver la nota de huecos.
+
 ### 2026-11-07 (10) — Edición de claves en la Línea de Tiempo y Editor de Curvas
 
 **Añadido**:

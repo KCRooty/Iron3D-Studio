@@ -47,4 +47,32 @@ MeshEditResult knifeCut(const MeshData& mesh, const MeshTopology& topo, const gl
 // Seleccion de poligonos a partir de triangulos (tras rehacer la topologia).
 std::set<int> polysFromTris(const MeshTopology& topo, const std::vector<int>& tris);
 
+// --- Seleccion por topologia (indices de la topologia; mode 1/2/3 = puntos/aristas/poligonos)
+// Bucle de aristas: sigue la arista por puntos de 4 aristas (o por el borde
+// abierto) hasta cerrarse o llegar a un polo.
+std::set<int> edgeLoop(const MeshTopology& topo, int edge);
+// Anillo de aristas: las aristas opuestas de cuadrilatero en cuadrilatero.
+std::set<int> edgeRing(const MeshTopology& topo, int edge);
+// Aumentar / Reducir / Seleccionar Conectados. Vecinos: puntos por arista;
+// aristas y poligonos por punto comun.
+std::set<int> growSelection(const MeshTopology& topo, int mode, const std::set<int>& sel);
+std::set<int> shrinkSelection(const MeshTopology& topo, int mode, const std::set<int>& sel);
+std::set<int> connectedSelection(const MeshTopology& topo, int mode, const std::set<int>& sel);
+
+// --- Operaciones de malla
+// Soldar: los puntos se juntan en su centro; las caras que se quedan con menos
+// de 3 puntos desaparecen.
+MeshEditResult weldPoints(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& points);
+// Cerrar Agujero: un poligono nuevo por cada borde abierto cerrado que toque
+// `touchPoints` (vacio = todos). El poligono se triangula en abanico: bien
+// para agujeros convexos.
+MeshEditResult closeHoles(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& touchPoints);
+// Subdividir (lineal, sin suavizar): cada poligono de n lados se parte en n
+// cuadrilateros por los puntos medios y el centro. Los vecinos sin
+// seleccionar reciben el punto medio para que no queden puntos en T.
+// `polys` vacio = todos.
+MeshEditResult subdividePolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);
+// Invertir Normales de los poligonos indicados.
+MeshEditResult flipPolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);
+
 } // namespace iron3d

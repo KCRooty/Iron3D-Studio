@@ -579,6 +579,72 @@ int main() {
         check(deleteKeys(*n, {0, 20}) == 3 && n->animPos.empty() && n->animRot.empty(), "claves: borrar todas");
     }
 
+
+    // --- Seleccion por topologia y Soldar / Cerrar Agujero / Subdividir / Invertir ---
+    {
+        const MeshData cube = makeCubeMesh();
+        const MeshTopology t = buildMeshTopology(cube);
+        int top = -1;
+        for (size_t p = 0; p < t.polyNormals.size(); ++p)
+            if (t.polyNormals[p].y > 0.9f) top = (int)p;
+        auto euler = [](const MeshTopology& m) { return (int)m.points.size() - (int)m.edges.size() + (int)m.polys.size(); };
+
+        // Anillo en el cubo: las 4 aristas paralelas. Bucle: los puntos tienen 3 aristas, se queda en 1.
+        check(edgeRing(t, 0).size() == 4, "anillo: 4 aristas paralelas en el cubo");
+        check(edgeLoop(t, 0).size() == 1, "bucle: en el cubo no sigue (puntos de 3 aristas)");
+        // Esfera 12x18: el ecuador es un bucle de 18 aristas y su anillo vertical tambien.
+        const MeshTopology st = buildMeshTopology(makeSphereMesh());
+        int eq = -1, vert = -1;
+        for (size_t e = 0; e < st.edges.size(); ++e) {
+            const float ya = st.points[(size_t)st.edges[e].first].y, yb = st.points[(size_t)st.edges[e].second].y;
+            if (std::fabs(ya) < 1e-4f && std::fabs(yb) < 1e-4f) eq = (int)e;
+            if ((std::fabs(ya) < 1e-4f) != (std::fabs(yb) < 1e-4f) && std::max(std::fabs(ya), std::fabs(yb)) < 0.4f) vert = (int)e;
+        }
+        check(eq >= 0 && edgeLoop(st, eq).size() == 18, "bucle: ecuador de la esfera = 18 aristas");
+        check(vert >= 0 && edgeRing(st, vert).size() == 18, "anillo: 18 aristas verticales alrededor");
+        check(eq >= 0 && edgeRing(st, eq).size() > 2, "anillo del ecuador: recorre los meridianos");
+
+        // Aumentar / Reducir / Conectados con la cara de arriba.
+        const std::set<int> grown = growSelection(t, 3, {top});
+        check(grown.size() == 5, "aumentar: arriba + 4 lados");
+        check(shrinkSelection(t, 3, grown) == std::set<int>{top}, "reducir: vuelve a la de arriba");
+        check(connectedSelection(t, 3, {top}).size() == 6, "conectados: el cubo entero");
+        check(growSelection(t, 1, {0}).size() == 4, "aumentar puntos: el punto y sus 3 vecinos");
+
+        // Soldar los 4 puntos de arriba: piramide de 5 puntos y 5 poligonos.
+        std::set<int> topPts(t.polys[(size_t)top].begin(), t.polys[(size_t)top].end());
+        const MeshTopology wt = buildMeshTopology(weldPoints(cube, t, topPts).mesh);
+        check(wt.points.size() == 5 && wt.polys.size() == 5 && euler(wt) == 2, "soldar: piramide 5/8/5");
+
+        // Cerrar Agujero: el cubo sin la cara de arriba vuelve a cerrarse.
+        std::vector<char> keep(t.polys.size(), 1);
+        keep[(size_t)top] = 0;
+        const MeshData open = keepPolygons(cube, t, keep);
+        const MeshTopology ot = buildMeshTopology(open);
+        const MeshEditResult ch = closeHoles(open, ot, {});
+        const MeshTopology ct = buildMeshTopology(ch.mesh);
+        check(ch.changed == 1 && ct.polys.size() == 6 && euler(ct) == 2, "cerrar agujero: cubo cerrado de nuevo");
+        check(polysFromTris(ct, ch.selectTris).size() == 1 && ct.polyNormals[(size_t)*polysFromTris(ct, ch.selectTris).begin()].y > 0.9f,
+              "cerrar agujero: la tapa nueva mira hacia arriba");
+        check(closeHoles(open, ot, {999999}).changed == 0, "cerrar agujero: solo los bordes que tocan la seleccion");
+
+        // Subdividir la cara de arriba: 4 cuadrilateros, vecinos con punto medio.
+        const MeshEditResult sd = subdividePolygons(cube, t, {top});
+        const MeshTopology sdt = buildMeshTopology(sd.mesh);
+        check(sdt.points.size() == 13 && sdt.polys.size() == 9 && euler(sdt) == 2, "subdividir arriba: 13 puntos, 9 poligonos, cerrada");
+        check(polysFromTris(sdt, sd.selectTris).size() == 4, "subdividir: quedan seleccionados los 4 nuevos");
+        const MeshTopology sall = buildMeshTopology(subdividePolygons(cube, t, {}).mesh);
+        check(sall.points.size() == 26 && sall.polys.size() == 24 && euler(sall) == 2, "subdividir todo: 26 puntos, 24 poligonos");
+
+        // Invertir Normales de la cara de arriba.
+        const MeshTopology ft = buildMeshTopology(flipPolygons(cube, t, {top}).mesh);
+        bool down = false;
+        for (const glm::vec3& n : ft.polyNormals) down = down || n.y < -0.9f;
+        int downs = 0;
+        for (const glm::vec3& n : ft.polyNormals) downs += n.y < -0.9f ? 1 : 0;
+        check(down && downs == 2, "invertir normales: la de arriba mira ahora hacia abajo");
+    }
+
     if (g_failures == 0) std::printf("c4d_geometry: todo correcto\n");
     return g_failures == 0 ? 0 : 1;
 }
