@@ -40,7 +40,7 @@ void noExport(std::string* outError) {
 
 bool exportC4D(const std::filesystem::path& /*file*/, const std::vector<const SceneNode*>& /*roots*/,
                const std::vector<Material>& /*materials*/, bool /*allMaterials*/, C4DExportReport& report,
-               std::string* outError) {
+               std::string* outError, int /*fps*/) {
     report = C4DExportReport{};
     noExport(outError);
     return false;
