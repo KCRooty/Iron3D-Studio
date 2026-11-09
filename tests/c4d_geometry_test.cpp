@@ -537,6 +537,48 @@ int main() {
         }
     }
 
+
+    // --- Edicion de claves: mover, borrar, interpolacion y .iron v6 ------------
+    {
+        SceneNode root("root");
+        SceneNode* n = root.addChild("animado");
+        n->animPos.set(0, {0.0f, 0.0f, 0.0f});
+        n->animPos.set(10, {10.0f, 0.0f, 0.0f});
+        n->animPos.set(20, {10.0f, 10.0f, 0.0f});
+        n->animRot.set(10, {0.0f, 45.0f, 0.0f});
+
+        // Interpolacion por tramo: Lineal da el punto medio exacto, Escalon se queda.
+        check(setKeyInterp(*n, {0}, KeyInterp::Linear) == 1, "claves: interpolacion en 1 clave");
+        check(nearly(n->animPos.evaluate(5.0f), {5.0f, 0.0f, 0.0f}), "claves: tramo Lineal = punto medio");
+        check(setKeyInterp(*n, {10}, KeyInterp::Step) == 2, "claves: interpolacion en las dos pistas del fotograma 10");
+        check(nearly(n->animPos.evaluate(19.0f), {10.0f, 0.0f, 0.0f}), "claves: tramo Escalon se queda hasta la siguiente");
+        check(nearly(n->animPos.evaluate(20.0f), {10.0f, 10.0f, 0.0f}), "claves: Escalon llega a la clave siguiente");
+
+        // Mover: el fotograma 10 a 15 (Pos y Rot), conservando la interpolacion.
+        check(moveKeys(*n, {10}, 5) == 2, "claves: mover 2 claves (2 pistas)");
+        check(n->animPos.hasKeyAt(15) && !n->animPos.hasKeyAt(10) && n->animRot.hasKeyAt(15), "claves: movidas a 15");
+        check(n->animPos.keys[1].interp == KeyInterp::Step, "claves: al mover se conserva la interpolacion");
+        // Mover encima de otra la sustituye.
+        check(moveKeys(*n, {15}, 5) == 2 && n->animPos.keys.size() == 2 && n->animPos.keys[1].frame == 20 &&
+                  nearly(n->animPos.keys[1].value, {10.0f, 0.0f, 0.0f}),
+              "claves: la movida sustituye a la que estaba");
+        check(keyFrames(*n) == std::vector<int>{0, 20}, "claves: fotogramas tras mover");
+
+        // .iron v6 con i=
+        std::vector<Material> mats;
+        const std::string text = serializeScene(root, mats);
+        check(text.find(" i=s") != std::string::npos && text.find(" i=l") != std::string::npos, "claves: se guarda i=l / i=s");
+        SceneNode back("x");
+        std::string err;
+        check(deserializeScene(text, back, mats, &err), "claves: el .iron v6 se vuelve a leer");
+        const SceneNode* bn = back.children().empty() ? nullptr : back.children().front().get();
+        check(bn && bn->animPos.keys.size() == 2 && bn->animPos.keys[0].interp == KeyInterp::Linear &&
+                  bn->animPos.keys[1].interp == KeyInterp::Step,
+              "claves: interpolacion guardada y leida");
+
+        check(deleteKeys(*n, {0, 20}) == 3 && n->animPos.empty() && n->animRot.empty(), "claves: borrar todas");
+    }
+
     if (g_failures == 0) std::printf("c4d_geometry: todo correcto\n");
     return g_failures == 0 ? 0 : 1;
 }

@@ -162,7 +162,7 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
 void AnimTrack::set(int frame, const glm::vec3& value) {
     auto it = std::lower_bound(keys.begin(), keys.end(), frame, [](const AnimKey& k, int f) { return k.frame < f; });
     if (it != keys.end() && it->frame == frame) it->value = value;
-    else keys.insert(it, AnimKey{frame, value});
+    else keys.insert(it, AnimKey{frame, value, KeyInterp::Spline});
 }
 
 bool AnimTrack::remove(int frame) {
@@ -201,6 +201,8 @@ glm::vec3 AnimTrack::evaluate(float frame) const {
     const AnimKey& b = keys[i + 1];
     const float span = (float)(b.frame - a.frame);
     const float t = (frame - (float)a.frame) / span;
+    if (a.interp == KeyInterp::Step) return a.value;
+    if (a.interp == KeyInterp::Linear) return a.value + (b.value - a.value) * t;
     const glm::vec3 m0 = autoSlope(keys, i) * span, m1 = autoSlope(keys, i + 1) * span;
     const float t2 = t * t, t3 = t2 * t;
     return (2 * t3 - 3 * t2 + 1) * a.value + (t3 - 2 * t2 + t) * m0 + (-2 * t3 + 3 * t2) * b.value + (t3 - t2) * m1;
@@ -226,6 +228,59 @@ std::vector<int> keyFrames(const SceneNode& node) {
     std::sort(out.begin(), out.end());
     out.erase(std::unique(out.begin(), out.end()), out.end());
     return out;
+}
+
+namespace {
+bool inFrames(const std::vector<int>& frames, int f) { return std::find(frames.begin(), frames.end(), f) != frames.end(); }
+
+AnimTrack* tracksOf(SceneNode& n, int i) { return i == 0 ? &n.animPos : i == 1 ? &n.animRot : &n.animScale; }
+} // namespace
+
+int moveKeys(SceneNode& node, const std::vector<int>& frames, int delta) {
+    if (delta == 0) return 0;
+    int moved = 0;
+    for (int ti = 0; ti < 3; ++ti) {
+        AnimTrack& t = *tracksOf(node, ti);
+        std::vector<AnimKey> moving, staying;
+        for (const AnimKey& k : t.keys) (inFrames(frames, k.frame) ? moving : staying).push_back(k);
+        if (moving.empty()) continue;
+        for (AnimKey& k : moving) k.frame += delta;
+        // Las que se mueven pisan a las que estaban en su sitio nuevo.
+        staying.erase(std::remove_if(staying.begin(), staying.end(),
+                                     [&](const AnimKey& s) {
+                                         return std::any_of(moving.begin(), moving.end(),
+                                                            [&](const AnimKey& m) { return m.frame == s.frame; });
+                                     }),
+                      staying.end());
+        staying.insert(staying.end(), moving.begin(), moving.end());
+        std::sort(staying.begin(), staying.end(), [](const AnimKey& a, const AnimKey& b) { return a.frame < b.frame; });
+        t.keys = std::move(staying);
+        moved += (int)moving.size();
+    }
+    return moved;
+}
+
+int deleteKeys(SceneNode& node, const std::vector<int>& frames) {
+    int n = 0;
+    for (int ti = 0; ti < 3; ++ti) {
+        auto& keys = tracksOf(node, ti)->keys;
+        const size_t before = keys.size();
+        keys.erase(std::remove_if(keys.begin(), keys.end(), [&](const AnimKey& k) { return inFrames(frames, k.frame); }),
+                   keys.end());
+        n += (int)(before - keys.size());
+    }
+    return n;
+}
+
+int setKeyInterp(SceneNode& node, const std::vector<int>& frames, KeyInterp interp) {
+    int n = 0;
+    for (int ti = 0; ti < 3; ++ti)
+        for (AnimKey& k : tracksOf(node, ti)->keys)
+            if (inFrames(frames, k.frame)) {
+                k.interp = interp;
+                ++n;
+            }
+    return n;
 }
 
 SceneNode* duplicateSubtree(SceneNode& parent, const SceneNode& src) {

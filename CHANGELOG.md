@@ -6,6 +6,51 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-07 (10) — Edición de claves en la Línea de Tiempo y Editor de Curvas
+
+**Añadido**:
+- **Claves en la Línea de Tiempo**:
+  - Clic en una clave la selecciona y Mayús+clic añade o quita.
+  - Arrastrarlas en horizontal las mueve, con vista previa y en fotogramas enteros.
+  - Supr las borra cuando el ratón está sobre la Línea de Tiempo o el Editor de Curvas.
+  - Al moverlas se llevan las tres pistas (Posición, Rotación y Escala) de ese fotograma.
+    Si caen encima de otra clave, la sustituyen.
+- **Interpolación por clave**: Spline (la de siempre), Lineal o Escalón, para el tramo que
+  empieza en esa clave. Se cambia desde Animación > Claves Seleccionadas, con el clic
+  derecho o con los botones del Editor de Curvas.
+- **Editor de Curvas** (Animación > Editor de Curvas...):
+  - Muestra las pistas del objeto activo como valor por fotograma: posición en cm,
+    rotación H/P/B en grados y escala, con una casilla por canal.
+  - Las claves se seleccionan con clic y llevan marcada su interpolación (L/E).
+- Todo se puede deshacer, un paso por operación.
+- **.iron v6**: cada clave lleva un `i=l` o `i=s` opcional (Spline no escribe nada). Los
+  archivos v5 se siguen leyendo igual y las claves quedan como Spline.
+
+**Probado**: compila sin avisos y pasan los tests nuevos:
+- tramo Lineal: el punto medio exacto;
+- tramo Escalón: se mantiene hasta la clave siguiente;
+- mover conserva la interpolación;
+- mover encima de otra clave la sustituye;
+- borrar;
+- ida y vuelta por .iron con `i=`.
+
+Verificado por captura limpia, con una escena de prueba temporal (no la de ejemplo) y
+`--ui-cmd`:
+- el Editor de Curvas dibuja el tramo Lineal recto, el Escalón plano con el salto en la
+  clave siguiente y el Spline curvo;
+- `keys-move=10` lleva la clave 30 a 40 sin perder el Escalón, y la marca de la Línea de
+  Tiempo se mueve con ella.
+
+**Sin probar**: el clic y el arrastre reales con el ratón (en la Línea de Tiempo y en el
+Editor de Curvas), Supr, el menú del clic derecho y OpenGL.
+
+**Limitaciones**:
+- En el Editor de Curvas las claves no se arrastran: ni en vertical (valor) ni en
+  horizontal. Para moverlas hay que usar la Línea de Tiempo.
+- No hay tangentes editables: Spline es siempre la curva suave automática.
+- La interpolación se elige por fotograma, para todas las pistas a la vez, no por canal.
+- El botón Selección de Claves de la barra sigue sin hacer nada.
+
 ### 2026-11-07 (9) — Arreglo: seleccionar con Mover, Rotar y Escalar
 
 **Corregido**: en los modos Puntos, Aristas y Polígonos solo se podía seleccionar con la

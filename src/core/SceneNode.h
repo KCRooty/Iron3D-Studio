@@ -50,14 +50,20 @@ inline bool resolveVisibility(VisMode mode, bool parentVisible) {
 // interpolacion spline con tangentes automaticas recortadas (sin rebasar los
 // valores de las claves, como el "Clamp" de C4D). Antes de la primera clave y
 // despues de la ultima el valor se queda fijo.
+//
+// Interpolacion por clave (2026-11-07): manda en el tramo que EMPIEZA en esa
+// clave, como en C4D -- Spline (tangentes automaticas), Lineal o Escalon (el
+// valor se queda hasta la clave siguiente).
+enum class KeyInterp { Spline, Linear, Step };
 struct AnimKey {
     int frame = 0;
     glm::vec3 value{0.0f};
+    KeyInterp interp = KeyInterp::Spline;
 };
 struct AnimTrack {
     std::vector<AnimKey> keys;
     bool empty() const { return keys.empty(); }
-    void set(int frame, const glm::vec3& value);  // anade o sustituye
+    void set(int frame, const glm::vec3& value);  // anade o sustituye (conserva la interpolacion)
     bool remove(int frame);
     bool hasKeyAt(int frame) const;
     glm::vec3 evaluate(float frame) const;         // requiere !empty()
@@ -149,5 +155,13 @@ void evaluateAnimation(SceneNode& root, float frame);
 void recordKey(SceneNode& node, int frame, bool position, bool rotation, bool scale);
 // Fotogramas con alguna clave en el nodo, ordenados y sin repetir.
 std::vector<int> keyFrames(const SceneNode& node);
+
+// Edicion de claves de la Linea de Tiempo / Editor de Curvas, sobre las tres
+// pistas a la vez (las claves de esos fotogramas, en cualquier canal).
+// moveKeys: desplaza `delta` fotogramas; una clave que cae sobre otra que no
+// se mueve la sustituye. Devuelven cuantas claves se tocaron.
+int moveKeys(SceneNode& node, const std::vector<int>& frames, int delta);
+int deleteKeys(SceneNode& node, const std::vector<int>& frames);
+int setKeyInterp(SceneNode& node, const std::vector<int>& frames, KeyInterp interp);
 
 } // namespace iron3d
