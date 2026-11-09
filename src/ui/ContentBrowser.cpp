@@ -90,12 +90,17 @@ struct State {
     bool showFiles = true;
     std::string message; // aviso en la barra inferior (clic para quitarlo)
     std::vector<RecentItem> recent;
-    // Ventanita que pide un nombre (Nueva Libreria / Nueva Carpeta).
-    enum class Ask { None, Library, Folder } ask = Ask::None;
+    // Ventanita que pide un nombre (Nueva Libreria / Nueva Carpeta /
+    // Renombrar) o una carpeta de destino (Mover a).
+    enum class Ask { None, Library, Folder, Rename, Move } ask = Ask::None;
     bool askOpen = false; // abrir el popup en el siguiente dibujo
     int askLib = 0;
-    std::string askFolder;
-    char askBuf[128] = {};
+    std::string askFolder; // carpeta donde crear (Folder) o elemento a editar (Rename/Move)
+    char askBuf[256] = {};
+    // Confirmacion de Eliminar.
+    bool delOpen = false;
+    int delLib = 0;
+    std::string delPath;
     // La ventana del navegador estaba bajo el raton (archivos soltados).
     bool hovered = false;
 };
@@ -330,11 +335,18 @@ void makePermanent(Mounted& m) {
         s.message = "Ya hay una librería con ese nombre en library/browser.";
         return;
     }
-    if (!std::filesystem::copy_file(m.lib.file(), dst, ec) || ec) {
+    std::string err;
+    if (!m.lib.rootUrlMatchesFile()) {
+        // La url interna no cuadra con el nombre: C4D no la montaria. Se
+        // escribe una copia limpia con la url correcta en vez de copiarla tal cual.
+        if (!rewritePresetLibrary(m.lib.file(), dst, {}, &err)) {
+            s.message = err;
+            return;
+        }
+    } else if (!std::filesystem::copy_file(m.lib.file(), dst, ec) || ec) {
         s.message = "No se pudo copiar la librería a library/browser: " + ec.message();
         return;
     }
-    std::string err;
     PresetLibrary copy;
     if (!copy.open(dst, &err)) {
         s.message = err;
@@ -469,6 +481,110 @@ void addFilesDialog(Mounted& m, const std::string& folder) {
     if (!files.empty()) addFiles(m, folder, files);
 }
 
+std::string parentPath(const std::string& p) {
+    const size_t k = p.rfind('/');
+    return k == std::string::npos ? std::string() : p.substr(0, k);
+}
+std::string leafName(const std::string& p) {
+    const size_t k = p.rfind('/');
+    return k == std::string::npos ? p : p.substr(k + 1);
+}
+// `p` es `root` o esta dentro.
+bool insidePath(const std::string& p, const std::string& root) {
+    return p == root || (p.size() > root.size() && p.compare(0, root.size(), root) == 0 && p[root.size()] == '/');
+}
+
+// Tras renombrar/mover/borrar: si se estaba dentro de lo tocado, seguirlo.
+void followEdit(int serial, const std::string& from, const std::string* to) {
+    auto fix = [&](Location& l) {
+        if (l.node != Node::Library || l.lib != serial || !insidePath(l.folder, from)) return;
+        l.folder = to ? *to + l.folder.substr(from.size()) : parentPath(from);
+    };
+    fix(s.loc);
+    for (auto& l : s.back) fix(l);
+    for (auto& l : s.fwd) fix(l);
+}
+
+void moveItem(Mounted& m, const std::string& from, const std::string& to) {
+    std::string err;
+    if (!movePresetLibraryItem(m.lib.file(), from, to, &err)) {
+        s.message = err;
+        return;
+    }
+    followEdit(m.serial, from, &to);
+    if (reloadLib(m)) s.message = "\"" + leafName(from) + "\" → \"" + to + "\".";
+}
+
+void deleteItem(Mounted& m, const std::string& path) {
+    std::string err;
+    if (!removeFromPresetLibrary(m.lib.file(), {path}, &err)) {
+        s.message = err;
+        return;
+    }
+    followEdit(m.serial, path, nullptr);
+    if (reloadLib(m)) s.message = "\"" + leafName(path) + "\" eliminado de \"" + m.lib.title() + "\".";
+}
+
+// Corrige la url raiz de una libreria renombrada a mano: la original queda
+// como copia de seguridad (.bak) y se escribe una limpia con el mismo nombre.
+void fixRootUrl(Mounted& m) {
+    const auto file = m.lib.file();
+    auto bak = file;
+    bak += ".bak";
+    std::error_code ec;
+    if (std::filesystem::exists(bak, ec)) {
+        s.message = "Ya existe " + pathUtf8(bak) + "; muévela antes de corregir.";
+        return;
+    }
+    std::filesystem::rename(file, bak, ec);
+    if (ec) {
+        s.message = "No se pudo renombrar la librería: " + ec.message();
+        return;
+    }
+    std::string err;
+    if (!rewritePresetLibrary(bak, file, {}, &err)) {
+        std::filesystem::rename(bak, file, ec);
+        s.message = err;
+        return;
+    }
+    if (reloadLib(m)) s.message = "Url interna corregida (copia de seguridad en " + pathUtf8(bak) + ").";
+}
+
+void askEdit(State::Ask what, int lib, const std::string& path) {
+    s.ask = what;
+    s.askOpen = true;
+    s.askLib = lib;
+    s.askFolder = path;
+    std::snprintf(s.askBuf, sizeof(s.askBuf), "%s",
+                  what == State::Ask::Rename ? leafName(path).c_str() : parentPath(path).c_str());
+}
+
+void askDelete(int lib, const std::string& path) {
+    s.delOpen = true;
+    s.delLib = lib;
+    s.delPath = path;
+}
+
+void drawAskDelete() {
+    if (s.delOpen) {
+        ImGui::OpenPopup("Eliminar de la Librería###cbdel");
+        s.delOpen = false;
+    }
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (!ImGui::BeginPopupModal("Eliminar de la Librería###cbdel", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
+    Mounted* m = findLib(s.delLib);
+    const int idx = m ? m->lib.find(s.delPath) : -1;
+    const bool folder = idx >= 0 && m->lib.items()[idx].kind == PresetKind::Folder;
+    ImGui::Text("¿Eliminar \"%s\"%s?", leafName(s.delPath).c_str(), folder ? " y todo su contenido" : "");
+    ImGui::TextDisabled("Se borra de la librería (%s).", m ? m->lib.title().c_str() : "");
+    const bool yes = ImGui::Button("Eliminar", ImVec2(110, 0));
+    ImGui::SameLine();
+    const bool no = ImGui::Button("Cancelar", ImVec2(110, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape);
+    if (yes && m && idx >= 0) deleteItem(*m, s.delPath);
+    if (yes || no) ImGui::CloseCurrentPopup();
+    ImGui::EndPopup();
+}
+
 void askName(State::Ask what, int lib, const std::string& folder) {
     s.ask = what;
     s.askOpen = true;
@@ -482,25 +598,46 @@ void drawAskName() {
         ImGui::OpenPopup("###cbask");
         s.askOpen = false;
     }
-    const char* title = s.ask == State::Ask::Library ? "Nueva Librería de Preestablecidos###cbask" : "Nueva Carpeta###cbask";
+    const char* title = s.ask == State::Ask::Library  ? "Nueva Librería de Preestablecidos###cbask"
+                        : s.ask == State::Ask::Rename ? "Renombrar###cbask"
+                        : s.ask == State::Ask::Move   ? "Mover a###cbask"
+                                                      : "Nueva Carpeta###cbask";
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if (!ImGui::BeginPopupModal(title, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
-    ImGui::TextUnformatted("Nombre:");
+    const bool move = s.ask == State::Ask::Move;
+    ImGui::TextUnformatted(move ? "Carpeta de destino (vacío = raíz, \"a/b\" = subcarpetas):" : "Nombre:");
     if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
     const bool enter = ImGui::InputText("##askname", s.askBuf, sizeof(s.askBuf),
                                         ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
     const std::string name = trimmed(s.askBuf);
-    const bool ok = validName(name);
-    if (!ok) ImGui::TextDisabled("Sin  / \\ : * ? \" < > |");
+    bool ok = validName(name);
+    if (move) {
+        // Cada parte de la ruta, un nombre valido; vacio = raiz.
+        ok = true;
+        size_t a = 0;
+        while (ok && !name.empty() && a <= name.size()) {
+            const size_t b = name.find('/', a);
+            ok = validName(trimmed(name.substr(a, b == std::string::npos ? std::string::npos : b - a)));
+            if (b == std::string::npos) break;
+            a = b + 1;
+        }
+        if (ok && insidePath(name, s.askFolder)) ok = false;
+    }
+    if (!ok) ImGui::TextDisabled(move ? "Ruta no válida (o dentro de sí misma)." : "Sin  / \\ : * ? \" < > |");
     if (s.ask == State::Ask::Library) ImGui::TextDisabled("Se guarda en library/browser: sale siempre.");
     ImGui::BeginDisabled(!ok);
-    const bool create = ImGui::Button("Crear", ImVec2(110, 0)) || (enter && ok);
+    const bool create =
+        ImGui::Button(s.ask == State::Ask::Rename ? "Renombrar" : move ? "Mover" : "Crear", ImVec2(110, 0)) ||
+        (enter && ok);
     ImGui::EndDisabled();
     ImGui::SameLine();
     const bool cancel = ImGui::Button("Cancelar", ImVec2(110, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape);
     if (create && ok) {
+        Mounted* m = findLib(s.askLib);
         if (s.ask == State::Ask::Library) createLibrary(name);
-        else if (Mounted* m = findLib(s.askLib)) addFolder(*m, s.askFolder, name);
+        else if (m && s.ask == State::Ask::Rename) moveItem(*m, s.askFolder, joinPath(parentPath(s.askFolder), name));
+        else if (m && s.ask == State::Ask::Move) moveItem(*m, s.askFolder, joinPath(name, leafName(s.askFolder)));
+        else if (m) addFolder(*m, s.askFolder, name);
     }
     if ((create && ok) || cancel) {
         s.ask = State::Ask::None;
@@ -724,6 +861,13 @@ int libraryContextMenu(Mounted& m) {
     ImGui::Separator();
     if (ImGui::MenuItem("Hacer Permanente (copiar a library/browser)", nullptr, false, m.temporary)) makePermanent(m);
     if (ImGui::MenuItem("Quitar del Navegador", nullptr, false, m.temporary)) unmountSerial = m.serial;
+    if (!m.lib.rootUrlMatchesFile()) {
+        ImGui::Separator();
+        if (ImGui::MenuItem("Corregir Url Interna (archivo renombrado)")) fixRootUrl(m);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Dentro pone \"%s\": Cinema 4D no la monta si no coincide con el nombre del archivo.",
+                              m.lib.rootUrl().c_str());
+    }
     ImGui::EndPopup();
     return unmountSerial;
 }
@@ -831,6 +975,10 @@ void drawGrid(const ContentBrowserCallbacks& cb) {
                             cb.load(e.lib->lib, *it);
                         if (ImGui::MenuItem("Abrir", nullptr, false, it->kind == PresetKind::Folder))
                             openEntry(e, cb);
+                        ImGui::Separator();
+                        if (ImGui::MenuItem("Renombrar...")) askEdit(State::Ask::Rename, e.lib->serial, it->path);
+                        if (ImGui::MenuItem("Mover a...")) askEdit(State::Ask::Move, e.lib->serial, it->path);
+                        if (ImGui::MenuItem("Eliminar")) askDelete(e.lib->serial, it->path);
                         ImGui::Separator();
                         ImGui::TextDisabled("%s", it->path.c_str());
                         ImGui::EndPopup();
@@ -959,9 +1107,12 @@ bool mountTemporaryLibrary(const std::filesystem::path& file, std::string* outEr
     m->serial = g_nextSerial++;
     m->temporary = true;
     const int serial = m->serial;
+    const bool urlOk = m->lib.rootUrlMatchesFile();
     g_libs.push_back(std::move(m));
     navigate(libraryLocation(serial));
-    s.message.clear();
+    s.message = urlOk ? std::string()
+                      : "Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. "
+                        "Clic derecho > Corregir Url Interna.";
     return true;
 }
 
@@ -1015,6 +1166,7 @@ void drawContentBrowser(ImVec2 pos, ImVec2 size, const ContentBrowserCallbacks& 
     drawMenuBar(cb);
     drawToolbar();
     drawAskName();
+    drawAskDelete();
 
     const float statusH = ImGui::GetTextLineHeightWithSpacing() + 2;
     const ImVec2 avail = ImGui::GetContentRegionAvail();

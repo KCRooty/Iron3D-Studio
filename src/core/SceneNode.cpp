@@ -52,6 +52,7 @@ const char* primitiveTypeName(PrimitiveType type) {
         case PrimitiveType::Sphere: return "Esfera";
         case PrimitiveType::Plane: return "Plano";
         case PrimitiveType::Light: return "Luz";
+        case PrimitiveType::Camera: return "Cámara";
         case PrimitiveType::Mesh: return "Objeto poligonal";
         case PrimitiveType::None: default: return "Nulo (vacio)";
     }
@@ -151,6 +152,9 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
     copy->renderVis = src.renderVis;
     copy->materialIndex = src.materialIndex;
     copy->mesh = src.mesh;
+    copy->light = src.light;
+    copy->camera = src.camera;
+    copy->texTag = src.texTag;
     copy->animPos = src.animPos;
     copy->animRot = src.animRot;
     copy->animScale = src.animScale;
@@ -281,6 +285,27 @@ int setKeyInterp(SceneNode& node, const std::vector<int>& frames, KeyInterp inte
                 ++n;
             }
     return n;
+}
+
+const char* lightKindName(LightKind kind) {
+    switch (kind) {
+        case LightKind::Omni: return "Omni";
+        case LightKind::Spot: return "Foco";
+        case LightKind::SpotSquare: return "Foco Cuadrado";
+        case LightKind::Infinite: return "Infinita";
+        case LightKind::Parallel: return "Paralela";
+        case LightKind::ParallelSpot: return "Foco Paralelo";
+        case LightKind::ParallelSpotSquare: return "Foco Paralelo Cuadrado";
+        case LightKind::Tube: return "Tubo";
+        case LightKind::Area: return "Área";
+        case LightKind::Photometric: return "Fotométrica";
+        default: return "Luz";
+    }
+}
+
+float CameraData::fovDeg() const {
+    if (focalMm <= 0.0f) return 0.0f;
+    return 2.0f * std::atan(sensorMm * 0.5f / focalMm) * 57.29577951308232f;
 }
 
 SceneNode* duplicateSubtree(SceneNode& parent, const SceneNode& src) {

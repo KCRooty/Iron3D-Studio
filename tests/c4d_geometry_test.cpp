@@ -8,12 +8,18 @@
 #include "core/ThumbnailRenderer.h"
 #include "core/TransformGizmo.h"
 #include "importers/c4d_compat/C4DGeometry.h"
+#include "io_scene_fixture.h"
+#include "core/Paths.h"
+
+#include <stb_image_write.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
 #include <functional>
 #include <set>
 
@@ -305,6 +311,50 @@ int main() {
         floor->renderVis = VisMode::Off;
         const Thumbnail hidden = renderCameraImage(root, {}, view, proj, 32, 24, 1, glm::vec3(0.0f), glm::vec3(0.0f));
         check(hidden.triangles == 0, "render de camara: respeta la visibilidad de render");
+    }
+
+    {
+        // Textura de Color en el render por CPU: PNG de 8x1 (4 rojos | 4 azules)
+        // sobre un cuadrado con UV 0..1, visto desde arriba.
+        const std::filesystem::path dir = std::filesystem::temp_directory_path() / "iron3d_tex_test";
+        std::filesystem::create_directories(dir);
+        {
+            unsigned char px[24] = {};
+            for (int i = 0; i < 8; ++i) px[i * 3 + (i < 4 ? 0 : 2)] = 255;
+            std::ofstream f(dir / "rojo_azul.png", std::ios::binary | std::ios::trunc);
+            stbi_write_png_to_func(
+                [](void* ctx, void* data, int size) { static_cast<std::ofstream*>(ctx)->write((const char*)data, size); },
+                &f, 8, 1, 3, px, 24);
+        }
+        SceneNode root("root");
+        SceneNode* sq = root.addChild("Cuadrado", PrimitiveType::Mesh);
+        MeshData quad = testio::uvMesh();
+        quad.indices.resize(6); // solo el cuadrado
+        sq->mesh = std::make_shared<MeshData>(quad);
+        sq->materialIndex = 0;
+        Material m;
+        m.baseColor = glm::vec3(0.5f);
+        m.roughness = 1.0f;
+        m.texture(TexSlot::Color) = "rojo_azul.png";
+        m.texBaseDir = pathUtf8(dir);
+        std::vector<Material> mats{m};
+        const glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 3.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0, 0, -1));
+        const glm::mat4 proj = glm::ortho(-0.5f, 0.5f, -0.5f, 0.5f, 0.1f, 10.0f);
+        auto px = [](const Thumbnail& t, int x, int y) { return &t.rgba[((size_t)y * (size_t)t.width + (size_t)x) * 4]; };
+        const Thumbnail img = renderCameraImage(root, mats, view, proj, 32, 32, 1, glm::vec3(0.0f), glm::vec3(0.0f));
+        const uint8_t *l = px(img, 4, 16), *r = px(img, 27, 16);
+        check(l[0] > 2 * l[2] && r[2] > 2 * r[0], "textura: render por CPU, rojo a la izquierda (u=0) y azul a la derecha");
+        // Mosaico de la etiqueta: longitud 0.5 -> dos repeticiones.
+        sq->texTag.length = glm::vec2(0.5f, 1.0f);
+        const Thumbnail tiled = renderCameraImage(root, mats, view, proj, 32, 32, 1, glm::vec3(0.0f), glm::vec3(0.0f));
+        const uint8_t *t1 = px(tiled, 2, 16), *t2 = px(tiled, 10, 16), *t3 = px(tiled, 18, 16);
+        check(t1[0] > 2 * t1[2] && t2[2] > 2 * t2[0] && t3[0] > 2 * t3[2], "textura: la etiqueta repite (longitud U 0.5)");
+        // Sin archivo: color base.
+        mats[0].texture(TexSlot::Color) = "no_existe.png";
+        sq->texTag = TextureTagData{};
+        const Thumbnail plain = renderCameraImage(root, mats, view, proj, 32, 32, 1, glm::vec3(0.0f), glm::vec3(0.0f));
+        const uint8_t* c = px(plain, 16, 16);
+        check(std::abs((int)c[0] - (int)c[2]) <= 2, "textura: si no esta en disco se usa el color base");
     }
 
     {
@@ -643,6 +693,81 @@ int main() {
         int downs = 0;
         for (const glm::vec3& n : ft.polyNormals) downs += n.y < -0.9f ? 1 : 0;
         check(down && downs == 2, "invertir normales: la de arriba mira ahora hacia abajo");
+    }
+
+    // --- Ida y vuelta exacta por .iron (formato 7) --------------------------------
+    {
+        SceneNode root("Raiz");
+        std::vector<Material> mats;
+        testio::buildScene(root, mats, "C:/texturas de prueba");
+        const std::string text = serializeScene(root, mats);
+        SceneNode back("Raiz");
+        std::vector<Material> mats2;
+        std::string err;
+        check(deserializeScene(text, back, mats2, &err), "iron v7: se vuelve a leer");
+        const testio::Diffs d = testio::compareScenes(root, mats, back, mats2, testio::CompareOptions{});
+        for (const std::string& s : d.list) std::printf("  iron: %s\n", s.c_str());
+        check(d.list.empty(), "iron v7: todo vuelve exacto (luces, camaras, canales, capas, UV, HPB, claves)");
+        check(serializeScene(back, mats2) == text, "iron v7: guardar lo leido da el mismo texto");
+        check(mats2.size() == 3 && mats2[0].texBaseDir == "C:/texturas de prueba", "iron v7: carpeta de texturas");
+        // Un .iron de version 6 (sin escapes) sigue leyendo "%" tal cual.
+        SceneNode old("Raiz");
+        std::vector<Material> om;
+        check(deserializeScene("IRON3D_SCENE 6\nMATERIALS {\n}\nNODE name=\"Raiz\" primitive=none {\n  NODE "
+                               "name=\"50%22\" primitive=none {\n  }\n}\n",
+                               old, om, &err) &&
+                  old.children().size() == 1 && old.children()[0]->name() == "50%22",
+              "iron v6: los nombres con % no se desescapan");
+    }
+
+    // --- UV: Iron3D -> C4D -> Iron3D conserva cada esquina -------------------------
+    {
+        const MeshData src = testio::uvMesh();
+        const c4d::PolySoup soup = c4d::fromIronMesh(src);
+        check(soup.uvs.size() == soup.polys.size(), "uv: una UV por esquina de cada poligono");
+        check(soup.polys.size() == 2, "uv: el cuadrado sale como un cuadrilatero y el triangulo aparte");
+        const MeshData back = c4d::toIronMesh(soup, -1.0);
+        check(testio::corners(src, 1e-5f) == testio::corners(back, 1e-5f), "uv: mismas esquinas (posicion + UV)");
+        // Costura: mismas posiciones, UV distintas en la arista comun -> no se juntan.
+        MeshData seam = src;
+        seam.vertices[2].uv = glm::vec2(0.9f, 0.9f); // solo en el primer triangulo
+        seam.vertices.push_back(src.vertices[2]);
+        seam.indices[4] = (uint32_t)seam.vertices.size() - 1;
+        check(c4d::fromIronMesh(seam).polys.size() == 3, "uv: una costura no se junta en cuadrilatero");
+        // Anadir a una sopa vacia (lo que hace el importador) conserva las UV.
+        c4d::PolySoup joined;
+        joined.append(soup, glm::dmat4(1.0));
+        check(joined.uvs.size() == joined.polys.size() && joined.uvs == soup.uvs, "uv: append a una sopa vacia las conserva");
+        c4d::PolySoup mixed = c4d::makeCube({1.0, 1.0, 1.0});
+        mixed.append(soup, glm::dmat4(1.0));
+        check(mixed.uvs.size() == mixed.polys.size() && mixed.uvs.back() == soup.uvs.back(),
+              "uv: append a una sopa sin UV rellena con ceros y conserva las nuevas");
+    }
+
+    // --- Capas de Reflectancia <-> PBR ---------------------------------------------
+    {
+        Material m;
+        m.metallic = 1.0f;
+        m.roughness = 0.3f;
+        m.baseColor = {0.9f, 0.6f, 0.2f};
+        const ReflectLayer l = layerFromPbr(m);
+        glm::vec3 c(0.0f);
+        float metal = 0.0f, rough = 0.0f;
+        check(pbrFromLayers({l}, true, c, metal, rough) && metal == 1.0f && rough == 0.3f && c == m.baseColor,
+              "pbr: la capa generada vuelve a dar los mismos valores (metal)");
+        m.layers = {l};
+        check(layersMatchPbr(m), "pbr: capas sin tocar se reconocen");
+        m.roughness = 0.31f;
+        check(!layersMatchPbr(m), "pbr: si se edita la rugosidad, las capas ya no valen");
+        Material d;
+        d.roughness = 0.45f;
+        d.baseColor = {0.1f, 0.2f, 0.3f};
+        glm::vec3 dc = d.baseColor;
+        check(pbrFromLayers({layerFromPbr(d)}, true, dc, metal, rough) && metal == 0.0f && rough == 0.45f &&
+                  dc == d.baseColor,
+              "pbr: la capa generada vuelve a dar los mismos valores (dielectrico)");
+        CameraData cam;
+        check(std::fabs(cam.fovDeg() - 53.130102f) < 1e-3f, "camara: campo de vision de 36 mm con sensor de 36 mm");
     }
 
     if (g_failures == 0) std::printf("c4d_geometry: todo correcto\n");

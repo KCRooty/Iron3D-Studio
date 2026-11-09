@@ -113,8 +113,16 @@ PolySoup revolve(const std::vector<std::pair<double, double>>& rings, int segmen
 
 void PolySoup::append(const PolySoup& other, const glm::dmat4& xform) {
     const int base = (int)points.size();
+    // UV: si alguna de las dos partes las trae, la otra se rellena con ceros.
+    // (No basta con mirar uvs.empty(): al anadir a una sopa vacia sigue vacia.)
+    const bool withUv = !uvs.empty() || !other.uvs.empty();
+    if (withUv && uvs.empty()) uvs.assign(polys.size(), {});
     for (const glm::dvec3& p : other.points) points.push_back(glm::dvec3(xform * glm::dvec4(p, 1.0)));
     for (const auto& f : other.polys) polys.push_back({f[0] + base, f[1] + base, f[2] + base, f[3] + base});
+    if (withUv) {
+        if (other.uvs.size() == other.polys.size()) uvs.insert(uvs.end(), other.uvs.begin(), other.uvs.end());
+        else uvs.resize(polys.size(), {});
+    }
 }
 
 Axis axisFromC4D(int value) {
@@ -243,13 +251,23 @@ MeshData toIronMesh(const PolySoup& soup, double smoothAngleRad) {
 
     // El espejo en Z invierte el sentido de giro: se invierte el orden de
     // cada cara para que la normal siga saliendo por el mismo lado.
-    struct Face { int idx[4]; int n; glm::vec3 area; glm::vec3 unit; };
+    struct Face { int idx[4]; int corner[4]; int n; size_t poly; glm::vec3 area; glm::vec3 unit; };
     std::vector<Face> faces;
     faces.reserve(soup.polys.size());
-    for (const auto& p : soup.polys) {
+    const bool hasUv = soup.uvs.size() == soup.polys.size() && !soup.uvs.empty();
+    for (size_t pi = 0; pi < soup.polys.size(); ++pi) {
+        const auto& p = soup.polys[pi];
         Face f{};
-        if (p[2] == p[3]) { f.n = 3; f.idx[0] = p[0]; f.idx[1] = p[2]; f.idx[2] = p[1]; }
-        else { f.n = 4; f.idx[0] = p[0]; f.idx[1] = p[3]; f.idx[2] = p[2]; f.idx[3] = p[1]; }
+        f.poly = pi;
+        if (p[2] == p[3]) {
+            f.n = 3;
+            f.idx[0] = p[0]; f.idx[1] = p[2]; f.idx[2] = p[1];
+            f.corner[0] = 0; f.corner[1] = 2; f.corner[2] = 1;
+        } else {
+            f.n = 4;
+            f.idx[0] = p[0]; f.idx[1] = p[3]; f.idx[2] = p[2]; f.idx[3] = p[1];
+            f.corner[0] = 0; f.corner[1] = 3; f.corner[2] = 2; f.corner[3] = 1;
+        }
         bool ok = true;
         for (int k = 0; k < f.n; ++k) ok = ok && f.idx[k] >= 0 && (size_t)f.idx[k] < np;
         if (!ok) continue;
@@ -286,7 +304,9 @@ MeshData toIronMesh(const PolySoup& soup, double smoothAngleRad) {
                 const float len = glm::length(sum);
                 if (len > 1e-20f) n = sum / len;
             }
-            mesh.vertices.push_back({pts[pi], color, n});
+            Vertex v{pts[pi], color, n};
+            if (hasUv) v.uv = glm::vec2(soup.uvs[f.poly][(size_t)f.corner[k]]);
+            mesh.vertices.push_back(v);
         }
         mesh.indices.insert(mesh.indices.end(), {base, base + 1, base + 2});
         if (f.n == 4) mesh.indices.insert(mesh.indices.end(), {base, base + 2, base + 3});
@@ -370,13 +390,15 @@ PolySoup fromIronMesh(const MeshData& mesh, bool* smooth) {
         weld[i] = it->second;
     }
 
-    struct Tri { int v[3]; glm::dvec3 n; };
+    const bool hasUv = std::any_of(mesh.vertices.begin(), mesh.vertices.end(),
+                                   [](const Vertex& v) { return v.uv.x != 0.0f || v.uv.y != 0.0f; });
+    struct Tri { int v[3]; uint32_t r[3]; glm::dvec3 n; };
     std::vector<Tri> tris;
     tris.reserve(mesh.indices.size() / 3);
     for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
         uint32_t r[3] = {mesh.indices[i], mesh.indices[i + 1], mesh.indices[i + 2]};
         if (r[0] >= nv || r[1] >= nv || r[2] >= nv) continue;
-        Tri t{{weld[r[0]], weld[r[1]], weld[r[2]]}, {}};
+        Tri t{{weld[r[0]], weld[r[1]], weld[r[2]]}, {r[0], r[1], r[2]}, {}};
         if (t.v[0] == t.v[1] || t.v[1] == t.v[2] || t.v[0] == t.v[2]) continue; // degenerado
         const glm::vec3& p0 = mesh.vertices[r[0]].position;
         glm::vec3 fn = glm::cross(mesh.vertices[r[1]].position - p0, mesh.vertices[r[2]].position - p0);
@@ -386,6 +408,7 @@ PolySoup fromIronMesh(const MeshData& mesh, bool* smooth) {
         const glm::vec3 vn = mesh.vertices[r[0]].normal + mesh.vertices[r[1]].normal + mesh.vertices[r[2]].normal;
         if (glm::dot(fn, vn) < 0.0f) {
             std::swap(t.v[1], t.v[2]);
+            std::swap(t.r[1], t.r[2]);
             fn = -fn;
         }
         const float len = glm::length(fn);
@@ -410,6 +433,17 @@ PolySoup fromIronMesh(const MeshData& mesh, bool* smooth) {
                 if (b.v[f] == y && b.v[(f + 1) % 3] == x) q = b.v[(f + 2) % 3];
             if (q < 0 || q == p) continue;
             const int quad[4] = {x, q, y, p}; // mismo giro que los dos triangulos
+            // Las UV de x e y tienen que coincidir en los dos triangulos: si no,
+            // la arista es una costura y no se pueden juntar.
+            auto renderOf = [](const Tri& t, int w) {
+                for (int k = 0; k < 3; ++k)
+                    if (t.v[k] == w) return t.r[k];
+                return t.r[0];
+            };
+            if (hasUv && (mesh.vertices[renderOf(a, x)].uv != mesh.vertices[renderOf(b, x)].uv ||
+                          mesh.vertices[renderOf(a, y)].uv != mesh.vertices[renderOf(b, y)].uv))
+                return false;
+            const uint32_t quadR[4] = {renderOf(a, x), renderOf(b, q), renderOf(a, y), renderOf(a, p)};
             // Normal en espacio de C4D: el espejo cambia el signo del producto
             // vectorial, por eso convexo es "< 0".
             const glm::dvec3 nC4d(a.n.x, a.n.y, -a.n.z);
@@ -420,6 +454,10 @@ PolySoup fromIronMesh(const MeshData& mesh, bool* smooth) {
                 if (glm::dot(glm::cross(p1 - p0, p2 - p1), nC4d) >= 0.0) return false;
             }
             out.polys.push_back({quad[0], quad[3], quad[2], quad[1]});
+            if (hasUv) {
+                auto uv = [&](uint32_t r) { return glm::dvec2(mesh.vertices[r].uv); };
+                out.uvs.push_back({uv(quadR[0]), uv(quadR[3]), uv(quadR[2]), uv(quadR[1])});
+            }
             return true;
         }
         return false;
@@ -431,6 +469,10 @@ PolySoup fromIronMesh(const MeshData& mesh, bool* smooth) {
         }
         const Tri& t = tris[i];
         out.polys.push_back({t.v[0], t.v[2], t.v[1], t.v[1]});
+        if (hasUv) {
+            auto uv = [&](uint32_t r) { return glm::dvec2(mesh.vertices[r].uv); };
+            out.uvs.push_back({uv(t.r[0]), uv(t.r[2]), uv(t.r[1]), uv(t.r[1])});
+        }
     }
     return out;
 }

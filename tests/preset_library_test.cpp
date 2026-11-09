@@ -233,6 +233,36 @@ void realLibrary(const char* p) {
                 models, docsOk, files, folders, thumbs);
     check(models > 0 && docsOk == models, "todos los modelos se descomprimen a .c4d");
     check(thumbOk, "alguna miniatura se decodifica");
+
+    // Cada registro (difm/ditm) se lee con la gramatica y se vuelve a escribir
+    // identico, byte a byte: lo que permite renombrar y mover sin perder nada.
+    std::ifstream f(L.file(), std::ios::binary);
+    f.seekg(0, std::ios::end);
+    const uint64_t size = static_cast<uint64_t>(f.tellg());
+    uint64_t off = 16;
+    int recs = 0, same = 0;
+    while (off + 16 <= size) {
+        uint8_t h[16];
+        f.seekg(static_cast<std::streamoff>(off));
+        f.read(reinterpret_cast<char*>(h), 16);
+        uint64_t len = 0;
+        for (int k = 8; k < 16; ++k) len = (len << 8) | h[k];
+        if (std::memcmp(h, "dbfe", 4) == 0) break;
+        const bool rec = std::memcmp(h, "ditm", 4) == 0 || std::memcmp(h, "difm", 4) == 0 ||
+                         (std::memcmp(h, "ivld", 4) == 0 && len < (1u << 20));
+        if (rec && len < (1u << 20)) {
+            Bytes body(static_cast<size_t>(len));
+            f.read(reinterpret_cast<char*>(body.data()), static_cast<std::streamsize>(len));
+            if (body.size() > 8 && std::memcmp(body.data(), "QC4Dbrow", 8) == 0) {
+                ++recs;
+                lib4d::BcRecord r;
+                if (lib4d::parseRecord(body, r) && lib4d::serializeRecord(r) == body) ++same;
+            }
+        }
+        off += 16 + len;
+    }
+    std::printf("  registros: %d, identicos al reescribirlos: %d\n", recs, same);
+    check(recs > 0 && same == recs, "todos los registros reales se reescriben identicos");
 }
 
 // Escritor: crear, anadir y volver a leer con el lector propio.
@@ -310,6 +340,59 @@ void writerRoundTrip() {
               "miniatura JPEG legible y roja");
         check(withThumb && L.readData(*withThumb, out, &err) && out == doc, "modelo con miniatura identico");
     }
+
+    // Renombrar: mismo id, datos intactos, nombre visible nuevo.
+    auto at = [&](const char* p) -> const PresetItem* {
+        const int i = L.find(p);
+        return i < 0 ? nullptr : &L.items()[i];
+    };
+    const uint32_t freddyId = at("Personajes/Freddy") ? at("Personajes/Freddy")->id : 0;
+    check(movePresetLibraryItem(path, "Personajes/Freddy", "Personajes/Freddy Viejo", &err) && L.open(path, &err),
+          "renombrar modelo");
+    check(!at("Personajes/Freddy") && at("Personajes/Freddy Viejo") && at("Personajes/Freddy Viejo")->id == freddyId &&
+              at("Personajes/Freddy Viejo")->name == "Freddy Viejo",
+          "renombrado: ruta y nombre nuevos, mismo id");
+    check(at("Personajes/Freddy Viejo") && L.readData(*at("Personajes/Freddy Viejo"), out, &err) && out == doc,
+          "renombrado: datos intactos");
+    check(!movePresetLibraryItem(path, "Personajes/Bonnie", "Personajes/Freddy Viejo", &err), "no pisa otro elemento");
+    check(!movePresetLibraryItem(path, "Personajes", "Personajes/Sub", &err), "no mete una carpeta en si misma");
+
+    // Mover una carpeta con contenido a otra que no existe (se crea).
+    check(movePresetLibraryItem(path, "Personajes", "Archivo/2026/Personajes", &err) && L.open(path, &err),
+          "mover carpeta con contenido");
+    check(!at("Personajes") && at("Archivo/2026") && at("Archivo/2026/Personajes/Bonnie") &&
+              at("Archivo/2026/Personajes/Freddy Viejo"),
+          "movida: el contenido va con la carpeta y se crean las intermedias");
+    check(at("Archivo/2026/Personajes/Bonnie") && L.readData(*at("Archivo/2026/Personajes/Bonnie"), out, &err) &&
+              out == doc,
+          "movida: datos intactos");
+    check(at("Con miniatura") && at("Con miniatura")->hasThumb(), "la miniatura sigue tras otras ediciones");
+
+    // Borrar un archivo y una carpeta entera.
+    check(removeFromPresetLibrary(path, {"tex/piel.png", "Archivo/2026/Personajes"}, &err) && L.open(path, &err),
+          "borrar archivo y carpeta");
+    check(!at("tex/piel.png") && !at("Archivo/2026/Personajes") && !at("Archivo/2026/Personajes/Bonnie") &&
+              at("Archivo/2026") && at("Con miniatura"),
+          "borrado: solo lo pedido");
+    check(!removeFromPresetLibrary(path, {"No existe"}, &err), "borrar algo que no existe falla");
+
+    // Reescribir con otro nombre: url raiz nueva, sin bloques anulados, todo legible.
+    const std::filesystem::path copy = std::filesystem::temp_directory_path() / "iron3d writer copia.lib4d";
+    std::filesystem::remove(copy);
+    check(rewritePresetLibrary(path, copy, "Copia", &err), "reescribir con otro nombre");
+    PresetLibrary C;
+    check(C.open(copy, &err) && C.rootUrl() == "preset://iron3d writer copia.lib4d" && C.rootUrlMatchesFile() &&
+              C.title() == "Copia",
+          "copia: url raiz y titulo nuevos");
+    check(C.items().size() == L.items().size(), "copia: mismos elementos");
+    const int cm = C.find("Con miniatura");
+    Bytes rgba;
+    int w = 0, h = 0;
+    check(cm >= 0 && C.readData(C.items()[cm], out, &err) && out == doc && C.readThumbnail(C.items()[cm], rgba, w, h),
+          "copia: modelo y miniatura en su nueva posicion");
+    check(std::filesystem::file_size(copy) < std::filesystem::file_size(path), "copia: sin bloques anulados");
+    check(!rewritePresetLibrary(path, copy, "", &err), "reescribir no pisa un archivo");
+    std::filesystem::remove(copy);
     std::filesystem::remove(path);
 }
 
@@ -347,10 +430,33 @@ int writeMode(int argc, char** argv) {
     return 0;
 }
 
+// "--move lib de a", "--remove lib ruta...", "--rewrite origen destino [titulo]":
+// ediciones para validarlas fuera con Cinema 4D R19.
+int editMode(int argc, char** argv) {
+    auto u8 = [](const char* s) { return std::filesystem::path(reinterpret_cast<const char8_t*>(s)); };
+    const std::string mode = argv[1];
+    std::string err;
+    bool ok = false;
+    if (mode == "--move" && argc == 5) {
+        ok = movePresetLibraryItem(u8(argv[2]), argv[3], argv[4], &err);
+    } else if (mode == "--remove" && argc >= 4) {
+        ok = removeFromPresetLibrary(u8(argv[2]), std::vector<std::string>(argv + 3, argv + argc), &err);
+    } else if (mode == "--rewrite" && argc >= 4) {
+        ok = rewritePresetLibrary(u8(argv[2]), u8(argv[3]), argc > 4 ? argv[4] : "", &err);
+    } else {
+        err = "argumentos";
+    }
+    std::printf("%s %s\n", ok ? "hecho" : "FALLO:", ok ? mode.c_str() : err.c_str());
+    return ok ? 0 : 1;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
     if (argc > 1 && std::string(argv[1]) == "--write") return writeMode(argc, argv);
+    if (argc > 1 && (std::string(argv[1]) == "--move" || std::string(argv[1]) == "--remove" ||
+                     std::string(argv[1]) == "--rewrite"))
+        return editMode(argc, argv);
     syntheticLibrary();
     writerRoundTrip();
     for (int i = 1; i < argc; ++i) realLibrary(argv[i]);

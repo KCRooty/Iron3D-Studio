@@ -235,6 +235,12 @@ void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vect
             renderer.drawMesh(meshes.sphere, iconWorld, viewProj * iconWorld, material);
             break;
         }
+        case PrimitiveType::Camera: {
+            // Marcador como la Luz, con un cubo (con su rotacion: se ve hacia donde mira).
+            const glm::mat4 iconWorld = world * glm::scale(glm::mat4(1.0f), 0.15f / glm::max(node.scale, glm::vec3(1e-6f)));
+            renderer.drawMesh(meshes.cube, iconWorld, viewProj * iconWorld, material);
+            break;
+        }
         case PrimitiveType::None:
         default:
             break;
@@ -299,6 +305,7 @@ bool rayHitsMesh(const iron3d::MeshData& mesh, const glm::vec3& o, const glm::ve
 bool rayHitsLocal(const iron3d::SceneNode& node, const glm::vec3& o, const glm::vec3& d, float& tOut) {
     using iron3d::PrimitiveType;
     switch (node.primitive) {
+        case PrimitiveType::Camera:
         case PrimitiveType::Cube: {
             float t0 = -1e30f, t1 = 1e30f;
             for (int i = 0; i < 3; ++i) {
@@ -353,6 +360,8 @@ void pickNode(iron3d::SceneNode& node, const glm::mat4& parentWorld, const iron3
             // Mismo icono de tamano fijo que dibuja drawScene().
             m = parentWorld * glm::translate(glm::mat4(1.0f), node.position) *
                 glm::scale(glm::mat4(1.0f), glm::vec3(0.12f));
+        } else if (node.primitive == iron3d::PrimitiveType::Camera) {
+            m = world * glm::scale(glm::mat4(1.0f), 0.15f / glm::max(node.scale, glm::vec3(1e-6f)));
         }
         const glm::mat4 inv = glm::inverse(m);
         const glm::vec3 lo = glm::vec3(inv * glm::vec4(ray.origin, 1.0f));
