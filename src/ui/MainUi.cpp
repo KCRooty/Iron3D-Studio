@@ -49,6 +49,9 @@ bool componentMarquee(SceneNode* selected, const OrbitalCamera& camera, const Vi
                       const std::function<bool(ImVec2)>& inside, bool shift, bool ctrl);
 bool deleteComponents(SceneNode& root, SceneNode* selected, SceneHistory& history);
 const MeshData* editableMesh(const SceneNode* n);
+// Modo de componentes con un objeto editable (1/2/3) o 0.
+int componentModeFor(const SceneNode* n);
+bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, const std::string& op);
 
 namespace {
 
@@ -194,6 +197,7 @@ struct UiState {
     int pendingCompMode = 0;
     std::vector<int> pendingCompSel;
     bool compDeleteRequested = false;  // --ui-cmd=comp-del
+    std::string compOp;                // Seleccion/Malla sobre componentes (menu o --ui-cmd=meshop=...)
     int compSelectAllRequested = 0;    // --ui-cmd=sel-all-visible|sel-all-through
     // Herramientas de modelado (Malla).
     enum class ModelTool { None, Extrude, InnerExtrude, Bevel, Knife };
@@ -2261,17 +2265,19 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         }
         iconMenuItem(Icon::MnuPolySelect, "Selección de Polígono", "", false, false);
         ImGui::Separator();
-        iconMenuItem(Icon::MnuLoop, "Selección de Bucle", "U~L", false, false);
+        const int cm = componentModeFor(selected);
+        if (iconMenuItem(Icon::MnuLoop, "Selección de Bucle", "U~L", false, cm == 2)) g.compOp = "loop";
+        if (ImGui::MenuItemEx("Selección de Anillo", kIconGutterText, "U~B", false, cm == 2)) g.compOp = "ring";
         for (const auto& it : std::initializer_list<std::pair<const char*, const char*>>{
-                 {"Selección de Anillo", "U~B"}, {"Selección Contorno", "U~Q"}, {"Rellenar Selección", "U~F"}})
+                 {"Selección Contorno", "U~Q"}, {"Rellenar Selección", "U~F"}})
             ImGui::MenuItemEx(it.first, kIconGutterText, it.second, false, false);
         ImGui::Separator();
         if (iconMenuItem(Icon::MnuSelectAll, "Seleccionar Todo", "Ctrl+A")) g.pendingCmd = UiCmd::SelectAll;
         if (iconMenuItem(Icon::MnuDeselect, "Deseleccionar Todo", "Esc", false, selected != nullptr)) selected = nullptr;
-        for (const auto& it : std::initializer_list<std::pair<const char*, const char*>>{
-                 {"Invertir Selección", "U~I"}, {"Seleccionar Conectados", "U~W"},
-                 {"Aumentar Selección", "U~Y"}, {"Reducir Selección", "U~K"}})
-            ImGui::MenuItemEx(it.first, kIconGutterText, it.second, false, false);
+        for (const auto& it : std::initializer_list<std::array<const char*, 3>>{
+                 {"Invertir Selección", "U~I", "invert"}, {"Seleccionar Conectados", "U~W", "connected"},
+                 {"Aumentar Selección", "U~Y", "grow"}, {"Reducir Selección", "U~K", "shrink"}})
+            if (ImGui::MenuItemEx(it[0], kIconGutterText, it[1], false, cm != 0)) g.compOp = it[2];
         ImGui::EndMenu();
     }
 
@@ -2320,8 +2326,15 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
                 setModelTool(MT::InnerExtrude);
             if (ImGui::MenuItemEx("Bisel", kIconGutterText, "M~S", g.modelTool == MT::Bevel, editable)) setModelTool(MT::Bevel);
         }
-        disabledItems({{"Puente", "M~B"}, {"Soldar", "M~Q"}, {"Pincel", "M~C"}, {"Planchar", "M~G"},
-                       {nullptr, nullptr}, {"Invertir Normales", "U~R"}, {"Alinear Normales", "U~A"}});
+        {
+            const int cm = componentModeFor(selected);
+            if (ImGui::MenuItemEx("Cerrar Agujero Poligonal", kIconGutterText, "M~D", false, cm != 0)) g.compOp = "close";
+            if (ImGui::MenuItemEx("Soldar", kIconGutterText, "M~Q", false, cm != 0)) g.compOp = "weld";
+            if (ImGui::MenuItemEx("Subdividir", kIconGutterText, "U~S", false, cm != 0)) g.compOp = "subdiv";
+            disabledItems({{"Puente", "M~B"}, {"Pincel", "M~C"}, {"Planchar", "M~G"}, {nullptr, nullptr}});
+            if (ImGui::MenuItemEx("Invertir Normales", kIconGutterText, "U~R", false, cm != 0)) g.compOp = "flip";
+            disabledItems({{"Alinear Normales", "U~A"}});
+        }
         ImGui::EndMenu();
     }
     stubTop("Fijación", {{"Activar Fijación", "Mayús+S"}, {nullptr, nullptr}, {"Fijación 2D", ""},
@@ -5747,6 +5760,75 @@ bool componentMarquee(SceneNode* selected, const OrbitalCamera& camera, const Vi
 
 // Borrar (Supr) en modo de componentes: quita los poligonos seleccionados o
 // los que usan los puntos/aristas seleccionados (y los vertices sueltos).
+int componentModeFor(const SceneNode* n) { return syncComponents(n) ? g.comp.mode : 0; }
+
+// Operaciones de los menus Seleccion y Malla sobre los componentes. Las de
+// seleccion no crean paso de deshacer (como el resto de la seleccion de
+// componentes); las de malla si.
+bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, const std::string& op) {
+    if (!syncComponents(selected)) {
+        flashStatus("Selecciona un objeto editable y entra en modo Puntos, Aristas o Polígonos.");
+        return false;
+    }
+    auto& c = g.comp;
+    const MeshTopology& t = c.topo;
+    const int mode = c.mode;
+    auto done = [&](const char* what) {
+        flashStatus(std::string(what) + ": " + std::to_string(c.sel.size()) + " seleccionados.");
+        return true;
+    };
+    if (op == "loop" || op == "ring") {
+        if (mode != 2) { flashStatus("Bucle y Anillo funcionan en modo Aristas."); return false; }
+        std::set<int> out;
+        for (int e : c.sel) {
+            const std::set<int> part = op == "loop" ? edgeLoop(t, e) : edgeRing(t, e);
+            out.insert(part.begin(), part.end());
+        }
+        c.sel = out;
+        return done(op == "loop" ? "Selección de Bucle" : "Selección de Anillo");
+    }
+    if (op == "grow") { c.sel = growSelection(t, mode, c.sel); return done("Aumentar Selección"); }
+    if (op == "shrink") { c.sel = shrinkSelection(t, mode, c.sel); return done("Reducir Selección"); }
+    if (op == "connected") { c.sel = connectedSelection(t, mode, c.sel); return done("Seleccionar Conectados"); }
+    if (op == "invert") {
+        std::set<int> out;
+        for (int i = 0; i < (int)componentCount(); ++i)
+            if (!c.sel.count(i)) out.insert(i);
+        c.sel = out;
+        return done("Invertir Selección");
+    }
+
+    MeshEditResult r;
+    const char* name = "";
+    if (op == "weld") {
+        name = "Soldar";
+        r = weldPoints(*c.mesh, t, selectedPoints());
+        if (!r.changed) { flashStatus("Soldar: selecciona al menos 2 puntos."); return false; }
+    } else if (op == "close") {
+        name = "Cerrar Agujero Poligonal";
+        r = closeHoles(*c.mesh, t, selectedPoints());
+        if (!r.changed) { flashStatus("Cerrar Agujero: no hay bordes abiertos que toquen la selección."); return false; }
+    } else if (op == "subdiv" || op == "flip") {
+        name = op == "subdiv" ? "Subdividir" : "Invertir Normales";
+        std::set<int> polys;
+        if (mode == 3) polys = c.sel;
+        if (polys.empty())
+            for (int p = 0; p < (int)t.polys.size(); ++p) polys.insert(p);
+        r = op == "subdiv" ? subdividePolygons(*c.mesh, t, polys) : flipPolygons(*c.mesh, t, polys);
+    } else {
+        flashStatus("Operación desconocida: " + op);
+        return false;
+    }
+    if (!r.changed) return false;
+    history.commitBefore(root);
+    const std::vector<int> selTris = r.selectTris;
+    selected->mesh = std::make_shared<const MeshData>(std::move(r.mesh));
+    if (!selTris.empty() && g_vp) g_vp->compMode = 3;
+    if (syncComponents(selected)) c.sel = selTris.empty() ? std::set<int>{} : polysFromTris(c.topo, selTris);
+    flashStatus(std::string(name) + ": " + std::to_string(r.changed) + (r.changed == 1 ? " elemento." : " elementos."));
+    return true;
+}
+
 bool deleteComponents(SceneNode& root, SceneNode* selected, SceneHistory& history) {
     if (!syncComponents(selected) || g.comp.sel.empty()) return false;
     auto& c = g.comp;
@@ -6143,6 +6225,11 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
         g.compDeleteRequested = false;
         deleteComponents(root, selected, history);
     }
+    if (!g.compOp.empty() && !g.pendingCompMode && !g.compSelectAllRequested) {
+        const std::string op = g.compOp;
+        g.compOp.clear();
+        runCompOp(root, selected, history, op);
+    }
     {   // Ultima herramienta (Espacio): se apunta cualquier cambio, venga de donde venga.
         const int cur = viewport.selectTool ? 3 + viewport.selectShape : (int)gizmoMode;
         if (cur != g.curTool) {
@@ -6309,6 +6396,7 @@ bool queueUiCommand(const std::string& cmd) {
         } catch (...) { return false; }
     }
     else if (cmd == "comp-del") g.compDeleteRequested = true;
+    else if (cmd.rfind("meshop=", 0) == 0) g.compOp = cmd.substr(7);
     else if (cmd.rfind("tool=", 0) == 0 || cmd.rfind("knife=", 0) == 0) g.pendingTool = cmd;
     else if (cmd == "sel-all-visible") g.compSelectAllRequested = 1;   // marco que cubre todo el visor
     else if (cmd == "sel-all-through") g.compSelectAllRequested = 2;
