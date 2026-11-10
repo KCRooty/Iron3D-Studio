@@ -13,6 +13,7 @@
 #include "LitPipeline.h"
 #include "ShadowMap.h"
 #include "SsaoPass.h"
+#include "MaterialTextures.h"
 #include "core/PrimitiveMesh.h"
 #include "core/GizmoMesh.h"
 
@@ -48,7 +49,7 @@ public:
     void setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
                       const glm::mat4& lightViewProj) override;
     void drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
-                  const Material& material) override;
+                  const Material& material, const TexMapping& tex) override;
     void drawGizmo(const std::vector<Vertex>& lineVerts, const std::vector<Vertex>& triVerts,
                     const glm::mat4& viewProj) override;
     void endFrame() override;
@@ -80,6 +81,7 @@ private:
     LitPipeline litPipeline_; // malla de escena con iluminacion (Fase 5)
     ShadowMap shadowMap_;     // mapa de sombras de la unica luz (Fase render 2)
     SsaoPass ssaoPass_;       // oclusion ambiental en espacio de pantalla (Fase 3)
+    MaterialTextures materialTextures_; // texturas de Color de los materiales (2026-11-10)
     BasicPipeline gizmoLinePipeline_;
     BasicPipeline gizmoTriPipeline_;
     GizmoMesh gizmoMesh_;

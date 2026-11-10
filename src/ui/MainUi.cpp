@@ -494,8 +494,14 @@ SceneNode* findById(SceneNode& node, int id) {
 }
 
 // Esfera envolvente aproximada (mundo) de un nodo y sus hijos, para Encuadrar.
-void accumulateBounds(const SceneNode& node, glm::vec3& mn, glm::vec3& mx, bool& any) {
-    if (node.primitive != PrimitiveType::None) {
+// `onlyVisible`: solo lo que se ve en el editor (2026-11-10). Los objetivos
+// ocultos de un Pose Morph de un .lib4d (a cientos de unidades, en la pose
+// del bind) dejaban el personaje como un punto en el centro del visor.
+void accumulateBounds(const SceneNode& node, glm::vec3& mn, glm::vec3& mx, bool& any, bool onlyVisible = false,
+                      bool parentVisible = true) {
+    const bool vis = resolveVisibility(node.editorVis, parentVisible);
+    if (onlyVisible && !vis && node.children().empty()) return;
+    if (node.primitive != PrimitiveType::None && (!onlyVisible || vis)) {
         const glm::mat4 w = node.worldMatrix();
         glm::vec3 lo(-0.5f), hi(0.5f);
         if (node.primitive == PrimitiveType::Mesh && node.mesh) {
@@ -510,15 +516,23 @@ void accumulateBounds(const SceneNode& node, glm::vec3& mn, glm::vec3& mx, bool&
             any = true;
         }
     }
-    for (const auto& c : node.children()) accumulateBounds(*c, mn, mx, any);
+    for (const auto& c : node.children()) accumulateBounds(*c, mn, mx, any, onlyVisible, vis);
 }
 
+bool nodeEditorVisible(const SceneNode* n);
+
+// Encuadra lo visible; si no hay nada visible (p. ej. encuadrar un objeto
+// oculto seleccionado), todo.
 void frameNodes(OrbitalCamera& camera, const SceneNode& node, bool includeSelf) {
     glm::vec3 mn(0.0f), mx(0.0f);
     bool any = false;
-    if (includeSelf) accumulateBounds(node, mn, mx, any);
-    else
-        for (const auto& c : node.children()) accumulateBounds(*c, mn, mx, any);
+    const bool parentVis = node.parent() ? nodeEditorVisible(node.parent()) : true;
+    for (bool onlyVisible : {true, false}) {
+        if (includeSelf) accumulateBounds(node, mn, mx, any, onlyVisible, parentVis);
+        else
+            for (const auto& c : node.children()) accumulateBounds(*c, mn, mx, any, onlyVisible, nodeEditorVisible(&node));
+        if (any) break;
+    }
     if (!any) {
         camera.resetView();
         return;
@@ -6461,6 +6475,7 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "world-coords") { if (g_vp) g_vp->worldCoords = true; else g.pendingWorldCoords = true; }
     else if (cmd == "axis-mode") { if (g_vp) g_vp->axisMode = true; else g.pendingAxisMode = true; }
     else if (cmd == "vp-menu") g.openVpMenu = 30;
+    else if (cmd == "close-report") g.showImport = false; // verificacion: el informe de importacion tapa el visor
     else if (cmd.rfind("commander", 0) == 0) {
         g.showCommander = true;
         if (cmd.size() > 10 && cmd[9] == ':') g.commanderPreset = cmd.substr(10);

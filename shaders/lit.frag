@@ -3,15 +3,25 @@
 layout(location = 0) in vec3 fragNormalWS;
 layout(location = 1) in vec3 fragPosWS;
 layout(location = 2) in vec4 fragPosLightSpace;
+layout(location = 3) in vec2 fragUV;
 
 layout(push_constant) uniform PushConstants {
     mat4 model;
     mat4 mvp;
-    vec4 lightPosAndAmbient;    // xyz = posicion de luz, w = intensidad ambiente (hack, sin GI real)
+    vec4 lightPosAndFlags;      // xyz = posicion de luz, w = indicadores de textura (ver kTex* abajo)
     vec4 eyePosAndRoughness;    // xyz = posicion de camara, w = roughness [0,1]
     vec4 baseColorAndMetallic;  // xyz = color base (albedo), w = metallic [0,1]
     mat4 lightViewProj;         // Fase render 2: igual matriz que uso ShadowMap para dibujar el mapa
+    vec4 uvTransform;           // 2026-11-10: uv de la imagen = uv * xy + zw (Etiqueta de Textura)
 } pc;
+
+// Indicadores de lightPosAndFlags.w (entero guardado como float).
+const int kTexColor = 1; // hay textura de Color: sustituye al color base, como en C4D
+const int kTexTile = 2;  // Mosaico activo; sin el, fuera de 0..1 se ve el color base
+
+// Intensidad del termino ambiente, fija para toda la escena (antes iba en
+// lightPosAndAmbient.w; era siempre 0.15, ver LitPipeline.cpp).
+const float kAmbientStrength = 0.15;
 
 layout(set = 0, binding = 0) uniform sampler2D shadowMap;
 // Fase 3 (SSAO): textura de oclusion ambiental ya difuminada, a la misma
@@ -19,6 +29,9 @@ layout(set = 0, binding = 0) uniform sampler2D shadowMap;
 // UV propio (no hay vertex shader que la traiga) via textureSize, igual
 // patron que el texel de shadowFactor() de abajo.
 layout(set = 1, binding = 0) uniform sampler2D aoMap;
+// 2026-11-10: textura de Color del material (sRGB: el muestreo ya devuelve
+// lineal). Sin textura se enlaza una blanca de 1x1 y kTexColor va apagado.
+layout(set = 2, binding = 0) uniform sampler2D colorTex;
 
 layout(location = 0) out vec4 outColor;
 
@@ -116,11 +129,20 @@ float shadowFactor(vec4 posLightSpace, float NdotL) {
 // que lo sustituya hasta que haya sombras/oclusion de verdad.
 void main() {
     vec3 N = normalize(fragNormalWS);
-    vec3 lightPos = pc.lightPosAndAmbient.xyz;
-    float ambientStrength = pc.lightPosAndAmbient.w;
+    vec3 lightPos = pc.lightPosAndFlags.xyz;
+    int flags = int(pc.lightPosAndFlags.w + 0.5);
+    float ambientStrength = kAmbientStrength;
     vec3 eyePos = pc.eyePosAndRoughness.xyz;
     float roughness = clamp(pc.eyePosAndRoughness.w, 0.045, 1.0); // evita a=0 (GGX degenerado)
     vec3 baseColor = pc.baseColorAndMetallic.xyz;
+    if ((flags & kTexColor) != 0) {
+        vec2 uv = fragUV * pc.uvTransform.xy + pc.uvTransform.zw;
+        // Se muestrea siempre (fuera del if por pixel): las derivadas que
+        // eligen el mip tienen que calcularse con todo el cuadro 2x2 activo.
+        vec3 texel = texture(colorTex, uv).rgb;
+        bool inside = all(greaterThanEqual(uv, vec2(0.0))) && all(lessThanEqual(uv, vec2(1.0)));
+        if ((flags & kTexTile) != 0 || inside) baseColor = texel;
+    }
     float metallic = clamp(pc.baseColorAndMetallic.w, 0.0, 1.0);
 
     vec3 L = normalize(lightPos - fragPosWS);

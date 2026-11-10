@@ -23,6 +23,10 @@ public:
     // hasta la Fase 3b); IRenderer::needsProjectionYFlip() dice que pasar
     // segun el backend activo.
     glm::mat4 projectionMatrix(float aspectRatio, bool flipY = true) const;
+    // Planos de recorte de la perspectiva: proporcionales a la distancia al
+    // objetivo (2026-11-10), para que quepan modelos de cualquier tamano.
+    float nearPlane() const;
+    float farPlane() const;
     glm::vec3 eyePosition() const;
 
     // Mismas operaciones que los atajos Alt+clic, en pixeles de raton --
@@ -65,8 +69,11 @@ private:
     static constexpr float kOrbitSpeed = 0.01f;
     static constexpr float kPanSpeed = 0.0025f;
     static constexpr float kZoomSpeed = 0.5f;
-    static constexpr float kMinDistance = 0.5f;
-    static constexpr float kMaxDistance = 50.0f;
+    // 2026-11-10: antes 0.5..50, que no dejaba encuadrar modelos grandes de
+    // .lib4d/.c4d (la camara se quedaba dentro del modelo) ni acercarse a
+    // piezas pequenas. El recorte ya escala con la distancia (nearPlane/farPlane).
+    static constexpr float kMinDistance = 0.02f;
+    static constexpr float kMaxDistance = 100000.0f;
     static constexpr float kMaxPitch = glm::radians(89.0f);
 };
 

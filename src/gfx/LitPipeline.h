@@ -24,20 +24,30 @@ namespace iron3d {
 
 struct Material;
 
+// 2026-11-10 (texturas en el visor): 256 bytes justos. La intensidad
+// ambiente, que siempre fue 0.15, pasa a ser constante de lit.frag y su hueco
+// (lightPos.w) lleva los indicadores de textura; uvTransform es el vec4 nuevo.
 struct LitPushConstants {
     glm::mat4 model;
     glm::mat4 mvp;
-    glm::vec4 lightPosAndAmbient;    // xyz = posicion de luz en mundo, w = intensidad ambiente (hack temporal, sin GI real)
+    glm::vec4 lightPosAndFlags;      // xyz = posicion de luz en mundo, w = kLitTex* (entero como float)
     glm::vec4 eyePosAndRoughness;    // xyz = posicion de camara en mundo, w = roughness [0,1]
     glm::vec4 baseColorAndMetallic;  // xyz = color base (albedo) del material, w = metallic [0,1]
     glm::mat4 lightViewProj;         // Fase render 2: vista*proyeccion de la luz (lit.vert la usa para fragPosLightSpace)
+    glm::vec4 uvTransform;           // uv de la imagen = uv * xy + zw
 };
+static_assert(sizeof(LitPushConstants) == 256, "lit.vert/lit.frag esperan 256 bytes");
+
+// Indicadores de LitPushConstants::lightPosAndFlags.w (mismos valores que lit.frag).
+constexpr int kLitTexColor = 1;
+constexpr int kLitTexTile = 2;
 
 class LitPipeline {
 public:
     void create(VkDevice device, VkPhysicalDevice physicalDevice, VkRenderPass renderPass,
                 const std::filesystem::path& shaderDir, VkDescriptorSetLayout shadowSetLayout,
-                VkDescriptorSetLayout aoSetLayout, VkCullModeFlags cullMode = VK_CULL_MODE_NONE);
+                VkDescriptorSetLayout aoSetLayout, VkDescriptorSetLayout colorTexSetLayout,
+                VkCullModeFlags cullMode = VK_CULL_MODE_NONE);
     void destroy(VkDevice device);
 
     void bind(VkCommandBuffer cmd) const;
@@ -46,9 +56,12 @@ public:
     // set=1: el combined-image-sampler de la oclusion ambiental, ya
     // difuminada (Fase 3, ver SsaoPass).
     void bindAoMap(VkCommandBuffer cmd, VkDescriptorSet aoSet) const;
+    // set=2: la textura de Color del material (2026-11-10, ver MaterialTextures).
+    void bindColorTexture(VkCommandBuffer cmd, VkDescriptorSet texSet) const;
+    // `texFlags` = kLitTex*; `uvTransform` = escala (xy) y desplazamiento (zw).
     void pushConstants(VkCommandBuffer cmd, const glm::mat4& model, const glm::mat4& mvp,
                         const glm::vec3& lightPosWS, const glm::vec3& eyePosWS, const Material& material,
-                        const glm::mat4& lightViewProj) const;
+                        const glm::mat4& lightViewProj, int texFlags, const glm::vec4& uvTransform) const;
 
 private:
     VkPipeline pipeline_ = VK_NULL_HANDLE;

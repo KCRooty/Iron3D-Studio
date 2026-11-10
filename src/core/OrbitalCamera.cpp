@@ -34,7 +34,10 @@ void OrbitalCamera::handleInput(GLFWwindow* window, double mouseX, double mouseY
     }
 
     if (scrollY != 0.0) {
-        distance_ = std::clamp(distance_ - (float)scrollY * kZoomSpeed, kMinDistance, kMaxDistance);
+        // Proporcional a la distancia (2026-11-10): un paso de rueda acerca un
+        // 12 %, igual de util con un modelo de 2 unidades que con uno de 400.
+        // A la distancia por defecto (4) da casi el paso fijo de antes (0.5).
+        distance_ = std::clamp(distance_ * std::pow(0.88f, (float)scrollY), kMinDistance, kMaxDistance);
     }
 }
 
@@ -73,7 +76,8 @@ void OrbitalCamera::pan(float dxPixels, float dyPixels) {
 }
 
 void OrbitalCamera::dolly(float dyPixels) {
-    distance_ = std::clamp(distance_ + dyPixels * kZoomSpeed * 0.05f, kMinDistance, kMaxDistance);
+    // Proporcional tambien (a distancia 4, el mismo 0.025 por pixel de antes).
+    distance_ = std::clamp(distance_ * std::exp(dyPixels * 0.00625f), kMinDistance, kMaxDistance);
 }
 
 void OrbitalCamera::resetView() {
@@ -115,6 +119,9 @@ glm::mat4 OrbitalCamera::viewMatrix() const {
     return glm::lookAt(eyePosition(), target_, up);
 }
 
+float OrbitalCamera::nearPlane() const { return std::clamp(distance_ * 0.005f, 0.0005f, 50.0f); }
+float OrbitalCamera::farPlane() const { return std::max(100.0f, distance_ * 200.0f); }
+
 glm::mat4 OrbitalCamera::projectionMatrix(float aspectRatio, bool flipY) const {
     glm::mat4 proj;
     if (isOrtho()) {
@@ -122,9 +129,15 @@ glm::mat4 OrbitalCamera::projectionMatrix(float aspectRatio, bool flipY) const {
         // volumen se extiende detras del ojo para no recortar nada.
         const float halfH = distance_ * std::tan(glm::radians(25.0f));
         const float halfW = halfH * aspectRatio;
-        proj = glm::ortho(-halfW, halfW, -halfH, halfH, -100.0f, 100.0f);
+        const float depth = std::max(100.0f, distance_ * 200.0f);
+        proj = glm::ortho(-halfW, halfW, -halfH, halfH, -depth, depth);
     } else {
-        proj = glm::perspective(glm::radians(50.0f), aspectRatio, 0.05f, 100.0f);
+        // Recorte relativo a la distancia (2026-11-10). Antes era fijo
+        // (0.05..100) y un modelo grande de una .lib4d (William Afton mide 53
+        // unidades y llega a 430) quedaba entero, cuadricula incluida, mas alla
+        // del plano lejano: el visor salia vacio. C4D tambien adapta el
+        // recorte a la escena (Proyecto > Recortar Vista).
+        proj = glm::perspective(glm::radians(50.0f), aspectRatio, nearPlane(), farPlane());
     }
     // Vulkan: +Y apunta hacia abajo en el espacio de recorte (al reves que GL).
     if (flipY) proj[1][1] *= -1.0f;

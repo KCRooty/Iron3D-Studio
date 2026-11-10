@@ -4,6 +4,11 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_JPEG
 #define STBI_ONLY_PNG
+// Texturas de materiales (2026-11-10): en las .lib4d reales salen tambien
+// BMP y TGA, y PSD es habitual en escenas de C4D.
+#define STBI_ONLY_BMP
+#define STBI_ONLY_TGA
+#define STBI_ONLY_PSD
 #define STBI_NO_STDIO
 #include <stb_image.h>
 

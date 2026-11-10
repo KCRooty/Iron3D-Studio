@@ -104,6 +104,7 @@ add_executable(Iron3DStudio
     src/gfx/BasicPipeline.cpp
     src/gfx/IRenderer.cpp
     src/gfx/VulkanRenderer.cpp
+    src/gfx/MaterialTextures.cpp
     src/gfx/ShadowPipeline.cpp
     src/gfx/ShadowMap.cpp
     src/gfx/SsaoPass.cpp
@@ -123,6 +124,7 @@ add_executable(Iron3DStudio
     src/core/Preferences.cpp
     src/core/Material.cpp
     src/core/ThumbnailRenderer.cpp
+    src/core/TextureImage.cpp
     src/gfx/LitPipeline.cpp
     src/ui/MainUi.cpp
     src/ui/UiTheme.cpp

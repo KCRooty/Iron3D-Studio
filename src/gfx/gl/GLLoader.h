@@ -62,6 +62,10 @@ constexpr GLenum GL_TEXTURE_WRAP_S = 0x2802;
 constexpr GLenum GL_TEXTURE_WRAP_T = 0x2803;
 constexpr GLenum GL_LINEAR = 0x2601;
 constexpr GLenum GL_CLAMP_TO_EDGE = 0x812F;
+// Texturas de materiales (2026-11-10).
+constexpr GLenum GL_REPEAT = 0x2901;
+constexpr GLenum GL_LINEAR_MIPMAP_LINEAR = 0x2703;
+constexpr GLenum GL_TEXTURE0 = 0x84C0;
 
 // --- Punteros a funcion (nombres y firmas identicos a los headers oficiales
 // de Khronos) ---------------------------------------------------------------
@@ -113,6 +117,10 @@ using PFNGLGETUNIFORMLOCATIONPROC = GLint (*)(GLuint, const GLchar*);
 using PFNGLUNIFORMMATRIX4FVPROC = void (*)(GLint, GLsizei, GLboolean, const GLfloat*);
 using PFNGLUNIFORM3FVPROC = void (*)(GLint, GLsizei, const GLfloat*);
 using PFNGLUNIFORM1FPROC = void (*)(GLint, GLfloat);
+using PFNGLUNIFORM1IPROC = void (*)(GLint, GLint);
+using PFNGLUNIFORM4FVPROC = void (*)(GLint, GLsizei, const GLfloat*);
+using PFNGLACTIVETEXTUREPROC = void (*)(GLenum);
+using PFNGLGENERATEMIPMAPPROC = void (*)(GLenum);
 
 // --- Variables globales (una por funcion, mismo nombre que en OpenGL de
 // verdad -- el codigo que las llama se lee como OpenGL normal) -------------
@@ -164,6 +172,10 @@ extern PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
 extern PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
 extern PFNGLUNIFORM3FVPROC glUniform3fv;
 extern PFNGLUNIFORM1FPROC glUniform1f;
+extern PFNGLUNIFORM1IPROC glUniform1i;
+extern PFNGLUNIFORM4FVPROC glUniform4fv;
+extern PFNGLACTIVETEXTUREPROC glActiveTexture;
+extern PFNGLGENERATEMIPMAPPROC glGenerateMipmap;
 
 // Rellena todos los punteros de arriba via glfwGetProcAddress -- llamar
 // DESPUES de glfwMakeContextCurrent(window). Devuelve false (con un mensaje

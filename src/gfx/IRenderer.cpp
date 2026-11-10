@@ -64,9 +64,23 @@ bool vulkanUsable() {
         std::vector<VkQueueFamilyProperties> qs(qn);
         vkGetPhysicalDeviceQueueFamilyProperties(gpu, &qn, qs.data());
         for (const VkQueueFamilyProperties& q : qs) ok = ok || (q.queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0;
+        // LitPipeline necesita 256 bytes de push constants (LitPushConstants):
+        // una GPU que de menos (algunos drivers dan 128) va por OpenGL en vez
+        // de que LitPipeline::create aborte.
+        VkPhysicalDeviceProperties props{};
+        vkGetPhysicalDeviceProperties(gpu, &props);
+        ok = ok && props.limits.maxPushConstantsSize >= sizeof(LitPushConstants);
     }
     vkDestroyInstance(inst, nullptr);
     return ok;
+}
+
+glm::vec4 texMappingUvTransform(const TexMapping& tex) {
+    // Igual que el render por CPU (ThumbnailRenderer): uv = (uv - offset) / length,
+    // con la longitud lejos de cero pero conservando el signo (negativa = espejo).
+    const glm::vec2 len = glm::max(glm::abs(tex.length), glm::vec2(1e-6f)) * glm::sign(tex.length + glm::vec2(1e-12f));
+    const glm::vec2 scale = 1.0f / len;
+    return glm::vec4(scale, -tex.offset * scale);
 }
 
 std::unique_ptr<IRenderer> createRenderer(RendererBackend backend) {
