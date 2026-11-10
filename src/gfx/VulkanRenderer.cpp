@@ -56,8 +56,11 @@ void VulkanRenderer::init(GLFWwindow* window, int width, int height) {
     // (set=0 del sampler de sombras, set=1 del mapa de AO).
     shadowMap_.create(ctx_.device, ctx_.physicalDevice, allocator_, shaderDir);
     ssaoPass_.create(ctx_.device, ctx_.physicalDevice, allocator_, shaderDir, width, height);
+    materialTextures_.create(ctx_.device, ctx_.physicalDevice, allocator_, ctx_.graphicsQueue,
+                             ctx_.graphicsQueueFamily);
     litPipeline_.create(ctx_.device, ctx_.physicalDevice, swapchain_.renderPass(), shaderDir,
-                         shadowMap_.descriptorSetLayout(), ssaoPass_.descriptorSetLayout(), VK_CULL_MODE_NONE);
+                         shadowMap_.descriptorSetLayout(), ssaoPass_.descriptorSetLayout(),
+                         materialTextures_.descriptorSetLayout(), VK_CULL_MODE_NONE);
     gizmoLinePipeline_.create(ctx_.device, swapchain_.renderPass(), shaderDir,
                                VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
     gizmoTriPipeline_.create(ctx_.device, swapchain_.renderPass(), shaderDir,
@@ -95,6 +98,7 @@ void VulkanRenderer::shutdown() {
     litPipeline_.destroy(ctx_.device);
     shadowMap_.destroy(ctx_.device, allocator_);
     ssaoPass_.destroy(ctx_.device, allocator_);
+    materialTextures_.destroy(ctx_.device, allocator_);
     for (auto& mesh : meshes_) mesh.destroy(ctx_.device, allocator_);
     meshes_.clear();
     pendingDestroy_.clear();
@@ -246,15 +250,29 @@ void VulkanRenderer::setLighting(const glm::vec3& lightPosWS, const glm::vec3& e
 }
 
 void VulkanRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
-                               const Material& material) {
+                               const Material& material, const TexMapping& tex) {
     if (mesh >= meshes_.size()) return;
+    // Textura de Color (2026-11-10): si el material la tiene y la etiqueta la
+    // aplica en UVW; si no se puede cargar, color plano como hasta ahora.
+    VkDescriptorSet texSet = materialTextures_.whiteSet();
+    int texFlags = 0;
+    glm::vec4 uvTransform(1.0f, 1.0f, 0.0f, 0.0f);
+    if (tex.enabled) {
+        if (VkDescriptorSet s = materialTextures_.get(material.texture(TexSlot::Color), material.texBaseDir)) {
+            texSet = s;
+            texFlags = kLitTexColor | (tex.tile ? kLitTexTile : 0);
+            uvTransform = texMappingUvTransform(tex);
+        }
+    }
     // Rebind siempre (no asume que nada mas dejo la pipeline comun activa):
     // drawGizmo cambia de pipeline, asi que el orden de llamadas no puede
     // importar.
     litPipeline_.bind(currentCmd_);
     litPipeline_.bindShadowMap(currentCmd_, shadowMap_.descriptorSet());
     litPipeline_.bindAoMap(currentCmd_, ssaoPass_.descriptorSet());
-    litPipeline_.pushConstants(currentCmd_, model, mvp, lightPosWS_, eyePosWS_, material, lightViewProj_);
+    litPipeline_.bindColorTexture(currentCmd_, texSet);
+    litPipeline_.pushConstants(currentCmd_, model, mvp, lightPosWS_, eyePosWS_, material, lightViewProj_, texFlags,
+                               uvTransform);
     meshes_[mesh].draw(currentCmd_);
 }
 

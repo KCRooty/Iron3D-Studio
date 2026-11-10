@@ -6,6 +6,49 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-10 (14) — Texturas en el visor y personajes con Piel
+
+**Nuevo**
+- **Texturas en el visor** (Vulkan y OpenGL): la textura del canal Color del material se
+  ve en el modelo, con el mismo mapeo que las miniaturas. Desplazamiento y longitud de la
+  etiqueta de textura, mosaico activado o no (sin mosaico, fuera de 0..1 queda el color
+  base). Las texturas se suben con mipmaps (sRGB en Vulkan) y se guardan en caché. Si una
+  textura falta o tiene un formato que no se lee, la consola lo dice una sola vez y se usa
+  el color base.
+- Se leen también BMP, TGA y PSD (además de PNG y JPG).
+- **Piel (Skin) de C4D al importar**: las mallas con etiqueta de pesos y un deformador Piel
+  activo se importan con la Piel aplicada, en la pose de las articulaciones guardada en el
+  archivo. Antes, en un personaje de `.lib4d`, la cabeza salía 100 veces más grande y a
+  cientos de unidades del cuerpo. El informe de importación lo avisa.
+- Opciones de depuración: `--dump-scene` (lista cada objeto con su caja en el mundo, su
+  material y si su textura está en disco) y `--ui-cmd=close-report` (cierra el informe de
+  importación).
+
+**Arreglado**
+- Los modelos grandes desaparecían del visor: el plano lejano estaba fijo en 100 y la
+  distancia de cámara limitada a 0,5–50. Ahora el recorte va con la distancia (0,02 a
+  100 000) y la rueda y el dolly hacen zoom proporcional.
+- Encuadrar (H, Alt+H y al cargar) contaba los objetos ocultos. Los objetivos de un Pose
+  Morph dejaban al personaje como un punto. Ahora solo cuenta lo visible; si no hay nada
+  visible, lo cuenta todo.
+- Si la GPU no admite 256 bytes de push constants, Iron3D usa OpenGL en vez de cerrarse.
+
+**Probado**
+- Tests (`c4d_geometry`, `c4d_roundtrip`, `preset_library`) en verde.
+- `William Afton.lib4d` en Vulkan y en OpenGL, por captura: el personaje entero, encuadrado,
+  cabeza y pelo en su sitio, texturas de piel (cara y manos) y de cuero (zapatos).
+  Los pesos de las 23 mallas con Piel suman 1 en todos los puntos (comprobado con una
+  traza temporal).
+
+**Sin probar / no hecho**
+- Piel animada (solo la pose guardada), morphs del Pose Morph, Piel de tipo esférico o
+  con mezcla, y deformadores Piel que no son hijos directos de la malla.
+- Mapas que no son de Color (normal, relieve, especular...), EXR/HDR, proyecciones que no
+  son UVW, texturas dentro de shaders de capa o procedurales en el visor.
+- Carga asíncrona: las texturas se suben al dibujarse por primera vez (pausa breve). No se
+  liberan hasta cerrar Iron3D.
+- Otros `.lib4d` de `MODELOS 3D` aparte de Afton.
+
 ### 2026-11-09 (13) — El instalador funciona en otros PCs
 
 **Arreglado**

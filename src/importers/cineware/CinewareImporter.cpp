@@ -294,10 +294,74 @@ double phongAngle(BaseObject* op) {
 
 // --- Geometria ------------------------------------------------------------------
 
-void appendPolygons(PolygonObject* po, const glm::dmat4& xform, c4d::PolySoup& out) {
-    const cineware::Vector* p = po->GetPointR();
+// Deformador Piel de C4D horneado al importar (2026-11-10): los puntos de una
+// malla con Piel estan guardados en la pose del bind; sin evaluar la Piel, una
+// cabeza de personaje de .lib4d salia 100 veces mas grande y lejos del cuerpo.
+// Piel lineal, la de C4D por defecto: cada punto pasa a mundo con la matriz de
+// la geometria en el bind (GetGeomMg), cada articulacion j lo mueve con
+// Mg_actual(j) * inversa(Mg_bind(j)) segun su peso, lo que no tiene peso se
+// queda donde estaba, y el resultado vuelve al espacio local del objeto. La
+// pose es la que C4D guardo en el archivo (sin animacion de las
+// articulaciones todavia). Metodo publico (linear blend skinning), datos via
+// la API documentada de Cineware (WeightTagData), sin codigo de Maxon.
+bool skinnedPoints(PolygonObject* op, std::vector<cineware::Vector>& out) {
+    BaseTag* tag = op->GetTag(Tweights);
+    if (!tag) return false;
+    bool skinOn = false;
+    for (BaseObject* ch = op->GetDown(); ch; ch = ch->GetNext())
+        if (ch->GetType() == Oskin && ch->GetDeformMode()) skinOn = true;
+    if (!skinOn) return false;
+    auto* wt = static_cast<WeightTagData*>(tag->GetNodeData());
+    BaseDocument* doc = op->GetDocument();
+    const cineware::Vector* p = op->GetPointR();
+    const Int32 np = op->GetPointCount();
+    if (!wt || !doc || !p || np <= 0) return false;
+
+    const cineware::Matrix geomMg = wt->GetGeomMg();
+    std::vector<cineware::Vector> bind((size_t)np), acc((size_t)np, cineware::Vector(0.0));
+    std::vector<double> wsum((size_t)np, 0.0);
+    for (Int32 i = 0; i < np; ++i) bind[(size_t)i] = geomMg * p[i];
+
+    bool any = false;
+    const Int32 nj = wt->GetJointCount();
+    // Pesos por mapa completo (GetWeightMap): medido 2026-11-10 con William
+    // Afton.lib4d, GetWeightCount/GetIndexWeight dejaba casi todos los puntos
+    // con suma < 1 y la cabeza seguia lejos; el mapa da suma 1 en todos.
+    std::vector<cineware::Float> map((size_t)np);
+    for (Int32 j = 0; j < nj; ++j) {
+        BaseObject* joint = wt->GetJoint(j, doc);
+        if (!joint) continue;
+        const cineware::Matrix d = joint->GetMg() * wt->GetJointRestState(j).m_oMi;
+        std::fill(map.begin(), map.end(), 0.0);
+        wt->GetWeightMap(j, map.data(), np);
+        for (Int32 pi = 0; pi < np; ++pi) {
+            const cineware::Float w = map[(size_t)pi];
+            if (w <= 0.0) continue;
+            acc[(size_t)pi] += (d * bind[(size_t)pi]) * w;
+            wsum[(size_t)pi] += w;
+            any = true;
+        }
+    }
+    if (!any) return false;
+    // La parte sin peso no se mueve: se queda en su posicion local del objeto.
+    const cineware::Matrix mg = op->GetMg();
+    const cineware::Matrix toLocal = ~mg;
+    out.resize((size_t)np);
+    for (Int32 i = 0; i < np; ++i) {
+        const double s = wsum[(size_t)i];
+        cineware::Vector g = s > 1.0 ? acc[(size_t)i] * (1.0 / s) : acc[(size_t)i] + (mg * p[i]) * (1.0 - s);
+        out[(size_t)i] = toLocal * g;
+    }
+    return true;
+}
+
+// `points`: puntos que sustituyen a los del objeto (la malla con la Piel ya
+// aplicada, ver skinnedPoints); nullptr = los del objeto.
+void appendPolygons(PolygonObject* po, const glm::dmat4& xform, c4d::PolySoup& out,
+                    const std::vector<cineware::Vector>* points = nullptr) {
+    const cineware::Vector* p = points ? points->data() : po->GetPointR();
     const CPolygon* f = po->GetPolygonR();
-    const Int32 np = po->GetPointCount(), nf = po->GetPolygonCount();
+    const Int32 np = points ? (Int32)points->size() : po->GetPointCount(), nf = po->GetPolygonCount();
     if (!p || !f || np <= 0 || nf <= 0) return;
     c4d::PolySoup s;
     s.points.reserve((size_t)np);
@@ -560,7 +624,14 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
         BaseObject* dc = op->GetDeformCache();
         PolygonObject* po = (dc && dc->GetType() == Opolygon) ? static_cast<PolygonObject*>(dc)
                                                                : static_cast<PolygonObject*>(op);
-        appendPolygons(po, glm::dmat4(1.0), soup);
+        std::vector<cineware::Vector> skinned;
+        if (po == op && skinnedPoints(po, skinned)) {
+            appendPolygons(po, glm::dmat4(1.0), soup, &skinned);
+            ctx.warn("Piel: aplicada con la pose de las articulaciones guardada en el archivo (todavía sin animación "
+                     "ni morphs de Pose Morph)");
+        } else {
+            appendPolygons(po, glm::dmat4(1.0), soup);
+        }
         // La cache de deformacion no siempre lleva la etiqueta UVW: la del objeto vale.
         if (soup.uvs.empty() && po != op) {
             c4d::PolySoup own;

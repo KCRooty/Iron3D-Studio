@@ -1,4 +1,5 @@
 #include "OpenGLRenderer.h"
+#include "core/TextureImage.h"
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -50,26 +51,37 @@ void main() {
 const char* kLitVertexSrc = R"GLSL(#version 330 core
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
+layout(location = 2) in vec2 inUV;
 uniform mat4 uModel;
 uniform mat4 uMvp;
 out vec3 fragNormalWS;
 out vec3 fragPosWS;
+out vec2 fragUV;
 void main() {
     vec4 worldPos = uModel * vec4(inPosition, 1.0);
     gl_Position = uMvp * vec4(inPosition, 1.0);
     fragNormalWS = normalize(mat3(uModel) * inNormal);
     fragPosWS = worldPos.xyz;
+    fragUV = inUV;
 }
 )GLSL";
 
+// Textura de Color (2026-11-10): mismas reglas que lit.frag -- sustituye al
+// color difuso; sin Mosaico, fuera de 0..1 se ve el color del material. Aqui
+// todo va en espacio gamma (el Phong de este backend nunca paso a lineal),
+// asi que la textura se sube tal cual, sin formato sRGB.
 const char* kLitFragmentSrc = R"GLSL(#version 330 core
 in vec3 fragNormalWS;
 in vec3 fragPosWS;
+in vec2 fragUV;
 uniform vec3 uLightPos;
 uniform vec3 uEyePos;
 uniform vec3 uMaterialDiffuse;
 uniform float uMaterialSpecular;
 uniform float uMaterialShininess;
+uniform sampler2D uColorTex;
+uniform int uTexFlags;     // 1 = hay textura de Color, 2 = Mosaico
+uniform vec4 uUvTransform; // uv de la imagen = uv * xy + zw
 out vec4 outColor;
 void main() {
     vec3 N = normalize(fragNormalWS);
@@ -78,9 +90,17 @@ void main() {
     vec3 R = reflect(-L, N);
     const vec3 lightColor = vec3(1.0);
 
-    vec3 ambient = 0.15 * uMaterialDiffuse;
+    vec3 albedo = uMaterialDiffuse;
+    if ((uTexFlags & 1) != 0) {
+        vec2 uv = fragUV * uUvTransform.xy + uUvTransform.zw;
+        vec3 texel = texture(uColorTex, uv).rgb;
+        bool inside = all(greaterThanEqual(uv, vec2(0.0))) && all(lessThanEqual(uv, vec2(1.0)));
+        if ((uTexFlags & 2) != 0 || inside) albedo = texel;
+    }
+
+    vec3 ambient = 0.15 * albedo;
     float diff = max(dot(N, L), 0.0);
-    vec3 diffuse = diff * uMaterialDiffuse * lightColor;
+    vec3 diffuse = diff * albedo * lightColor;
     float spec = (diff > 0.0) ? pow(max(dot(R, V), 0.0), max(uMaterialShininess, 1.0)) : 0.0;
     vec3 specular = uMaterialSpecular * spec * lightColor;
 
@@ -142,6 +162,26 @@ void setupLitVertexAttribs() {
     gl::glEnableVertexAttribArray(1);
     gl::glVertexAttribPointer(1, 3, gl::GL_FLOAT, gl::GL_FALSE_, (gl::GLsizei)sizeof(Vertex),
                                (const void*)offsetof(Vertex, normal));
+    gl::glEnableVertexAttribArray(2); // UV (2026-11-10, texturas)
+    gl::glVertexAttribPointer(2, 2, gl::GL_FLOAT, gl::GL_FALSE_, (gl::GLsizei)sizeof(Vertex),
+                               (const void*)offsetof(Vertex, uv));
+}
+
+// Textura 2D con mipmaps y mosaico (REPEAT), RGBA8 tal cual.
+gl::GLuint createRepeatTexture(const uint8_t* rgba, int width, int height) {
+    gl::GLuint tex = 0;
+    gl::glGenTextures(1, &tex);
+    if (!tex) return 0;
+    gl::glBindTexture(gl::GL_TEXTURE_2D, tex);
+    gl::glTexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MIN_FILTER, (gl::GLint)gl::GL_LINEAR_MIPMAP_LINEAR);
+    gl::glTexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MAG_FILTER, (gl::GLint)gl::GL_LINEAR);
+    gl::glTexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_S, (gl::GLint)gl::GL_REPEAT);
+    gl::glTexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_T, (gl::GLint)gl::GL_REPEAT);
+    gl::glTexImage2D(gl::GL_TEXTURE_2D, 0, (gl::GLint)gl::GL_RGBA, width, height, 0, gl::GL_RGBA,
+                     gl::GL_UNSIGNED_BYTE, rgba);
+    gl::glGenerateMipmap(gl::GL_TEXTURE_2D);
+    gl::glBindTexture(gl::GL_TEXTURE_2D, 0);
+    return tex;
 }
 
 } // namespace
@@ -190,6 +230,11 @@ void OpenGLRenderer::init(GLFWwindow* window, int width, int height) {
     uLitDiffuseLoc_ = gl::glGetUniformLocation(litProgram_, "uMaterialDiffuse");
     uLitSpecularLoc_ = gl::glGetUniformLocation(litProgram_, "uMaterialSpecular");
     uLitShininessLoc_ = gl::glGetUniformLocation(litProgram_, "uMaterialShininess");
+    uLitColorTexLoc_ = gl::glGetUniformLocation(litProgram_, "uColorTex");
+    uLitTexFlagsLoc_ = gl::glGetUniformLocation(litProgram_, "uTexFlags");
+    uLitUvTransformLoc_ = gl::glGetUniformLocation(litProgram_, "uUvTransform");
+    const uint8_t white[4] = {255, 255, 255, 255};
+    whiteTexture_ = createRepeatTexture(white, 1, 1);
 
     createGizmoBuffers();
 
@@ -219,6 +264,11 @@ void OpenGLRenderer::shutdown() {
 
     if (!uiTextures_.empty()) gl::glDeleteTextures((gl::GLsizei)uiTextures_.size(), uiTextures_.data());
     uiTextures_.clear();
+    for (const auto& [key, tex] : materialTextures_)
+        if (tex) gl::glDeleteTextures(1, &tex);
+    materialTextures_.clear();
+    if (whiteTexture_) gl::glDeleteTextures(1, &whiteTexture_);
+    whiteTexture_ = 0;
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -368,9 +418,24 @@ void OpenGLRenderer::setLighting(const glm::vec3& lightPosWS, const glm::vec3& e
 }
 
 void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
-                               const Material& material) {
+                               const Material& material, const TexMapping& tex) {
     if (mesh >= meshes_.size() || meshes_[mesh].vao == 0) return;
     gl::glUseProgram(litProgram_);
+    gl::GLuint colorTex = whiteTexture_;
+    int texFlags = 0;
+    glm::vec4 uvTransform(1.0f, 1.0f, 0.0f, 0.0f);
+    if (tex.enabled) {
+        if (gl::GLuint t = materialTexture(material.texture(TexSlot::Color), material.texBaseDir)) {
+            colorTex = t;
+            texFlags = 1 | (tex.tile ? 2 : 0);
+            uvTransform = texMappingUvTransform(tex);
+        }
+    }
+    gl::glActiveTexture(gl::GL_TEXTURE0);
+    gl::glBindTexture(gl::GL_TEXTURE_2D, colorTex);
+    gl::glUniform1i(uLitColorTexLoc_, 0);
+    gl::glUniform1i(uLitTexFlagsLoc_, texFlags);
+    gl::glUniform4fv(uLitUvTransformLoc_, 1, &uvTransform.x);
     gl::glUniformMatrix4fv(uLitModelLoc_, 1, gl::GL_FALSE_, &model[0][0]);
     gl::glUniformMatrix4fv(uLitMvpLoc_, 1, gl::GL_FALSE_, &mvp[0][0]);
     gl::glUniform3fv(uLitLightPosLoc_, 1, &lightPosWS_.x);
@@ -387,6 +452,24 @@ void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     gl::glUniform1f(uLitShininessLoc_, shininess);
     gl::glBindVertexArray(meshes_[mesh].vao);
     gl::glDrawElements(gl::GL_TRIANGLES, meshes_[mesh].indexCount, gl::GL_UNSIGNED_INT, nullptr);
+}
+
+gl::GLuint OpenGLRenderer::materialTexture(const std::string& rawPath, const std::string& baseDir) {
+    if (rawPath.empty()) return 0;
+    const std::string key = textureCacheKey(rawPath, baseDir);
+    auto it = materialTextures_.find(key);
+    if (it != materialTextures_.end()) return it->second;
+    gl::GLuint tex = 0;
+    const std::string path = resolveTexturePath(rawPath, baseDir);
+    TextureImage img;
+    if (path.empty())
+        std::fprintf(stderr, "[Iron3D] Textura no encontrada: %s\n", rawPath.c_str());
+    else if (!loadTextureImage(path, img))
+        std::fprintf(stderr, "[Iron3D] Formato de textura no soportado o archivo roto: %s\n", path.c_str());
+    else
+        tex = createRepeatTexture(img.rgba.data(), img.width, img.height);
+    materialTextures_.emplace(key, tex);
+    return tex;
 }
 
 void OpenGLRenderer::drawGizmo(const std::vector<Vertex>& lineVerts, const std::vector<Vertex>& triVerts,

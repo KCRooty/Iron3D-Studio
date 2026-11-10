@@ -26,6 +26,21 @@ namespace iron3d {
 
 enum class RendererBackend { Vulkan, OpenGL };
 
+// Como se aplica la textura de Color del material a una malla concreta (la
+// Etiqueta de Textura del nodo, 2026-11-10). Solo proyeccion UVW por ahora,
+// igual que el render por CPU (ThumbnailRenderer): `enabled` = false dibuja
+// el color plano del material aunque tenga textura.
+struct TexMapping {
+    bool enabled = false;
+    glm::vec2 offset{0.0f}; // Desplazamiento U/V
+    glm::vec2 length{1.0f}; // Longitud U/V (uv de la imagen = (uv - offset) / length)
+    bool tile = true;       // Mosaico: sin el, fuera de 0..1 se ve el color del material
+};
+
+// Escala (xy) y desplazamiento (zw) que llevan la UV de la malla a la UV de
+// la imagen: uv_imagen = uv * xy + zw. Comun a los dos backends.
+glm::vec4 texMappingUvTransform(const TexMapping& tex);
+
 using MeshHandle = uint32_t;
 constexpr MeshHandle kInvalidMesh = UINT32_MAX;
 
@@ -131,8 +146,10 @@ public:
     // `model` es la matriz de mundo del nodo (para posicion/normal en espacio
     // de mundo); `mvp` ya trae la proyeccion*vista*mundo para gl_Position --
     // se pasan ambas en vez de reconstruir una desde la otra en el shader.
+    // `tex` decide si se muestrea la textura de Color del material (el backend
+    // la carga la primera vez que la ve y la guarda en su cache por ruta).
     virtual void drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
-                           const Material& material) = 0;
+                           const Material& material, const TexMapping& tex = {}) = 0;
     // Vertices ya en espacio de mundo (ver TransformGizmo::buildGeometry):
     // el backend se encarga de subirlos a un buffer dinamico cada frame.
     virtual void drawGizmo(const std::vector<Vertex>& lineVerts, const std::vector<Vertex>& triVerts,

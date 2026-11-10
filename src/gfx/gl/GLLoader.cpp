@@ -54,6 +54,10 @@ PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = nullptr;
 PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv = nullptr;
 PFNGLUNIFORM3FVPROC glUniform3fv = nullptr;
 PFNGLUNIFORM1FPROC glUniform1f = nullptr;
+PFNGLUNIFORM1IPROC glUniform1i = nullptr;
+PFNGLUNIFORM4FVPROC glUniform4fv = nullptr;
+PFNGLACTIVETEXTUREPROC glActiveTexture = nullptr;
+PFNGLGENERATEMIPMAPPROC glGenerateMipmap = nullptr;
 
 namespace {
 // Carga un puntero y avisa por stderr si falta -- no aborta aqui mismo para
@@ -121,6 +125,10 @@ bool loadOpenGLFunctions() {
     IRON3D_GL_LOAD(glUniformMatrix4fv);
     IRON3D_GL_LOAD(glUniform3fv);
     IRON3D_GL_LOAD(glUniform1f);
+    IRON3D_GL_LOAD(glUniform1i);
+    IRON3D_GL_LOAD(glUniform4fv);
+    IRON3D_GL_LOAD(glActiveTexture);
+    IRON3D_GL_LOAD(glGenerateMipmap);
 #undef IRON3D_GL_LOAD
     return ok;
 }

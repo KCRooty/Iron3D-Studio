@@ -225,7 +225,14 @@ void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vect
         case PrimitiveType::Plane:
         case PrimitiveType::Mesh: {
             const iron3d::MeshHandle h = meshes.forNode(node);
-            if (h != iron3d::kInvalidMesh) renderer.drawMesh(h, world, viewProj * world, material);
+            // Etiqueta de Textura del nodo: solo proyeccion UVW (6), como el
+            // render por CPU; las demas proyecciones salen con color plano.
+            iron3d::TexMapping tex;
+            tex.enabled = node.texTag.projection == 6;
+            tex.offset = node.texTag.offset;
+            tex.length = node.texTag.length;
+            tex.tile = node.texTag.tile;
+            if (h != iron3d::kInvalidMesh) renderer.drawMesh(h, world, viewProj * world, material, tex);
             break;
         }
         case PrimitiveType::Light: {
@@ -441,6 +448,7 @@ int main(int argc, char** argv) {
     std::string frameArg, selectArg;
     std::vector<std::string> uiCmdArgs; // "--ui-cmd=make-editable|frame-selected|commander[:texto]|vp-menu"
     bool travelArg = false; // "--travel": como pulsar la flecha (viaje hacia el seleccionado)
+    bool dumpSceneArg = false; // "--dump-scene": lista los objetos cargados por stderr (verificacion)
     bool savePresetArg = false; // "--save-preset": abre "Guardar como Preestablecido" con el seleccionado
     bool iconSheet = false;
     // "--no-focus": la ventana sale sin quitar el foco a la que se este usando
@@ -456,6 +464,8 @@ int main(int argc, char** argv) {
             openPreferencesDialog();
         } else if (a.rfind("--load-preset=", 0) == 0) {
             loadPresetArg = a.substr(14);
+        } else if (a == "--dump-scene") {
+            dumpSceneArg = true;
         } else if (a == "--travel") {
             travelArg = true;
         } else if (a == "--save-preset") {
@@ -628,6 +638,42 @@ int main(int argc, char** argv) {
     }
     for (const std::string& c : uiCmdArgs)
         if (!iron3d::queueUiCommand(c)) std::fprintf(stderr, "[Iron3D] --ui-cmd desconocida: %s\n", c.c_str());
+    // "--dump-scene" (verificacion, 2026-11-10): una linea por objeto con
+    // geometria -- caja en mundo, visibilidad, material y textura de Color --
+    // para diagnosticar modelos importados que no se ven como en C4D.
+    if (dumpSceneArg) {
+        std::function<void(const SceneNode&, const glm::mat4&, bool, int)> dump =
+            [&](const SceneNode& n, const glm::mat4& parent, bool parentVis, int depth) {
+                const glm::mat4 w = parent * n.localMatrix();
+                const bool vis = iron3d::resolveVisibility(n.editorVis, parentVis);
+                if (n.primitive != PrimitiveType::None) {
+                    glm::vec3 lo(-0.5f), hi(0.5f);
+                    if (n.primitive == PrimitiveType::Mesh && n.mesh) lo = n.mesh->boundsMin, hi = n.mesh->boundsMax;
+                    glm::vec3 mn(1e30f), mx(-1e30f);
+                    for (int i = 0; i < 8; ++i) {
+                        const glm::vec3 c((i & 1) ? hi.x : lo.x, (i & 2) ? hi.y : lo.y, (i & 4) ? hi.z : lo.z);
+                        const glm::vec3 p(w * glm::vec4(c, 1.0f));
+                        mn = glm::min(mn, p);
+                        mx = glm::max(mx, p);
+                    }
+                    const iron3d::Material& m = iron3d::materialOrDefault(materials, n.materialIndex);
+                    const std::string& tex = m.texture(iron3d::TexSlot::Color);
+                    const bool found = !tex.empty() && !iron3d::resolveTexturePath(tex, m.texBaseDir).empty();
+                    std::fprintf(stderr,
+                                 "[dump] %*s%s prim=%d vis=%d pts=%zu caja=(%.1f %.1f %.1f)-(%.1f %.1f %.1f) mat=%d '%s' "
+                                 "color=(%.2f %.2f %.2f) tex='%s'%s proy=%d\n",
+                                 depth * 2, "", n.name().c_str(), (int)n.primitive, (int)vis,
+                                 n.mesh ? n.mesh->vertices.size() : (size_t)0, mn.x, mn.y, mn.z, mx.x, mx.y, mx.z,
+                                 n.materialIndex, m.name.c_str(), m.baseColor.r, m.baseColor.g, m.baseColor.b,
+                                 tex.c_str(), tex.empty() ? "" : (found ? " (ok)" : " (NO ENCONTRADA)"),
+                                 n.texTag.projection);
+                } else {
+                    std::fprintf(stderr, "[dump] %*s%s (nulo) vis=%d\n", depth * 2, "", n.name().c_str(), (int)vis);
+                }
+                for (const auto& c : n.children()) dump(*c, w, vis, depth + 1);
+            };
+        for (const auto& c : sceneRoot.children()) dump(*c, glm::mat4(1.0f), true, 0);
+    }
 
     // --- Carpeta de escenas (Fase 2c: guardar/cargar .iron) -------------------
     const std::filesystem::path scenesDir = exeDirectory() / "scenes";

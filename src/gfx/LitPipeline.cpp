@@ -13,10 +13,9 @@ namespace iron3d {
 
 namespace {
 
-// Intensidad del termino ambiente, fija para toda la escena (Fase 5: una
-// sola luz, sin configuracion de ambiente todavia). 0.15 deja algo visible
-// en la cara opuesta a la luz sin aplanar el contraste del lado iluminado.
-constexpr float kAmbientStrength = 0.15f;
+// La intensidad del termino ambiente (0.15) vive ahora en lit.frag
+// (kAmbientStrength): su hueco en los push constants lleva los indicadores
+// de textura (2026-11-10).
 
 std::vector<char> readFile(const std::filesystem::path& path) {
     std::ifstream file(path, std::ios::ate | std::ios::binary);
@@ -44,7 +43,8 @@ VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code
 
 void LitPipeline::create(VkDevice device, VkPhysicalDevice physicalDevice, VkRenderPass renderPass,
                           const std::filesystem::path& shaderDir, VkDescriptorSetLayout shadowSetLayout,
-                          VkDescriptorSetLayout aoSetLayout, VkCullModeFlags cullMode) {
+                          VkDescriptorSetLayout aoSetLayout, VkDescriptorSetLayout colorTexSetLayout,
+                          VkCullModeFlags cullMode) {
     VkPhysicalDeviceProperties props{};
     vkGetPhysicalDeviceProperties(physicalDevice, &props);
     if (props.limits.maxPushConstantsSize < sizeof(LitPushConstants)) {
@@ -73,16 +73,17 @@ void LitPipeline::create(VkDevice device, VkPhysicalDevice physicalDevice, VkRen
     binding.stride = sizeof(Vertex);
     binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    // Solo posicion + normal (location 0/1); el color de Vertex no se lee
+    // Posicion + normal + UV (location 0/1/2); el color de Vertex no se lee
     // aqui -- el color final lo da el material, no el vertice.
-    VkVertexInputAttributeDescription attrs[2]{};
+    VkVertexInputAttributeDescription attrs[3]{};
     attrs[0] = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, (uint32_t)offsetof(Vertex, position)};
     attrs[1] = {1, 0, VK_FORMAT_R32G32B32_SFLOAT, (uint32_t)offsetof(Vertex, normal)};
+    attrs[2] = {2, 0, VK_FORMAT_R32G32_SFLOAT, (uint32_t)offsetof(Vertex, uv)};
 
     VkPipelineVertexInputStateCreateInfo vertexInput{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
     vertexInput.vertexBindingDescriptionCount = 1;
     vertexInput.pVertexBindingDescriptions = &binding;
-    vertexInput.vertexAttributeDescriptionCount = 2;
+    vertexInput.vertexAttributeDescriptionCount = 3;
     vertexInput.pVertexAttributeDescriptions = attrs;
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
@@ -131,9 +132,9 @@ void LitPipeline::create(VkDevice device, VkPhysicalDevice physicalDevice, VkRen
     pushConstant.offset = 0;
     pushConstant.size = sizeof(LitPushConstants);
 
-    const VkDescriptorSetLayout setLayouts[2] = {shadowSetLayout, aoSetLayout};
+    const VkDescriptorSetLayout setLayouts[3] = {shadowSetLayout, aoSetLayout, colorTexSetLayout};
     VkPipelineLayoutCreateInfo layoutInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
-    layoutInfo.setLayoutCount = 2;
+    layoutInfo.setLayoutCount = 3;
     layoutInfo.pSetLayouts = setLayouts;
     layoutInfo.pushConstantRangeCount = 1;
     layoutInfo.pPushConstantRanges = &pushConstant;
@@ -174,14 +175,16 @@ void LitPipeline::bind(VkCommandBuffer cmd) const {
 
 void LitPipeline::pushConstants(VkCommandBuffer cmd, const glm::mat4& model, const glm::mat4& mvp,
                                  const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
-                                 const Material& material, const glm::mat4& lightViewProj) const {
+                                 const Material& material, const glm::mat4& lightViewProj, int texFlags,
+                                 const glm::vec4& uvTransform) const {
     LitPushConstants pc{};
     pc.model = model;
     pc.mvp = mvp;
-    pc.lightPosAndAmbient = glm::vec4(lightPosWS, kAmbientStrength);
+    pc.lightPosAndFlags = glm::vec4(lightPosWS, (float)texFlags);
     pc.eyePosAndRoughness = glm::vec4(eyePosWS, material.roughness);
     pc.baseColorAndMetallic = glm::vec4(material.baseColor, material.metallic);
     pc.lightViewProj = lightViewProj;
+    pc.uvTransform = uvTransform;
     vkCmdPushConstants(cmd, layout_, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                         sizeof(LitPushConstants), &pc);
 }
@@ -192,6 +195,10 @@ void LitPipeline::bindShadowMap(VkCommandBuffer cmd, VkDescriptorSet shadowSet) 
 
 void LitPipeline::bindAoMap(VkCommandBuffer cmd, VkDescriptorSet aoSet) const {
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout_, 1, 1, &aoSet, 0, nullptr);
+}
+
+void LitPipeline::bindColorTexture(VkCommandBuffer cmd, VkDescriptorSet texSet) const {
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout_, 2, 1, &texSet, 0, nullptr);
 }
 
 } // namespace iron3d

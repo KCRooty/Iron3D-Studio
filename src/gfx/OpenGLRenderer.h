@@ -17,6 +17,8 @@
 #include "IRenderer.h"
 #include "gl/GLLoader.h"
 
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace iron3d {
@@ -53,7 +55,7 @@ public:
     void setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
                       const glm::mat4& lightViewProj) override;
     void drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
-                  const Material& material) override;
+                  const Material& material, const TexMapping& tex) override;
     void drawGizmo(const std::vector<Vertex>& lineVerts, const std::vector<Vertex>& triVerts,
                     const glm::mat4& viewProj) override;
     void endFrame() override;
@@ -81,6 +83,13 @@ private:
     gl::GLint uLitModelLoc_ = -1, uLitMvpLoc_ = -1;
     gl::GLint uLitLightPosLoc_ = -1, uLitEyePosLoc_ = -1;
     gl::GLint uLitDiffuseLoc_ = -1, uLitSpecularLoc_ = -1, uLitShininessLoc_ = -1;
+    gl::GLint uLitColorTexLoc_ = -1, uLitTexFlagsLoc_ = -1, uLitUvTransformLoc_ = -1;
+    // Texturas de Color de los materiales (2026-11-10): clave
+    // textureCacheKey -> nombre de textura (0 = no se pudo cargar, no se
+    // reintenta). Viven hasta shutdown(), igual que en Vulkan.
+    gl::GLuint materialTexture(const std::string& rawPath, const std::string& baseDir);
+    std::unordered_map<std::string, gl::GLuint> materialTextures_;
+    gl::GLuint whiteTexture_ = 0;
     glm::vec3 lightPosWS_{0.0f};
     glm::vec3 eyePosWS_{0.0f};
 
