@@ -14,6 +14,7 @@
 #include "ShadowMap.h"
 #include "SsaoPass.h"
 #include "MaterialTextures.h"
+#include "LightsUniform.h"
 #include "core/PrimitiveMesh.h"
 #include "core/GizmoMesh.h"
 
@@ -46,10 +47,11 @@ public:
     void setViewportRect(int x, int y, int width, int height) override;
     void setDrawRect(int x, int y, int width, int height) override;
     void drawGrid(const std::vector<Vertex>& lineVerts, const glm::mat4& viewProj) override;
-    void setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
-                      const glm::mat4& lightViewProj) override;
+    void setSceneLighting(const SceneLighting& lighting, const glm::mat4& lightViewProj) override;
+    void setEyePosition(const glm::vec3& eyePosWS) override;
     void drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
-                  const Material& material, const TexMapping& tex) override;
+                  const Material& material, const TexMapping& tex, uint32_t firstIndex,
+                  uint32_t indexCount) override;
     void drawGizmo(const std::vector<Vertex>& lineVerts, const std::vector<Vertex>& triVerts,
                     const glm::mat4& viewProj) override;
     void endFrame() override;
@@ -97,8 +99,8 @@ private:
     std::vector<PendingDestroy> pendingDestroy_;
     std::vector<MeshHandle> freeMeshes_;
 
-    glm::vec3 lightPosWS_{0.0f}; // fijado por setLighting(), leido en cada drawMesh() de este frame
-    glm::vec3 eyePosWS_{0.0f};
+    LightsUniform lightsUniform_; // luces de la escena (set=3 de LitPipeline, 2026-11-10)
+    glm::vec3 eyePosWS_{0.0f};    // fijado por setEyePosition(), leido en cada drawMesh() del panel
     glm::mat4 lightViewProj_{1.0f}; // idem -- tambien la usa drawMeshShadow() durante beginShadowPass()
 
     VkCommandBuffer currentCmd_ = VK_NULL_HANDLE; // valido solo entre beginFrame()/endFrame()

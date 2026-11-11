@@ -119,7 +119,8 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             << " i=" << l.intensity << " outer=" << l.outerAngleDeg << " inner=" << l.innerAngleDeg
             << " shadow=" << l.shadow << " falloff=" << l.falloff << " radius=" << l.falloffRadius
             << " iradius=" << l.innerRadius << " shape=" << l.areaShape << " ax=" << l.areaSize.x
-            << " ay=" << l.areaSize.y << " az=" << l.areaSize.z << "\n";
+            << " ay=" << l.areaSize.y << " az=" << l.areaSize.z << " noillum=" << (int)l.noIllumination
+            << " diff=" << (int)l.diffuse << " spec=" << (int)l.specular << "\n";
     }
     if (node.primitive == PrimitiveType::Camera) {
         const CameraData& c = node.camera;
@@ -129,6 +130,13 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
     if (node.materialIndex >= 0 && !(node.texTag == TextureTagData{})) {
         const TextureTagData& t = node.texTag;
         out << indent << "  TEXTAG proj=" << t.projection << " ou=" << t.offset.x << " ov=" << t.offset.y
+            << " lu=" << t.length.x << " lv=" << t.length.y << " tile=" << (int)t.tile << " seamless=" << (int)t.seamless
+            << " side=" << t.side << "\n";
+    }
+    for (const MaterialPart& part : node.materialParts) {
+        const TextureTagData& t = part.texTag;
+        out << indent << "  PART first=" << part.firstIndex << " count=" << part.indexCount << " mat=" << part.materialIndex
+            << " sel=" << quoted(part.selection) << " proj=" << t.projection << " ou=" << t.offset.x << " ov=" << t.offset.y
             << " lu=" << t.length.x << " lv=" << t.length.y << " tile=" << (int)t.tile << " seamless=" << (int)t.seamless
             << " side=" << t.side << "\n";
     }
@@ -339,7 +347,8 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     }
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras los atributos de NODE"; return false; }
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
-    while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG")) {
+    while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG" ||
+                            p.peek() == "PART")) {
         const std::string kind = p.next();
         bool ok = true;
         if (kind == "LIGHT") {
@@ -357,6 +366,9 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
                 else if (k == "radius") l.falloffRadius = std::stof(v);
                 else if (k == "iradius") l.innerRadius = std::stof(v);
                 else if (k == "shape") l.areaShape = std::stoi(v);
+                else if (k == "noillum") l.noIllumination = std::stoi(v) != 0;
+                else if (k == "diff") l.diffuse = std::stoi(v) != 0;
+                else if (k == "spec") l.specular = std::stoi(v) != 0;
                 else if (k == "ax") l.areaSize.x = std::stof(v);
                 else if (k == "ay") l.areaSize.y = std::stof(v);
                 else if (k == "az") l.areaSize.z = std::stof(v);
@@ -370,6 +382,25 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
                 else if (k == "zoom") c.zoom = std::stof(v);
                 else if (k == "target") c.target = unquote(v);
             });
+        } else if (kind == "PART") {
+            // Formato con partes (2026-11-11): material por Seleccion de Poligonos.
+            MaterialPart part;
+            TextureTagData& t = part.texTag;
+            ok = readAttrs(p, "PART", err, [&](const std::string& k, const std::string& v) {
+                if (k == "first") part.firstIndex = (uint32_t)std::stoul(v);
+                else if (k == "count") part.indexCount = (uint32_t)std::stoul(v);
+                else if (k == "mat") part.materialIndex = std::stoi(v);
+                else if (k == "sel") part.selection = unquote(v);
+                else if (k == "proj") t.projection = std::stoi(v);
+                else if (k == "ou") t.offset.x = std::stof(v);
+                else if (k == "ov") t.offset.y = std::stof(v);
+                else if (k == "lu") t.length.x = std::stof(v);
+                else if (k == "lv") t.length.y = std::stof(v);
+                else if (k == "tile") t.tile = v != "0";
+                else if (k == "seamless") t.seamless = v != "0";
+                else if (k == "side") t.side = std::stoi(v);
+            });
+            if (ok) node.materialParts.push_back(part);
         } else {
             TextureTagData& t = node.texTag;
             ok = readAttrs(p, "TEXTAG", err, [&](const std::string& k, const std::string& v) {
@@ -579,6 +610,7 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.light = temp.light;
     root.camera = temp.camera;
     root.texTag = temp.texTag;
+    root.materialParts = temp.materialParts;
     root.animPos = temp.animPos;
     root.animRot = temp.animRot;
     root.animScale = temp.animScale;

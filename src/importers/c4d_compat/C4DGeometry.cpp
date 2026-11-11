@@ -243,8 +243,9 @@ glm::vec3 toIronPoint(const glm::dvec3& p) {
     return glm::vec3((float)(p.x / kCmPerUnit), (float)(p.y / kCmPerUnit), (float)(-p.z / kCmPerUnit));
 }
 
-MeshData toIronMesh(const PolySoup& soup, double smoothAngleRad) {
+MeshData toIronMesh(const PolySoup& soup, double smoothAngleRad, std::vector<uint32_t>* trisPerPoly) {
     MeshData mesh;
+    if (trisPerPoly) trisPerPoly->assign(soup.polys.size(), 0);
     const size_t np = soup.points.size();
     std::vector<glm::vec3> pts(np);
     for (size_t i = 0; i < np; ++i) pts[i] = toIronPoint(soup.points[i]);
@@ -310,6 +311,7 @@ MeshData toIronMesh(const PolySoup& soup, double smoothAngleRad) {
         }
         mesh.indices.insert(mesh.indices.end(), {base, base + 1, base + 2});
         if (f.n == 4) mesh.indices.insert(mesh.indices.end(), {base, base + 2, base + 3});
+        if (trisPerPoly) (*trisPerPoly)[f.poly] = f.n == 4 ? 2u : 1u;
     }
     updateBounds(mesh);
     return mesh;

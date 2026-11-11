@@ -15,7 +15,8 @@ class PrimitiveMesh {
 public:
     void create(VkDevice device, VmaAllocator allocator, const MeshData& data);
     void destroy(VkDevice device, VmaAllocator allocator);
-    void draw(VkCommandBuffer cmd) const;
+    // indexCount 0 = todos los indices.
+    void draw(VkCommandBuffer cmd, uint32_t firstIndex = 0, uint32_t indexCount = 0) const;
 
 private:
     VkBuffer vertexBuffer_ = VK_NULL_HANDLE;

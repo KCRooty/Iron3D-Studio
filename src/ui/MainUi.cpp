@@ -455,11 +455,17 @@ void setHint(const char* text) {
 void fixupMaterialIndicesAfterRemoval(SceneNode& node, int removed) {
     if (node.materialIndex == removed) node.materialIndex = -1;
     else if (node.materialIndex > removed) node.materialIndex -= 1;
+    for (MaterialPart& part : node.materialParts) {
+        if (part.materialIndex == removed) part.materialIndex = -1;
+        else if (part.materialIndex > removed) part.materialIndex -= 1;
+    }
     for (const auto& child : node.children()) fixupMaterialIndicesAfterRemoval(*child, removed);
 }
 
 bool materialUsed(const SceneNode& node, int index) {
     if (node.materialIndex == index) return true;
+    for (const MaterialPart& part : node.materialParts)
+        if (part.materialIndex == index) return true;
     for (const auto& c : node.children())
         if (materialUsed(*c, index)) return true;
     return false;
@@ -877,6 +883,8 @@ void newScene(SceneNode& root, SceneNode*& selected, SceneHistory& history, std:
 
 void offsetMaterialIndices(SceneNode& node, int base) {
     if (node.materialIndex >= 0) node.materialIndex += base;
+    for (MaterialPart& part : node.materialParts)
+        if (part.materialIndex >= 0) part.materialIndex += base;
     for (const auto& c : node.children()) offsetMaterialIndices(*c, base);
 }
 
@@ -1566,7 +1574,18 @@ struct PaletteItem {
     Icon icon;
     PrimitiveType type; // None + !functional = deshabilitado
     bool functional;
+    int lightKind = -1; // Luces: LightKind con el que se crea (-1 = Omni por defecto)
 };
+
+// Crea el objeto de un elemento de menu/paleta; las luces salen con su tipo
+// y con el nombre del menu, como en C4D ("Foco", "Luz Infinita"...).
+void createPaletteItem(SceneNode& root, SceneNode*& selected, SceneHistory& history, const PaletteItem& it) {
+    SceneNode* n = createObject(root, selected, history, it.type);
+    if (n && it.type == PrimitiveType::Light && it.lightKind >= 0) {
+        n->light.kind = (LightKind)it.lightKind;
+        n->setName(it.name);
+    }
+}
 
 void drawPalette(const char* id, const PaletteItem* items, int count, int columns, SceneNode& root,
                  SceneNode*& selected, SceneHistory& history) {
@@ -1595,7 +1614,7 @@ void drawPalette(const char* id, const PaletteItem* items, int count, int column
             if (!it.functional) ImGui::BeginDisabled();
             const ImVec2 p = ImGui::GetCursorScreenPos();
             if (ImGui::Selectable("##it", false, 0, ImVec2(kItemW, kItemH))) {
-                createObject(root, selected, history, it.type);
+                createPaletteItem(root, selected, history, it);
                 ImGui::CloseCurrentPopup();
             }
             const bool hov = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled);
@@ -1765,10 +1784,10 @@ const PaletteItem kCameras[] = {
 const PaletteItem kLights[] = {
     {"Luz", Icon::Light, PrimitiveType::Light, true},
     {"Luz Objetivo", Icon::LgtTarget, kNone, false},
-    {"Foco", Icon::LgtSpot, kNone, false},
+    {"Foco", Icon::LgtSpot, PrimitiveType::Light, true, (int)LightKind::Spot},
     {"Luz IES", Icon::LgtIes, kNone, false},
-    {"Luz Infinita", Icon::LgtInfinite, kNone, false},
-    {"Luz de Área", Icon::LgtArea, kNone, false},
+    {"Luz Infinita", Icon::LgtInfinite, PrimitiveType::Light, true, (int)LightKind::Infinite},
+    {"Luz de Área", Icon::LgtArea, PrimitiveType::Light, true, (int)LightKind::Area},
     {"Luz Solar", Icon::LgtSun, kNone, false},
     {"Luz PBR", Icon::LgtPbr, kNone, false},
     {"Herramienta de Iluminación", Icon::LgtTool, kNone, false},
@@ -2294,7 +2313,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         stubMenu(Icon::Camera, "Cámara", kCameras, countOf(kCameras));
         if (iconBeginMenu(Icon::Light, "Luz")) {
             for (const auto& it : kLights)
-                if (iconMenuItem(it.icon, it.name, nullptr, false, it.functional)) createObject(root, selected, history, it.type);
+                if (iconMenuItem(it.icon, it.name, nullptr, false, it.functional)) createPaletteItem(root, selected, history, it);
             ImGui::EndMenu();
         }
         if (iconBeginMenu(Icon::MnuNewMaterial, "Materiales")) {
@@ -3698,23 +3717,53 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
     }
     if (tabOn(mask, 2)) {
         if (isLight) {
+            // Pestana General de la Luz de C4D (2026-11-10): antes todo era de
+            // solo lectura y cualquier luz iluminaba igual.
+            LightData& l = node.light;
             sectionHeader("General");
             propLabel("Color");
-            ImGui::BeginDisabled();
-            float white[3] = {1, 1, 1};
-            ImGui::ColorEdit3("##lc", white, ImGuiColorEditFlags_NoInputs);
-            ImGui::EndDisabled();
-            roFloat("Intensidad", 100.0f, "%.0f %%");
-            roCombo("Tipo", "Omni");
-            roCombo("Sombra", "Ninguno");
+            ImGui::SetNextItemWidth(fieldWidth(240));
+            ImGui::ColorEdit3("##lc", &l.color.x, ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_PickerHueBar);
+            trackEdit(history, root);
+            propLabel("Intensidad");
+            float pct = l.intensity * 100.0f;
+            ImGui::SetNextItemWidth(fieldWidth());
+            if (ImGui::DragFloat("##li", &pct, 1.0f, 0.0f, 100000.0f, "%.0f %%")) l.intensity = std::max(pct, 0.0f) / 100.0f;
+            trackEdit(history, root);
+            static const char* kinds[] = {"Omni", "Foco", "Foco Cuadrado", "Infinita", "Paralela", "Foco Paralelo",
+                                          "Foco Paralelo Cuadrado", "Tubo", "Área", "IES"};
+            propLabel("Tipo", false);
+            int lkind = (int)l.kind;
+            ImGui::SetNextItemWidth(fieldWidth());
+            if (ImGui::Combo("##lkind", &lkind, kinds, IM_ARRAYSIZE(kinds))) {
+                history.commitBefore(root);
+                l.kind = (LightKind)lkind;
+            }
+            setHint("Tipo de luz. En el visor, Tubo, Área e IES iluminan como una Omni; Paralela y Foco Paralelo como una Infinita.");
+            static const char* shadows[] = {"Ninguno", "Mapeado (Suave)", "Trazado (Duro)", "Área"};
+            propLabel("Sombra", false);
+            int sh = std::clamp(l.shadow, 0, 3);
+            ImGui::SetNextItemWidth(fieldWidth());
+            if (ImGui::Combo("##lshadow", &sh, shadows, IM_ARRAYSIZE(shadows))) {
+                history.commitBefore(root);
+                l.shadow = sh;
+            }
+            setHint("Con sombra activada, la primera luz de la escena que la tenga proyecta sombras en el visor.");
             roCombo("Luz Visible", "Ninguno");
-            roCheck("No Ilumina", false);
+            auto check = [&](const char* label, const char* id, bool& v) {
+                propLabel(label);
+                bool b = v;
+                if (ImGui::Checkbox(id, &b)) {
+                    history.commitBefore(root);
+                    v = b;
+                }
+            };
+            check("No Ilumina", "##lnoillum", l.noIllumination);
             roCheck("Mostrar Iluminación", true, false);
-            roCheck("Difusión", true);
+            check("Difusión", "##ldiff", l.diffuse);
             roCheck("Mostrar Luz Visible", false, false);
-            roCheck("Especular", true);
+            check("Especular", "##lspec", l.specular);
             roCheck("Iluminación de IG", true);
-            ImGui::TextDisabled("  Iron3D: la luz ilumina con color e intensidad fijos por ahora.");
         } else if (isNull) {
             sectionHeader("Propiedades del Objeto");
             roCombo("Mostrar", "Punto");
@@ -3759,7 +3808,80 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
         roFloat("Ángulo de Phong", 80.0f, "%.0f °");
         roCheck("Usar Bordes", false);
     }
-    if (isLight && (mask & ~7u)) {
+    if (isLight && tabOn(mask, 3)) {
+        LightData& l = node.light;
+        sectionHeader("Detalles");
+        const bool spot = l.kind == LightKind::Spot || l.kind == LightKind::SpotSquare ||
+                          l.kind == LightKind::ParallelSpot || l.kind == LightKind::ParallelSpotSquare;
+        ImGui::BeginDisabled(!spot);
+        propLabel("Ángulo Interior");
+        ImGui::SetNextItemWidth(fieldWidth());
+        if (ImGui::DragFloat("##linner", &l.innerAngleDeg, 0.5f, 0.0f, 175.0f, "%.1f °"))
+            l.innerAngleDeg = std::clamp(l.innerAngleDeg, 0.0f, l.outerAngleDeg);
+        trackEdit(history, root);
+        propLabel("Ángulo Exterior");
+        ImGui::SetNextItemWidth(fieldWidth());
+        if (ImGui::DragFloat("##louter", &l.outerAngleDeg, 0.5f, 0.1f, 175.0f, "%.1f °")) {
+            l.outerAngleDeg = std::clamp(l.outerAngleDeg, 0.1f, 175.0f);
+            l.innerAngleDeg = std::min(l.innerAngleDeg, l.outerAngleDeg);
+        }
+        trackEdit(history, root);
+        ImGui::EndDisabled();
+        // Mismo orden que el desplegable de C4D; el valor guardado es el de
+        // LIGHT_DETAILS_FALLOFF.
+        static const char* falloffNames[] = {"Ninguno", "Inverso Cuadrado (Físicamente Exacto)", "Lineal", "Escalón",
+                                             "Inverso Cuadrado Limitado", "Inverso Limitado", "Inverso"};
+        static const int falloffIds[] = {0, 10, 8, 5, 7, 6, 9};
+        int fi = 0;
+        for (int i = 0; i < IM_ARRAYSIZE(falloffIds); ++i)
+            if (falloffIds[i] == l.falloff) fi = i;
+        propLabel("Decaimiento", false);
+        ImGui::SetNextItemWidth(fieldWidth(240));
+        if (ImGui::Combo("##lfalloff", &fi, falloffNames, IM_ARRAYSIZE(falloffNames))) {
+            history.commitBefore(root);
+            l.falloff = falloffIds[fi];
+        }
+        setHint("Cómo pierde fuerza la luz con la distancia. En las inversas, el Radio es la distancia a la que da el 100 %.");
+        ImGui::BeginDisabled(l.falloff == 0);
+        propLabel("Radio Interior");
+        float innerCm = l.innerRadius * kCmPerUnit;
+        ImGui::SetNextItemWidth(fieldWidth());
+        if (ImGui::DragFloat("##lir", &innerCm, 1.0f, 0.0f, 1e7f, "%.0f cm")) l.innerRadius = std::max(innerCm, 0.0f) / kCmPerUnit;
+        trackEdit(history, root);
+        propLabel("Radio/Decaimiento");
+        float radCm = l.falloffRadius * kCmPerUnit;
+        ImGui::SetNextItemWidth(fieldWidth());
+        if (ImGui::DragFloat("##lr", &radCm, 1.0f, 0.1f, 1e7f, "%.0f cm")) l.falloffRadius = std::max(radCm, 0.1f) / kCmPerUnit;
+        trackEdit(history, root);
+        ImGui::EndDisabled();
+        if (l.kind == LightKind::Area) {
+            sectionHeader("Área");
+            const char* axes[] = {"Tamaño Horizontal", "Tamaño Vertical", "Tamaño en Profundidad"};
+            for (int i = 0; i < 3; ++i) {
+                ImGui::PushID(i);
+                propLabel(axes[i]);
+                float cm = l.areaSize[i] * kCmPerUnit;
+                ImGui::SetNextItemWidth(fieldWidth());
+                if (ImGui::DragFloat("##as", &cm, 1.0f, 0.1f, 1e7f, "%.0f cm")) l.areaSize[i] = std::max(cm, 0.1f) / kCmPerUnit;
+                trackEdit(history, root);
+                ImGui::PopID();
+            }
+        }
+    }
+    if (isLight && tabOn(mask, 5)) {
+        LightData& l = node.light;
+        sectionHeader("Sombra");
+        static const char* shadows[] = {"Ninguno", "Mapeado (Suave)", "Trazado (Duro)", "Área"};
+        propLabel("Sombra", false);
+        int sh = std::clamp(l.shadow, 0, 3);
+        ImGui::SetNextItemWidth(fieldWidth());
+        if (ImGui::Combo("##lshadow2", &sh, shadows, IM_ARRAYSIZE(shadows))) {
+            history.commitBefore(root);
+            l.shadow = sh;
+        }
+        ImGui::TextDisabled("  En el visor, las sombras son siempre mapeadas y de una sola luz.");
+    }
+    if (isLight && (mask & ~0x2Fu)) {
         sectionHeader("Página no disponible");
         ImGui::TextDisabled("  Todavía no implementado en Iron3D.");
     }

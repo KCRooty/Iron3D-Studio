@@ -6,6 +6,60 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-11 (15) — Luces de la escena en el visor y materiales por selección
+
+**Nuevo**
+- **Las luces de la escena iluminan el visor** (Vulkan y OpenGL), hasta 32 a la vez: color,
+  intensidad, tipo (Omni, Foco con su cono interior/exterior, Infinita/Paralela) y
+  decaimiento (Ninguno, Cuadrado Inverso, Lineal, Paso, Ajustado Cuadrado Inverso…).
+  También respetan No Ilumina, Difusión y Especular. Antes había una sola luz blanca en la
+  posición de la primera luz, y daba igual cuántas se añadieran o cómo se configuraran.
+  Sin luces en la escena, la luz por defecto sigue en la cámara. La sombra la proyecta la
+  primera luz que tenga sombra activada (en OpenGL, todavía sin sombras).
+- La Luminancia del material se suma en el visor de Vulkan.
+- **Atributos de la luz editables**, como en R19: pestaña General (Color, Intensidad, Tipo,
+  Sombra, No Ilumina, Difusión, Especular), Detalles (ángulos del foco, Decaimiento, Radio
+  Interior, Radio/Decaimiento, tamaño del área) y Sombra. Todo con deshacer.
+- Crear > Luz: Foco, Luz Infinita y Luz de Área ya crean su tipo.
+- **Materiales por Selección de Polígonos**: las etiquetas de textura restringidas a una
+  selección pintan solo esos polígonos, y la de más a la derecha manda donde se pisan, como
+  en C4D. Antes se aplicaban a todo el objeto: el traje de William Afton salía blanco
+  entero por la etiqueta del cuello de la camisa, y la cabeza y los ojos de un solo color.
+  Se guardan en el `.iron`.
+
+**Arreglado**
+- **Luces y cámaras importadas de `.c4d` salían con los valores por defecto** (toda luz era
+  una Omni blanca al 100 %). C4D guarda sus parámetros en el objeto, no en su contenedor, y
+  el importador leía el contenedor. Ahora se leen bien: color, intensidad, tipo, sombra,
+  decaimiento, focal, sensor, zoom.
+- **El exportador escribía las luces y cámaras en el mismo sitio equivocado**, así que un
+  `.c4d` exportado por Iron3D se abría en C4D con las luces por defecto. El test de ida y
+  vuelta no lo veía porque leía del mismo sitio; ahora lee y escribe por el camino bueno y
+  pasa.
+
+**Probado**
+- Packs de luces reales (`freddy fazbear lighting pack`, `fnaf lighting pack`): el volcado
+  de la escena coincide con los valores que muestra R19 (p. ej. FNaF World Lighting: tres
+  Infinitas, azul-violeta 100 %, azul 150 %, blanca 24 %). Capturas en Vulkan y OpenGL de
+  William Afton con FNaF World Lighting y Stage Lighting 2.
+- Partes de material de Afton comprobadas con `c4d_probe` (cabeza, ojos, traje, zapatos,
+  dientes, cinturón): los rangos suman exactamente los triángulos de cada malla.
+- `iron3d_tests`, `c4d_roundtrip_test` y `preset_library_test` pasan.
+
+**Sin probar / pendiente**
+- No se ha abierto en R19 un `.c4d` exportado tras el arreglo del exportador.
+- Al exportar, las partes por selección se pierden (solo va el material del objeto; avisa).
+- Si se edita la malla con las herramientas de modelado, las partes pueden quedar
+  desalineadas (si ya no caben, el objeto entero vuelve a su material).
+- Las miniaturas del Navegador de Contenido todavía no usan las partes.
+- Tubo, Área e IES iluminan como una Omni; Paralela y Foco Paralelo como una Infinita.
+- Pestañas de la luz sin hacer: Visibilidad, Fotométrico, Cáusticas, Ruido, Lentes,
+  Proyecto (son de render).
+- `[C4D] [FNaF 1] lights pack update by FazbearRenders.lib4d` no se abre ("No se puede
+  leer el archivo"), sin investigar.
+- Herramientas de verificación: `preset_library_test --list/--extract`, Iron3D `--also=` y
+  `IRON3D_DUMP_LIGHTS=1` (parámetros en bruto de cada luz al importar).
+
 ### 2026-11-10 (14) — Texturas en el visor y personajes con Piel
 
 **Nuevo**

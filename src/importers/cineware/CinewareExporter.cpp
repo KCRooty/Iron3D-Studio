@@ -41,6 +41,15 @@ using namespace cineware;
 
 constexpr double kPi = 3.14159265358979323846;
 
+// Luces y camaras guardan sus parametros en su NodeData, no en el contenedor
+// (2026-11-11): escribir solo en GetDataInstance() dejaba el .c4d con los
+// valores por defecto al abrirlo en C4D. SetParameter pasa por el NodeData;
+// se copia tambien al contenedor por si algun lector lo mira ahi.
+void setParam(BaseObject* op, Int32 id, const GeData& d) {
+    op->SetParameter(id, d);
+    op->GetDataInstance()->SetData(id, d);
+}
+
 cineware::Vector cv(const glm::dvec3& v) { return cineware::Vector(v.x, v.y, v.z); }
 cineware::Vector cv(const glm::vec3& v) { return cineware::Vector(v.x, v.y, v.z); }
 
@@ -359,32 +368,33 @@ BaseObject* exportNode(const SceneNode& node, BaseObject* parent, BaseObject* pr
         case PrimitiveType::Light:
             if ((op = BaseObject::Alloc(Olight)) != nullptr) {
                 const LightData& l = node.light;
-                BaseContainer* bc = op->GetDataInstance();
                 const double toRad = kPi / 180.0;
-                bc->SetInt32(LIGHT_TYPE, (Int32)l.kind);
-                bc->SetVector(LIGHT_COLOR, cv(l.color));
-                bc->SetFloat(LIGHT_BRIGHTNESS, l.intensity);
-                bc->SetFloat(LIGHT_DETAILS_OUTERANGLE, l.outerAngleDeg * toRad);
-                bc->SetFloat(LIGHT_DETAILS_INNERANGLE, l.innerAngleDeg * toRad);
-                bc->SetInt32(LIGHT_SHADOWTYPE, l.shadow);
-                bc->SetInt32(LIGHT_DETAILS_FALLOFF, l.falloff);
-                bc->SetFloat(LIGHT_DETAILS_OUTERDISTANCE, l.falloffRadius * c4d::kCmPerUnit);
-                bc->SetFloat(LIGHT_DETAILS_INNERDISTANCE, l.innerRadius * c4d::kCmPerUnit);
-                bc->SetInt32(LIGHT_AREADETAILS_SHAPE, l.areaShape);
-                bc->SetFloat(LIGHT_AREADETAILS_SIZEX, l.areaSize.x * c4d::kCmPerUnit);
-                bc->SetFloat(LIGHT_AREADETAILS_SIZEY, l.areaSize.y * c4d::kCmPerUnit);
-                bc->SetFloat(LIGHT_AREADETAILS_SIZEZ, l.areaSize.z * c4d::kCmPerUnit);
+                setParam(op, LIGHT_TYPE, GeData((Int32)((Int32)l.kind)));
+                setParam(op, LIGHT_COLOR, GeData(cv(l.color)));
+                setParam(op, LIGHT_BRIGHTNESS, GeData((Float)(l.intensity)));
+                setParam(op, LIGHT_DETAILS_OUTERANGLE, GeData((Float)(l.outerAngleDeg * toRad)));
+                setParam(op, LIGHT_DETAILS_INNERANGLE, GeData((Float)(l.innerAngleDeg * toRad)));
+                setParam(op, LIGHT_SHADOWTYPE, GeData((Int32)(l.shadow)));
+                setParam(op, LIGHT_DETAILS_FALLOFF, GeData((Int32)(l.falloff)));
+                setParam(op, LIGHT_DETAILS_OUTERDISTANCE, GeData((Float)(l.falloffRadius * c4d::kCmPerUnit)));
+                setParam(op, LIGHT_DETAILS_INNERDISTANCE, GeData((Float)(l.innerRadius * c4d::kCmPerUnit)));
+                setParam(op, LIGHT_NOLIGHTRADIATION, GeData((Int32)((l.noIllumination) ? 1 : 0)));
+                setParam(op, LIGHT_DETAILS_DIFFUSE, GeData((Int32)((l.diffuse) ? 1 : 0)));
+                setParam(op, LIGHT_DETAILS_SPECULAR, GeData((Int32)((l.specular) ? 1 : 0)));
+                setParam(op, LIGHT_AREADETAILS_SHAPE, GeData((Int32)(l.areaShape)));
+                setParam(op, LIGHT_AREADETAILS_SIZEX, GeData((Float)(l.areaSize.x * c4d::kCmPerUnit)));
+                setParam(op, LIGHT_AREADETAILS_SIZEY, GeData((Float)(l.areaSize.y * c4d::kCmPerUnit)));
+                setParam(op, LIGHT_AREADETAILS_SIZEZ, GeData((Float)(l.areaSize.z * c4d::kCmPerUnit)));
                 ++rep.lights;
             }
             break;
         case PrimitiveType::Camera:
             if ((op = BaseObject::Alloc(Ocamera)) != nullptr) {
                 const CameraData& c = node.camera;
-                BaseContainer* bc = op->GetDataInstance();
-                bc->SetInt32(CAMERA_PROJECTION, c.projection);
-                bc->SetFloat(CAMERA_FOCUS, c.focalMm);
-                bc->SetFloat(CAMERAOBJECT_APERTURE, c.sensorMm);
-                bc->SetFloat(CAMERA_ZOOM, c.zoom);
+                setParam(op, CAMERA_PROJECTION, GeData((Int32)(c.projection)));
+                setParam(op, CAMERA_FOCUS, GeData((Float)(c.focalMm)));
+                setParam(op, CAMERAOBJECT_APERTURE, GeData((Float)(c.sensorMm)));
+                setParam(op, CAMERA_ZOOM, GeData((Float)(c.zoom)));
                 if (!c.target.empty()) ctx.cameras.push_back({&node, op});
                 ++rep.cameras;
             }
@@ -423,6 +433,8 @@ BaseObject* exportNode(const SceneNode& node, BaseObject* parent, BaseObject* pr
     }
     // Material: solo donde cambia respecto al padre (en C4D se hereda), o
     // donde cambia la proyeccion/mosaico de la etiqueta.
+    if (!node.materialParts.empty())
+        ctx.warn("Materiales por Selección de Polígonos: se exporta solo el material del objeto (las partes, todavía no)");
     if (node.materialIndex >= 0 && (node.materialIndex != parentMaterial || !(node.texTag == parentTag))) {
         if (BaseMaterial* mat = makeMaterial(node.materialIndex, ctx)) {
             if (BaseTag* t = op->MakeTag(Ttexture)) {

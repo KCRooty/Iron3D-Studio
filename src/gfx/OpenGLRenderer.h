@@ -52,10 +52,11 @@ public:
     void setViewportRect(int x, int y, int width, int height) override;
     void setDrawRect(int x, int y, int width, int height) override;
     void drawGrid(const std::vector<Vertex>& lineVerts, const glm::mat4& viewProj) override;
-    void setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
-                      const glm::mat4& lightViewProj) override;
+    void setSceneLighting(const SceneLighting& lighting, const glm::mat4& lightViewProj) override;
+    void setEyePosition(const glm::vec3& eyePosWS) override;
     void drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
-                  const Material& material, const TexMapping& tex) override;
+                  const Material& material, const TexMapping& tex, uint32_t firstIndex,
+                  uint32_t indexCount) override;
     void drawGizmo(const std::vector<Vertex>& lineVerts, const std::vector<Vertex>& triVerts,
                     const glm::mat4& viewProj) override;
     void endFrame() override;
@@ -81,16 +82,23 @@ private:
     // Programa con iluminacion basica (Fase 5), solo para drawMesh.
     gl::GLuint litProgram_ = 0;
     gl::GLint uLitModelLoc_ = -1, uLitMvpLoc_ = -1;
-    gl::GLint uLitLightPosLoc_ = -1, uLitEyePosLoc_ = -1;
+    gl::GLint uLitEyePosLoc_ = -1;
     gl::GLint uLitDiffuseLoc_ = -1, uLitSpecularLoc_ = -1, uLitShininessLoc_ = -1;
     gl::GLint uLitColorTexLoc_ = -1, uLitTexFlagsLoc_ = -1, uLitUvTransformLoc_ = -1;
+    gl::GLint uLitEmissionLoc_ = -1, uLitAmbientLoc_ = -1;
+    // Luces de la escena (2026-11-10): arrays de uniforms, mismo contenido
+    // que el buffer de luces de Vulkan (ver LightsUniform.h).
+    gl::GLint uLitLightCountLoc_ = -1, uLitLightPosTypeLoc_ = -1, uLitLightDirFalloffLoc_ = -1;
+    gl::GLint uLitLightColorRadiusLoc_ = -1, uLitLightConeLoc_ = -1;
+    int lightCount_ = 0;
+    float ambient_ = 0.15f;
+    std::vector<glm::vec4> lightPosType_, lightDirFalloff_, lightColorRadius_, lightCone_;
     // Texturas de Color de los materiales (2026-11-10): clave
     // textureCacheKey -> nombre de textura (0 = no se pudo cargar, no se
     // reintenta). Viven hasta shutdown(), igual que en Vulkan.
     gl::GLuint materialTexture(const std::string& rawPath, const std::string& baseDir);
     std::unordered_map<std::string, gl::GLuint> materialTextures_;
     gl::GLuint whiteTexture_ = 0;
-    glm::vec3 lightPosWS_{0.0f};
     glm::vec3 eyePosWS_{0.0f};
 
     float clearColor_[4] = {0.0f, 0.0f, 0.0f, 1.0f};

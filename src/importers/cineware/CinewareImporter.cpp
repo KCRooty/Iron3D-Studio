@@ -29,6 +29,7 @@
 #include "core/Material.h"
 
 #include "c4d.h"
+#include "c4d_selectiontag.h"
 #include "default_alien_overloads.h"
 
 #include <algorithm>
@@ -253,8 +254,23 @@ int materialFor(BaseMaterial* m, Ctx& ctx) {
     return index;
 }
 
-// Material del objeto: la etiqueta de textura mas a la derecha (la que manda
-// en C4D), con su proyeccion y mosaico. Sin etiqueta se hereda del padre.
+TextureTagData textureTagData(BaseTag* t) {
+    BaseContainer* bc = t->GetDataInstance();
+    TextureTagData d;
+    d.projection = bc->GetInt32(TEXTURETAG_PROJECTION, TEXTURETAG_PROJECTION_UVW);
+    d.offset = glm::vec2((float)bc->GetFloat(TEXTURETAG_OFFSETX, 0.0), (float)bc->GetFloat(TEXTURETAG_OFFSETY, 0.0));
+    d.length = glm::vec2((float)bc->GetFloat(TEXTURETAG_LENGTHX, 1.0), (float)bc->GetFloat(TEXTURETAG_LENGTHY, 1.0));
+    d.tile = bc->GetBool(TEXTURETAG_TILE, true);
+    d.seamless = bc->GetBool(TEXTURETAG_SEAMLESS, false);
+    d.side = bc->GetInt32(TEXTURETAG_SIDE, 0);
+    return d;
+}
+
+std::string textureTagSelection(BaseTag* t) { return utf8(t->GetDataInstance()->GetString(TEXTURETAG_RESTRICTION)); }
+
+// Material del objeto: la etiqueta de textura SIN restriccion mas a la derecha
+// (la que manda en C4D), con su proyeccion y mosaico. Las restringidas a una
+// Seleccion de Poligonos van aparte (selectionParts). Sin etiqueta se hereda.
 int materialOfObject(BaseObject* op, int inherited, TextureTagData& texTag, Ctx& ctx) {
     int result = inherited;
     int tags = 0;
@@ -262,25 +278,56 @@ int materialOfObject(BaseObject* op, int inherited, TextureTagData& texTag, Ctx&
         if (t->GetType() != Ttexture) continue;
         BaseMaterial* m = static_cast<TextureTag*>(t)->GetMaterial();
         if (!m) continue;
-        ++tags;
-        result = materialFor(m, ctx);
-        BaseContainer* bc = t->GetDataInstance();
-        TextureTagData d;
-        d.projection = bc->GetInt32(TEXTURETAG_PROJECTION, TEXTURETAG_PROJECTION_UVW);
-        d.offset = glm::vec2((float)bc->GetFloat(TEXTURETAG_OFFSETX, 0.0), (float)bc->GetFloat(TEXTURETAG_OFFSETY, 0.0));
-        d.length = glm::vec2((float)bc->GetFloat(TEXTURETAG_LENGTHX, 1.0), (float)bc->GetFloat(TEXTURETAG_LENGTHY, 1.0));
-        d.tile = bc->GetBool(TEXTURETAG_TILE, true);
-        d.seamless = bc->GetBool(TEXTURETAG_SEAMLESS, false);
-        d.side = bc->GetInt32(TEXTURETAG_SIDE, 0);
-        texTag = d;
+        const TextureTagData d = textureTagData(t);
         if (d.projection != TEXTURETAG_PROJECTION_UVW)
             ctx.warn("Etiquetas de textura con proyección distinta de UVW (Esférica, Cúbica...): se conserva, pero Iron3D "
                      "dibuja con las UV");
-        if (bc->GetString(TEXTURETAG_RESTRICTION).GetLength() > 0)
-            ctx.warn("Etiquetas de textura restringidas a una selección: se aplican a todo el objeto");
+        if (!textureTagSelection(t).empty()) continue;
+        ++tags;
+        result = materialFor(m, ctx);
+        texTag = d;
     }
-    if (tags > 1) ctx.warn("Objetos con varias etiquetas de textura: vale la de más a la derecha");
+    if (tags > 1) ctx.warn("Objetos con varias etiquetas de textura sin selección: vale la de más a la derecha");
     return result;
+}
+
+// Etiquetas de Textura restringidas a una Seleccion de Poligonos (2026-11-11):
+// en C4D, cada una pinta solo esos poligonos, y la de mas a la derecha manda
+// donde se pisan (una sin restriccion a la derecha las tapa todas). `slot`
+// sale con la parte de cada poligono (-1 = el material del objeto). Antes se
+// aplicaban a todo el objeto: el traje de Afton salia blanco entero por la
+// etiqueta del cuello de la camisa.
+void selectionParts(BaseObject* op, Int32 polyCount, std::vector<MaterialPart>& parts, std::vector<int>& slot,
+                    Ctx& ctx) {
+    parts.clear();
+    slot.assign((size_t)std::max<Int32>(polyCount, 0), -1);
+    for (BaseTag* t = op->GetFirstTag(); t; t = t->GetNext()) {
+        if (t->GetType() != Ttexture) continue;
+        BaseMaterial* m = static_cast<TextureTag*>(t)->GetMaterial();
+        if (!m) continue;
+        const std::string sel = textureTagSelection(t);
+        if (sel.empty()) {
+            std::fill(slot.begin(), slot.end(), -1);
+            continue;
+        }
+        BaseSelect* bs = nullptr;
+        for (BaseTag* st = op->GetFirstTag(); st && !bs; st = st->GetNext())
+            if (st->GetType() == Tpolygonselection && utf8(st->GetName()) == sel)
+                bs = static_cast<SelectionTag*>(st)->GetBaseSelect();
+        if (!bs) {
+            ctx.warn("Etiquetas de textura restringidas a una selección que no existe en el objeto: no pintan nada");
+            continue;
+        }
+        MaterialPart part;
+        part.materialIndex = materialFor(m, ctx);
+        part.texTag = textureTagData(t);
+        part.selection = sel;
+        const int k = (int)parts.size();
+        parts.push_back(part);
+        Int32 seg = 0, a = 0, b = 0;
+        while (bs->GetRange(seg++, &a, &b))
+            for (Int32 i = std::max<Int32>(a, 0); i <= b && i < polyCount; ++i) slot[(size_t)i] = k;
+    }
 }
 
 // Angulo de suavizado de la etiqueta Phong; -1 = sin etiqueta (caras planas).
@@ -467,37 +514,91 @@ double defaultPrimitivePhong(Int32 type) {
     return (type == Ocube || type == Opyramid) ? -1.0 : kDefaultPhongRad;
 }
 
+// Parametros de objeto (2026-11-11): luces y camaras guardan los suyos en
+// su NodeData (LightObjectData, CameraObjectData), no en el contenedor, asi
+// que GetDataInstance() no los trae y salian todos con el valor por defecto
+// (toda luz era una Omni blanca al 100 %). GetParameter pasa por el NodeData;
+// si no responde, se mira el contenedor.
+GeData paramData(BaseObject* op, Int32 id) {
+    GeData d;
+    if (!op->GetParameter(id, d)) d = GeData();
+    return d;
+}
+Int32 paramInt(BaseObject* op, Int32 id, Int32 def) {
+    const GeData d = paramData(op, id);
+    if (d.GetType() == DA_LONG) return d.GetInt32();
+    return op->GetDataInstance()->GetInt32(id, def);
+}
+Bool paramBool(BaseObject* op, Int32 id, Bool def) {
+    const GeData d = paramData(op, id);
+    if (d.GetType() == DA_LONG) return d.GetInt32() != 0;
+    return op->GetDataInstance()->GetBool(id, def);
+}
+Float paramFloat(BaseObject* op, Int32 id, Float def) {
+    const GeData d = paramData(op, id);
+    if (d.GetType() == DA_REAL) return d.GetFloat();
+    return op->GetDataInstance()->GetFloat(id, def);
+}
+cineware::Vector paramVector(BaseObject* op, Int32 id, const cineware::Vector& def) {
+    const GeData d = paramData(op, id);
+    if (d.GetType() == DA_VECTOR) return d.GetVector();
+    return op->GetDataInstance()->GetVector(id, def);
+}
+
 // Datos de una Luz de C4D (distancias en cm -> unidades de Iron3D).
 LightData lightFrom(BaseObject* op, Ctx& ctx) {
     BaseContainer* bc = op->GetDataInstance();
+    // Diagnostico (IRON3D_DUMP_LIGHTS=1): todos los parametros de la luz tal cual.
+    if (std::getenv("IRON3D_DUMP_LIGHTS")) {
+        std::fprintf(stderr, "[luz] %s:", op->GetName().GetCStringCopy());
+        for (Int32 i = 0;; ++i) {
+            const Int32 id = bc->GetIndexId(i);
+            if (id == NOTOK) break;
+            const GeData* d = bc->GetIndexData(i);
+            if (!d) continue;
+            switch (d->GetType()) {
+                case DA_LONG: std::fprintf(stderr, " %d=%d", (int)id, (int)d->GetInt32()); break;
+                case DA_REAL: std::fprintf(stderr, " %d=%.3f", (int)id, d->GetFloat()); break;
+                case DA_VECTOR: {
+                    const cineware::Vector v = d->GetVector();
+                    std::fprintf(stderr, " %d=(%.2f %.2f %.2f)", (int)id, v.x, v.y, v.z);
+                    break;
+                }
+                default: std::fprintf(stderr, " %d:t%d", (int)id, (int)d->GetType()); break;
+            }
+        }
+        std::fprintf(stderr, "\n");
+    }
     LightData l;
-    const Int32 type = bc->GetInt32(LIGHT_TYPE, LIGHT_TYPE_OMNI);
+    const Int32 type = paramInt(op, LIGHT_TYPE, LIGHT_TYPE_OMNI);
     l.kind = (LightKind)std::clamp((int)type, 0, 9);
-    const cineware::Vector c = bc->GetVector(LIGHT_COLOR, cineware::Vector(1.0, 1.0, 1.0));
+    const cineware::Vector c = paramVector(op, LIGHT_COLOR, cineware::Vector(1.0, 1.0, 1.0));
     l.color = glm::vec3((float)c.x, (float)c.y, (float)c.z);
-    l.intensity = (float)bc->GetFloat(LIGHT_BRIGHTNESS, 1.0);
+    l.intensity = (float)paramFloat(op, LIGHT_BRIGHTNESS, 1.0);
     const double toDeg = 180.0 / kPi;
-    l.outerAngleDeg = (float)(bc->GetFloat(LIGHT_DETAILS_OUTERANGLE, 30.0 / toDeg) * toDeg);
-    l.innerAngleDeg = (float)(bc->GetFloat(LIGHT_DETAILS_INNERANGLE, 0.0) * toDeg);
-    l.shadow = bc->GetInt32(LIGHT_SHADOWTYPE, LIGHT_SHADOWTYPE_NONE);
-    l.falloff = bc->GetInt32(LIGHT_DETAILS_FALLOFF, LIGHT_DETAILS_FALLOFF_NONE);
-    l.falloffRadius = (float)(bc->GetFloat(LIGHT_DETAILS_OUTERDISTANCE, 500.0) / c4d::kCmPerUnit);
-    l.innerRadius = (float)(bc->GetFloat(LIGHT_DETAILS_INNERDISTANCE, 0.0) / c4d::kCmPerUnit);
-    l.areaShape = bc->GetInt32(LIGHT_AREADETAILS_SHAPE, LIGHT_AREADETAILS_SHAPE_RECTANGLE);
-    l.areaSize = glm::vec3((float)(bc->GetFloat(LIGHT_AREADETAILS_SIZEX, 200.0) / c4d::kCmPerUnit),
-                           (float)(bc->GetFloat(LIGHT_AREADETAILS_SIZEY, 200.0) / c4d::kCmPerUnit),
-                           (float)(bc->GetFloat(LIGHT_AREADETAILS_SIZEZ, 200.0) / c4d::kCmPerUnit));
+    l.outerAngleDeg = (float)(paramFloat(op, LIGHT_DETAILS_OUTERANGLE, 30.0 / toDeg) * toDeg);
+    l.innerAngleDeg = (float)(paramFloat(op, LIGHT_DETAILS_INNERANGLE, 0.0) * toDeg);
+    l.shadow = paramInt(op, LIGHT_SHADOWTYPE, LIGHT_SHADOWTYPE_NONE);
+    l.falloff = paramInt(op, LIGHT_DETAILS_FALLOFF, LIGHT_DETAILS_FALLOFF_NONE);
+    l.falloffRadius = (float)(paramFloat(op, LIGHT_DETAILS_OUTERDISTANCE, 500.0) / c4d::kCmPerUnit);
+    l.innerRadius = (float)(paramFloat(op, LIGHT_DETAILS_INNERDISTANCE, 0.0) / c4d::kCmPerUnit);
+    l.noIllumination = paramBool(op, LIGHT_NOLIGHTRADIATION, false);
+    l.diffuse = paramBool(op, LIGHT_DETAILS_DIFFUSE, true);
+    l.specular = paramBool(op, LIGHT_DETAILS_SPECULAR, true);
+    l.areaShape = paramInt(op, LIGHT_AREADETAILS_SHAPE, LIGHT_AREADETAILS_SHAPE_RECTANGLE);
+    l.areaSize = glm::vec3((float)(paramFloat(op, LIGHT_AREADETAILS_SIZEX, 200.0) / c4d::kCmPerUnit),
+                           (float)(paramFloat(op, LIGHT_AREADETAILS_SIZEY, 200.0) / c4d::kCmPerUnit),
+                           (float)(paramFloat(op, LIGHT_AREADETAILS_SIZEZ, 200.0) / c4d::kCmPerUnit));
     if (op->GetTag(Tsunexpression)) ctx.warn("Luces con expresión Sol: se importan como su luz (sin la expresión)");
     return l;
 }
 
 CameraData cameraFrom(BaseObject* op) {
-    BaseContainer* bc = op->GetDataInstance();
     CameraData c;
-    c.projection = bc->GetInt32(CAMERA_PROJECTION, Pperspective);
-    c.focalMm = (float)bc->GetFloat(CAMERA_FOCUS, 36.0);
-    c.sensorMm = (float)bc->GetFloat(CAMERAOBJECT_APERTURE, 36.0);
-    c.zoom = (float)bc->GetFloat(CAMERA_ZOOM, 1.0);
+    c.projection = paramInt(op, CAMERA_PROJECTION, Pperspective);
+    c.focalMm = (float)paramFloat(op, CAMERA_FOCUS, 36.0);
+    c.sensorMm = (float)paramFloat(op, CAMERAOBJECT_APERTURE, 36.0);
+    c.zoom = (float)paramFloat(op, CAMERA_ZOOM, 1.0);
     return c;
 }
 
@@ -617,6 +718,8 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
 
     const Int32 type = op->GetType();
     c4d::PolySoup soup;
+    std::vector<MaterialPart> parts;
+    std::vector<int> polySlot;
     double phong = phongAngle(op);
     bool childrenAreInputs = false;
 
@@ -638,6 +741,8 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
             appendPolygons(static_cast<PolygonObject*>(op), glm::dmat4(1.0), own);
             if (own.polys.size() == soup.polys.size()) soup.uvs = own.uvs;
         }
+        selectionParts(op, static_cast<PolygonObject*>(op)->GetPolygonCount(), parts, polySlot, ctx);
+        if (polySlot.size() != soup.polys.size()) parts.clear();
     } else if (type == Olight) {
         node->primitive = PrimitiveType::Light;
         node->light = lightFrom(op, ctx);
@@ -674,8 +779,41 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
                  "(guarda el .c4d con \"Guardar polígonos para Melange\" activado para traerla)");
     }
 
+    // Poligonos agrupados por parte (estable: primero los del material del
+    // objeto, luego cada parte en orden), para que cada una sea un rango.
+    std::vector<int> slotOfPoly;
+    if (!parts.empty()) {
+        std::vector<size_t> order(soup.polys.size());
+        for (size_t i = 0; i < order.size(); ++i) order[i] = i;
+        std::stable_sort(order.begin(), order.end(), [&](size_t x, size_t y) { return polySlot[x] < polySlot[y]; });
+        c4d::PolySoup sorted;
+        sorted.points = std::move(soup.points);
+        sorted.polys.reserve(order.size());
+        for (size_t i : order) sorted.polys.push_back(soup.polys[i]);
+        if (!soup.uvs.empty())
+            for (size_t i : order) sorted.uvs.push_back(soup.uvs[i]);
+        for (size_t i : order) slotOfPoly.push_back(polySlot[i]);
+        soup = std::move(sorted);
+    }
     if (!soup.empty()) {
-        auto mesh = std::make_shared<MeshData>(c4d::toIronMesh(soup, phong));
+        std::vector<uint32_t> trisPerPoly;
+        auto mesh = std::make_shared<MeshData>(c4d::toIronMesh(soup, phong, parts.empty() ? nullptr : &trisPerPoly));
+        if (!parts.empty() && trisPerPoly.size() == slotOfPoly.size()) {
+            uint32_t idx = 0;
+            for (size_t i = 0; i < slotOfPoly.size(); ++i) {
+                const uint32_t n = trisPerPoly[i] * 3u;
+                if (slotOfPoly[i] >= 0) {
+                    MaterialPart& part = parts[(size_t)slotOfPoly[i]];
+                    if (part.indexCount == 0) part.firstIndex = idx;
+                    part.indexCount += n;
+                }
+                idx += n;
+            }
+            for (const MaterialPart& part : parts)
+                if (part.indexCount > 0) node->materialParts.push_back(part);
+            std::sort(node->materialParts.begin(), node->materialParts.end(),
+                      [](const MaterialPart& x, const MaterialPart& y) { return x.firstIndex < y.firstIndex; });
+        }
         rep.points += (long long)soup.points.size();
         rep.polygons += (long long)soup.polys.size();
         if (!mesh->indices.empty()) {

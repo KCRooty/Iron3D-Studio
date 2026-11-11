@@ -89,6 +89,10 @@ struct LightData {
     float innerRadius = 0.0f;        // Radio interior del decaimiento
     int areaShape = 1;               // forma de la Luz de Area (1 = rectangulo)
     glm::vec3 areaSize{1.0f, 1.0f, 1.0f}; // tamano X/Y/Z de la Luz de Area (C4D: 200 cm)
+    // Pestana General de C4D (2026-11-10): No Ilumina, Difusion, Especular.
+    bool noIllumination = false;
+    bool diffuse = true;
+    bool specular = true;
     bool operator==(const LightData&) const = default;
 };
 
@@ -114,6 +118,18 @@ struct TextureTagData {
     bool seamless = false;
     int side = 0;                    // Lado: 0 ambos, 1 frente, 2 detras
     bool operator==(const TextureTagData&) const = default;
+};
+
+// Parte de una malla con otro material (2026-11-11): en C4D, una etiqueta de
+// Textura restringida a una Seleccion de Poligonos. Rango de mesh->indices;
+// los triangulos que no cubre ninguna parte usan materialIndex/texTag.
+struct MaterialPart {
+    uint32_t firstIndex = 0;
+    uint32_t indexCount = 0;
+    int materialIndex = -1;
+    TextureTagData texTag;
+    std::string selection;           // nombre de la Seleccion de Poligonos en C4D
+    bool operator==(const MaterialPart&) const = default;
 };
 
 class SceneNode {
@@ -179,6 +195,9 @@ public:
     LightData light;
     CameraData camera;
     TextureTagData texTag;
+    // Solo con primitive == Mesh: partes con su propio material, ordenadas por
+    // firstIndex y sin solaparse (ver MaterialPart).
+    std::vector<MaterialPart> materialParts;
 
     // Pistas de animacion (vacias = sin animar).
     AnimTrack animPos, animRot, animScale;

@@ -46,11 +46,12 @@ void PrimitiveMesh::destroy(VkDevice /*device*/, VmaAllocator allocator) {
     vertexBuffer_ = indexBuffer_ = VK_NULL_HANDLE;
 }
 
-void PrimitiveMesh::draw(VkCommandBuffer cmd) const {
+void PrimitiveMesh::draw(VkCommandBuffer cmd, uint32_t firstIndex, uint32_t indexCount) const {
     VkDeviceSize offset = 0;
     vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer_, &offset);
     vkCmdBindIndexBuffer(cmd, indexBuffer_, 0, VK_INDEX_TYPE_UINT32);
-    vkCmdDrawIndexed(cmd, indexCount_, 1, 0, 0, 0);
+    if (indexCount == 0 || firstIndex + indexCount > indexCount_) firstIndex = 0, indexCount = indexCount_;
+    vkCmdDrawIndexed(cmd, indexCount, 1, firstIndex, 0, 0);
 }
 
 } // namespace iron3d
