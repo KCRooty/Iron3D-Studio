@@ -1,4 +1,5 @@
 #include "OpenGLRenderer.h"
+#include "core/ChannelBake.h"
 #include "core/TextureImage.h"
 
 #define GLFW_INCLUDE_NONE
@@ -494,7 +495,7 @@ void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     int texFlags = 0;
     glm::vec4 uvTransform(1.0f, 1.0f, 0.0f, 0.0f);
     if (tex.enabled) {
-        if (gl::GLuint t = materialTexture(material.texture(TexSlot::Color), material.texBaseDir)) {
+        if (gl::GLuint t = materialTexture(material, TexSlot::Color)) {
             colorTex = t;
             texFlags = 1 | (tex.tile ? 2 : 0);
             uvTransform = texMappingUvTransform(tex);
@@ -534,18 +535,15 @@ void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
                        reinterpret_cast<const void*>((uintptr_t)firstIndex * sizeof(uint32_t)));
 }
 
-gl::GLuint OpenGLRenderer::materialTexture(const std::string& rawPath, const std::string& baseDir) {
-    if (rawPath.empty()) return 0;
-    const std::string key = textureCacheKey(rawPath, baseDir);
+gl::GLuint OpenGLRenderer::materialTexture(const Material& m, TexSlot slot) {
+    const std::string key = channelTextureKey(m, slot);
+    if (key.empty()) return 0;
     auto it = materialTextures_.find(key);
     if (it != materialTextures_.end()) return it->second;
     gl::GLuint tex = 0;
-    const std::string path = resolveTexturePath(rawPath, baseDir);
     TextureImage img;
-    if (path.empty())
-        std::fprintf(stderr, "[Iron3D] Textura no encontrada: %s\n", rawPath.c_str());
-    else if (!loadTextureImage(path, img))
-        std::fprintf(stderr, "[Iron3D] Formato de textura no soportado o archivo roto: %s\n", path.c_str());
+    if (!loadChannelTexture(m, slot, img))
+        std::fprintf(stderr, "[Iron3D] Textura no encontrada o no se puede leer: %s\n", m.texture(slot).c_str());
     else
         tex = createRepeatTexture(img.rgba.data(), img.width, img.height);
     materialTextures_.emplace(key, tex);

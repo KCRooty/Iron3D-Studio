@@ -264,7 +264,7 @@ void VulkanRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     int texFlags = 0;
     glm::vec4 uvTransform(1.0f, 1.0f, 0.0f, 0.0f);
     if (tex.enabled) {
-        if (VkDescriptorSet s = materialTextures_.get(material.texture(TexSlot::Color), material.texBaseDir)) {
+        if (VkDescriptorSet s = materialTextures_.get(material, TexSlot::Color)) {
             texSet = s;
             texFlags = kLitTexColor | (tex.tile ? kLitTexTile : 0);
             uvTransform = texMappingUvTransform(tex);

@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -36,6 +37,9 @@ struct C4DImportReport {
     // Lo que no ha llegado tal cual (agrupado: "texto (N)"), para que el
     // usuario sepa exactamente que revisar.
     std::vector<std::string> warnings;
+    // Shaders encontrados en los canales de los materiales ("id nombre" -> veces),
+    // para saber que hace falta soportar (auditoria de librerias).
+    std::map<std::string, int> shaders;
 };
 
 // true si este ejecutable lleva el importador de Cineware.

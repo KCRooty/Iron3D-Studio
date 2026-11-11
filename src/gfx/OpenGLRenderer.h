@@ -96,7 +96,7 @@ private:
     // Texturas de Color de los materiales (2026-11-10): clave
     // textureCacheKey -> nombre de textura (0 = no se pudo cargar, no se
     // reintenta). Viven hasta shutdown(), igual que en Vulkan.
-    gl::GLuint materialTexture(const std::string& rawPath, const std::string& baseDir);
+    gl::GLuint materialTexture(const Material& m, TexSlot slot); // ver ChannelBake.h
     std::unordered_map<std::string, gl::GLuint> materialTextures_;
     gl::GLuint whiteTexture_ = 0;
     glm::vec3 eyePosWS_{0.0f};

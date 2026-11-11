@@ -1,6 +1,7 @@
 #include "MaterialTextures.h"
 #include "VulkanContext.h"
 #include "core/Material.h"
+#include "core/ChannelBake.h"
 #include "core/TextureImage.h"
 
 #include <algorithm>
@@ -88,22 +89,20 @@ void MaterialTextures::destroy(VkDevice device, VmaAllocator allocator) {
     pool_ = VK_NULL_HANDLE;
 }
 
-VkDescriptorSet MaterialTextures::get(const std::string& rawPath, const std::string& baseDir) {
-    if (rawPath.empty()) return VK_NULL_HANDLE;
-    const std::string key = textureCacheKey(rawPath, baseDir);
+VkDescriptorSet MaterialTextures::get(const Material& m, TexSlot slot) {
+    const std::string key = channelTextureKey(m, slot);
+    if (key.empty()) return VK_NULL_HANDLE;
     auto it = cache_.find(key);
     if (it != cache_.end()) return it->second < 0 ? VK_NULL_HANDLE : textures_[(size_t)it->second].set;
 
     int index = -1;
-    const std::string path = resolveTexturePath(rawPath, baseDir);
+    const std::string& rawPath = m.texture(slot);
     TextureImage img;
-    if (path.empty()) {
-        std::fprintf(stderr, "[Iron3D] Textura no encontrada: %s\n", rawPath.c_str());
-    } else if (!loadTextureImage(path, img)) {
-        std::fprintf(stderr, "[Iron3D] Formato de textura no soportado o archivo roto: %s\n", path.c_str());
+    if (!loadChannelTexture(m, slot, img)) {
+        std::fprintf(stderr, "[Iron3D] Textura no encontrada o no se puede leer: %s\n", rawPath.c_str());
     } else if (textures_.size() >= kMaxTextures) {
         std::fprintf(stderr, "[Iron3D] Tope de %u texturas alcanzado; %s se ve sin textura.\n", kMaxTextures,
-                     path.c_str());
+                     rawPath.c_str());
     } else {
         Texture t;
         if (upload(img.rgba.data(), img.width, img.height, t)) {

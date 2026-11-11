@@ -22,6 +22,8 @@
 // mismo patron que ya usan SceneHistory/Preferences, sin una clase
 // "MaterialLibrary" de mas.
 
+#include "ShaderTree.h"
+
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
@@ -49,6 +51,30 @@ struct ReflectLayer {
     glm::vec3 color{1.0f};    // color de la capa * brillo
     bool transparencyLayer = false; // capa "Transparencia" que C4D gestiona sola
     std::string roughnessTex, colorTex;
+    // Ajustes de la capa tal como los ensena C4D (2026-11-11).
+    bool active = true;           // la capa cuenta (casilla de la pestana)
+    int blendMode = 0;            // Modo de la capa (0 Normal, 1 Sumar)
+    int attenuation = 0;          // Atenuacion (REFLECTION_ADDITIVE_MODE_*: 0 Promedio, 1 Minimo, 2 Maximo, 3 Anadir, 4 Metal)
+    float bumpStrength = 1.0f;    // Fuerza Relieve
+    glm::vec3 colorRaw{1.0f};     // Color de Capa sin el brillo
+    float colorBrightness = 1.0f; // Brillo del Color de Capa
+    int colorMixMode = 0;         // Modo de Mezcla de la textura de color (0 Normal, 1 Sumar, 2 Restar, 3 Multiplicar)
+    float colorMixStrength = 1.0f;
+};
+
+// Ajustes de un canal (Color, Luminancia...) como los del editor de R19:
+// color y brillo por separado, como se mezcla la textura con el color y el
+// arbol de shaders de la textura (2026-11-11).
+enum class TexMix { Normal = 0, Add = 1, Subtract = 2, Multiply = 3 };
+struct ChannelSettings {
+    glm::vec3 color{1.0f};
+    float brightness = 1.0f;
+    int mixMode = 0;          // TexMix
+    float mixStrength = 1.0f; // Fuerza de Mezcla
+    int sampling = 6;         // Muestreo (6 = MIP)
+    float blurOffset = 0.0f;  // Desenfoque Desfase
+    float blurScale = 0.0f;   // Desenfoque Escala
+    ShaderNode shader;        // vacio = la textura es solo Material::textures[canal]
 };
 
 struct Material {
@@ -72,6 +98,26 @@ struct Material {
     std::string texBaseDir;
     // Capas de Reflectancia originales (vacio = se generan desde los campos PBR).
     std::vector<ReflectLayer> layers;
+
+    // --- Ajustes completos de C4D (2026-11-11) ---
+    // Casillas de canal de la pestana Basico.
+    bool useColor = true, useLuminance = false, useTransparency = false, useReflectance = true;
+    bool useNormal = false, useBump = false, useAlpha = false;
+    ChannelSettings channels[kTexSlotCount]; // Rugosidad no se usa (es de las capas)
+    int diffuseModel = 0;          // Modelo: 0 Lambertiano, 1 Oren-Nayar
+    float diffuseFalloff = 0.0f;   // Caida Difusa
+    float diffuseLevel = 1.0f;     // Nivel Difuso
+    float diffuseRoughness = 0.5f; // Rugosidad (Oren-Nayar)
+    float reflectionBrightness = 1.0f; // Brillo Reflexion Global
+    float specularBrightness = 1.0f;   // Brillo Especular Global
+    bool separatePass = false;         // Pase Separado
+    // Alfa
+    glm::vec3 alphaColor{0.0f};
+    float alphaDelta = 0.0f;
+    bool alphaInvert = false, alphaSoft = true, alphaImage = true;
+
+    ChannelSettings& channel(TexSlot s) { return channels[(int)s]; }
+    const ChannelSettings& channel(TexSlot s) const { return channels[(int)s]; }
 
     const std::string& texture(TexSlot s) const { return textures[(int)s]; }
     std::string& texture(TexSlot s) { return textures[(int)s]; }

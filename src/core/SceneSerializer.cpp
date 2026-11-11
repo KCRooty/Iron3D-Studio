@@ -19,7 +19,8 @@ namespace {
 // 7 (2026-11-07): floats con 9 cifras (ida y vuelta exacta), nombres
 // escapados, UV en MESH, LIGHT / CAMERA / TEXTAG en los nodos y canales,
 // texturas y capas de Reflectancia en los materiales.
-constexpr int kFormatVersion = 7;
+// 8 (2026-11-11): ajustes completos del material (CHANNEL, arbol de shaders).
+constexpr int kFormatVersion = 8;
 
 // Texto entre comillas: '%', '"' y saltos de linea van como %25, %22, %0A.
 std::string quoted(const std::string& text) {
@@ -154,6 +155,25 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
     out << indent << "}\n";
 }
 
+std::string vec3Text(const glm::vec3& v) {
+    std::ostringstream o;
+    o.imbue(std::locale::classic());
+    o << v.r << ',' << v.g << ',' << v.b;
+    return o.str();
+}
+
+glm::vec3 vec3From(const std::string& t) {
+    glm::vec3 v(0.0f);
+    size_t a = 0;
+    for (int k = 0; k < 3; ++k) {
+        const size_t b = t.find(',', a);
+        v[k] = std::stof(t.substr(a, b == std::string::npos ? std::string::npos : b - a));
+        if (b == std::string::npos) break;
+        a = b + 1;
+    }
+    return v;
+}
+
 void writeMaterials(std::ostream& out, const std::vector<Material>& materials) {
     out << "MATERIALS {\n";
     for (const Material& m : materials) {
@@ -165,13 +185,36 @@ void writeMaterials(std::ostream& out, const std::vector<Material>& materials) {
         for (int i = 0; i < kTexSlotCount; ++i)
             if (!m.textures[i].empty()) out << " tex_" << texSlotCode((TexSlot)i) << '=' << quoted(m.textures[i]);
         if (!m.texBaseDir.empty()) out << " texdir=" << quoted(m.texBaseDir);
+        out << " uc=" << (int)m.useColor << " ul=" << (int)m.useLuminance << " ut=" << (int)m.useTransparency
+            << " ur=" << (int)m.useReflectance << " un=" << (int)m.useNormal << " ub=" << (int)m.useBump
+            << " ua=" << (int)m.useAlpha << " dm=" << m.diffuseModel << " df=" << m.diffuseFalloff
+            << " dl=" << m.diffuseLevel << " dr=" << m.diffuseRoughness << " grb=" << m.reflectionBrightness
+            << " gsb=" << m.specularBrightness << " sep=" << (int)m.separatePass << " ac=" << vec3Text(m.alphaColor)
+            << " ad=" << m.alphaDelta << " ai=" << (int)m.alphaInvert << " as=" << (int)m.alphaSoft
+            << " aim=" << (int)m.alphaImage;
         out << " {\n";
         for (const ReflectLayer& l : m.layers)
             out << "    LAYER name=" << quoted(l.name) << " dist=" << l.distribution << " fresnel=" << l.fresnel
                 << " preset=" << l.fresnelPreset << " strength=" << l.strength << " specular=" << l.specular
                 << " rough=" << l.roughness << " ior=" << l.ior << " r=" << l.color.r << " g=" << l.color.g
                 << " b=" << l.color.b << " transp=" << (int)l.transparencyLayer << " rtex=" << quoted(l.roughnessTex)
-                << " ctex=" << quoted(l.colorTex) << "\n";
+                << " ctex=" << quoted(l.colorTex) << " act=" << (int)l.active << " blend=" << l.blendMode
+                << " att=" << l.attenuation << " bump=" << l.bumpStrength << " craw=" << vec3Text(l.colorRaw)
+                << " cbr=" << l.colorBrightness << " cmix=" << l.colorMixMode << " cstr=" << l.colorMixStrength << "\n";
+        // Canales con algo distinto de lo de por defecto.
+        const ChannelSettings def;
+        for (int i = 0; i < kTexSlotCount; ++i) {
+            const ChannelSettings& c = m.channels[i];
+            const bool isDefault = c.color == def.color && c.brightness == def.brightness && c.mixMode == def.mixMode &&
+                                   c.mixStrength == def.mixStrength && c.sampling == def.sampling &&
+                                   c.blurOffset == def.blurOffset && c.blurScale == def.blurScale && c.shader.empty();
+            if (isDefault) continue;
+            out << "    CHANNEL slot=" << texSlotCode((TexSlot)i) << " col=" << vec3Text(c.color) << " br=" << c.brightness
+                << " mix=" << c.mixMode << " str=" << c.mixStrength << " samp=" << c.sampling << " boff=" << c.blurOffset
+                << " bscale=" << c.blurScale;
+            if (!c.shader.empty()) out << " tree=" << quoted(encodeShaderTree(c.shader));
+            out << "\n";
+        }
         out << "  }\n";
     }
     out << "}\n";
@@ -498,6 +541,25 @@ bool parseMaterial(Parser& p, Material& out, std::string& err) {
             else if (key == "ns") out.normalStrength = std::stof(val);
             else if (key == "bs") out.bumpStrength = std::stof(val);
             else if (key == "texdir") out.texBaseDir = unquote(val);
+            else if (key == "uc") out.useColor = val != "0";
+            else if (key == "ul") out.useLuminance = val != "0";
+            else if (key == "ut") out.useTransparency = val != "0";
+            else if (key == "ur") out.useReflectance = val != "0";
+            else if (key == "un") out.useNormal = val != "0";
+            else if (key == "ub") out.useBump = val != "0";
+            else if (key == "ua") out.useAlpha = val != "0";
+            else if (key == "dm") out.diffuseModel = std::stoi(val);
+            else if (key == "df") out.diffuseFalloff = std::stof(val);
+            else if (key == "dl") out.diffuseLevel = std::stof(val);
+            else if (key == "dr") out.diffuseRoughness = std::stof(val);
+            else if (key == "grb") out.reflectionBrightness = std::stof(val);
+            else if (key == "gsb") out.specularBrightness = std::stof(val);
+            else if (key == "sep") out.separatePass = val != "0";
+            else if (key == "ac") out.alphaColor = vec3From(val);
+            else if (key == "ad") out.alphaDelta = std::stof(val);
+            else if (key == "ai") out.alphaInvert = val != "0";
+            else if (key == "as") out.alphaSoft = val != "0";
+            else if (key == "aim") out.alphaImage = val != "0";
             else if (key.rfind("tex_", 0) == 0) {
                 for (int i = 0; i < kTexSlotCount; ++i)
                     if (key.compare(4, std::string::npos, texSlotCode((TexSlot)i)) == 0) out.textures[i] = unquote(val);
@@ -508,8 +570,29 @@ bool parseMaterial(Parser& p, Material& out, std::string& err) {
         }
     }
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras los atributos de MATERIAL"; return false; }
-    while (!p.atEnd() && p.peek() == "LAYER") {
-        p.next();
+    while (!p.atEnd() && (p.peek() == "LAYER" || p.peek() == "CHANNEL")) {
+        if (p.next() == "CHANNEL") {
+            ChannelSettings c;
+            int slot = -1;
+            const bool ok = readAttrs(p, "CHANNEL", err, [&](const std::string& k, const std::string& v) {
+                if (k == "slot") {
+                    for (int i = 0; i < kTexSlotCount; ++i)
+                        if (v == texSlotCode((TexSlot)i)) slot = i;
+                } else if (k == "col") c.color = vec3From(v);
+                else if (k == "br") c.brightness = std::stof(v);
+                else if (k == "mix") c.mixMode = std::stoi(v);
+                else if (k == "str") c.mixStrength = std::stof(v);
+                else if (k == "samp") c.sampling = std::stoi(v);
+                else if (k == "boff") c.blurOffset = std::stof(v);
+                else if (k == "bscale") c.blurScale = std::stof(v);
+                else if (k == "tree") {
+                    if (!decodeShaderTree(unquote(v), c.shader)) c.shader = {}; // ilegible: canal sin arbol
+                }
+            });
+            if (!ok) return false;
+            if (slot >= 0) out.channels[slot] = std::move(c);
+            continue;
+        }
         ReflectLayer l;
         const bool ok = readAttrs(p, "LAYER", err, [&](const std::string& k, const std::string& v) {
             if (k == "name") l.name = unquote(v);
@@ -526,6 +609,14 @@ bool parseMaterial(Parser& p, Material& out, std::string& err) {
             else if (k == "transp") l.transparencyLayer = v != "0";
             else if (k == "rtex") l.roughnessTex = unquote(v);
             else if (k == "ctex") l.colorTex = unquote(v);
+            else if (k == "act") l.active = v != "0";
+            else if (k == "blend") l.blendMode = std::stoi(v);
+            else if (k == "att") l.attenuation = std::stoi(v);
+            else if (k == "bump") l.bumpStrength = std::stof(v);
+            else if (k == "craw") l.colorRaw = vec3From(v);
+            else if (k == "cbr") l.colorBrightness = std::stof(v);
+            else if (k == "cmix") l.colorMixMode = std::stoi(v);
+            else if (k == "cstr") l.colorMixStrength = std::stof(v);
         });
         if (!ok) return false;
         out.layers.push_back(std::move(l));

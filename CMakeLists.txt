@@ -124,11 +124,14 @@ add_executable(Iron3DStudio
     src/core/Paths.cpp
     src/core/Preferences.cpp
     src/core/Material.cpp
+    src/core/ShaderTree.cpp
+    src/core/ChannelBake.cpp
     src/core/ThumbnailRenderer.cpp
     src/core/TextureImage.cpp
     src/core/SceneLighting.cpp
     src/gfx/LitPipeline.cpp
     src/ui/MainUi.cpp
+    src/importers/lib4d/PresetTextures.cpp
     src/ui/UiTheme.cpp
     src/ui/C4DIcons.cpp
     src/ui/IconsSplines.cpp
@@ -178,6 +181,7 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
     # Herramienta de consola para probar el importador con archivos reales.
     add_executable(c4d_probe
         tools/c4d_probe.cpp
+        src/importers/lib4d/PresetTextures.cpp
         src/importers/cineware/CinewareImporter.cpp
         src/importers/cineware/CinewareExporter.cpp
         src/importers/c4d_compat/C4DGeometry.cpp
@@ -186,6 +190,7 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         src/core/SceneNode.cpp
         src/core/SceneSerializer.cpp
         src/core/Material.cpp
+        src/core/ShaderTree.cpp
         src/core/ThumbnailRenderer.cpp)
     target_include_directories(c4d_probe PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
     target_include_directories(c4d_probe SYSTEM PRIVATE "${IRON3D_CINEWARE_SDK}/includes")
@@ -207,6 +212,7 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         src/core/SceneNode.cpp
         src/core/SceneSerializer.cpp
         src/core/Material.cpp
+        src/core/ShaderTree.cpp
         src/core/ThumbnailRenderer.cpp)
     target_include_directories(c4d_roundtrip_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
     target_include_directories(c4d_roundtrip_test SYSTEM PRIVATE "${IRON3D_CINEWARE_SDK}/includes")
@@ -320,6 +326,7 @@ add_executable(iron3d_tests
     src/core/MeshEdit.cpp
     src/core/SceneNode.cpp
     src/core/Material.cpp
+    src/core/ShaderTree.cpp
     src/core/SceneSerializer.cpp
     src/core/ThumbnailRenderer.cpp
     src/core/TransformGizmo.cpp)

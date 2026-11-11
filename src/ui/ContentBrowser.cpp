@@ -1116,6 +1116,12 @@ bool mountTemporaryLibrary(const std::filesystem::path& file, std::string* outEr
     return true;
 }
 
+std::vector<const PresetLibrary*> mountedLibraries() {
+    std::vector<const PresetLibrary*> out;
+    for (auto& m : g_libs) out.push_back(&m->lib);
+    return out;
+}
+
 const PresetLibrary* findMountedLibrary(const std::filesystem::path& file) {
     for (auto& m : g_libs)
         if (samePath(m->lib.file(), file)) return &m->lib;

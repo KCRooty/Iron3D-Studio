@@ -30,6 +30,9 @@
 
 #include "c4d.h"
 #include "c4d_selectiontag.h"
+#include "blendlayers.h"
+#include "c4d_customdatatype/blenddatatype.h"
+#include "c4d_customdatatype/customgui_gradient.h"
 #include "default_alien_overloads.h"
 
 #include <algorithm>
@@ -118,32 +121,211 @@ std::string typeLabel(BaseObject* op) {
     }
 }
 
+// Parametros por GetParameter (los objetos y shaders con NodeData propio -- Luz,
+// Camara, shaders -- no los tienen en el contenedor); si no, el contenedor.
+GeData paramData(BaseList2D* op, Int32 id) {
+    GeData d;
+    if (!op->GetParameter(id, d)) d = GeData();
+    return d;
+}
+Int32 paramInt(BaseList2D* op, Int32 id, Int32 def) {
+    const GeData d = paramData(op, id);
+    if (d.GetType() == DA_LONG) return d.GetInt32();
+    return op->GetDataInstance()->GetInt32(id, def);
+}
+Bool paramBool(BaseList2D* op, Int32 id, Bool def) {
+    const GeData d = paramData(op, id);
+    if (d.GetType() == DA_LONG) return d.GetInt32() != 0;
+    return op->GetDataInstance()->GetBool(id, def);
+}
+Float paramFloat(BaseList2D* op, Int32 id, Float def) {
+    const GeData d = paramData(op, id);
+    if (d.GetType() == DA_REAL) return d.GetFloat();
+    return op->GetDataInstance()->GetFloat(id, def);
+}
+cineware::Vector paramVector(BaseList2D* op, Int32 id, const cineware::Vector& def) {
+    const GeData d = paramData(op, id);
+    if (d.GetType() == DA_VECTOR) return d.GetVector();
+    return op->GetDataInstance()->GetVector(id, def);
+}
+
 // --- Materiales -----------------------------------------------------------------
 
-// Ruta de la imagen de un canal. El enlace apunta a un shader: si es Imagen
-// (Xbitmap) se toma su archivo; si es otro (Capa, Filtro, Fusion...), la
-// primera Imagen que tenga dentro.
-std::string bitmapPath(BaseList2D* link, Ctx& ctx, int depth = 0) {
-    if (!link || depth > 8) return {};
+// Nudos de un Degradado de C4D (color * brillo de cada nudo).
+std::vector<iron3d::GradientKnot> gradientKnots(const GeData& d) {
+    std::vector<iron3d::GradientKnot> out;
+    if (d.GetType() != CUSTOMDATATYPE_GRADIENT) return out;
+    Gradient* g = static_cast<Gradient*>(d.GetCustomDataType(CUSTOMDATATYPE_GRADIENT));
+    if (!g) return out;
+    for (Int32 i = 0; i < g->GetKnotCount(); ++i) {
+        const cineware::GradientKnot k = g->GetKnot(i);
+        iron3d::GradientKnot o;
+        o.color = glm::vec3((float)(k.col.x * k.brightness), (float)(k.col.y * k.brightness), (float)(k.col.z * k.brightness));
+        o.pos = (float)k.pos;
+        o.bias = (float)k.bias;
+        o.interpolation = k.interpolation;
+        out.push_back(o);
+    }
+    return out;
+}
+
+constexpr float kRadToDeg = 57.29577951f;
+
+// Arbol de shaders de un canal tal cual (Imagen, Color, Filtro, Colorizador,
+// Capa, Degradado; el resto queda como "Otro" con sus hijos, para no perder
+// las imagenes que lleven dentro). Ver core/ShaderTree.h.
+iron3d::ShaderNode shaderTree(BaseList2D* link, Ctx& ctx, int depth = 0) {
+    iron3d::ShaderNode n;
+    if (!link || depth > 12) return n;
     BaseShader* sh = static_cast<BaseShader*>(link);
-    if (sh->GetType() == Xbitmap) {
-        GeData d;
-        if (!sh->GetParameter(BITMAPSHADER_FILENAME, d)) return {};
-        std::string p = utf8(d.GetFilename().GetString());
-        // Cinema 4D guarda las rutas relativas como "./tex/a.png": se quita
-        // el "./" para que la ruta vuelva igual que se escribio.
-        while (p.size() > 2 && p[0] == '.' && (p[1] == '/' || p[1] == (char)92)) p.erase(0, 2);
-        return p;
-    }
-    for (BaseShader* k = sh->GetDown(); k; k = k->GetNext()) {
-        const std::string inner = bitmapPath(k, ctx, depth + 1);
-        if (!inner.empty()) {
-            if (depth == 0) ctx.warn("Canales con shaders de C4D (Capa, Filtro, Fusión...): se usa la imagen que llevan dentro");
-            return inner;
+    const Int32 type = sh->GetType();
+    ++ctx.report->shaders[std::to_string((int)type) + " " + utf8(sh->GetName())];
+    n.c4dType = (int)type;
+    n.name = utf8(sh->GetName());
+    auto kids = [&] {
+        for (BaseShader* k = sh->GetDown(); k; k = k->GetNext()) n.children.push_back(shaderTree(k, ctx, depth + 1));
+    };
+    switch (type) {
+        case Xbitmap: {
+            n.kind = iron3d::ShaderKind::Bitmap;
+            GeData d;
+            if (sh->GetParameter(BITMAPSHADER_FILENAME, d)) {
+                std::string path = utf8(d.GetFilename().GetString());
+                // Cinema 4D guarda las rutas relativas como "./tex/a.png": se quita
+                // el "./" para que la ruta vuelva igual que se escribio.
+                while (path.size() > 2 && path[0] == '.' && (path[1] == '/' || path[1] == (char)92)) path.erase(0, 2);
+                n.path = path;
+            }
+            n.sampling = (int)paramInt(sh, BITMAPSHADER_INTERPOLATION, BITMAPSHADER_INTERPOLATION_MIP);
+            break;
         }
+        case Xcolor: {
+            n.kind = iron3d::ShaderKind::Color;
+            const cineware::Vector c = paramVector(sh, COLORSHADER_COLOR, cineware::Vector(1.0, 1.0, 1.0));
+            n.color = glm::vec3((float)c.x, (float)c.y, (float)c.z);
+            n.brightness = (float)paramFloat(sh, COLORSHADER_BRIGHTNESS, 1.0);
+            break;
+        }
+        case Xfilter:
+            n.kind = iron3d::ShaderKind::Filter;
+            n.hue = (float)paramFloat(sh, SLA_FILTER_HUE, 0.0) * kRadToDeg;
+            n.saturation = (float)paramFloat(sh, SLA_FILTER_SATURATION, 0.0);
+            n.lightness = (float)paramFloat(sh, SLA_FILTER_LIGHTNESS, 0.0);
+            n.colorize = paramBool(sh, SLA_FILTER_COLORIZE, false);
+            n.fBrightness = (float)paramFloat(sh, SLA_FILTER_BRIGHNESS, 0.0);
+            n.contrast = (float)paramFloat(sh, SLA_FILTER_CONTRAST, 0.0);
+            n.gamma = (float)paramFloat(sh, SLA_FILTER_GAMMA, 1.0);
+            n.clipping = paramBool(sh, SLA_FILTER_CLIPPING, false);
+            n.lowClip = (float)paramFloat(sh, SLA_FILTER_LOW_CLIP, 0.0);
+            n.highClip = (float)paramFloat(sh, SLA_FILTER_HIGH_CLIP, 1.0);
+            kids();
+            break;
+        case Xcolorizer:
+            n.kind = iron3d::ShaderKind::Colorizer;
+            n.input = (int)paramInt(sh, SLA_COLORIZER_INPUT, SLA_COLORIZER_INPUT_LUMINANCE);
+            n.cycle = paramBool(sh, SLA_COLORIZER_CYCLE, false);
+            n.gradient = gradientKnots(paramData(sh, SLA_COLORIZER_GRADIENT));
+            kids();
+            break;
+        case Xgradient:
+            n.kind = iron3d::ShaderKind::Gradient;
+            n.gradientType = (int)paramInt(sh, SLA_GRADIENT_TYPE, SLA_GRADIENT_TYPE_2D_U);
+            n.cycle = paramBool(sh, SLA_GRADIENT_CYCLE, false);
+            n.angle = (float)paramFloat(sh, SLA_GRADIENT_ANGLE, 0.0);
+            n.gradient = gradientKnots(paramData(sh, SLA_GRADIENT_GRADIENT));
+            break;
+        case Xlayer: {
+            n.kind = iron3d::ShaderKind::Layer;
+            std::vector<BaseShader*> childPtrs;
+            for (BaseShader* k = sh->GetDown(); k; k = k->GetNext()) childPtrs.push_back(k);
+            kids();
+            const GeData d = paramData(sh, SLA_LAYER_BLEND);
+            iBlendDataType* bd = d.GetType() == CUSTOMDATA_BLEND_LIST
+                                     ? static_cast<iBlendDataType*>(d.GetCustomDataType(CUSTOMDATA_BLEND_LIST))
+                                     : nullptr;
+            if (!bd) {
+                ctx.warn("Shader Capa sin lista de capas legible: se usa la primera imagen");
+                n.kind = iron3d::ShaderKind::Other;
+                break;
+            }
+            int nextShader = 0;
+            const Int32 count = bd->m_BlendLayers.GetElementCount();
+            for (Int32 i = 0; i < count; ++i) {
+                BlendLayer* bl = bd->m_BlendLayers.GetLayer(i);
+                if (!bl) continue;
+                iron3d::ShaderLayer l;
+                l.type = (int)bl->GetType();
+                GeData v;
+                auto getF = [&](Int32 id, float def) { return bl->GetParameter(id, v) && v.GetType() == DA_REAL ? (float)v.GetFloat() : def; };
+                auto getI = [&](Int32 id, int def) { return bl->GetParameter(id, v) && v.GetType() == DA_LONG ? (int)v.GetInt32() : def; };
+                l.active = getI(LAYER_S_PARAM_ALL_ACTIVE, 1) != 0;
+                l.flags = getI(LAYER_S_PARAM_ALL_FLAGS, 0);
+                switch (l.type) {
+                    case TypeShader: {
+                        l.mode = getI(LAYER_S_PARAM_SHADER_MODE, BlendNormal);
+                        l.blend = getF(LAYER_S_PARAM_SHADER_BLEND, 1.0f);
+                        // El shader de la capa: por enlace si se puede, si no por orden.
+                        BaseList2D* target = bl->GetParameter(LAYER_S_PARAM_SHADER_LINK, v) ? v.GetLink() : nullptr;
+                        for (size_t c = 0; c < childPtrs.size(); ++c)
+                            if (childPtrs[c] == target) l.child = (int)c;
+                        if (l.child < 0 && nextShader < (int)childPtrs.size()) l.child = nextShader;
+                        ++nextShader;
+                        break;
+                    }
+                    case TypeFolder:
+                        l.mode = getI(LAYER_S_PARAM_FOLDER_MODE, BlendNormal);
+                        l.blend = getF(LAYER_S_PARAM_FOLDER_BLEND, 1.0f);
+                        ctx.warn("Carpetas dentro del shader Capa: todavía no se evalúan");
+                        break;
+                    case TypeBrightnessContrast:
+                        l.a = getF(LAYER_S_PARAM_BC_BRIGHTNESS, 0.0f);
+                        l.b = getF(LAYER_S_PARAM_BC_CONTRAST, 0.0f);
+                        l.c = getF(LAYER_S_PARAM_BC_GAMMA, 1.0f);
+                        break;
+                    case TypeHSL:
+                        l.a = getF(LAYER_S_PARAM_HSL_HUE, 0.0f) * kRadToDeg;
+                        l.b = getF(LAYER_S_PARAM_HSL_SATURATION, 0.0f);
+                        l.c = getF(LAYER_S_PARAM_HSL_LIGHTNESS, 0.0f);
+                        l.colorize = getI(LAYER_S_PARAM_HSL_COLORIZE, 0);
+                        break;
+                    case TypePosterize:
+                        l.a = (float)getI(LAYER_S_PARAM_POSTER_LEVELS, 16);
+                        l.b = getF(LAYER_S_PARAM_POSTER_WIDTH, 1.0f);
+                        break;
+                    case TypeColorize:
+                        l.colorize = getI(LAYER_S_PARAM_COLORIZE_INPUT, 0);
+                        l.cycle = getI(LAYER_S_PARAM_COLORIZE_CYCLE, 0) != 0;
+                        if (bl->GetParameter(LAYER_S_PARAM_COLORIZE_GRADIENT, v)) l.gradient = gradientKnots(v);
+                        break;
+                    case TypeClamp:
+                        l.a = getF(LAYER_S_PARAM_CLAMP_LOW_CLIP, 0.0f);
+                        l.b = getF(LAYER_S_PARAM_CLAMP_HIGH_CLIP, 1.0f);
+                        break;
+                    case TypeClip:
+                        l.a = getF(LAYER_S_PARAM_CLIP_LOW_CLIP, 0.0f);
+                        l.b = getF(LAYER_S_PARAM_CLIP_HIGH_CLIP, 1.0f);
+                        break;
+                    default: break;
+                }
+                n.layers.push_back(std::move(l));
+            }
+            break;
+        }
+        default:
+            n.kind = iron3d::ShaderKind::Other;
+            kids();
+            break;
     }
-    if (depth == 0) ctx.warn("Canales con shaders procedurales de C4D (Ruido, Degradado...): Iron3D no los tiene, se ignoran");
-    return {};
+    if (depth == 0 && std::getenv("IRON3D_C4D_DEBUG"))
+        std::fprintf(stderr, "[c4d] shader: %s\n", iron3d::encodeShaderTree(n).c_str());
+    return n;
+}
+
+// Ruta de la primera Imagen de un enlace a shader (texturas de las capas de Reflectancia).
+std::string bitmapPath(BaseList2D* link, Ctx& ctx) {
+    const iron3d::ShaderNode n = shaderTree(link, ctx);
+    const iron3d::ShaderNode* b = n.firstBitmap();
+    return b ? b->path : std::string();
 }
 
 glm::vec3 colorTimes(BaseContainer* bc, Int32 colorId, Int32 brightId, const cineware::Vector& defColor) {
@@ -173,39 +355,81 @@ int materialFor(BaseMaterial* m, Ctx& ctx) {
     out.metallic = 0.0f;
     if (m->GetType() == Mmaterial) {
         BaseContainer* bc = m->GetDataInstance();
-        auto tex = [&](iron3d::TexSlot slot, Int32 linkId) {
-            std::string& t = out.texture(slot);
-            t = bitmapPath(bc->GetLink(linkId), ctx);
-            noteTexture(t, ctx);
+        auto vec = [](const cineware::Vector& v) { return glm::vec3((float)v.x, (float)v.y, (float)v.z); };
+        // Canal completo: color y brillo por separado, mezcla y arbol de shaders.
+        auto channel = [&](iron3d::TexSlot slot, Int32 linkId, Int32 colorId, Int32 brightId, Int32 strengthId,
+                           Int32 mixId, const cineware::Vector& defColor) {
+            iron3d::ChannelSettings& c = out.channel(slot);
+            if (colorId) {
+                c.color = vec(bc->GetVector(colorId, defColor));
+                c.brightness = (float)bc->GetFloat(brightId, 1.0);
+                c.mixStrength = (float)bc->GetFloat(strengthId, 1.0);
+                c.mixMode = (int)bc->GetInt32(mixId, MATERIAL_TEXTUREMIXING_NORMAL);
+            }
+            c.shader = shaderTree(bc->GetLink(linkId), ctx);
+            if (const iron3d::ShaderNode* b = c.shader.firstBitmap()) {
+                out.texture(slot) = b->path;
+                c.sampling = b->sampling;
+            }
+            if (c.shader.hasUnsupported())
+                ctx.warn("Canales con shaders procedurales de C4D (Ruido, Fresnel...): Iron3D no los evalúa (gris o la imagen que llevan dentro)");
+            noteTexture(out.texture(slot), ctx);
         };
         const bool colorOn = bc->GetBool(MATERIAL_USE_COLOR, true);
+        out.useColor = colorOn;
+        out.useLuminance = bc->GetBool(MATERIAL_USE_LUMINANCE, false);
+        out.useTransparency = bc->GetBool(MATERIAL_USE_TRANSPARENCY, false);
+        out.useNormal = bc->GetBool(MATERIAL_USE_NORMAL, false);
+        out.useBump = bc->GetBool(MATERIAL_USE_BUMP, false);
+        out.useAlpha = bc->GetBool(MATERIAL_USE_ALPHA, false);
+        out.useReflectance = bc->GetBool(MATERIAL_USE_REFLECTION, true);
+        out.diffuseModel = (int)bc->GetInt32(MATERIAL_COLOR_MODEL, MATERIAL_COLOR_MODEL_LAMBERTIAN);
+        out.diffuseFalloff = (float)bc->GetFloat(MATERIAL_COLOR_DIFFUSEFALLOFF, 0.0);
+        out.diffuseLevel = (float)bc->GetFloat(MATERIAL_COLOR_DIFFUSELEVEL, 1.0);
+        out.diffuseRoughness = (float)bc->GetFloat(MATERIAL_COLOR_ROUGHNESS, 0.5);
+        // Los ajustes se leen aunque el canal este apagado (asi no se pierden al
+        // encenderlo); lo que pinta el visor solo sale de los canales activos.
+        channel(iron3d::TexSlot::Color, MATERIAL_COLOR_SHADER, MATERIAL_COLOR_COLOR, MATERIAL_COLOR_BRIGHTNESS,
+                MATERIAL_COLOR_TEXTURESTRENGTH, MATERIAL_COLOR_TEXTUREMIXING, cineware::Vector(0.8, 0.8, 0.8));
         if (colorOn) {
             out.baseColor = glm::clamp(colorTimes(bc, MATERIAL_COLOR_COLOR, MATERIAL_COLOR_BRIGHTNESS, cineware::Vector(0.8, 0.8, 0.8)),
                                        0.0f, 1.0f);
-            tex(iron3d::TexSlot::Color, MATERIAL_COLOR_SHADER);
         } else {
             out.baseColor = glm::vec3(0.0f);
+            out.texture(iron3d::TexSlot::Color).clear();
         }
-        if (bc->GetBool(MATERIAL_USE_LUMINANCE, false)) {
+        channel(iron3d::TexSlot::Emission, MATERIAL_LUMINANCE_SHADER, MATERIAL_LUMINANCE_COLOR, MATERIAL_LUMINANCE_BRIGHTNESS,
+                MATERIAL_LUMINANCE_TEXTURESTRENGTH, MATERIAL_LUMINANCE_TEXTUREMIXING, cineware::Vector(1.0, 1.0, 1.0));
+        if (out.useLuminance)
             out.emission = colorTimes(bc, MATERIAL_LUMINANCE_COLOR, MATERIAL_LUMINANCE_BRIGHTNESS, cineware::Vector(1.0, 1.0, 1.0));
-            tex(iron3d::TexSlot::Emission, MATERIAL_LUMINANCE_SHADER);
-        }
-        if (bc->GetBool(MATERIAL_USE_TRANSPARENCY, false)) {
+        else
+            out.texture(iron3d::TexSlot::Emission).clear();
+        channel(iron3d::TexSlot::Transparency, MATERIAL_TRANSPARENCY_SHADER, MATERIAL_TRANSPARENCY_COLOR,
+                MATERIAL_TRANSPARENCY_BRIGHTNESS, MATERIAL_TRANSPARENCY_TEXTURESTRENGTH, MATERIAL_TRANSPARENCY_TEXTUREMIXING,
+                cineware::Vector(1.0, 1.0, 1.0));
+        out.ior = (float)bc->GetFloat(MATERIAL_TRANSPARENCY_REFRACTION, 1.0);
+        if (out.useTransparency)
             out.transparency = colorTimes(bc, MATERIAL_TRANSPARENCY_COLOR, MATERIAL_TRANSPARENCY_BRIGHTNESS,
                                           cineware::Vector(1.0, 1.0, 1.0));
-            out.ior = (float)bc->GetFloat(MATERIAL_TRANSPARENCY_REFRACTION, 1.0);
-            tex(iron3d::TexSlot::Transparency, MATERIAL_TRANSPARENCY_SHADER);
-        }
-        if (bc->GetBool(MATERIAL_USE_NORMAL, false)) {
-            out.normalStrength = (float)bc->GetFloat(MATERIAL_NORMAL_STRENGTH, 1.0);
-            tex(iron3d::TexSlot::Normal, MATERIAL_NORMAL_SHADER);
-        }
-        if (bc->GetBool(MATERIAL_USE_BUMP, false)) {
-            out.bumpStrength = (float)bc->GetFloat(MATERIAL_BUMP_STRENGTH, 0.2);
-            tex(iron3d::TexSlot::Bump, MATERIAL_BUMP_SHADER);
-        }
-        if (bc->GetBool(MATERIAL_USE_ALPHA, false)) tex(iron3d::TexSlot::Alpha, MATERIAL_ALPHA_SHADER);
-        if (bc->GetBool(MATERIAL_USE_REFLECTION, true)) {
+        else
+            out.texture(iron3d::TexSlot::Transparency).clear();
+        channel(iron3d::TexSlot::Normal, MATERIAL_NORMAL_SHADER, 0, 0, 0, 0, cineware::Vector());
+        out.normalStrength = (float)bc->GetFloat(MATERIAL_NORMAL_STRENGTH, 1.0);
+        if (!out.useNormal) out.texture(iron3d::TexSlot::Normal).clear();
+        channel(iron3d::TexSlot::Bump, MATERIAL_BUMP_SHADER, 0, 0, 0, 0, cineware::Vector());
+        out.bumpStrength = (float)bc->GetFloat(MATERIAL_BUMP_STRENGTH, 0.2);
+        if (!out.useBump) out.texture(iron3d::TexSlot::Bump).clear();
+        channel(iron3d::TexSlot::Alpha, MATERIAL_ALPHA_SHADER, 0, 0, 0, 0, cineware::Vector());
+        out.alphaColor = vec(bc->GetVector(MATERIAL_ALPHA_COLOR, cineware::Vector()));
+        out.alphaDelta = (float)bc->GetFloat(MATERIAL_ALPHA_DELTA, 0.0);
+        out.alphaInvert = bc->GetBool(MATERIAL_ALPHA_INVERT, false);
+        out.alphaSoft = bc->GetBool(MATERIAL_ALPHA_SOFT, true);
+        out.alphaImage = bc->GetBool(MATERIAL_ALPHA_IMAGEALPHA, true);
+        if (!out.useAlpha) out.texture(iron3d::TexSlot::Alpha).clear();
+        out.reflectionBrightness = (float)bc->GetFloat(REFLECTION_LAYER_GLOBAL_REFLECTION, 1.0);
+        out.specularBrightness = (float)bc->GetFloat(REFLECTION_LAYER_GLOBAL_SPECULAR, 1.0);
+        out.separatePass = bc->GetBool(REFLECTION_LAYER_GLOBAL_SEPARATE_PASS, false);
+        if (out.useReflectance) {
             cineware::Material* mm = static_cast<cineware::Material*>(m);
             const Int32 n = mm->GetReflectionLayerCount();
             for (Int32 i = 0; i < n; ++i) {
@@ -224,6 +448,14 @@ int materialFor(BaseMaterial* m, Ctx& ctx) {
                 l.ior = (float)bc->GetFloat(id + REFLECTION_LAYER_FRESNEL_VALUE_IOR, 1.5);
                 l.color = colorTimes(bc, id + REFLECTION_LAYER_COLOR_COLOR, id + REFLECTION_LAYER_COLOR_BRIGHTNESS,
                                      cineware::Vector(1.0, 1.0, 1.0));
+                l.colorRaw = vec(bc->GetVector(id + REFLECTION_LAYER_COLOR_COLOR, cineware::Vector(1.0, 1.0, 1.0)));
+                l.colorBrightness = (float)bc->GetFloat(id + REFLECTION_LAYER_COLOR_BRIGHTNESS, 1.0);
+                l.colorMixMode = (int)bc->GetInt32(id + REFLECTION_LAYER_COLOR_MIX_MODE, 0);
+                l.colorMixStrength = (float)bc->GetFloat(id + REFLECTION_LAYER_COLOR_MIX_STRENGTH, 1.0);
+                l.attenuation = (int)bc->GetInt32(id + REFLECTION_LAYER_MAIN_ADDITIVE, REFLECTION_ADDITIVE_MODE_AVG);
+                l.blendMode = (int)bc->GetInt32(id + REFLECTION_LAYER_MAIN_BLEND_MODE, 0);
+                l.bumpStrength = (float)bc->GetFloat(id + REFLECTION_LAYER_MAIN_VALUE_BUMP, 1.0);
+                l.active = (layer->GetFlags() & REFLECTION_FLAG_ACTIVE) != 0;
                 l.roughnessTex = bitmapPath(bc->GetLink(id + REFLECTION_LAYER_MAIN_SHADER_ROUGHNESS), ctx);
                 l.colorTex = bitmapPath(bc->GetLink(id + REFLECTION_LAYER_COLOR_TEXTURE), ctx);
                 noteTexture(l.roughnessTex, ctx);
@@ -240,9 +472,23 @@ int materialFor(BaseMaterial* m, Ctx& ctx) {
                     out.texture(iron3d::TexSlot::Roughness) = l.roughnessTex;
                     break;
                 }
-            if (std::getenv("IRON3D_C4D_DEBUG"))
-                std::fprintf(stderr, "[c4d] material '%s': %d capas -> metal=%.3f rugosidad=%.3f\n", out.name.c_str(),
-                             (int)out.layers.size(), out.metallic, out.roughness);
+            if (std::getenv("IRON3D_C4D_DEBUG")) {
+                const iron3d::ChannelSettings& cc = out.channel(iron3d::TexSlot::Color);
+                std::fprintf(stderr,
+                             "[c4d] material '%s': %d capas -> metal=%.3f rugosidad=%.3f | color on=%d (%.2f %.2f %.2f) br=%.2f "
+                             "mix=%d str=%.2f tex='%s' | lum=%d transp=%d bump=%d alfa=%d normal=%d\n",
+                             out.name.c_str(), (int)out.layers.size(), out.metallic, out.roughness, (int)out.useColor,
+                             cc.color.r, cc.color.g, cc.color.b, cc.brightness, cc.mixMode, cc.mixStrength,
+                             out.texture(iron3d::TexSlot::Color).c_str(), (int)out.useLuminance, (int)out.useTransparency,
+                             (int)out.useBump, (int)out.useAlpha, (int)out.useNormal);
+                for (const iron3d::ReflectLayer& l : out.layers)
+                    std::fprintf(stderr,
+                                 "[c4d]    capa '%s' dist=%d fresnel=%d att=%d modo=%d refl=%.2f spec=%.2f rug=%.2f "
+                                 "color=(%.2f %.2f %.2f)x%.2f ctex='%s'\n",
+                                 l.name.c_str(), l.distribution, l.fresnel, l.attenuation, l.blendMode, l.strength,
+                                 l.specular, l.roughness, l.colorRaw.r, l.colorRaw.g, l.colorRaw.b, l.colorBrightness,
+                                 l.colorTex.c_str());
+            }
         }
     } else {
         ctx.warn("Materiales que no son el material estándar de C4D (p. ej. de otros motores): se importan en gris");
@@ -519,32 +765,6 @@ double defaultPrimitivePhong(Int32 type) {
 // que GetDataInstance() no los trae y salian todos con el valor por defecto
 // (toda luz era una Omni blanca al 100 %). GetParameter pasa por el NodeData;
 // si no responde, se mira el contenedor.
-GeData paramData(BaseObject* op, Int32 id) {
-    GeData d;
-    if (!op->GetParameter(id, d)) d = GeData();
-    return d;
-}
-Int32 paramInt(BaseObject* op, Int32 id, Int32 def) {
-    const GeData d = paramData(op, id);
-    if (d.GetType() == DA_LONG) return d.GetInt32();
-    return op->GetDataInstance()->GetInt32(id, def);
-}
-Bool paramBool(BaseObject* op, Int32 id, Bool def) {
-    const GeData d = paramData(op, id);
-    if (d.GetType() == DA_LONG) return d.GetInt32() != 0;
-    return op->GetDataInstance()->GetBool(id, def);
-}
-Float paramFloat(BaseObject* op, Int32 id, Float def) {
-    const GeData d = paramData(op, id);
-    if (d.GetType() == DA_REAL) return d.GetFloat();
-    return op->GetDataInstance()->GetFloat(id, def);
-}
-cineware::Vector paramVector(BaseObject* op, Int32 id, const cineware::Vector& def) {
-    const GeData d = paramData(op, id);
-    if (d.GetType() == DA_VECTOR) return d.GetVector();
-    return op->GetDataInstance()->GetVector(id, def);
-}
-
 // Datos de una Luz de C4D (distancias en cm -> unidades de Iron3D).
 LightData lightFrom(BaseObject* op, Ctx& ctx) {
     BaseContainer* bc = op->GetDataInstance();
