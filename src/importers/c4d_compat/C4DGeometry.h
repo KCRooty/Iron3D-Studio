@@ -55,6 +55,20 @@ PolySoup makeTorus(double ringRadius, double pipeRadius, int segments, int pipeS
 PolySoup makeDisc(double innerRadius, double outerRadius, int segments, Axis axis);
 PolySoup makePyramid(const glm::dvec3& size);
 
+// Generador Simetria de C4D (2026-11-11): el original mas su copia reflejada
+// en el eje `axis` (0 X = plano ZY, 1 Y = plano XZ, 2 Z = plano XY), con la
+// vuelta de los poligonos invertida. Con `weld`, los puntos a menos de `tol`
+// del plano se llevan al plano y los comparten las dos mitades (sin costura).
+// `slots` (opcional, uno por poligono) se duplica igual que los poligonos.
+PolySoup mirrorSoup(const PolySoup& in, int axis, bool weld, double tol, std::vector<int>* slots = nullptr);
+
+// Subdivision Catmull-Clark (generador Subdivision Surface de C4D), `levels`
+// veces: cada cara de n lados da n cuadrados; los bordes abiertos siguen la
+// regla de curva B-spline y las esquinas de borde con mas de dos aristas
+// abiertas se quedan quietas. Las UV se interpolan linealmente y `slots`
+// (opcional) pasa de cada cara a sus hijas.
+PolySoup subdivideCatmullClark(const PolySoup& in, int levels, std::vector<int>* slots = nullptr);
+
 // Punto de C4D -> Iron3D (espejo en Z y cm -> unidades).
 glm::vec3 toIronPoint(const glm::dvec3& p);
 

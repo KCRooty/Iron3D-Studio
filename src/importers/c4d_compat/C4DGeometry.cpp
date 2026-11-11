@@ -125,6 +125,168 @@ void PolySoup::append(const PolySoup& other, const glm::dmat4& xform) {
     }
 }
 
+namespace {
+int cornerCount(const std::array<int, 4>& f) { return f[2] == f[3] ? 3 : 4; }
+} // namespace
+
+PolySoup mirrorSoup(const PolySoup& in, int axis, bool weld, double tol, std::vector<int>* slots) {
+    PolySoup out = in;
+    const int a = std::clamp(axis, 0, 2);
+    const int n = (int)in.points.size();
+    std::vector<int> twin((size_t)n);
+    for (int i = 0; i < n; ++i) {
+        glm::dvec3& p = out.points[(size_t)i];
+        if (weld && std::fabs(p[a]) <= tol) {
+            p[a] = 0.0; // al plano, compartido por las dos mitades
+            twin[(size_t)i] = i;
+            continue;
+        }
+        glm::dvec3 q = p;
+        q[a] = -q[a];
+        twin[(size_t)i] = (int)out.points.size();
+        out.points.push_back(q);
+    }
+    const bool withUv = in.uvs.size() == in.polys.size() && !in.uvs.empty();
+    const size_t np = in.polys.size();
+    for (size_t k = 0; k < np; ++k) {
+        const auto& f = in.polys[k];
+        if (cornerCount(f) == 3) {
+            out.polys.push_back({twin[(size_t)f[0]], twin[(size_t)f[2]], twin[(size_t)f[1]], twin[(size_t)f[1]]});
+            if (withUv) out.uvs.push_back({in.uvs[k][0], in.uvs[k][2], in.uvs[k][1], in.uvs[k][1]});
+        } else {
+            out.polys.push_back({twin[(size_t)f[0]], twin[(size_t)f[3]], twin[(size_t)f[2]], twin[(size_t)f[1]]});
+            if (withUv) out.uvs.push_back({in.uvs[k][0], in.uvs[k][3], in.uvs[k][2], in.uvs[k][1]});
+        }
+    }
+    if (slots && slots->size() == np) {
+        std::vector<int> copy = *slots;
+        slots->insert(slots->end(), copy.begin(), copy.end());
+    }
+    return out;
+}
+
+PolySoup subdivideCatmullClark(const PolySoup& input, int levels, std::vector<int>* slots) {
+    PolySoup cur = input;
+    for (int level = 0; level < levels; ++level) {
+        const size_t nv = cur.points.size(), nf = cur.polys.size();
+        if (nf == 0) break;
+        const bool withUv = cur.uvs.size() == nf;
+
+        // Aristas: indice por par de puntos, con sus caras.
+        std::map<std::pair<int, int>, int> edgeIndex;
+        std::vector<std::pair<int, int>> edges;
+        std::vector<std::vector<int>> edgeFaces;
+        std::vector<std::array<int, 4>> faceEdges(nf);
+        for (size_t f = 0; f < nf; ++f) {
+            const auto& p = cur.polys[f];
+            const int k = cornerCount(p);
+            for (int i = 0; i < k; ++i) {
+                const int a = p[(size_t)i], b = p[(size_t)((i + 1) % k)];
+                const std::pair<int, int> key = std::minmax(a, b);
+                auto it = edgeIndex.find(key);
+                int e;
+                if (it == edgeIndex.end()) {
+                    e = (int)edges.size();
+                    edgeIndex.emplace(key, e);
+                    edges.push_back(key);
+                    edgeFaces.emplace_back();
+                } else {
+                    e = it->second;
+                }
+                edgeFaces[(size_t)e].push_back((int)f);
+                faceEdges[f][(size_t)i] = e;
+            }
+        }
+        const size_t ne = edges.size();
+
+        // Puntos de cara y de arista.
+        std::vector<glm::dvec3> facePt(nf);
+        for (size_t f = 0; f < nf; ++f) {
+            const auto& p = cur.polys[f];
+            const int k = cornerCount(p);
+            glm::dvec3 s(0.0);
+            for (int i = 0; i < k; ++i) s += cur.points[(size_t)p[(size_t)i]];
+            facePt[f] = s / (double)k;
+        }
+        std::vector<glm::dvec3> edgePt(ne);
+        for (size_t e = 0; e < ne; ++e) {
+            const glm::dvec3 mid = (cur.points[(size_t)edges[e].first] + cur.points[(size_t)edges[e].second]) * 0.5;
+            if (edgeFaces[e].size() == 2)
+                edgePt[e] = (mid * 2.0 + facePt[(size_t)edgeFaces[e][0]] + facePt[(size_t)edgeFaces[e][1]]) * 0.25;
+            else
+                edgePt[e] = mid; // borde abierto (o arista de mas de dos caras)
+        }
+
+        // Puntos de vertice.
+        std::vector<glm::dvec3> faceSum(nv, glm::dvec3(0.0)), midSum(nv, glm::dvec3(0.0)), borderSum(nv, glm::dvec3(0.0));
+        std::vector<int> faceCnt(nv, 0), edgeCnt(nv, 0), borderCnt(nv, 0);
+        for (size_t f = 0; f < nf; ++f) {
+            const auto& p = cur.polys[f];
+            for (int i = 0, k = cornerCount(p); i < k; ++i) {
+                faceSum[(size_t)p[(size_t)i]] += facePt[f];
+                ++faceCnt[(size_t)p[(size_t)i]];
+            }
+        }
+        for (size_t e = 0; e < ne; ++e) {
+            const int a = edges[e].first, b = edges[e].second;
+            const glm::dvec3 mid = (cur.points[(size_t)a] + cur.points[(size_t)b]) * 0.5;
+            midSum[(size_t)a] += mid;
+            midSum[(size_t)b] += mid;
+            ++edgeCnt[(size_t)a];
+            ++edgeCnt[(size_t)b];
+            if (edgeFaces[e].size() != 2) {
+                borderSum[(size_t)a] += cur.points[(size_t)b];
+                borderSum[(size_t)b] += cur.points[(size_t)a];
+                ++borderCnt[(size_t)a];
+                ++borderCnt[(size_t)b];
+            }
+        }
+        PolySoup next;
+        next.points.resize(nv + ne + nf);
+        for (size_t v = 0; v < nv; ++v) {
+            const glm::dvec3& P = cur.points[v];
+            if (borderCnt[v] == 2) {
+                next.points[v] = P * 0.75 + borderSum[v] * 0.125;
+            } else if (borderCnt[v] > 0 || faceCnt[v] == 0 || edgeCnt[v] < 3) {
+                next.points[v] = P; // esquina o no-manifold: quieto
+            } else {
+                const double n = (double)edgeCnt[v];
+                const glm::dvec3 F = faceSum[v] / (double)faceCnt[v];
+                const glm::dvec3 R = midSum[v] / n;
+                next.points[v] = (F + R * 2.0 + P * (n - 3.0)) / n;
+            }
+        }
+        for (size_t e = 0; e < ne; ++e) next.points[nv + e] = edgePt[e];
+        for (size_t f = 0; f < nf; ++f) next.points[nv + ne + f] = facePt[f];
+
+        // Caras: una por esquina (esquina, arista siguiente, centro, arista anterior).
+        std::vector<int> nextSlots;
+        for (size_t f = 0; f < nf; ++f) {
+            const auto& p = cur.polys[f];
+            const int k = cornerCount(p);
+            glm::dvec2 uvCenter(0.0);
+            if (withUv) {
+                for (int i = 0; i < k; ++i) uvCenter += cur.uvs[f][(size_t)i];
+                uvCenter /= (double)k;
+            }
+            for (int i = 0; i < k; ++i) {
+                const int prev = (i + k - 1) % k;
+                next.polys.push_back({p[(size_t)i], (int)(nv + (size_t)faceEdges[f][(size_t)i]), (int)(nv + ne + f),
+                                      (int)(nv + (size_t)faceEdges[f][(size_t)prev])});
+                if (withUv) {
+                    const auto& u = cur.uvs[f];
+                    next.uvs.push_back({u[(size_t)i], (u[(size_t)i] + u[(size_t)((i + 1) % k)]) * 0.5, uvCenter,
+                                        (u[(size_t)i] + u[(size_t)prev]) * 0.5});
+                }
+                if (slots && slots->size() == nf) nextSlots.push_back((*slots)[f]);
+            }
+        }
+        if (slots && slots->size() == nf) *slots = std::move(nextSlots);
+        cur = std::move(next);
+    }
+    return cur;
+}
+
 Axis axisFromC4D(int value) {
     return value >= 0 && value <= 5 ? (Axis)value : Axis::PosY;
 }
