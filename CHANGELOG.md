@@ -6,6 +6,44 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-11 (17): Simetría y Subdivision Surface al importar, Banking corregido y blancos que salían negros
+
+**Nuevo**
+- **Generadores Simetría y Subdivision Surface sin caché**: las `.lib4d` no guardan la malla
+  generada, y estos dos salían como Nulo con el hijo en crudo (medio torso, mandíbula y
+  cintura a la mitad, piezas en bloque). Ahora se evalúan al importar sobre su primer hijo,
+  también encadenados (SDS > Simetría > Cubo). Simetría lee el plano, Soldar y la
+  Tolerancia; sobre un Nulo refleja toda su jerarquía y cada pieza conserva su material.
+  SDS usa Catmull-Clark con el nivel del editor (el que enseña el visor de C4D), y las UV y
+  los materiales por Selección de Polígonos pasan a las caras hijas. El objeto de entrada
+  queda oculto, como en C4D.
+- `--dump-scene` también enseña la transformación local, las partes por selección, cada
+  material con sus capas de Reflectancia y el shader del canal Color.
+
+**Corregido**
+- **Signo del Banking (B) al importar y exportar**: medido contra la matriz que guarda C4D
+  en los 97 objetos girados de Toy Foxy, solo (P, H, -B) la reproduce. Todo lo que tenía
+  Banking salía girado al revés: la oreja izquierda de Toy Foxy flotaba lejos de la cabeza y
+  los brazos quedaban en otra pose. Corregido en las pistas de animación y en el
+  exportador. Los `.c4d` exportados antes con Banking salen con ese giro invertido.
+- **Capas de Reflectancia sin Fresnel al 100 % con el canal Color activo**: se convertían en
+  cromo y, sin entorno que reflejar, el objeto salía negro (el cuerpo blanco de Toy Foxy).
+  El visor de R19 sigue enseñando el color y la capa solo suma el brillo de las luces
+  (comprobado en el GLSL del visor que trae R19); ahora Iron3D hace lo mismo.
+
+**Probado**: tests `c4d_geometry`, `c4d_roundtrip` y `preset_library` en verde; Toy Foxy de
+`fnaf 2 toys animatronics by alfred.lib4d` comparado por captura con R19 (pose, orejas y
+cuerpo blanco y suave).
+
+**Sin probar / pendiente**
+- Toy Chica y el resto de modelos de control tras el cambio de Banking (la captura no se pudo
+  hacer en esta sesión: la ventana abría minimizada).
+- El shader **Fresnel** de C4D (rosa de Toy Foxy en pecho, cinturón y almohadillas) todavía no
+  se evalúa: sale blanco. R19 lo hace por píxel en el visor con `abs(dot(N, V))` sobre el
+  degradado.
+- Simetría sobre un Recorrido NURBS u otros generadores de splines (Iron3D no tiene splines).
+- UV de la SDS interpoladas linealmente (C4D las suaviza con el modo Estándar).
+
 ### 2026-11-11 (16) — Ajustes completos de material, shaders de C4D y texturas de cualquier .lib4d
 
 **Nuevo**
