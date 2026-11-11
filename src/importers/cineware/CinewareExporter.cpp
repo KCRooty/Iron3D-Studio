@@ -127,10 +127,27 @@ BaseMaterial* makeMaterial(int index, Ctx& ctx) {
     }
 
     // Color: el de Iron3D (en metal generado, negro: el color va en el reflejo).
-    bc->SetBool(MATERIAL_USE_COLOR, true);
-    bc->SetVector(MATERIAL_COLOR_COLOR, vecOf(keepLayers ? src.baseColor : iron3d::colorChannelFromPbr(src)));
-    bc->SetFloat(MATERIAL_COLOR_BRIGHTNESS, 1.0);
+    // Ajustes de canal (2026-11-11): color y brillo por separado y la mezcla de
+    // la textura, si siguen describiendo el color que se ve.
+    const iron3d::ChannelSettings& colCh = src.channel(iron3d::TexSlot::Color);
+    const glm::vec3 colorShown = keepLayers ? src.baseColor : iron3d::colorChannelFromPbr(src);
+    const bool chanMatches =
+        glm::all(glm::lessThanEqual(glm::abs(glm::clamp(colCh.color * colCh.brightness, 0.0f, 1.0f) - colorShown), glm::vec3(1e-4f)));
+    bc->SetBool(MATERIAL_USE_COLOR, src.useColor || !keepLayers);
+    bc->SetVector(MATERIAL_COLOR_COLOR, vecOf(chanMatches ? colCh.color : colorShown));
+    bc->SetFloat(MATERIAL_COLOR_BRIGHTNESS, chanMatches ? colCh.brightness : 1.0);
+    bc->SetInt32(MATERIAL_COLOR_TEXTUREMIXING, colCh.mixMode);
+    bc->SetFloat(MATERIAL_COLOR_TEXTURESTRENGTH, colCh.mixStrength);
+    bc->SetInt32(MATERIAL_COLOR_MODEL, src.diffuseModel);
+    bc->SetFloat(MATERIAL_COLOR_DIFFUSEFALLOFF, src.diffuseFalloff);
+    bc->SetFloat(MATERIAL_COLOR_DIFFUSELEVEL, src.diffuseLevel);
+    bc->SetFloat(MATERIAL_COLOR_ROUGHNESS, src.diffuseRoughness);
     linkBitmap(m, bc, MATERIAL_COLOR_SHADER, tex(iron3d::TexSlot::Color), ctx);
+    for (const iron3d::ChannelSettings& c : src.channels)
+        if (!c.shader.empty() && !c.shader.isPlainBitmap()) {
+            ctx.warn("Shaders de canal (Filtro, Capa, Colorizador...): se exporta solo la imagen que llevan dentro");
+            break;
+        }
 
     const bool emit = src.emission != glm::vec3(0.0f) || !src.texture(iron3d::TexSlot::Emission).empty();
     bc->SetBool(MATERIAL_USE_LUMINANCE, emit);
@@ -194,8 +211,14 @@ BaseMaterial* makeMaterial(int index, Ctx& ctx) {
         bc->SetFloat(id + REFLECTION_LAYER_MAIN_VALUE_SPECULAR, l.specular);
         bc->SetFloat(id + REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS, l.roughness);
         bc->SetFloat(id + REFLECTION_LAYER_FRESNEL_VALUE_IOR, l.ior);
-        bc->SetVector(id + REFLECTION_LAYER_COLOR_COLOR, vecOf(l.color));
-        bc->SetFloat(id + REFLECTION_LAYER_COLOR_BRIGHTNESS, 1.0);
+        const bool rawOk = glm::all(glm::lessThanEqual(glm::abs(l.colorRaw * l.colorBrightness - l.color), glm::vec3(1e-4f)));
+        bc->SetVector(id + REFLECTION_LAYER_COLOR_COLOR, vecOf(rawOk ? l.colorRaw : l.color));
+        bc->SetFloat(id + REFLECTION_LAYER_COLOR_BRIGHTNESS, rawOk ? l.colorBrightness : 1.0);
+        bc->SetInt32(id + REFLECTION_LAYER_COLOR_MIX_MODE, l.colorMixMode);
+        bc->SetFloat(id + REFLECTION_LAYER_COLOR_MIX_STRENGTH, l.colorMixStrength);
+        bc->SetInt32(id + REFLECTION_LAYER_MAIN_ADDITIVE, l.attenuation);
+        bc->SetInt32(id + REFLECTION_LAYER_MAIN_BLEND_MODE, l.blendMode);
+        bc->SetFloat(id + REFLECTION_LAYER_MAIN_VALUE_BUMP, l.bumpStrength);
         linkBitmap(m, bc, id + REFLECTION_LAYER_MAIN_SHADER_ROUGHNESS, texturePathFor(l.roughnessTex, src, ctx), ctx);
         linkBitmap(m, bc, id + REFLECTION_LAYER_COLOR_TEXTURE, texturePathFor(l.colorTex, src, ctx), ctx);
     }

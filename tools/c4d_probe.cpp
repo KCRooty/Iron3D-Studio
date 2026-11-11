@@ -9,6 +9,10 @@
 #include "core/ThumbnailRenderer.h"
 #include "importers/cineware/CinewareImporter.h"
 #include "importers/lib4d/PresetLibraryWriter.h"
+#include "importers/lib4d/PresetTextures.h"
+
+#include <fstream>
+#include <map>
 
 #include <cstdio>
 #include <string>
@@ -46,10 +50,75 @@ static void print(const SceneNode& n, const std::vector<Material>& mats, int dep
     for (const auto& c : n.children()) print(*c, mats, depth + 1);
 }
 
+// "--audit lib1.lib4d lib2.lib4d ...": carga cada modelo de cada libreria por
+// el mismo camino que la UI (importador + texturas de las librerias) y cuenta
+// lo que no llega: texturas perdidas, avisos y shaders de los canales.
+static int audit(int argc, wchar_t** argv) {
+    std::vector<std::unique_ptr<PresetLibrary>> libs;
+    for (int i = 2; i < argc; ++i) {
+        auto lib = std::make_unique<PresetLibrary>();
+        std::string err;
+        if (!lib->open(std::filesystem::path(argv[i]), &err)) {
+            std::printf("NO ABRE %s: %s\n", pathUtf8(std::filesystem::path(argv[i])).c_str(), err.c_str());
+            continue;
+        }
+        libs.push_back(std::move(lib));
+    }
+    std::vector<const PresetLibrary*> all;
+    for (auto& l : libs) all.push_back(l.get());
+    const std::filesystem::path tmp = std::filesystem::temp_directory_path() / "Iron3D_audit";
+    std::filesystem::create_directories(tmp);
+    std::map<std::string, int> shadersAll, warnAll;
+    int models = 0, failed = 0, texTotal = 0, texMissing = 0;
+    for (auto& lib : libs) {
+        for (const PresetItem& it : lib->items()) {
+            if (it.kind != PresetKind::Model) continue;
+            ++models;
+            std::vector<uint8_t> data;
+            std::string err;
+            if (!lib->readData(it, data, &err) || data.size() < 8) {
+                std::printf("  FALLO leer %s/%s: %s\n", lib->title().c_str(), it.path.c_str(), err.c_str());
+                ++failed;
+                continue;
+            }
+            const auto file = tmp / "modelo.c4d";
+            {
+                std::ofstream f(file, std::ios::binary | std::ios::trunc);
+                f.write(reinterpret_cast<const char*>(data.data()), std::streamsize(data.size()));
+            }
+            SceneNode root("Escena");
+            std::vector<Material> mats;
+            C4DImportReport rep;
+            if (!importC4D(file, root, mats, rep, &err)) {
+                std::printf("  FALLO importar %s/%s: %s\n", lib->title().c_str(), it.path.c_str(), err.c_str());
+                ++failed;
+                continue;
+            }
+            const PresetTextureReport tr = extractPresetTextures(*lib, all, tmp / "texcache", mats, 0);
+            int texHere = tr.alreadyOnDisk + tr.extracted + (int)tr.missing.size();
+            texTotal += texHere;
+            texMissing += (int)tr.missing.size();
+            std::printf("%s | %s: %d mat, %d tex (%d de la lib, %d perdidas)\n", lib->title().c_str(), it.path.c_str(),
+                        rep.materials, texHere, tr.extracted, (int)tr.missing.size());
+            for (const std::string& m : tr.missing) std::printf("    perdida: %s\n", m.c_str());
+            for (const auto& [k, v] : rep.shaders) shadersAll[k] += v;
+            for (const std::string& w : rep.warnings) ++warnAll[w.substr(0, w.rfind(" ("))];
+        }
+    }
+    std::printf("\n=== %zu librerias, %d modelos (%d fallan), %d texturas, %d perdidas\n", libs.size(), models, failed,
+                texTotal, texMissing);
+    std::printf("--- shaders en canales (id nombre: veces)\n");
+    for (const auto& [k, v] : shadersAll) std::printf("  %5d  %s\n", v, k.c_str());
+    std::printf("--- avisos (modelos)\n");
+    for (const auto& [k, v] : warnAll) std::printf("  %5d  %s\n", v, k.c_str());
+    return 0;
+}
+
 int wmain(int argc, wchar_t** argv) {
 #if defined(_WIN32)
     SetConsoleOutputCP(CP_UTF8);
 #endif
+    if (argc >= 3 && std::wstring(argv[1]) == L"--audit") return audit(argc, argv);
     if (argc < 2) {
         std::printf("uso: c4d_probe archivo.c4d [--save salida.iron]\n"
                     "     c4d_probe --export escena.iron salida.c4d   (exporta y vuelve a importar)\n");

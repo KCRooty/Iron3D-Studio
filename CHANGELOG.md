@@ -6,6 +6,66 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-11 (16) — Ajustes completos de material, shaders de C4D y texturas de cualquier .lib4d
+
+**Nuevo**
+- **Texturas de cualquier `.lib4d`**: las rutas `preset://<librería>.lib4d/tex/...` (o solo el
+  nombre del archivo) se buscan primero en la librería que nombra la ruta, luego en la del
+  modelo y luego en todas las montadas. Cada librería se extrae en su propia carpeta de
+  caché, así que dos packs con un `Skin.png` cada uno ya no se pisan. Lo que no está en
+  ninguna sale en el informe de importación.
+- **Ajustes de cada canal como en el editor de R19**: Color y Brillo por separado, Textura,
+  Muestreo, Desenfoque, Modo de Mezcla (Normal/Añadir/Restar/Multiplicar) y Fuerza de
+  Mezcla en Color, Luminancia y Transparencia; Modelo (Lambertiano/Oren-Nayar), Caída
+  Difusa, Nivel Difuso y Rugosidad; Relieve, Normal y Alfa con sus opciones; casillas de
+  canal del Básico. Capas de Reflectancia completas: Tipo, Atenuación, Rugosidad, Fuerza
+  Reflexión/Especular/Relieve, Color de Capa (color, brillo, mezcla), Fresnel e IOR; Brillo
+  Reflexión/Especular Global y Pase Separado. Se importan del `.c4d`/`.lib4d`, se editan en
+  el Gestor de Atributos y en el Editor de Material, se guardan en el `.iron` (formato 8) y
+  el exportador escribe los que C4D acepta.
+- **Shaders de C4D en el visor**: el árbol de shaders de cada canal se importa entero (Imagen,
+  Color, Filtro, Colorizador, Capa con sus modos de fusión y capas de efecto, Degradado) y se
+  hornea a una imagen junto con el color, el brillo y la mezcla del canal. Antes se cogía la
+  primera imagen de dentro y se ignoraba el resto: el Filtro que tiñe los ojos de Afton o
+  el Capa que mezcla dos texturas en los trajes de FNaF 1 TCG ahora se ven. Funciona igual en
+  Vulkan y OpenGL. El Editor de Material enseña el árbol.
+- `c4d_probe --audit <librerías>`: carga cada modelo por el mismo camino que la UI y cuenta
+  texturas perdidas, avisos y shaders. Con las 30 librerías de prueba: 248 modelos, 0 fallos,
+  2624 texturas, 1 perdida (una ruta a un juego Source que no está en ninguna librería).
+
+**Arreglado**
+- Abrir un modelo de una `.lib4d` desde la línea de comandos dejaba el Cubo de la escena
+  inicial debajo del modelo.
+- `--also=` no decía nada si el elemento no existía.
+
+**Probado**
+- Las 3 pruebas (`iron3d_tests`, `c4d_roundtrip_test`, `preset_library_test`) pasan.
+- Auditoría de las 30 librerías (arriba). Unidades del Filtro comprobadas con modelos reales
+  (el tono sale en grados razonables: 185°, 195°, 214°). Orden del shader Capa comprobado
+  con modelos reales: la lista va de arriba a abajo (una capa Transformar en la posición 0
+  solo tiene sentido encima de la imagen).
+- Freddy Fazbear [VF_2.0] (FNaF 1 TCG) + FNaF World Lighting capturado en Vulkan y OpenGL:
+  carga con sus 3 luces infinitas, sin el Cubo, y las dos API se ven igual.
+
+**Sin probar / bugs conocidos**
+- **No se ve todavía como en R19.** El naranja de los trajes de FNaF 1 TCG sale de 3 capas
+  de Reflectancia especulares de color con Atenuación Añadir, y el visor aún no pinta cada
+  capa por separado (solo saca de ellas un metal/rugosidad). Es lo siguiente.
+- **Pose de Freddy VF_2.0 distinta a R19**: en R19 está en T-pose; en Iron3D brazos y cabeza
+  salen girados. Fallo del rig/Piel, sin investigar todavía.
+- Ruido, Fresnel, Normalizador y el resto de procedurales no se evalúan (Normalizador y
+  similares dejan pasar la imagen de dentro; un procedural suelto no tapa el color). Las
+  carpetas del shader Capa y las capas Distorsión/Transformar tampoco.
+- La matemática de Filtro, Colorizador y modos de fusión es propia y aproximada; no está
+  comparada píxel a píxel con un render de R19.
+- Muestreo, Desenfoque, Modelo difuso, Atenuación y Fresnel se guardan y editan pero el
+  visor aún no los usa.
+- Las texturas horneadas no se liberan al cambiar un ajuste (se crea una nueva por valor
+  aplicado; los campos que hornean solo aplican al soltar el control).
+- El exportador escribe la imagen de dentro de los shaders, no el árbol.
+- La interfaz nueva (pestañas de material, Editor de Material) compila pero no se ha
+  probado a mano.
+
 ### 2026-11-11 (15) — Luces de la escena en el visor y materiales por selección
 
 **Nuevo**

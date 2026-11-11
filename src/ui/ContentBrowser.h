@@ -43,6 +43,8 @@ void scanPermanentLibraries();
 bool mountTemporaryLibrary(const std::filesystem::path& file, std::string* outError = nullptr);
 // Libreria ya montada a partir de su archivo (o nullptr).
 const PresetLibrary* findMountedLibrary(const std::filesystem::path& file);
+// Todas las librerias montadas (permanentes y de esta sesion).
+std::vector<const PresetLibrary*> mountedLibraries();
 
 // Lo que el navegador pide a quien lo dibuja (MainUi).
 struct ContentBrowserCallbacks {

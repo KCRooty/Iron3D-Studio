@@ -22,6 +22,8 @@
 #include "core/Paths.h"
 #include "importers/cineware/CinewareImporter.h"
 #include "importers/lib4d/PresetLibrary.h"
+#include "importers/lib4d/PresetTextures.h"
+#include "core/ChannelBake.h"
 #include "ContentBrowser.h"
 
 #include <imgui.h>
@@ -924,44 +926,6 @@ void openPresetLibraryDialog() {
     if (path) openPresetLibrary(*path);
 }
 
-// Texturas de un preestablecido: viven dentro de la libreria (tex/...). Las
-// que usan los materiales recien importados y no estan en disco se sacan a
-// `dir`/tex, y los materiales pasan a buscarlas ahi.
-void extractPresetTextures(const PresetLibrary& lib, const std::filesystem::path& dir, std::vector<Material>& materials,
-                           size_t firstNew) {
-    auto lower = [](std::string t) {
-        for (char& c : t) c = (char)std::tolower((unsigned char)c);
-        return t;
-    };
-    std::map<std::string, const PresetItem*> byLeaf;
-    for (const PresetItem& it : lib.items())
-        if (it.kind == PresetKind::File) byLeaf.emplace(lower(it.name), &it);
-    const std::string dirUtf8 = pathUtf8(dir);
-    std::error_code ec;
-    for (size_t i = firstNew; i < materials.size(); ++i) {
-        Material& m = materials[i];
-        std::vector<std::string> paths(std::begin(m.textures), std::end(m.textures));
-        for (const ReflectLayer& l : m.layers) paths.insert(paths.end(), {l.roughnessTex, l.colorTex});
-        for (const std::string& t : paths) {
-            if (t.empty() || !resolveTexturePath(t, m.texBaseDir).empty()) continue;
-            std::string leaf = t;
-            std::replace(leaf.begin(), leaf.end(), '\\', '/');
-            leaf = leaf.substr(leaf.rfind('/') + 1);
-            auto it = byLeaf.find(lower(leaf));
-            if (it == byLeaf.end()) continue;
-            const auto out = dir / "tex" / std::filesystem::path(std::u8string(it->second->name.begin(), it->second->name.end()));
-            if (!std::filesystem::exists(out, ec)) {
-                std::vector<uint8_t> bytes;
-                if (!lib.readData(*it->second, bytes)) continue;
-                std::filesystem::create_directories(out.parent_path(), ec);
-                std::ofstream f(out, std::ios::binary | std::ios::trunc);
-                f.write(reinterpret_cast<const char*>(bytes.data()), std::streamsize(bytes.size()));
-            }
-        }
-        m.texBaseDir = dirUtf8;
-    }
-}
-
 // Carga un modelo de una libreria .lib4d en la escena (doble clic en el
 // navegador o arrastrarlo al visor), como en C4D: se fusiona con lo que haya.
 // El modelo es un .c4d completo dentro de la libreria: se descomprime a un
@@ -990,7 +954,11 @@ void loadPresetImpl(const PresetLibrary& lib, const PresetItem& item, SceneNode&
     const bool ok = importC4D(tmp, root, materials, rep, &err);
     std::filesystem::remove(tmp, ec);
     if (!ok) return reportNamedError(item.name, err);
-    extractPresetTextures(lib, dir, materials, firstNewMaterial);
+    // Texturas: de esta libreria o de cualquier otra montada, cada una en su carpeta.
+    const PresetTextureReport texRep =
+        extractPresetTextures(lib, mountedLibraries(), dir / "texcache", materials, firstNewMaterial);
+    for (const std::string& t : texRep.missing)
+        rep.warnings.push_back("Textura que no está en ninguna librería montada: " + t);
     history.commit(before);
     selected = nullptr;
     noteRecentPreset(lib, item);
@@ -3887,6 +3855,325 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
     }
 }
 
+// --- Ajustes de material como el editor de R19 (2026-11-11) -----------------------
+
+const char* kTexMixNames[] = {"Normal", "Añadir", "Restar", "Multiplicar"};
+const char* kSamplingNames[] = {"Ninguno", "Circular", "Cuadrado", "Alias 1", "Alias 2", "Alias 3", "MIP", "SAT"};
+// REFLECTION_DISTRIBUTION_* en el orden de sus valores.
+const char* kReflDistNames[] = {"Especular - Blinn (Heredado)", "Especular - Phong (Heredado)", "Beckmann", "GGX",
+                                "Phong", "Ward", "Lambertiano (Difuso)", "Oren-Nayar (Difuso)", "Irawan (Tejido)"};
+// REFLECTION_ADDITIVE_MODE_* en el orden de sus valores.
+const char* kReflAttNames[] = {"Promedio", "Mínimo", "Máximo", "Añadir", "Metal"};
+const char* kReflFresnelNames[] = {"Ninguno", "Dieléctrico", "Conductor"};
+
+// Porcentaje que solo se aplica al soltar el control (los que cambian la imagen
+// horneada del canal: arrastrar no crea una textura nueva en cada frame).
+bool pctDeferred(const char* label, const char* id, float& value, float maxPct, SceneHistory& history, SceneNode& root) {
+    static ImGuiID activeId = 0;
+    static float draft = 0.0f;
+    propLabel(label);
+    ImGui::SetNextItemWidth(fieldWidth());
+    const ImGuiID me = ImGui::GetID(id);
+    float shown = activeId == me ? draft : value * 100.0f;
+    ImGui::DragFloat(id, &shown, 0.5f, -maxPct, maxPct, "%.0f %%");
+    bool applied = false;
+    if (ImGui::IsItemActive()) {
+        activeId = me;
+        draft = shown;
+    }
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
+        value = draft / 100.0f;
+        applied = true;
+    }
+    if (!ImGui::IsItemActive() && activeId == me) activeId = 0;
+    trackEdit(history, root);
+    return applied;
+}
+
+// Porcentaje normal (no toca la textura horneada).
+bool pctField(const char* label, const char* id, float& value, float minPct, float maxPct, SceneHistory& history,
+              SceneNode& root) {
+    propLabel(label);
+    ImGui::SetNextItemWidth(fieldWidth());
+    float pct = value * 100.0f;
+    const bool ch = ImGui::DragFloat(id, &pct, 0.5f, minPct, maxPct, "%.0f %%");
+    if (ch) value = std::clamp(pct, minPct, maxPct) / 100.0f;
+    trackEdit(history, root);
+    return ch;
+}
+
+bool comboField(const char* label, const char* id, int& value, const char* const* names, int count, SceneHistory& history,
+                SceneNode& root, float width = 200.0f) {
+    propLabel(label, false);
+    ImGui::SetNextItemWidth(fieldWidth(width));
+    int v = std::clamp(value, 0, count - 1);
+    if (ImGui::Combo(id, &v, names, count)) {
+        history.commitBefore(root);
+        value = v;
+        return true;
+    }
+    return false;
+}
+
+bool* channelFlag(Material& m, TexSlot s) {
+    switch (s) {
+        case TexSlot::Color: return &m.useColor;
+        case TexSlot::Emission: return &m.useLuminance;
+        case TexSlot::Transparency: return &m.useTransparency;
+        case TexSlot::Normal: return &m.useNormal;
+        case TexSlot::Bump: return &m.useBump;
+        case TexSlot::Alpha: return &m.useAlpha;
+        default: return nullptr;
+    }
+}
+
+// Campos derivados (lo que pinta el visor) a partir de los ajustes del canal.
+void syncMaterialChannels(Material& m) {
+    for (int i = 0; i < kTexSlotCount; ++i) {
+        const TexSlot s = (TexSlot)i;
+        bool* on = channelFlag(m, s);
+        if (!on) continue;
+        ChannelSettings& c = m.channel(s);
+        if (!*on) {
+            // Se guarda la ruta en el arbol; el canal apagado no pinta textura.
+            if (!m.texture(s).empty() && c.shader.empty()) {
+                c.shader.kind = ShaderKind::Bitmap;
+                c.shader.path = m.texture(s);
+            }
+            m.texture(s).clear();
+        } else if (m.texture(s).empty()) {
+            if (const ShaderNode* b = c.shader.firstBitmap()) m.texture(s) = b->path;
+        }
+    }
+    const ChannelSettings& col = m.channel(TexSlot::Color);
+    if (m.metallic < 0.5f) m.baseColor = m.useColor ? glm::clamp(col.color * col.brightness, 0.0f, 1.0f) : glm::vec3(0.0f);
+    const ChannelSettings& lum = m.channel(TexSlot::Emission);
+    m.emission = m.useLuminance ? lum.color * lum.brightness : glm::vec3(0.0f);
+    const ChannelSettings& tr = m.channel(TexSlot::Transparency);
+    m.transparency = m.useTransparency ? tr.color * tr.brightness : glm::vec3(0.0f);
+}
+
+std::string leafName(const std::string& p) {
+    const size_t s = p.find_last_of("/\\");
+    return s == std::string::npos ? p : p.substr(s + 1);
+}
+
+void shaderTreeLines(const ShaderNode& n, int depth) {
+    char line[400];
+    std::string extra;
+    switch (n.kind) {
+        case ShaderKind::Bitmap: extra = leafName(n.path); break;
+        case ShaderKind::Filter: {
+            char b[200];
+            std::snprintf(b, sizeof(b), "Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f", n.hue,
+                          n.saturation * 100, n.lightness * 100, n.fBrightness * 100, n.contrast * 100, n.gamma);
+            extra = b;
+            break;
+        }
+        case ShaderKind::Colorizer:
+        case ShaderKind::Gradient: extra = std::to_string(n.gradient.size()) + " nudos"; break;
+        case ShaderKind::Layer: extra = std::to_string(n.layers.size()) + " capas"; break;
+        case ShaderKind::Other: extra = "no se evalúa en el visor"; break;
+        default: break;
+    }
+    std::snprintf(line, sizeof(line), "%*s%s \"%s\"%s%s", depth * 3, "", shaderKindName(n.kind), n.name.c_str(),
+                  extra.empty() ? "" : "  —  ", extra.c_str());
+    ImGui::TextDisabled("  %s", line);
+    for (const ShaderNode& c : n.children) shaderTreeLines(c, depth + 1);
+}
+
+// Campo Textura: shader + imagen, "..." para elegir otra, "x" para quitarla.
+void textureField(Material& m, TexSlot s, SceneHistory& history, SceneNode& root) {
+    ChannelSettings& c = m.channel(s);
+    const ShaderNode* eff = effectiveShader(m, s);
+    std::string shown;
+    if (eff && !eff->isPlainBitmap()) shown = std::string(shaderKindName(eff->kind)) + " (" + leafName(m.texture(s)) + ")";
+    else shown = leafName(m.texture(s));
+    propLabel("Textura", false);
+    ImGui::SetNextItemWidth(std::max(60.0f, fieldWidth(240) - 56.0f));
+    char buf[260];
+    std::snprintf(buf, sizeof(buf), "%s", shown.c_str());
+    ImGui::InputText("##tex", buf, sizeof(buf), ImGuiInputTextFlags_ReadOnly);
+    if (ImGui::IsItemHovered() && !m.texture(s).empty()) ImGui::SetTooltip("%s", m.texture(s).c_str());
+    ImGui::SameLine(0, 2);
+    if (ImGui::Button("...##texpick") && nativeFileDialogAvailable()) {
+        if (auto p = openFileDialog("Elegir imagen", {{"Imágenes", "*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.psd"}})) {
+            history.commitBefore(root);
+            const std::u8string u = p->u8string();
+            m.texture(s) = std::string(u.begin(), u.end());
+            c.shader = {}; // imagen nueva sola
+            if (bool* on = channelFlag(m, s)) *on = true;
+        }
+    }
+    setHint("Elegir la imagen del canal (sustituye al shader importado).");
+    ImGui::SameLine(0, 2);
+    if (ImGui::Button("x##texclear")) {
+        history.commitBefore(root);
+        m.texture(s).clear();
+        c.shader = {};
+    }
+    setHint("Quitar la textura del canal.");
+    if (eff && !eff->isPlainBitmap()) {
+        shaderTreeLines(*eff, 0);
+        if (eff->hasUnsupported()) ImGui::TextColored(ImVec4(0.95f, 0.7f, 0.3f, 1), "  Hay shaders que el visor todavía no evalúa.");
+    }
+}
+
+// Bloque de un canal con color (Color, Luminancia, Transparencia).
+void colorChannelBlock(Material& m, TexSlot s, SceneHistory& history, SceneNode& root) {
+    ChannelSettings& c = m.channel(s);
+    ImGui::PushID((int)s);
+    propLabel("Color");
+    ImGui::SetNextItemWidth(fieldWidth(240));
+    if (ImGui::ColorEdit3("##ccol", &c.color.x, ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_PickerHueBar))
+        syncMaterialChannels(m);
+    trackEdit(history, root);
+    if (pctDeferred("Brillo", "##cbr", c.brightness, 1000.0f, history, root)) syncMaterialChannels(m);
+    textureField(m, s, history, root);
+    comboField("Muestreo", "##csamp", c.sampling, kSamplingNames, IM_ARRAYSIZE(kSamplingNames), history, root, 140);
+    pctField("Desenfoque Desfase", "##cboff", c.blurOffset, -100.0f, 100.0f, history, root);
+    pctField("Desenfoque Escala", "##cbsc", c.blurScale, -100.0f, 100.0f, history, root);
+    comboField("Modo de Mezcla", "##cmix", c.mixMode, kTexMixNames, IM_ARRAYSIZE(kTexMixNames), history, root, 140);
+    pctDeferred("Fuerza de Mezcla", "##cstr", c.mixStrength, 100.0f, history, root);
+    ImGui::PopID();
+}
+
+// Canal sin color (Relieve, Normal, Alfa).
+void plainChannelBlock(Material& m, TexSlot s, SceneHistory& history, SceneNode& root) {
+    ImGui::PushID((int)s);
+    if (s == TexSlot::Bump) pctField("Fuerza", "##bstr", m.bumpStrength, -1000.0f, 1000.0f, history, root);
+    if (s == TexSlot::Normal) pctField("Fuerza", "##nstr", m.normalStrength, -1000.0f, 1000.0f, history, root);
+    if (s == TexSlot::Alpha) {
+        propLabel("Color");
+        ImGui::SetNextItemWidth(fieldWidth(240));
+        ImGui::ColorEdit3("##acol", &m.alphaColor.x, ImGuiColorEditFlags_DisplayHSV);
+        trackEdit(history, root);
+        pctField("Delta", "##adelta", m.alphaDelta, 0.0f, 100.0f, history, root);
+        propLabel("Invertir", false);
+        bool b = m.alphaInvert;
+        if (ImGui::Checkbox("##ainv", &b)) { history.commitBefore(root); m.alphaInvert = b; }
+        propLabel("Alfa Suave", false);
+        b = m.alphaSoft;
+        if (ImGui::Checkbox("##asoft", &b)) { history.commitBefore(root); m.alphaSoft = b; }
+        propLabel("Alfa de Imagen", false);
+        b = m.alphaImage;
+        if (ImGui::Checkbox("##aimg", &b)) { history.commitBefore(root); m.alphaImage = b; }
+    }
+    textureField(m, s, history, root);
+    comboField("Muestreo", "##psamp", m.channel(s).sampling, kSamplingNames, IM_ARRAYSIZE(kSamplingNames), history, root, 140);
+    ImGui::PopID();
+}
+
+void colorTabExtras(Material& m, SceneHistory& history, SceneNode& root) {
+    static const char* models[] = {"Lambertiano", "Oren-Nayar"};
+    comboField("Modelo", "##dmodel", m.diffuseModel, models, IM_ARRAYSIZE(models), history, root, 140);
+    pctField("Caída Difusa", "##dfall", m.diffuseFalloff, -100.0f, 100.0f, history, root);
+    pctField("Nivel Difuso", "##dlevel", m.diffuseLevel, 0.0f, 1000.0f, history, root);
+    ImGui::BeginDisabled(m.diffuseModel != 1);
+    pctField("Rugosidad", "##drough", m.diffuseRoughness, 0.0f, 100.0f, history, root);
+    ImGui::EndDisabled();
+}
+
+void reflectancePanel(Material& m, SceneHistory& history, SceneNode& root) {
+    sectionHeader("Global");
+    pctField("Brillo Reflexión Global", "##grefl", m.reflectionBrightness, 0.0f, 1000.0f, history, root);
+    pctField("Brillo Especular Global", "##gspec", m.specularBrightness, 0.0f, 1000.0f, history, root);
+    propLabel("Pase Separado", false);
+    bool sep = m.separatePass;
+    if (ImGui::Checkbox("##gsep", &sep)) { history.commitBefore(root); m.separatePass = sep; }
+    bool layersChanged = false;
+    for (size_t i = 0; i < m.layers.size(); ++i) {
+        ReflectLayer& l = m.layers[i];
+        ImGui::PushID((int)i);
+        char head[200];
+        std::snprintf(head, sizeof(head), "%s  (%s)###lay", l.name.empty() ? "Capa" : l.name.c_str(),
+                      l.blendMode == 1 ? "Añadir" : "Normal");
+        if (ImGui::CollapsingHeader(head, ImGuiTreeNodeFlags_DefaultOpen)) {
+            int dist = std::clamp(l.distribution, 0, IM_ARRAYSIZE(kReflDistNames) - 1);
+            if (comboField("Tipo", "##ldist", dist, kReflDistNames, IM_ARRAYSIZE(kReflDistNames), history, root, 220)) {
+                l.distribution = dist;
+                layersChanged = true;
+            }
+            comboField("Atenuación", "##latt", l.attenuation, kReflAttNames, IM_ARRAYSIZE(kReflAttNames), history, root, 140);
+            layersChanged |= pctField("Rugosidad", "##lrough", l.roughness, 0.0f, 100.0f, history, root);
+            layersChanged |= pctField("Fuerza Reflexión", "##lrefl", l.strength, 0.0f, 1000.0f, history, root);
+            layersChanged |= pctField("Fuerza Especular", "##lspec", l.specular, 0.0f, 1000.0f, history, root);
+            pctField("Fuerza Relieve", "##lbump", l.bumpStrength, -1000.0f, 1000.0f, history, root);
+            sectionHeader("Color de Capa");
+            propLabel("Color");
+            ImGui::SetNextItemWidth(fieldWidth(240));
+            if (ImGui::ColorEdit3("##lcol", &l.colorRaw.x, ImGuiColorEditFlags_DisplayHSV)) {
+                l.color = l.colorRaw * l.colorBrightness;
+                layersChanged = true;
+            }
+            trackEdit(history, root);
+            if (pctField("Brillo", "##lcbr", l.colorBrightness, 0.0f, 1000.0f, history, root)) {
+                l.color = l.colorRaw * l.colorBrightness;
+                layersChanged = true;
+            }
+            propLabel("Textura", false);
+            ImGui::TextDisabled("%s", l.colorTex.empty() ? "(ninguna)" : leafName(l.colorTex).c_str());
+            comboField("Modo de Mezcla", "##lcmix", l.colorMixMode, kTexMixNames, IM_ARRAYSIZE(kTexMixNames), history, root, 140);
+            pctField("Fuerza de Mezcla", "##lcstr", l.colorMixStrength, 0.0f, 100.0f, history, root);
+            sectionHeader("Fresnel de Capa");
+            if (comboField("Fresnel", "##lfres", l.fresnel, kReflFresnelNames, IM_ARRAYSIZE(kReflFresnelNames), history, root, 140))
+                layersChanged = true;
+            ImGui::BeginDisabled(l.fresnel == 0);
+            propLabel("IOR");
+            ImGui::SetNextItemWidth(fieldWidth());
+            if (ImGui::DragFloat("##lior", &l.ior, 0.01f, 1.0f, 10.0f, "%.3f")) layersChanged = true;
+            trackEdit(history, root);
+            ImGui::EndDisabled();
+        }
+        ImGui::PopID();
+    }
+    if (m.layers.empty()) ImGui::TextDisabled("  Sin capas importadas: el visor usa Metálico/Rugosidad.");
+    if (layersChanged) {
+        glm::vec3 c = m.baseColor;
+        float metal = m.metallic, rough = m.roughness;
+        if (pbrFromLayers(m.layers, m.useColor, c, metal, rough)) {
+            m.baseColor = c;
+            m.metallic = metal;
+            m.roughness = rough;
+        }
+    }
+    sectionHeader("Visor (PBR equivalente)");
+    propLabel("Metálico");
+    float metallicPct = m.metallic * 100.0f;
+    ImGui::SetNextItemWidth(fieldWidth());
+    if (ImGui::SliderFloat("##metallic", &metallicPct, 0.0f, 100.0f, "%.0f %%")) m.metallic = metallicPct / 100.0f;
+    trackEdit(history, root);
+    propLabel("Rugosidad");
+    float roughnessPct = m.roughness * 100.0f;
+    ImGui::SetNextItemWidth(fieldWidth());
+    if (ImGui::SliderFloat("##roughness", &roughnessPct, 0.0f, 100.0f, "%.0f %%")) m.roughness = roughnessPct / 100.0f;
+    trackEdit(history, root);
+    ImGui::TextDisabled("  El visor todavía no pinta cada capa por separado (brillos de color, Atenuación).");
+}
+
+void channelChecks(Material& m, SceneHistory& history, SceneNode& root) {
+    struct Row { const char* name; bool* flag; };
+    const Row rows[] = {{"Color", &m.useColor},          {"Difusión", nullptr},          {"Luminancia", &m.useLuminance},
+                        {"Transparencia", &m.useTransparency}, {"Reflectancia", &m.useReflectance}, {"Entorno", nullptr},
+                        {"Niebla", nullptr},          {"Relieve", &m.useBump},        {"Normal", &m.useNormal},
+                        {"Alfa", &m.useAlpha},        {"Fosforescencia", nullptr},    {"Desplazamiento", nullptr}};
+    for (const Row& r : rows) {
+        if (!r.flag) {
+            roCheck(r.name, false, false);
+            continue;
+        }
+        propLabel(r.name, false);
+        bool v = *r.flag;
+        ImGui::PushID(r.name);
+        if (ImGui::Checkbox("##on", &v)) {
+            history.commitBefore(root);
+            *r.flag = v;
+            syncMaterialChannels(m);
+        }
+        ImGui::PopID();
+    }
+}
+
 void drawMaterialAttributes(Material& m, int index, SceneNode& root, SceneHistory& history) {
     char title[200];
     std::snprintf(title, sizeof(title), "Material [%s]", m.name.c_str());
@@ -3901,7 +4188,8 @@ void drawMaterialAttributes(Material& m, int index, SceneNode& root, SceneHistor
         if (g_fontBold) ImGui::PopFont();
         ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 22));
     }
-    static const char* tabs[] = {"Básico", "Color", "Reflectancia", "Iluminación", "Editor", "Asignar"};
+    static const char* tabs[] = {"Básico", "Color", "Luminancia", "Transparencia", "Reflectancia", "Relieve",
+                                 "Normal", "Alfa", "Iluminación", "Editor", "Asignar"};
     attrTabRow(tabs, IM_ARRAYSIZE(tabs), g.matMask);
 
     if (tabOn(g.matMask, 0)) {
@@ -3913,45 +4201,43 @@ void drawMaterialAttributes(Material& m, int index, SceneNode& root, SceneHistor
         if (ImGui::InputText("##mname", nameBuf, sizeof(nameBuf)) && nameBuf[0]) m.name = nameBuf;
         trackEdit(history, root);
         roCombo("Capa", "");
-        roCheck("Color", true, false);
-        roCheck("Difusión", false, false);
-        roCheck("Luminancia", false, false);
-        roCheck("Transparencia", false, false);
-        roCheck("Reflectancia", true, false);
-        roCheck("Entorno", false, false);
-        roCheck("Relieve", false, false);
-        roCheck("Alfa", false, false);
+        channelChecks(m, history, root);
     }
     if (tabOn(g.matMask, 1)) {
         sectionHeader("Color");
-        propLabel("Color");
-        ImGui::SetNextItemWidth(fieldWidth(240));
-        ImGui::ColorEdit3("##diff", &m.baseColor.x, ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_PickerHueBar);
-        trackEdit(history, root);
-        roFloat("Brillo", 100.0f, "%.0f %%");
-        roCombo("Textura", "");
-        roCombo("Modelo", "Lambertiano");
+        colorChannelBlock(m, TexSlot::Color, history, root);
+        colorTabExtras(m, history, root);
     }
     if (tabOn(g.matMask, 2)) {
-        sectionHeader("Reflectancia — PBR (Metallic/Roughness)");
-        roCombo("Tipo", "GGX (Cook-Torrance)");
-        propLabel("Metálico");
-        float metallicPct = m.metallic * 100.0f;
-        ImGui::SetNextItemWidth(fieldWidth());
-        if (ImGui::SliderFloat("##metallic", &metallicPct, 0.0f, 100.0f, "%.0f %%")) m.metallic = metallicPct / 100.0f;
-        trackEdit(history, root);
-        propLabel("Rugosidad");
-        float roughnessPct = m.roughness * 100.0f;
-        ImGui::SetNextItemWidth(fieldWidth());
-        if (ImGui::SliderFloat("##roughness", &roughnessPct, 0.0f, 100.0f, "%.0f %%")) m.roughness = roughnessPct / 100.0f;
-        trackEdit(history, root);
-        roCombo("Atenuación", "Añadir");
+        sectionHeader("Luminancia");
+        colorChannelBlock(m, TexSlot::Emission, history, root);
     }
-    if (tabOn(g.matMask, 3) || tabOn(g.matMask, 4)) {
-        sectionHeader(tabOn(g.matMask, 3) ? "Iluminación" : "Editor");
+    if (tabOn(g.matMask, 3)) {
+        sectionHeader("Transparencia");
+        colorChannelBlock(m, TexSlot::Transparency, history, root);
+        propLabel("Refracción");
+        ImGui::SetNextItemWidth(fieldWidth());
+        ImGui::DragFloat("##tior", &m.ior, 0.01f, 0.25f, 4.0f, "%.3f");
+        trackEdit(history, root);
+    }
+    if (tabOn(g.matMask, 4)) reflectancePanel(m, history, root);
+    if (tabOn(g.matMask, 5)) {
+        sectionHeader("Relieve");
+        plainChannelBlock(m, TexSlot::Bump, history, root);
+    }
+    if (tabOn(g.matMask, 6)) {
+        sectionHeader("Normal");
+        plainChannelBlock(m, TexSlot::Normal, history, root);
+    }
+    if (tabOn(g.matMask, 7)) {
+        sectionHeader("Alfa");
+        plainChannelBlock(m, TexSlot::Alpha, history, root);
+    }
+    if (tabOn(g.matMask, 8) || tabOn(g.matMask, 9)) {
+        sectionHeader(tabOn(g.matMask, 8) ? "Iluminación" : "Editor");
         ImGui::TextDisabled("  Todavía no implementado en Iron3D.");
     }
-    if (tabOn(g.matMask, 5)) {
+    if (tabOn(g.matMask, 10)) {
         sectionHeader("Asignar");
         std::vector<SceneNode*> users;
         collectUsers(root, index, users);
@@ -5085,22 +5371,28 @@ void drawMaterialEditor(SceneNode& root, SceneHistory& history, std::vector<Mate
         if (ImGui::InputText("##mename", nameBuf, sizeof(nameBuf)) && nameBuf[0]) m.name = nameBuf;
         trackEdit(history, root);
         ImGui::Separator();
-        struct Ch { const char* name; bool on; bool usable; };
-        const Ch channels[] = {{"Color", true, true}, {"Difusión", false, false}, {"Luminancia", false, false},
-                               {"Transparencia", false, false}, {"Reflectancia", true, true}, {"Entorno", false, false},
-                               {"Niebla", false, false}, {"Relieve", false, false}, {"Normales", false, false},
-                               {"Alfa", false, false}, {"Fosforescencia", false, false},
-                               {"Desplazamiento", false, false}, {nullptr, false, false}, {"Editor", false, false},
-                               {"Iluminación", false, false}, {"Asignación", false, true}};
+        struct Ch { const char* name; bool* flag; bool usable; };
+        const Ch channels[] = {{"Color", &m.useColor, true},       {"Difusión", nullptr, false},
+                               {"Luminancia", &m.useLuminance, true}, {"Transparencia", &m.useTransparency, true},
+                               {"Reflectancia", &m.useReflectance, true}, {"Entorno", nullptr, false},
+                               {"Niebla", nullptr, false},        {"Relieve", &m.useBump, true},
+                               {"Normales", &m.useNormal, true},  {"Alfa", &m.useAlpha, true},
+                               {"Fosforescencia", nullptr, false}, {"Desplazamiento", nullptr, false},
+                               {nullptr, nullptr, false},         {"Editor", nullptr, false},
+                               {"Iluminación", nullptr, false},   {"Asignación", nullptr, true}};
         for (int i = 0; i < IM_ARRAYSIZE(channels); ++i) {
             if (!channels[i].name) {
                 ImGui::Separator();
                 continue;
             }
             ImGui::PushID(i);
-            bool on = channels[i].on;
-            ImGui::BeginDisabled();
-            ImGui::Checkbox("##on", &on);
+            bool on = channels[i].flag ? *channels[i].flag : false;
+            ImGui::BeginDisabled(!channels[i].flag);
+            if (ImGui::Checkbox("##on", &on) && channels[i].flag) {
+                history.commitBefore(root);
+                *channels[i].flag = on;
+                syncMaterialChannels(m);
+            }
             ImGui::EndDisabled();
             ImGui::SameLine();
             const bool act = g.matEditorChannel == i;
@@ -5117,24 +5409,25 @@ void drawMaterialEditor(SceneNode& root, SceneHistory& history, std::vector<Mate
         g_labelW = 150.0f;
         if (g.matEditorChannel == 0) {
             sectionHeader("Color");
-            ImGui::ColorPicker3("##picker", &m.baseColor.x,
-                                ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_NoSidePreview);
-            trackEdit(history, root);
-            roFloat("Brillo", 100.0f, "%.0f %%");
-            roCombo("Modelo", "Lambertiano");
+            colorChannelBlock(m, TexSlot::Color, history, root);
+            colorTabExtras(m, history, root);
+        } else if (g.matEditorChannel == 2) {
+            sectionHeader("Luminancia");
+            colorChannelBlock(m, TexSlot::Emission, history, root);
+        } else if (g.matEditorChannel == 3) {
+            sectionHeader("Transparencia");
+            colorChannelBlock(m, TexSlot::Transparency, history, root);
         } else if (g.matEditorChannel == 4) {
-            sectionHeader("Reflectancia — PBR (Metallic/Roughness)");
-            ImGui::TextDisabled("  Capas:  GGX (Cook-Torrance)");
-            propLabel("Metálico");
-            float metallicPct = m.metallic * 100.0f;
-            ImGui::SetNextItemWidth(fieldWidth(220));
-            if (ImGui::SliderFloat("##metallic", &metallicPct, 0, 100, "%.0f %%")) m.metallic = metallicPct / 100.0f;
-            trackEdit(history, root);
-            propLabel("Rugosidad");
-            float roughnessPct = m.roughness * 100.0f;
-            ImGui::SetNextItemWidth(fieldWidth(220));
-            if (ImGui::SliderFloat("##roughness", &roughnessPct, 0, 100, "%.0f %%")) m.roughness = roughnessPct / 100.0f;
-            trackEdit(history, root);
+            reflectancePanel(m, history, root);
+        } else if (g.matEditorChannel == 7) {
+            sectionHeader("Relieve");
+            plainChannelBlock(m, TexSlot::Bump, history, root);
+        } else if (g.matEditorChannel == 8) {
+            sectionHeader("Normales");
+            plainChannelBlock(m, TexSlot::Normal, history, root);
+        } else if (g.matEditorChannel == 9) {
+            sectionHeader("Alfa");
+            plainChannelBlock(m, TexSlot::Alpha, history, root);
         } else {
             sectionHeader("Asignación");
             std::vector<SceneNode*> users;

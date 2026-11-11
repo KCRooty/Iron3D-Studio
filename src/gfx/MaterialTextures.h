@@ -11,6 +11,7 @@
 // (viven hasta cerrar el programa), cargar en segundo plano (la primera
 // aparicion de un modelo grande da un tiron) ni EXR.
 
+#include "core/Material.h"
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
 
@@ -34,7 +35,8 @@ public:
     // resuelta contra `baseDir`). VK_NULL_HANDLE si no se encuentra o no se
     // puede leer; el fallo tambien queda en la cache para no reintentarlo
     // en cada frame.
-    VkDescriptorSet get(const std::string& rawPath, const std::string& baseDir);
+    // Imagen del canal `slot` de `m` (horneada con sus ajustes si hace falta, ver ChannelBake.h).
+    VkDescriptorSet get(const Material& m, TexSlot slot);
 
     size_t loadedCount() const { return textures_.size(); }
 

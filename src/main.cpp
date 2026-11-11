@@ -610,6 +610,12 @@ int main(int argc, char** argv) {
             // abre su ventana; la escena sigue siendo la de siempre.
             if (iron3d::mountTemporaryLibrary(argPath, &err)) {
                 iron3d::openContentBrowser();
+                // Abrir un modelo de la libreria = escena con ese modelo, sin el
+                // Cubo de la escena inicial (C4D tampoco lo tiene).
+                if (!loadPresetArg.empty()) {
+                    sceneRoot.clearChildren();
+                    selected = nullptr;
+                }
                 const iron3d::PresetLibrary* lib = iron3d::findMountedLibrary(argPath);
                 for (const iron3d::PresetItem& it : lib ? lib->items() : std::vector<iron3d::PresetItem>{}) {
                     if (loadPresetArg.empty() || it.path != loadPresetArg) continue;
@@ -649,8 +655,15 @@ int main(int argc, char** argv) {
             continue;
         }
         const iron3d::PresetLibrary* lib = iron3d::findMountedLibrary(libPath);
+        bool found = false;
         for (const iron3d::PresetItem& it : lib ? lib->items() : std::vector<iron3d::PresetItem>{})
-            if (it.path == itemPath) iron3d::loadPresetIntoScene(*lib, it, sceneRoot, selected, history, materials);
+            if (it.path == itemPath) {
+                iron3d::loadPresetIntoScene(*lib, it, sceneRoot, selected, history, materials);
+                found = true;
+            }
+        if (!found)
+            std::fprintf(stderr, "[Iron3D] --also: '%s' no esta en la libreria (%s)\n", itemPath.c_str(),
+                         lib ? "montada" : "no encontrada tras montarla");
     }
     if (!frameArg.empty() || !selectArg.empty()) {
         std::function<SceneNode*(SceneNode&, const std::string&)> byName = [&](SceneNode& n, const std::string& name) -> SceneNode* {
