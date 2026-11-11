@@ -110,25 +110,6 @@ void glfwDropCallback(GLFWwindow* /*window*/, int count, const char** paths) {
     }
 }
 
-// Recorre el grafo de escena (Fase 2) buscando la primera Luz (Fase 5): su
-// posicion en mundo es la que usa drawScene() para iluminar todo lo demas.
-// Solo una luz activa por ahora -- Phong basico, no hace falta mas.
-bool findFirstLightWorldPos(iron3d::SceneNode& node, const glm::mat4& parentWorld, glm::vec3& outPos,
-                            bool parentVisible = true) {
-    // Visibilidad de editor heredada (Por Defecto = la del padre); un hijo
-    // en "Activado" se ve aunque su padre este apagado, como en C4D.
-    const bool vis = iron3d::resolveVisibility(node.editorVis, parentVisible);
-    const glm::mat4 world = parentWorld * node.localMatrix();
-    if (vis && node.primitive == iron3d::PrimitiveType::Light) {
-        outPos = glm::vec3(world * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-        return true;
-    }
-    for (const auto& child : node.children()) {
-        if (findFirstLightWorldPos(*child, world, outPos, vis)) return true;
-    }
-    return false;
-}
-
 // Matriz vista*proyeccion de la luz para el mapa de sombras (Fase render 2,
 // ver ROADMAP_RENDER.md): un unico shadow map ortografico, tratando la luz
 // como si "mirara" al origen de la escena -- NO omnidireccional (un point
@@ -227,12 +208,40 @@ void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vect
             const iron3d::MeshHandle h = meshes.forNode(node);
             // Etiqueta de Textura del nodo: solo proyeccion UVW (6), como el
             // render por CPU; las demas proyecciones salen con color plano.
-            iron3d::TexMapping tex;
-            tex.enabled = node.texTag.projection == 6;
-            tex.offset = node.texTag.offset;
-            tex.length = node.texTag.length;
-            tex.tile = node.texTag.tile;
-            if (h != iron3d::kInvalidMesh) renderer.drawMesh(h, world, viewProj * world, material, tex);
+            auto mapping = [](const iron3d::TextureTagData& t) {
+                iron3d::TexMapping tex;
+                tex.enabled = t.projection == 6;
+                tex.offset = t.offset;
+                tex.length = t.length;
+                tex.tile = t.tile;
+                return tex;
+            };
+            if (h == iron3d::kInvalidMesh) break;
+            const glm::mat4 mvp = viewProj * world;
+            // Partes con otro material (Selecciones de Poligonos de C4D): cada
+            // rango con el suyo y los huecos con el del objeto. Si la malla ha
+            // cambiado y los rangos ya no caben, el objeto entero con el suyo.
+            const uint32_t total = node.mesh ? (uint32_t)node.mesh->indices.size() : 0u;
+            bool partsOk = node.primitive == PrimitiveType::Mesh && !node.materialParts.empty() && total > 0;
+            uint32_t end = 0;
+            for (const iron3d::MaterialPart& part : node.materialParts) {
+                partsOk = partsOk && part.firstIndex >= end && part.firstIndex + part.indexCount <= total;
+                end = part.firstIndex + part.indexCount;
+            }
+            if (!partsOk) {
+                renderer.drawMesh(h, world, mvp, material, mapping(node.texTag));
+                break;
+            }
+            uint32_t cur = 0;
+            for (const iron3d::MaterialPart& part : node.materialParts) {
+                if (part.firstIndex > cur)
+                    renderer.drawMesh(h, world, mvp, material, mapping(node.texTag), cur, part.firstIndex - cur);
+                if (part.indexCount > 0)
+                    renderer.drawMesh(h, world, mvp, iron3d::materialOrDefault(materials, part.materialIndex),
+                                      mapping(part.texTag), part.firstIndex, part.indexCount);
+                cur = part.firstIndex + part.indexCount;
+            }
+            if (cur < total) renderer.drawMesh(h, world, mvp, material, mapping(node.texTag), cur, total - cur);
             break;
         }
         case PrimitiveType::Light: {
@@ -449,6 +458,9 @@ int main(int argc, char** argv) {
     std::vector<std::string> uiCmdArgs; // "--ui-cmd=make-editable|frame-selected|commander[:texto]|vp-menu"
     bool travelArg = false; // "--travel": como pulsar la flecha (viaje hacia el seleccionado)
     bool dumpSceneArg = false; // "--dump-scene": lista los objetos cargados por stderr (verificacion)
+    // "--also=<lib>|<ruta>": carga ademas ese preestablecido de otra libreria
+    // (verificacion: un personaje con un pack de luces encima).
+    std::vector<std::string> alsoPresetArgs;
     bool savePresetArg = false; // "--save-preset": abre "Guardar como Preestablecido" con el seleccionado
     bool iconSheet = false;
     // "--no-focus": la ventana sale sin quitar el foco a la que se este usando
@@ -464,6 +476,8 @@ int main(int argc, char** argv) {
             openPreferencesDialog();
         } else if (a.rfind("--load-preset=", 0) == 0) {
             loadPresetArg = a.substr(14);
+        } else if (a.rfind("--also=", 0) == 0) {
+            alsoPresetArgs.push_back(a.substr(7));
         } else if (a == "--dump-scene") {
             dumpSceneArg = true;
         } else if (a == "--travel") {
@@ -624,6 +638,20 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "[Iron3D] No se pudo abrir '%s': %s\n", sceneArg, err.c_str());
         }
     }
+    for (const std::string& also : alsoPresetArgs) {
+        const size_t bar = also.find('|');
+        if (bar == std::string::npos) continue;
+        const std::filesystem::path libPath(std::u8string(reinterpret_cast<const char8_t*>(also.data()), bar));
+        const std::string itemPath = also.substr(bar + 1);
+        std::string err;
+        if (!iron3d::mountTemporaryLibrary(libPath, &err)) {
+            std::fprintf(stderr, "[Iron3D] --also: no se pudo abrir '%s': %s\n", also.c_str(), err.c_str());
+            continue;
+        }
+        const iron3d::PresetLibrary* lib = iron3d::findMountedLibrary(libPath);
+        for (const iron3d::PresetItem& it : lib ? lib->items() : std::vector<iron3d::PresetItem>{})
+            if (it.path == itemPath) iron3d::loadPresetIntoScene(*lib, it, sceneRoot, selected, history, materials);
+    }
     if (!frameArg.empty() || !selectArg.empty()) {
         std::function<SceneNode*(SceneNode&, const std::string&)> byName = [&](SceneNode& n, const std::string& name) -> SceneNode* {
             if (n.name() == name) return &n;
@@ -673,6 +701,18 @@ int main(int argc, char** argv) {
                 for (const auto& c : n.children()) dump(*c, w, vis, depth + 1);
             };
         for (const auto& c : sceneRoot.children()) dump(*c, glm::mat4(1.0f), true, 0);
+        // Luces tal como llegan al visor (las que iluminan de verdad).
+        const iron3d::SceneLighting sl = iron3d::collectSceneLights(sceneRoot);
+        std::fprintf(stderr, "[dump] luces en el visor: %zu (sombra de la n.%d)\n", sl.lights.size(), sl.shadowLight);
+        for (size_t i = 0; i < sl.lights.size(); ++i) {
+            const iron3d::ViewportLight& v = sl.lights[i];
+            std::fprintf(stderr,
+                         "[dump]   luz %zu tipo=%d pos=(%.2f %.2f %.2f) dir=(%.2f %.2f %.2f) color=(%.2f %.2f %.2f) "
+                         "cos=(%.3f %.3f) caida=%d radio=%.2f dif=%d esp=%d\n",
+                         i, (int)v.type, v.position.x, v.position.y, v.position.z, v.direction.x, v.direction.y,
+                         v.direction.z, v.color.r, v.color.g, v.color.b, v.cosOuter, v.cosInner, v.falloff, v.radius,
+                         (int)v.diffuse, (int)v.specular);
+        }
     }
 
     // --- Carpeta de escenas (Fase 2c: guardar/cargar .iron) -------------------
@@ -965,12 +1005,18 @@ int main(int argc, char** argv) {
             renderer->setClearColor(bg.x, bg.y, bg.z, 1.0f);
         }
         if (renderer->beginFrame()) {
-            // Luz de la escena (Fase 5): la primera que haya en el grafo; si no
-            // hay ninguna, foco de camara de respaldo (headlamp) para que una
-            // escena nueva sin Luz no se quede a oscuras.
-            glm::vec3 lightPos = eye;
-            findFirstLightWorldPos(sceneRoot, glm::mat4(1.0f), lightPos);
-            const glm::mat4 lightViewProj = computeLightViewProj(lightPos);
+            // Luces de la escena (2026-11-10): todas las visibles, con su tipo,
+            // color, intensidad y caida. Sin ninguna, luz por defecto desde la
+            // camara (como C4D). El mapa de sombras es de la primera luz que
+            // tenga sombra activada.
+            const iron3d::SceneLighting sceneLighting = iron3d::collectSceneLights(sceneRoot);
+            glm::vec3 shadowPos = eye;
+            if (sceneLighting.shadowLight >= 0) {
+                const iron3d::ViewportLight& sl = sceneLighting.lights[sceneLighting.shadowLight];
+                shadowPos = sl.type == iron3d::ViewportLight::Type::Directional ? -sl.direction * 10.0f : sl.position;
+            }
+            const glm::mat4 lightViewProj = computeLightViewProj(shadowPos);
+            renderer->setSceneLighting(sceneLighting, lightViewProj);
 
             // Pasada de sombras (Fase render 2): ANTES del render pass
             // principal -- en Vulkan ambas pasadas comparten el mismo command
@@ -992,12 +1038,11 @@ int main(int argc, char** argv) {
             if (!viewport.quad) drawSceneGBuffer(*renderer, meshes, sceneRoot, glm::mat4(1.0f));
             renderer->endGBufferPass();
 
-            renderer->setLighting(lightPos, eye, lightViewProj);
             renderer->beginMainPass();
 
             for (const Panel& pn : panels) {
                 renderer->setDrawRect(pn.x, pn.y, pn.w, pn.h);
-                renderer->setLighting(lightPos, pn.eye, lightViewProj);
+                renderer->setEyePosition(pn.eye);
                 const glm::mat4 pvp = pn.proj * pn.view;
                 if (viewport.showGrid && !viewport.renderView)
                     renderer->drawGrid(gridVerts, pvp * gridModelFor(pn.kind));

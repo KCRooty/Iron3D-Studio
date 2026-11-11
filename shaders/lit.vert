@@ -8,12 +8,26 @@ layout(location = 2) in vec2 inUV; // 2026-11-10: texturas en el visor
 layout(push_constant) uniform PushConstants {
     mat4 model;
     mat4 mvp;
-    vec4 lightPosAndFlags;
+    vec4 flags;
     vec4 eyePosAndRoughness;
     vec4 baseColorAndMetallic;
-    mat4 lightViewProj; // Fase render 2: posicion del fragmento en espacio de la luz
     vec4 uvTransform;
+    vec4 emission;
 } pc;
+
+// Luces de la escena (2026-11-10, ver LightsUniform.h): aqui solo hace falta
+// la matriz del mapa de sombras.
+struct Light {
+    vec4 posType;
+    vec4 dirFalloff;
+    vec4 colorRadius;
+    vec4 cone;
+};
+layout(set = 3, binding = 0, std140) uniform SceneLights {
+    mat4 lightViewProj;
+    vec4 info;
+    Light lights[32];
+} sl;
 
 layout(location = 0) out vec3 fragNormalWS;
 layout(location = 1) out vec3 fragPosWS;
@@ -27,6 +41,6 @@ void main() {
     // ese caso) -- simplificacion deliberada de esta fase, ver LitPipeline.h.
     fragNormalWS = normalize(mat3(pc.model) * inNormal);
     fragPosWS = worldPos.xyz;
-    fragPosLightSpace = pc.lightViewProj * worldPos;
+    fragPosLightSpace = sl.lightViewProj * worldPos;
     fragUV = inUV;
 }

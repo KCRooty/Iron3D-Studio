@@ -58,9 +58,11 @@ void VulkanRenderer::init(GLFWwindow* window, int width, int height) {
     ssaoPass_.create(ctx_.device, ctx_.physicalDevice, allocator_, shaderDir, width, height);
     materialTextures_.create(ctx_.device, ctx_.physicalDevice, allocator_, ctx_.graphicsQueue,
                              ctx_.graphicsQueueFamily);
+    lightsUniform_.create(ctx_.device, allocator_);
     litPipeline_.create(ctx_.device, ctx_.physicalDevice, swapchain_.renderPass(), shaderDir,
                          shadowMap_.descriptorSetLayout(), ssaoPass_.descriptorSetLayout(),
-                         materialTextures_.descriptorSetLayout(), VK_CULL_MODE_NONE);
+                         materialTextures_.descriptorSetLayout(), lightsUniform_.descriptorSetLayout(),
+                         VK_CULL_MODE_NONE);
     gizmoLinePipeline_.create(ctx_.device, swapchain_.renderPass(), shaderDir,
                                VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
     gizmoTriPipeline_.create(ctx_.device, swapchain_.renderPass(), shaderDir,
@@ -99,6 +101,7 @@ void VulkanRenderer::shutdown() {
     shadowMap_.destroy(ctx_.device, allocator_);
     ssaoPass_.destroy(ctx_.device, allocator_);
     materialTextures_.destroy(ctx_.device, allocator_);
+    lightsUniform_.destroy(ctx_.device, allocator_);
     for (auto& mesh : meshes_) mesh.destroy(ctx_.device, allocator_);
     meshes_.clear();
     pendingDestroy_.clear();
@@ -242,15 +245,18 @@ void VulkanRenderer::drawGrid(const std::vector<Vertex>& lineVerts, const glm::m
     gridMesh_.drawLines(currentCmd_);
 }
 
-void VulkanRenderer::setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
-                                  const glm::mat4& lightViewProj) {
-    lightPosWS_ = lightPosWS;
-    eyePosWS_ = eyePosWS;
+void VulkanRenderer::setSceneLighting(const SceneLighting& lighting, const glm::mat4& lightViewProj) {
     lightViewProj_ = lightViewProj;
+    if (currentCmd_) lightsUniform_.update(currentCmd_, packSceneLights(lighting, lightViewProj));
+}
+
+void VulkanRenderer::setEyePosition(const glm::vec3& eyePosWS) {
+    eyePosWS_ = eyePosWS;
 }
 
 void VulkanRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
-                               const Material& material, const TexMapping& tex) {
+                               const Material& material, const TexMapping& tex, uint32_t firstIndex,
+                               uint32_t indexCount) {
     if (mesh >= meshes_.size()) return;
     // Textura de Color (2026-11-10): si el material la tiene y la etiqueta la
     // aplica en UVW; si no se puede cargar, color plano como hasta ahora.
@@ -271,9 +277,9 @@ void VulkanRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     litPipeline_.bindShadowMap(currentCmd_, shadowMap_.descriptorSet());
     litPipeline_.bindAoMap(currentCmd_, ssaoPass_.descriptorSet());
     litPipeline_.bindColorTexture(currentCmd_, texSet);
-    litPipeline_.pushConstants(currentCmd_, model, mvp, lightPosWS_, eyePosWS_, material, lightViewProj_, texFlags,
-                               uvTransform);
-    meshes_[mesh].draw(currentCmd_);
+    litPipeline_.bindLights(currentCmd_, lightsUniform_.descriptorSet());
+    litPipeline_.pushConstants(currentCmd_, model, mvp, eyePosWS_, material, texFlags, uvTransform);
+    meshes_[mesh].draw(currentCmd_, firstIndex, indexCount);
 }
 
 void VulkanRenderer::drawGizmo(const std::vector<Vertex>& lineVerts, const std::vector<Vertex>& triVerts,

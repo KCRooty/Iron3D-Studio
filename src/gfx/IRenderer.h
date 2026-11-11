@@ -13,6 +13,7 @@
 #include "core/MeshData.h"
 #include "core/Vertex.h"
 #include "core/Material.h"
+#include "core/SceneLighting.h"
 
 #include <glm/glm.hpp>
 
@@ -134,22 +135,27 @@ public:
     // geometria la tape. Buffer propio, independiente del gizmo.
     virtual void drawGrid(const std::vector<Vertex>& lineVerts, const glm::mat4& viewProj) = 0;
 
-    // Estado de iluminacion de ESTE frame: una sola luz puntual + un termino
-    // ambiente tipo IBL aproximado (ver lit.frag) -- la "Luz" de la escena
-    // (o el foco de camara de respaldo si no hay ninguna, ver main.cpp).
-    // `lightViewProj` es la misma matriz que beginShadowPass() uso para
-    // rellenar el mapa de sombras (Fase render 2); en OpenGL se ignora
-    // (sin sombras todavia). Llamar una vez por frame, antes de cualquier
-    // drawMesh.
-    virtual void setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
-                              const glm::mat4& lightViewProj) = 0;
+    // Luces de la escena de ESTE frame (2026-11-10, ver SceneLighting.h):
+    // todas las Luces visibles, o ninguna (= luz por defecto desde la camara).
+    // `lightViewProj` es la matriz con la que beginShadowPass() rellena el
+    // mapa de sombras de `lighting.shadowLight`; en OpenGL se ignora (sin
+    // sombras todavia). Llamar justo despues de beginFrame(), ANTES de la
+    // pasada de sombras (en Vulkan se copia al buffer de luces fuera de
+    // cualquier render pass).
+    virtual void setSceneLighting(const SceneLighting& lighting, const glm::mat4& lightViewProj) = 0;
+    // Posicion de la camara para el especular y la luz por defecto: una vez
+    // por panel (la vista de 4 paneles tiene una camara por panel).
+    virtual void setEyePosition(const glm::vec3& eyePosWS) = 0;
     // `model` es la matriz de mundo del nodo (para posicion/normal en espacio
     // de mundo); `mvp` ya trae la proyeccion*vista*mundo para gl_Position --
     // se pasan ambas en vez de reconstruir una desde la otra en el shader.
     // `tex` decide si se muestrea la textura de Color del material (el backend
     // la carga la primera vez que la ve y la guarda en su cache por ruta).
+    // `firstIndex`/`indexCount`: solo ese rango de indices (partes con otro
+    // material, ver MaterialPart); indexCount 0 = la malla entera.
     virtual void drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
-                           const Material& material, const TexMapping& tex = {}) = 0;
+                           const Material& material, const TexMapping& tex = {}, uint32_t firstIndex = 0,
+                           uint32_t indexCount = 0) = 0;
     // Vertices ya en espacio de mundo (ver TransformGizmo::buildGeometry):
     // el backend se encarga de subirlos a un buffer dinamico cada frame.
     virtual void drawGizmo(const std::vector<Vertex>& lineVerts, const std::vector<Vertex>& triVerts,

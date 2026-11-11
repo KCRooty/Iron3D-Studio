@@ -74,21 +74,55 @@ const char* kLitFragmentSrc = R"GLSL(#version 330 core
 in vec3 fragNormalWS;
 in vec3 fragPosWS;
 in vec2 fragUV;
-uniform vec3 uLightPos;
 uniform vec3 uEyePos;
 uniform vec3 uMaterialDiffuse;
 uniform float uMaterialSpecular;
 uniform float uMaterialShininess;
+uniform vec3 uEmission;    // Luminancia del material
+uniform float uAmbient;    // intensidad ambiente (baja con luces de escena)
 uniform sampler2D uColorTex;
 uniform int uTexFlags;     // 1 = hay textura de Color, 2 = Mosaico
 uniform vec4 uUvTransform; // uv de la imagen = uv * xy + zw
+// Luces de la escena (2026-11-10): mismo contenido que el buffer de luces de
+// Vulkan (LightsUniform.h). 0 luces = luz por defecto en la camara.
+uniform int uLightCount;
+uniform vec4 uLightPosType[32];     // xyz posicion, w tipo (0 puntual, 1 foco, 2 infinita)
+uniform vec4 uLightDirFalloff[32];  // xyz direccion de emision, w caida de C4D
+uniform vec4 uLightColorRadius[32]; // xyz color * intensidad, w radio de caida
+uniform vec4 uLightCone[32];        // x cos exterior, y cos interior, z radio interior
 out vec4 outColor;
+
+// Igual que falloffFactor de SceneLighting.cpp y lit.frag.
+float falloffFactor(int mode, float d, float radius, float innerRadius) {
+    radius = max(radius, 1e-4);
+    d = max(d, 1e-4);
+    if (mode == 5) return d <= radius ? 1.0 : 0.0;
+    if (mode == 6) return min(1.0, radius / d);
+    if (mode == 7) return min(1.0, (radius / d) * (radius / d));
+    if (mode == 8) {
+        if (d <= innerRadius) return 1.0;
+        return clamp((radius - d) / max(radius - innerRadius, 1e-4), 0.0, 1.0);
+    }
+    if (mode == 9) return radius / d;
+    if (mode == 10) return (radius / d) * (radius / d);
+    return 1.0;
+}
+
+// `lflags`: 1 = la luz aporta difusion, 2 = especular (General de C4D).
+vec3 phong(vec3 N, vec3 V, vec3 L, vec3 radiance, vec3 albedo, int lflags) {
+    float diff = max(dot(N, L), 0.0);
+    if (diff <= 0.0) return vec3(0.0);
+    vec3 R = reflect(-L, N);
+    float spec = pow(max(dot(R, V), 0.0), max(uMaterialShininess, 1.0));
+    float kd = (lflags & 1) != 0 ? 1.0 : 0.0;
+    float ks = (lflags & 2) != 0 ? 1.0 : 0.0;
+    return (kd * diff * albedo + ks * uMaterialSpecular * spec) * radiance;
+}
+
 void main() {
     vec3 N = normalize(fragNormalWS);
-    vec3 L = normalize(uLightPos - fragPosWS);
     vec3 V = normalize(uEyePos - fragPosWS);
-    vec3 R = reflect(-L, N);
-    const vec3 lightColor = vec3(1.0);
+    if (dot(N, V) < 0.0) N = -N; // caras traseras iluminadas como las delanteras
 
     vec3 albedo = uMaterialDiffuse;
     if ((uTexFlags & 1) != 0) {
@@ -98,13 +132,26 @@ void main() {
         if ((uTexFlags & 2) != 0 || inside) albedo = texel;
     }
 
-    vec3 ambient = 0.15 * albedo;
-    float diff = max(dot(N, L), 0.0);
-    vec3 diffuse = diff * albedo * lightColor;
-    float spec = (diff > 0.0) ? pow(max(dot(R, V), 0.0), max(uMaterialShininess, 1.0)) : 0.0;
-    vec3 specular = uMaterialSpecular * spec * lightColor;
+    vec3 direct = vec3(0.0);
+    if (uLightCount == 0) direct = phong(N, V, V, vec3(1.0), albedo, 3);
+    for (int i = 0; i < uLightCount && i < 32; ++i) {
+        int type = int(uLightPosType[i].w + 0.5);
+        vec3 L;
+        float atten = 1.0;
+        if (type == 2) {
+            L = -normalize(uLightDirFalloff[i].xyz);
+        } else {
+            vec3 toLight = uLightPosType[i].xyz - fragPosWS;
+            float d = length(toLight);
+            L = toLight / max(d, 1e-6);
+            atten = falloffFactor(int(uLightDirFalloff[i].w + 0.5), d, uLightColorRadius[i].w, uLightCone[i].z);
+            if (type == 1) atten *= smoothstep(uLightCone[i].x, uLightCone[i].y, dot(-L, normalize(uLightDirFalloff[i].xyz)));
+        }
+        if (atten > 0.0) direct += phong(N, V, L, uLightColorRadius[i].xyz * atten, albedo, int(uLightCone[i].w + 0.5));
+    }
 
-    outColor = vec4(ambient + diffuse + specular, 1.0);
+    vec3 color = uAmbient * albedo + direct + uEmission;
+    outColor = vec4(min(color, vec3(1.0)), 1.0);
 }
 )GLSL";
 
@@ -225,8 +272,14 @@ void OpenGLRenderer::init(GLFWwindow* window, int width, int height) {
     gl::glDeleteShader(litFrag);
     uLitModelLoc_ = gl::glGetUniformLocation(litProgram_, "uModel");
     uLitMvpLoc_ = gl::glGetUniformLocation(litProgram_, "uMvp");
-    uLitLightPosLoc_ = gl::glGetUniformLocation(litProgram_, "uLightPos");
     uLitEyePosLoc_ = gl::glGetUniformLocation(litProgram_, "uEyePos");
+    uLitEmissionLoc_ = gl::glGetUniformLocation(litProgram_, "uEmission");
+    uLitAmbientLoc_ = gl::glGetUniformLocation(litProgram_, "uAmbient");
+    uLitLightCountLoc_ = gl::glGetUniformLocation(litProgram_, "uLightCount");
+    uLitLightPosTypeLoc_ = gl::glGetUniformLocation(litProgram_, "uLightPosType");
+    uLitLightDirFalloffLoc_ = gl::glGetUniformLocation(litProgram_, "uLightDirFalloff");
+    uLitLightColorRadiusLoc_ = gl::glGetUniformLocation(litProgram_, "uLightColorRadius");
+    uLitLightConeLoc_ = gl::glGetUniformLocation(litProgram_, "uLightCone");
     uLitDiffuseLoc_ = gl::glGetUniformLocation(litProgram_, "uMaterialDiffuse");
     uLitSpecularLoc_ = gl::glGetUniformLocation(litProgram_, "uMaterialSpecular");
     uLitShininessLoc_ = gl::glGetUniformLocation(litProgram_, "uMaterialShininess");
@@ -411,14 +464,30 @@ void OpenGLRenderer::drawGrid(const std::vector<Vertex>& lineVerts, const glm::m
     gl::glEnable(gl::GL_DEPTH_TEST);
 }
 
-void OpenGLRenderer::setLighting(const glm::vec3& lightPosWS, const glm::vec3& eyePosWS,
-                                  const glm::mat4& /*lightViewProj*/) {
-    lightPosWS_ = lightPosWS;
+void OpenGLRenderer::setSceneLighting(const SceneLighting& lighting, const glm::mat4& /*lightViewProj*/) {
+    lightCount_ = std::min((int)lighting.lights.size(), kMaxViewportLights);
+    // Mismo criterio de ambiente que Vulkan (LightsUniform.h), en espacio gamma.
+    ambient_ = lightCount_ > 0 ? 0.04f : 0.15f;
+    lightPosType_.resize(lightCount_);
+    lightDirFalloff_.resize(lightCount_);
+    lightColorRadius_.resize(lightCount_);
+    lightCone_.resize(lightCount_);
+    for (int i = 0; i < lightCount_; ++i) {
+        const ViewportLight& l = lighting.lights[i];
+        lightPosType_[i] = glm::vec4(l.position, (float)l.type);
+        lightDirFalloff_[i] = glm::vec4(l.direction, (float)l.falloff);
+        lightColorRadius_[i] = glm::vec4(l.color, l.radius);
+        lightCone_[i] = glm::vec4(l.cosOuter, l.cosInner, l.innerRadius, (float)l.shaderFlags());
+    }
+}
+
+void OpenGLRenderer::setEyePosition(const glm::vec3& eyePosWS) {
     eyePosWS_ = eyePosWS;
 }
 
 void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm::mat4& mvp,
-                               const Material& material, const TexMapping& tex) {
+                               const Material& material, const TexMapping& tex, uint32_t firstIndex,
+                               uint32_t indexCount) {
     if (mesh >= meshes_.size() || meshes_[mesh].vao == 0) return;
     gl::glUseProgram(litProgram_);
     gl::GLuint colorTex = whiteTexture_;
@@ -438,8 +507,16 @@ void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     gl::glUniform4fv(uLitUvTransformLoc_, 1, &uvTransform.x);
     gl::glUniformMatrix4fv(uLitModelLoc_, 1, gl::GL_FALSE_, &model[0][0]);
     gl::glUniformMatrix4fv(uLitMvpLoc_, 1, gl::GL_FALSE_, &mvp[0][0]);
-    gl::glUniform3fv(uLitLightPosLoc_, 1, &lightPosWS_.x);
     gl::glUniform3fv(uLitEyePosLoc_, 1, &eyePosWS_.x);
+    gl::glUniform3fv(uLitEmissionLoc_, 1, &material.emission.x);
+    gl::glUniform1f(uLitAmbientLoc_, ambient_);
+    gl::glUniform1i(uLitLightCountLoc_, lightCount_);
+    if (lightCount_ > 0) {
+        gl::glUniform4fv(uLitLightPosTypeLoc_, lightCount_, &lightPosType_[0].x);
+        gl::glUniform4fv(uLitLightDirFalloffLoc_, lightCount_, &lightDirFalloff_[0].x);
+        gl::glUniform4fv(uLitLightColorRadiusLoc_, lightCount_, &lightColorRadius_[0].x);
+        gl::glUniform4fv(uLitLightConeLoc_, lightCount_, &lightCone_[0].x);
+    }
     // Backend OpenGL = Phong de siempre, sin subir a PBR (decision de Core,
     // 2026-10-30, ver ROADMAP_RENDER.md: el esfuerzo real de render va a
     // Vulkan). Aqui solo se aproxima specular/shininess a partir de
@@ -451,7 +528,10 @@ void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     gl::glUniform1f(uLitSpecularLoc_, specularIntensity);
     gl::glUniform1f(uLitShininessLoc_, shininess);
     gl::glBindVertexArray(meshes_[mesh].vao);
-    gl::glDrawElements(gl::GL_TRIANGLES, meshes_[mesh].indexCount, gl::GL_UNSIGNED_INT, nullptr);
+    const uint32_t total = (uint32_t)meshes_[mesh].indexCount;
+    if (indexCount == 0 || firstIndex + indexCount > total) firstIndex = 0, indexCount = total;
+    gl::glDrawElements(gl::GL_TRIANGLES, (gl::GLsizei)indexCount, gl::GL_UNSIGNED_INT,
+                       reinterpret_cast<const void*>((uintptr_t)firstIndex * sizeof(uint32_t)));
 }
 
 gl::GLuint OpenGLRenderer::materialTexture(const std::string& rawPath, const std::string& baseDir) {

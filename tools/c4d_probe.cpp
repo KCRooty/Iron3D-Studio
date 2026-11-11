@@ -27,7 +27,22 @@ static void print(const SceneNode& n, const std::vector<Material>& mats, int dep
     if (n.materialIndex >= 0 && (size_t)n.materialIndex < mats.size())
         std::printf("  mat=\"%s\"", mats[(size_t)n.materialIndex].name.c_str());
     if (n.editorVis == VisMode::Off) std::printf("  (oculto)");
+    if (n.primitive == PrimitiveType::Light) {
+        const LightData& l = n.light;
+        std::printf("  luz: tipo=%d color=(%.2f %.2f %.2f) int=%.2f sombra=%d caida=%d radio=%.2f ang=%.0f/%.0f "
+                    "noilum=%d dif=%d esp=%d",
+                    (int)l.kind, l.color.r, l.color.g, l.color.b, l.intensity, l.shadow, l.falloff, l.falloffRadius,
+                    l.innerAngleDeg, l.outerAngleDeg, (int)l.noIllumination, (int)l.diffuse, (int)l.specular);
+    }
+    if (n.primitive == PrimitiveType::Camera)
+        std::printf("  camara: proy=%d focal=%.1f sensor=%.1f zoom=%.2f", n.camera.projection, n.camera.focalMm,
+                    n.camera.sensorMm, n.camera.zoom);
     std::printf("\n");
+    for (const MaterialPart& p : n.materialParts)
+        std::printf("%*s    parte \"%s\": indices %u+%u mat=\"%s\"\n", depth * 2, "", p.selection.c_str(), p.firstIndex,
+                    p.indexCount,
+                    p.materialIndex >= 0 && (size_t)p.materialIndex < mats.size() ? mats[(size_t)p.materialIndex].name.c_str()
+                                                                                   : "-");
     for (const auto& c : n.children()) print(*c, mats, depth + 1);
 }
 

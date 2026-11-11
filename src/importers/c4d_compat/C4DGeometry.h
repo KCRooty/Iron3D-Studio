@@ -61,7 +61,10 @@ glm::vec3 toIronPoint(const glm::dvec3& p);
 // Malla de render de Iron3D. smoothAngleRad < 0: normales planas por cara;
 // si no, cada esquina promedia las caras que comparten su punto y forman un
 // angulo <= smoothAngleRad con la suya (lo que hace la etiqueta Phong).
-MeshData toIronMesh(const PolySoup& soup, double smoothAngleRad);
+// `trisPerPoly` (opcional): cuantos triangulos salen de cada poligono de
+// soup.polys, en orden (0 = descartado); sirve para saber que rango de
+// indices es de cada poligono.
+MeshData toIronMesh(const PolySoup& soup, double smoothAngleRad, std::vector<uint32_t>* trisPerPoly = nullptr);
 
 struct TRS {
     glm::vec3 position{0.0f};

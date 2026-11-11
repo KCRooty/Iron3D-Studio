@@ -452,7 +452,43 @@ int editMode(int argc, char** argv) {
 
 } // namespace
 
+// "--list lib": una linea por modelo con su ruta (para --load-preset= de Iron3D).
+int listMode(const char* p) {
+    PresetLibrary L;
+    std::string err;
+    if (!L.open(std::filesystem::path(reinterpret_cast<const char8_t*>(p)), &err)) {
+        std::printf("FALLO: %s\n", err.c_str());
+        return 1;
+    }
+    for (const PresetItem& it : L.items())
+        if (it.kind == PresetKind::Model) std::printf("%s\n", it.path.c_str());
+    return 0;
+}
+
+// "--extract lib ruta salida.c4d": saca un modelo tal cual (para c4d_probe).
+int extractMode(char** argv) {
+    PresetLibrary L;
+    std::string err;
+    if (!L.open(std::filesystem::path(reinterpret_cast<const char8_t*>(argv[2])), &err)) {
+        std::printf("FALLO: %s\n", err.c_str());
+        return 1;
+    }
+    for (const PresetItem& it : L.items()) {
+        if (it.path != argv[3]) continue;
+        Bytes d;
+        if (!L.readData(it, d, &err)) break;
+        std::ofstream f(std::filesystem::path(reinterpret_cast<const char8_t*>(argv[4])), std::ios::binary);
+        f.write(reinterpret_cast<const char*>(d.data()), std::streamsize(d.size()));
+        std::printf("extraido %zu bytes\n", d.size());
+        return f ? 0 : 1;
+    }
+    std::printf("FALLO: %s\n", err.empty() ? "no esta" : err.c_str());
+    return 1;
+}
+
 int main(int argc, char** argv) {
+    if (argc == 3 && std::string(argv[1]) == "--list") return listMode(argv[2]);
+    if (argc == 5 && std::string(argv[1]) == "--extract") return extractMode(argv);
     if (argc > 1 && std::string(argv[1]) == "--write") return writeMode(argc, argv);
     if (argc > 1 && (std::string(argv[1]) == "--move" || std::string(argv[1]) == "--remove" ||
                      std::string(argv[1]) == "--rewrite"))
