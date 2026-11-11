@@ -708,6 +708,17 @@ int main(int argc, char** argv) {
                                  n.materialIndex, m.name.c_str(), m.baseColor.r, m.baseColor.g, m.baseColor.b,
                                  tex.c_str(), tex.empty() ? "" : (found ? " (ok)" : " (NO ENCONTRADA)"),
                                  n.texTag.projection);
+                    std::fprintf(stderr, "[dump] %*s  local pos=(%.2f %.2f %.2f) rot=(%.1f %.1f %.1f) esc=(%.2f %.2f %.2f)\n",
+                                 depth * 2, "", n.position.x, n.position.y, n.position.z, n.rotationDeg.x,
+                                 n.rotationDeg.y, n.rotationDeg.z, n.scale.x, n.scale.y, n.scale.z);
+                    // Partes por Seleccion de Poligonos: tapan al material del objeto en sus triangulos.
+                    for (const iron3d::MaterialPart& p : n.materialParts) {
+                        const iron3d::Material& pm = iron3d::materialOrDefault(materials, p.materialIndex);
+                        std::fprintf(stderr, "[dump] %*s  parte '%s' tris=%u mat=%d '%s' color=(%.2f %.2f %.2f) proy=%d\n",
+                                     depth * 2, "", p.selection.c_str(), p.indexCount / 3, p.materialIndex,
+                                     pm.name.c_str(), pm.baseColor.r, pm.baseColor.g, pm.baseColor.b,
+                                     p.texTag.projection);
+                    }
                 } else {
                     std::fprintf(stderr, "[dump] %*s%s (nulo) vis=%d\n", depth * 2, "", n.name().c_str(), (int)vis);
                 }
@@ -716,6 +727,24 @@ int main(int argc, char** argv) {
         for (const auto& c : sceneRoot.children()) dump(*c, glm::mat4(1.0f), true, 0);
         // Luces tal como llegan al visor (las que iluminan de verdad).
         const iron3d::SceneLighting sl = iron3d::collectSceneLights(sceneRoot);
+        // Materiales tal como llegan al visor: color, metal, rugosidad y capas de Reflectancia.
+        for (size_t i = 0; i < materials.size(); ++i) {
+            const iron3d::Material& m = materials[i];
+            std::fprintf(stderr, "[dump] material %zu '%s' color=(%.2f %.2f %.2f)%s metal=%.2f rug=%.2f refl=%s\n", i,
+                         m.name.c_str(), m.baseColor.r, m.baseColor.g, m.baseColor.b, m.useColor ? "" : " (Color off)",
+                         m.metallic, m.roughness, m.useReflectance ? "on" : "off");
+            const iron3d::ChannelSettings& cc = m.channel(iron3d::TexSlot::Color);
+            if (cc.shader.kind != iron3d::ShaderKind::None || cc.shader.c4dType != 0)
+                std::fprintf(stderr, "[dump]   Color: shader '%s' tipo=%d (c4d %d) color=(%.2f %.2f %.2f) mezcla=%d fuerza=%.2f tex='%s'\n",
+                             cc.shader.name.c_str(), (int)cc.shader.kind, cc.shader.c4dType, cc.shader.color.r,
+                             cc.shader.color.g, cc.shader.color.b, cc.mixMode, cc.mixStrength,
+                             m.texture(iron3d::TexSlot::Color).c_str());
+            for (const iron3d::ReflectLayer& l : m.layers)
+                std::fprintf(stderr, "[dump]   capa '%s' activa=%d dist=%d fresnel=%d atten=%d reflejo=%.2f esp=%.2f "
+                                     "rug=%.2f color=(%.2f %.2f %.2f)\n",
+                             l.name.c_str(), (int)l.active, l.distribution, l.fresnel, l.attenuation, l.strength,
+                             l.specular, l.roughness, l.color.r, l.color.g, l.color.b);
+        }
         std::fprintf(stderr, "[dump] luces en el visor: %zu (sombra de la n.%d)\n", sl.lights.size(), sl.shadowLight);
         for (size_t i = 0; i < sl.lights.size(); ++i) {
             const iron3d::ViewportLight& v = sl.lights[i];

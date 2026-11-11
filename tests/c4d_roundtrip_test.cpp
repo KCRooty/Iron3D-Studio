@@ -141,7 +141,7 @@ void compareCurves(const std::filesystem::path& file, const SceneNode& cubo) {
                 for (int b = 0; b < 3; ++b) v[b] = cv[b] ? cv[b]->GetValue(BaseTime((Float)f, fps)) : 0.0;
                 glm::dvec3 iron;
                 if (ch == 0) iron = {v[0] / c4d::kCmPerUnit, v[1] / c4d::kCmPerUnit, -v[2] / c4d::kCmPerUnit};
-                else if (ch == 1) iron = {v[1] * 180.0 / 3.14159265358979323846, v[0] * 180.0 / 3.14159265358979323846, v[2] * 180.0 / 3.14159265358979323846};
+                else if (ch == 1) iron = {v[1] * 180.0 / 3.14159265358979323846, v[0] * 180.0 / 3.14159265358979323846, -v[2] * 180.0 / 3.14159265358979323846}; // B con signo cambiado
                 else iron = {v[0], v[1], v[2]};
                 const glm::vec3 want = tracks[ch]->evaluate((float)f);
                 for (int b = 0; b < 3; ++b) {

@@ -26,6 +26,7 @@ struct C4DImportReport {
     int meshes = 0;             // objetos con malla (poligonales + reconstruidos + generadores con cache)
     int primitivesRebuilt = 0;  // primitivas de C4D reconstruidas desde sus parametros
     int generatorsFromCache = 0;// generadores importados con la geometria que guardo C4D
+    int generatorsEvaluated = 0;// Simetria / Subdivision Surface evaluados al importar (sin cache)
     int lights = 0;
     int cameras = 0;
     int materials = 0;

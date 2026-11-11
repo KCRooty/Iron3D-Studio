@@ -70,12 +70,16 @@ bool pbrFromLayers(const std::vector<ReflectLayer>& layers, bool colorOn, glm::v
         if (l.fresnel == kFresnelConductor) {
             metallic = 1.0f;
             baseColor = clamp01(l.color);
-        } else if (l.fresnel == kFresnelNone && !legacy) {
-            // Sin Fresnel el reflejo es igual en todos los angulos: se
-            // comporta como un metal en la proporcion de su fuerza.
+        } else if (l.fresnel == kFresnelNone && !legacy && !colorOn) {
+            // Sin Fresnel y sin canal Color, lo que se ve es el reflejo: metal
+            // en la proporcion de su fuerza, con el color de la capa.
             metallic = std::clamp(l.strength, 0.0f, 1.0f);
-            if (!colorOn || metallic >= 0.5f) baseColor = clamp01(l.color) * metallic;
+            baseColor = clamp01(l.color) * metallic;
         }
+        // Con el canal Color activo, el visor de R19 sigue ensenando ese color:
+        // la capa solo suma el brillo de las luces (y el entorno si hay cielo).
+        // Antes "sin Fresnel al 100 %" pasaba a cromo y, sin entorno, salia
+        // negro (el cuerpo blanco de Toy Foxy).
         return true;
     }
     return false;

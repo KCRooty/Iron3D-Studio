@@ -298,7 +298,7 @@ void exportTracks(const SceneNode& node, BaseObject* op, Ctx& ctx) {
                     const double s[3] = {k.value.x, k.value.y, -k.value.z};
                     v[i] = s[c] * c4d::kCmPerUnit;
                 } else if (descId == ID_BASEOBJECT_REL_ROTATION) {
-                    const double r[3] = {k.value.y, k.value.x, k.value.z}; // H, P, B
+                    const double r[3] = {k.value.y, k.value.x, -k.value.z}; // H, P, B (B con signo cambiado)
                     v[i] = r[c] * kPi / 180.0;
                 } else {
                     v[i] = k.value[c];
@@ -443,7 +443,8 @@ BaseObject* exportNode(const SceneNode& node, BaseObject* parent, BaseObject* pr
     const double toRad = kPi / 180.0;
     op->SetRelPos(cineware::Vector(node.position.x * c4d::kCmPerUnit, node.position.y * c4d::kCmPerUnit,
                                    -node.position.z * c4d::kCmPerUnit));
-    op->SetRelRot(cineware::Vector(node.rotationDeg.y * toRad, node.rotationDeg.x * toRad, node.rotationDeg.z * toRad));
+    // B con el signo cambiado, inverso del importador (2026-11-11).
+    op->SetRelRot(cineware::Vector(node.rotationDeg.y * toRad, node.rotationDeg.x * toRad, -node.rotationDeg.z * toRad));
     op->SetRelScale(cv(node.scale));
     op->SetEditorMode(modeOf(node.editorVis));
     op->SetRenderMode(modeOf(node.renderVis));

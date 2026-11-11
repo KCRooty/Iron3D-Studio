@@ -870,7 +870,7 @@ void importTracks(BaseObject* op, SceneNode& node, Ctx& ctx) {
                 if (CCurve* cv = curves[ch][b]) v[b] = cv->GetValue(BaseTime((Float)f, ctx.fps));
             glm::vec3 iron;
             if (ch == 0) iron = glm::vec3((float)(v[0] / c4d::kCmPerUnit), (float)(v[1] / c4d::kCmPerUnit), (float)(-v[2] / c4d::kCmPerUnit));
-            else if (ch == 1) iron = glm::vec3((float)(v[1] * 180.0 / kPi), (float)(v[0] * 180.0 / kPi), (float)(v[2] * 180.0 / kPi));
+            else if (ch == 1) iron = glm::vec3((float)(v[1] * 180.0 / kPi), (float)(v[0] * 180.0 / kPi), (float)(-v[2] * 180.0 / kPi));
             else iron = glm::vec3((float)v[0], (float)v[1], (float)v[2]);
             tracks[ch]->set(f, iron);
             // Interpolacion de la clave (la del primer componente que tenga clave en f).
@@ -899,6 +899,129 @@ struct PendingTarget {
     BaseObject* target;
 };
 
+// Generadores Simetria y Subdivision Surface sin cache en el archivo
+// (2026-11-11): las .lib4d no guardan la malla generada, y antes salian como
+// Nulo con el hijo en crudo (medio torso, piezas en bloque). Se evaluan aqui
+// sobre su primer hijo, como hace C4D, tambien encadenados (SDS > Simetria >
+// Cubo). La geometria sale en el espacio local de `op`, con el material, la
+// Phong y las partes por Seleccion de Poligonos del objeto de entrada.
+struct GeneratedInput {
+    c4d::PolySoup soup;
+    std::vector<int> slot;            // parte de cada poligono (-1 = material del objeto)
+    std::vector<MaterialPart> parts;
+    int material = -1;
+    TextureTagData texTag;
+    double phong = -1.0;
+    bool subdivided = false;
+};
+
+bool isEvaluatedGenerator(BaseObject* op) {
+    const Int32 t = op->GetType();
+    return (t == Osds || t == Osymmetry) && !op->GetCache() && !op->GetDeformCache() && op->GetDeformMode();
+}
+
+bool generatedGeometry(BaseObject* op, int inheritedMaterial, const TextureTagData& inheritedTag, Ctx& ctx,
+                       GeneratedInput& out, int depth);
+
+// Hijos de un Nulo unidos en una malla (en el espacio del nulo). El material
+// de cada pieza pasa a ser una parte con el nombre de la pieza; sus propias
+// partes por seleccion se conservan.
+bool mergedHierarchy(BaseObject* nullOp, int inheritedMaterial, const TextureTagData& inheritedTag, Ctx& ctx,
+                     GeneratedInput& out, int depth) {
+    if (depth > 16) return false;
+    TextureTagData tag = inheritedTag;
+    out.material = materialOfObject(nullOp, inheritedMaterial, tag, ctx);
+    out.texTag = tag;
+    for (BaseObject* ch = nullOp->GetDown(); ch; ch = ch->GetNext()) {
+        GeneratedInput piece;
+        const bool ok = ch->GetType() == Onull ? mergedHierarchy(ch, out.material, tag, ctx, piece, depth + 1)
+                                               : generatedGeometry(ch, out.material, tag, ctx, piece, depth + 1);
+        if (!ok || piece.soup.empty()) continue;
+        const int own = (int)out.parts.size();
+        MaterialPart whole;
+        whole.materialIndex = piece.material;
+        whole.texTag = piece.texTag;
+        whole.selection = utf8(ch->GetName());
+        out.parts.push_back(whole);
+        const int offset = (int)out.parts.size();
+        for (MaterialPart& p : piece.parts) out.parts.push_back(std::move(p));
+        out.soup.append(piece.soup, mat(ch->GetMl()));
+        for (int s : piece.slot) out.slot.push_back(s < 0 ? own : offset + s);
+        if (out.phong < 0.0) out.phong = piece.phong;
+    }
+    return !out.soup.empty() && out.slot.size() == out.soup.polys.size();
+}
+
+bool generatedGeometry(BaseObject* op, int inheritedMaterial, const TextureTagData& inheritedTag, Ctx& ctx,
+                       GeneratedInput& out, int depth) {
+    if (!op || depth > 16) return false;
+    TextureTagData tag = inheritedTag;
+    const int material = materialOfObject(op, inheritedMaterial, tag, ctx);
+    const Int32 type = op->GetType();
+
+    if (type == Opolygon) {
+        auto* po = static_cast<PolygonObject*>(op);
+        std::vector<cineware::Vector> skinned;
+        if (skinnedPoints(po, skinned)) appendPolygons(po, glm::dmat4(1.0), out.soup, &skinned);
+        else appendPolygons(po, glm::dmat4(1.0), out.soup);
+        selectionParts(op, po->GetPolygonCount(), out.parts, out.slot, ctx);
+        if (out.slot.size() != out.soup.polys.size()) {
+            out.parts.clear();
+            out.slot.assign(out.soup.polys.size(), -1);
+        }
+        out.material = material;
+        out.texTag = tag;
+        out.phong = phongAngle(op);
+        return !out.soup.empty();
+    }
+    if (!isEvaluatedGenerator(op)) {
+        // Primitiva o generador con cache: su geometria tal cual.
+        if (!geometryFromCache(op, out.soup) && !rebuildPrimitive(op, out.soup, ctx)) return false;
+        out.slot.assign(out.soup.polys.size(), -1);
+        out.material = material;
+        out.texTag = tag;
+        out.phong = phongAngle(op);
+        if (out.phong < 0.0) out.phong = defaultPrimitivePhong(type);
+        return true;
+    }
+
+    // Simetria / SDS: el primer hijo es la entrada (los demas hijos quedan aparte).
+    BaseObject* in = op->GetDown();
+    if (!in) return false;
+    GeneratedInput child;
+    if (in->GetType() == Onull && type == Osymmetry) {
+        // Simetria sobre un Nulo: refleja toda su jerarquia. Cada pieza conserva
+        // su material como parte de la malla unida.
+        if (!mergedHierarchy(in, material, tag, ctx, child, depth + 1)) return false;
+    } else if (!generatedGeometry(in, material, tag, ctx, child, depth + 1)) {
+        return false;
+    }
+    out = std::move(child);
+    c4d::PolySoup placed;
+    placed.append(out.soup, mat(in->GetMl()));
+    out.soup = std::move(placed);
+
+    if (type == Osymmetry) {
+        // SYMMETRYOBJECT_PLANE: 0 XY (refleja Z), 1 ZY (refleja X), 2 XZ (refleja Y).
+        const Int32 plane = paramInt(op, SYMMETRYOBJECT_PLANE, SYMMETRYOBJECT_PLANE_YZ);
+        const int axis = plane == SYMMETRYOBJECT_PLANE_XY ? 2 : plane == SYMMETRYOBJECT_PLANE_XZ ? 1 : 0;
+        const bool weld = paramBool(op, SYMMETRYOBJECT_WELD, true);
+        const double tol = paramFloat(op, SYMMETRYOBJECT_TOLERANCE, 0.01);
+        out.soup = c4d::mirrorSoup(out.soup, axis, weld, tol, &out.slot);
+    } else {
+        // Nivel del editor: el visor de C4D ensena este, no el de render.
+        const int levels = std::clamp<int>(paramInt(op, SDSOBJECT_SUBEDITOR_CM, 2), 0, 4);
+        const Int32 kind = paramInt(op, SDSOBJECT_TYPE, SDSOBJECT_TYPE_CM);
+        if (kind == SDSOBJECT_TYPE_OSD_LOOP || kind == SDSOBJECT_TYPE_OSD_BILINEAR)
+            ctx.warn("Subdivision Surface tipo Loop o Bilineal: se subdivide con Catmull-Clark");
+        out.soup = c4d::subdivideCatmullClark(out.soup, levels, &out.slot);
+        out.subdivided = true;
+        // La malla subdividida se ve suave en C4D aunque la jaula no tenga Phong.
+        if (out.phong < 0.0) out.phong = kDefaultPhongRad;
+    }
+    return !out.soup.empty();
+}
+
 void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, const TextureTagData& inheritedTag,
                   bool isGeneratorInput, Ctx& ctx, std::vector<PendingTarget>& targets) {
     C4DImportReport& rep = *ctx.report;
@@ -913,7 +1036,10 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
     if (!frozen) {
         const cineware::Vector rp = op->GetRelPos(), rr = op->GetRelRot(), rs = op->GetRelScale();
         node->position = glm::vec3((float)(rp.x / c4d::kCmPerUnit), (float)(rp.y / c4d::kCmPerUnit), (float)(-rp.z / c4d::kCmPerUnit));
-        node->rotationDeg = glm::vec3((float)(rr.y * 180.0 / kPi), (float)(rr.x * 180.0 / kPi), (float)(rr.z * 180.0 / kPi));
+        // B cambia de signo al pasar a Iron3D (2026-11-11): medido contra la
+        // matriz Ml de C4D en los 97 objetos girados de Toy Foxy, solo
+        // (P, H, -B) la reproduce. Con +B, la oreja izquierda flotaba lejos.
+        node->rotationDeg = glm::vec3((float)(rr.y * 180.0 / kPi), (float)(rr.x * 180.0 / kPi), (float)(-rr.z * 180.0 / kPi));
         node->scale = glm::vec3((float)rs.x, (float)rs.y, (float)rs.z);
     } else {
         const cineware::Matrix& ml = op->GetMl();
@@ -942,6 +1068,7 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
     std::vector<int> polySlot;
     double phong = phongAngle(op);
     bool childrenAreInputs = false;
+    bool firstChildIsInput = false; // Simetria / SDS evaluados: solo el primer hijo es su entrada
 
     if (type == Opolygon) {
         BaseObject* dc = op->GetDeformCache();
@@ -978,6 +1105,21 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
         ++rep.cameras;
     } else if (type == Onull) {
         // grupo, nada mas
+    } else if (isEvaluatedGenerator(op)) {
+        GeneratedInput gen;
+        if (generatedGeometry(op, inheritedMaterial, inheritedTag, ctx, gen, 0)) {
+            soup = std::move(gen.soup);
+            parts = std::move(gen.parts);
+            polySlot = std::move(gen.slot);
+            if (polySlot.size() != soup.polys.size()) parts.clear();
+            phong = gen.phong;
+            node->materialIndex = gen.material;
+            node->texTag = gen.texTag;
+            firstChildIsInput = true;
+            ++rep.generatorsEvaluated;
+        } else {
+            ctx.warn(typeLabel(op) + ": su primer hijo no tiene geometría que generar; se importa como Nulo");
+        }
     } else if (geometryFromCache(op, soup)) {
         ++rep.generatorsFromCache;
         childrenAreInputs = op->GetDown() != nullptr;
@@ -1044,7 +1186,8 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
     }
 
     for (BaseObject* ch = op->GetDown(); ch; ch = ch->GetNext())
-        importObject(ch, *node, material, texTag, isGeneratorInput || childrenAreInputs, ctx, targets);
+        importObject(ch, *node, material, texTag,
+                     isGeneratorInput || childrenAreInputs || (firstChildIsInput && ch == op->GetDown()), ctx, targets);
 }
 
 } // namespace
