@@ -84,6 +84,19 @@ float channelInput(const vec3& c, int which) { // 0 lum, 1 tono, 2 sat, 3 lumino
     }
 }
 
+vec3 gradientAt(const std::vector<GradientKnot>& ks, float t, bool cycle);
+
+// Valor del shader Fresnel para x = abs(dot(N, V)) (1 = de cara, 0 = de canto). Modo degradado: la rampa
+// en x, como el GLSL de R19. Modo fisico: reflectancia de Schlick con el IOR (Invertir da la vuelta).
+vec3 fresnelAt(const ShaderNode& n, float x) {
+    x = std::clamp(x, 0.0f, 1.0f);
+    if (!n.fresnelPhysical) return gradientAt(n.gradient, x, false);
+    const float r = (1.0f - n.fresnelIor) / (1.0f + n.fresnelIor);
+    const float f0 = r * r;
+    const float f = f0 + (1.0f - f0) * std::pow(1.0f - x, 5.0f);
+    return vec3(n.fresnelInvert ? 1.0f - f : f);
+}
+
 vec3 gradientAt(const std::vector<GradientKnot>& ks, float t, bool cycle) {
     if (ks.empty()) return vec3(t);
     if (cycle) t -= std::floor(t);
@@ -204,6 +217,9 @@ vec4 evalNode(const ShaderNode& n, float u, float v, Images& imgs, int depth = 0
             return vec4(gradientAt(n.gradient, channelInput(vec3(c), which), n.cycle), c.a);
         }
         case ShaderKind::Gradient: return vec4(gradientAt(n.gradient, gradientParam(n, u, v), n.cycle), 1.0f);
+        // Fresnel anidado (no es la raiz del canal): sin angulo de vision en la imagen horneada, se toma de
+        // cara a la camara (|N.V| = 1). El Fresnel raiz del canal Color si va por pixel (ver fresnelStrip).
+        case ShaderKind::Fresnel: return vec4(fresnelAt(n, 1.0f), 1.0f);
         case ShaderKind::Layer: {
             vec3 acc(0.0f);
             float alpha = 1.0f;
@@ -268,6 +284,8 @@ ShaderNode treeFor(const Material& m, TexSlot s) {
     if (const ShaderNode* sh = effectiveShader(m, s)) {
         // Solo procedurales que Iron3D no evalua (Ruido...): mejor el color plano que un gris.
         if (!sh->firstBitmap() && sh->hasUnsupported()) return {};
+        // El Fresnel solo se evalua por pixel como raiz del canal Color.
+        if (sh->kind == ShaderKind::Fresnel && s != TexSlot::Color) return {};
         return *sh;
     }
     ShaderNode b;
@@ -296,6 +314,8 @@ const ShaderNode* effectiveShader(const Material& m, TexSlot s) {
 }
 
 bool channelHasTexture(const Material& m, TexSlot s) { return !treeFor(m, s).empty(); }
+
+bool channelIsFresnel(const Material& m, TexSlot s) { return treeFor(m, s).kind == ShaderKind::Fresnel; }
 
 bool materialHasAlphaMask(const Material& m) { return m.useAlpha && channelHasTexture(m, TexSlot::Alpha); }
 
@@ -336,6 +356,31 @@ bool loadPlainChannelTexture(const Material& m, TexSlot s, TextureImage& out) {
     const ShaderNode tree = treeFor(m, s);
     if (tree.empty()) return false;
     Images imgs{{}, m.texBaseDir};
+    if (tree.kind == ShaderKind::Fresnel) {
+        // Tira de 256x1: texel i = el canal para abs(dot(N, V)) = i/255. El shader la muestrea por pixel
+        // (flag kLitTexFresnel); el color/brillo/mezcla del canal se aplican aqui, no dependen del angulo.
+        const ChannelSettings& c = m.channel(s);
+        const vec3 base = c.color * c.brightness;
+        const float st = std::clamp(c.mixStrength, 0.0f, 1.0f);
+        out.width = 256;
+        out.height = 1;
+        out.rgba.resize(256 * 4);
+        for (int x = 0; x < 256; ++x) {
+            const vec3 f = fresnelAt(tree, (float)x / 255.0f);
+            const vec3 tb = f * c.brightness;
+            vec3 rgb;
+            switch (c.mixMode) {
+                case 1: rgb = base + tb * st; break;
+                case 2: rgb = base - tb * st; break;
+                case 3: rgb = glm::mix(base, base * f, st); break;
+                default: rgb = glm::mix(base, tb, st); break;
+            }
+            rgb = glm::clamp(rgb, 0.0f, 1.0f);
+            for (int k = 0; k < 3; ++k) out.rgba[(size_t)x * 4 + k] = (uint8_t)std::lround(rgb[k] * 255.0f);
+            out.rgba[(size_t)x * 4 + 3] = 255;
+        }
+        return true;
+    }
     if (!needsBake(m, s, tree)) {
         const std::string p = resolveTexturePath(tree.path, m.texBaseDir);
         return !p.empty() && loadTextureImage(p, out);

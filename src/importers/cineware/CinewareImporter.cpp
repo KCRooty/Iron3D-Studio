@@ -234,6 +234,14 @@ iron3d::ShaderNode shaderTree(BaseList2D* link, Ctx& ctx, int depth = 0) {
             n.angle = (float)paramFloat(sh, SLA_GRADIENT_ANGLE, 0.0);
             n.gradient = gradientKnots(paramData(sh, SLA_GRADIENT_GRADIENT));
             break;
+        case Xfresnel:
+            n.kind = iron3d::ShaderKind::Fresnel;
+            n.input = (int)paramInt(sh, SLA_FRESNEL_RENDER, SLA_FRESNEL_RENDER_FRONT_BACK);
+            n.fresnelPhysical = paramBool(sh, SLA_FRESNEL_PHY_ENABLE, false);
+            n.fresnelIor = (float)paramFloat(sh, SLA_FRESNEL_PHY_IOR, 1.333);
+            n.fresnelInvert = paramBool(sh, SLA_FRESNEL_PHY_INVERT, false);
+            n.gradient = gradientKnots(paramData(sh, SLA_FRESNEL_GRADIENT));
+            break;
         case Xlayer: {
             n.kind = iron3d::ShaderKind::Layer;
             std::vector<BaseShader*> childPtrs;
@@ -313,6 +321,28 @@ iron3d::ShaderNode shaderTree(BaseList2D* link, Ctx& ctx, int depth = 0) {
         }
         default:
             n.kind = iron3d::ShaderKind::Other;
+            // Diagnostico (IRON3D_DUMP_SHADERS=1): parametros crudos del shader que no evaluamos.
+            if (std::getenv("IRON3D_DUMP_SHADERS")) {
+                BaseContainer* sbc = sh->GetDataInstance();
+                std::fprintf(stderr, "[shader] %d '%s':", (int)type, n.name.c_str());
+                for (Int32 i = 0; sbc; ++i) {
+                    const Int32 id = sbc->GetIndexId(i);
+                    if (id == NOTOK) break;
+                    const GeData* d = sbc->GetIndexData(i);
+                    if (!d) continue;
+                    switch (d->GetType()) {
+                        case DA_LONG: std::fprintf(stderr, " %d=%d", (int)id, (int)d->GetInt32()); break;
+                        case DA_REAL: std::fprintf(stderr, " %d=%.3f", (int)id, d->GetFloat()); break;
+                        case DA_VECTOR: {
+                            const cineware::Vector v = d->GetVector();
+                            std::fprintf(stderr, " %d=(%.2f %.2f %.2f)", (int)id, v.x, v.y, v.z);
+                            break;
+                        }
+                        default: std::fprintf(stderr, " %d:t%d", (int)id, (int)d->GetType()); break;
+                    }
+                }
+                std::fprintf(stderr, "\n");
+            }
             kids();
             break;
     }
@@ -372,7 +402,7 @@ int materialFor(BaseMaterial* m, Ctx& ctx) {
                 c.sampling = b->sampling;
             }
             if (c.shader.hasUnsupported())
-                ctx.warn("Canales con shaders procedurales de C4D (Ruido, Fresnel...): Iron3D no los evalúa (gris o la imagen que llevan dentro)");
+                ctx.warn("Canales con shaders procedurales de C4D (Ruido...): Iron3D no los evalúa (gris o la imagen que llevan dentro)");
             noteTexture(out.texture(slot), ctx);
         };
         const bool colorOn = bc->GetBool(MATERIAL_USE_COLOR, true);

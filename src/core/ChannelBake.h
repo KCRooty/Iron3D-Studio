@@ -21,6 +21,10 @@ const ShaderNode* effectiveShader(const Material& m, TexSlot s);
 // true si el canal tiene textura (o un shader que genera imagen sin ella).
 bool channelHasTexture(const Material& m, TexSlot s);
 
+// true si el canal es un shader Fresnel (raiz del canal Color): su "textura" es una tira 1D de 256x1
+// que el shader del visor muestrea por pixel en abs(dot(N, V)), no por UV.
+bool channelIsFresnel(const Material& m, TexSlot s);
+
 // Clave para la cache de texturas del visor: cambia cuando cambia cualquier
 // cosa que afecte a la imagen. Vacia = el canal no tiene textura.
 std::string channelTextureKey(const Material& m, TexSlot s);

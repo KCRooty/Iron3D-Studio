@@ -272,7 +272,8 @@ void VulkanRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     if (tex.enabled) {
         if (VkDescriptorSet s = materialTextures_.get(material, TexSlot::Color)) {
             texSet = s;
-            texFlags = kLitTexColor | (tex.tile ? kLitTexTile : 0) | (materialHasAlphaMask(material) ? kLitTexAlpha : 0);
+            texFlags = kLitTexColor | (tex.tile ? kLitTexTile : 0) | (materialHasAlphaMask(material) ? kLitTexAlpha : 0) |
+                       (channelIsFresnel(material, TexSlot::Color) ? kLitTexFresnel : 0);
             uvTransform = texMappingUvTransform(tex);
         }
     }

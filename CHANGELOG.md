@@ -6,6 +6,30 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-18: Shader Fresnel por píxel en el canal Color (Vulkan y OpenGL)
+
+**Nuevo**
+- El shader **Fresnel** de C4D (el rosa de pecho, cinturón y almohadillas de Toy Foxy) ya se
+  importa y se evalúa **por píxel** en el visor: color = degradado en `abs(dot(N, V))`, la misma
+  fórmula que el GLSL del visor de R19 (cadena embebida en `corelibs/sla.cdl64`). Se hornea el
+  degradado a una tira de 256x1 que el shader muestrea según el ángulo de visión (flag
+  `kLitTexFresnel`), así que reutiliza el descriptor de textura de Color: no hay pipeline nuevo.
+- Modo físico (IOR + Invertir) aproximado con Schlick. Color, brillo y mezcla del canal
+  (Normal/Sumar/Restar/Multiplicar) se aplican al hornear.
+- Volcado de parámetros crudos de shaders sin evaluar: `IRON3D_DUMP_SHADERS=1`.
+- Prueba sin GPU `fresnel_test` (tira 256x1, modo físico, Multiplicar, clave de caché, ida y
+  vuelta del `.iron`).
+
+**Probado**: compila, `iron3d_tests` y `fresnel_test` pasan; Toy Foxy importa el Fresnel como
+raíz del canal Color en sus 4 materiales (antes salía como «Otro», gris).
+
+**Sin probar / límites**: la comparación visual contra R19 (la captura de Toy Foxy quedó sin
+hacer porque el PC estaba en uso). Solo vale como **raíz del canal Color**: un Fresnel dentro de
+una Capa o en otro canal no es por píxel (en Capa se toma de cara, |N·V| = 1; en otros canales
+se ignora). El modo Render se lee pero no se aplica: «frontal»/«trasera»/«transparentes» se
+tratan como «ambas caras». La opción «Usar relieve» tampoco. Los miniaturas del navegador (CPU)
+no lo evalúan.
+
 ### 2026-11-18: Transparencia y Alfa del material en el visor (Vulkan y OpenGL)
 
 **Nuevo**

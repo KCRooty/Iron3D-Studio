@@ -16,6 +16,7 @@ const char* shaderKindName(ShaderKind k) {
         case ShaderKind::Layer: return "Capa";
         case ShaderKind::Gradient: return "Degradado";
         case ShaderKind::Other: return "Otro";
+        case ShaderKind::Fresnel: return "Fresnel";
     }
     return "?";
 }
@@ -80,6 +81,11 @@ void putNode(std::ostringstream& o, const ShaderNode& n) {
         case ShaderKind::Gradient:
             o << " in=" << n.input << " cyc=" << (int)n.cycle << " gt=" << n.gradientType << " ang=" << n.angle
               << " knots=";
+            putKnots(o, n.gradient);
+            break;
+        case ShaderKind::Fresnel:
+            o << " rm=" << n.input << " ph=" << (int)n.fresnelPhysical << " ior=" << n.fresnelIor
+              << " inv=" << (int)n.fresnelInvert << " knots=";
             putKnots(o, n.gradient);
             break;
         case ShaderKind::Layer:
@@ -216,6 +222,10 @@ struct Reader {
             else if (key == "cyc") n.cycle = num() != 0.0;
             else if (key == "gt") n.gradientType = (int)num();
             else if (key == "ang") n.angle = (float)num();
+            else if (key == "rm") n.input = (int)num();
+            else if (key == "ph") n.fresnelPhysical = num() != 0.0;
+            else if (key == "ior") n.fresnelIor = (float)num();
+            else if (key == "inv") n.fresnelInvert = num() != 0.0;
             else if (key == "knots") n.gradient = knots();
             else if (key == "layers") {
                 if (!lit('[')) return false;

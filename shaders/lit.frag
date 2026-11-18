@@ -19,6 +19,7 @@ layout(push_constant) uniform PushConstants {
 const int kTexColor = 1; // hay textura de Color: sustituye al color base, como en C4D
 const int kTexTile = 2;  // Mosaico activo; sin el, fuera de 0..1 se ve el color base
 const int kTexAlpha = 4; // el canal A de la textura es el Alfa del material: bajo 0.5 se descarta
+const int kTexFresnel = 8; // la textura es la tira 256x1 del shader Fresnel: se muestrea en abs(dot(N, V)), no por UV
 
 // Luces de la escena (2026-11-10, ver LightsUniform.h / SceneLighting.h).
 // Sin luces (info.x == 0) se usa la luz por defecto: una puntual blanca en la
@@ -193,13 +194,17 @@ void main() {
     vec3 eyePos = pc.eyePosAndRoughness.xyz;
     float roughness = clamp(pc.eyePosAndRoughness.w, 0.045, 1.0); // evita a=0 (GGX degenerado)
     vec3 baseColor = pc.baseColorAndMetallic.xyz;
+    vec3 V = normalize(eyePos - fragPosWS);
     if ((flags & kTexColor) != 0) {
         vec2 uv = fragUV * pc.uvTransform.xy + pc.uvTransform.zw;
+        // Fresnel de C4D (2026-11-18): el GLSL de R19 muestrea el degradado en abs(dot(N, V)). Sin mip ni
+        // mosaico: el borde se recorta a medio texel para que 0 y 1 no se mezclen entre si.
+        if ((flags & kTexFresnel) != 0) uv = vec2(clamp(abs(dot(N, V)), 0.5 / 256.0, 1.0 - 0.5 / 256.0), 0.5);
         // Se muestrea siempre (fuera del if por pixel): las derivadas que
         // eligen el mip tienen que calcularse con todo el cuadro 2x2 activo.
         vec4 texel = texture(colorTex, uv);
         bool inside = all(greaterThanEqual(uv, vec2(0.0))) && all(lessThanEqual(uv, vec2(1.0)));
-        if ((flags & kTexTile) != 0 || inside) {
+        if ((flags & (kTexTile | kTexFresnel)) != 0 || inside) {
             baseColor = texel.rgb;
             // Canal Alfa de C4D (2026-11-18): recorte, sin mezcla (no necesita orden de dibujo).
             if ((flags & kTexAlpha) != 0 && texel.a < 0.5) discard;
@@ -207,7 +212,6 @@ void main() {
     }
     float metallic = clamp(pc.baseColorAndMetallic.w, 0.0, 1.0);
 
-    vec3 V = normalize(eyePos - fragPosWS);
     float NdotV = max(dot(N, V), 1e-4);
     // Las caras traseras se iluminan como las delanteras (mallas sin cerrar
     // de modelos importados: C4D tampoco las deja negras).

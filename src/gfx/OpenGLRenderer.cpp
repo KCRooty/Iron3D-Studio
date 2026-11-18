@@ -129,9 +129,11 @@ void main() {
     vec3 albedo = uMaterialDiffuse;
     if ((uTexFlags & 1) != 0) {
         vec2 uv = fragUV * uUvTransform.xy + uUvTransform.zw;
+        // Fresnel de C4D (8): la tira 256x1 se muestrea en abs(dot(N, V)), como el GLSL de R19.
+        if ((uTexFlags & 8) != 0) uv = vec2(clamp(abs(dot(N, V)), 0.5 / 256.0, 1.0 - 0.5 / 256.0), 0.5);
         vec4 texel = texture(uColorTex, uv);
         bool inside = all(greaterThanEqual(uv, vec2(0.0))) && all(lessThanEqual(uv, vec2(1.0)));
-        if ((uTexFlags & 2) != 0 || inside) {
+        if ((uTexFlags & 10) != 0 || inside) {
             albedo = texel.rgb;
             if ((uTexFlags & 4) != 0 && texel.a < 0.5) discard;
         }
@@ -502,7 +504,8 @@ void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     if (tex.enabled) {
         if (gl::GLuint t = materialTexture(material, TexSlot::Color)) {
             colorTex = t;
-            texFlags = 1 | (tex.tile ? 2 : 0) | (materialHasAlphaMask(material) ? 4 : 0);
+            texFlags = 1 | (tex.tile ? 2 : 0) | (materialHasAlphaMask(material) ? 4 : 0) |
+                       (channelIsFresnel(material, TexSlot::Color) ? 8 : 0);
             uvTransform = texMappingUvTransform(tex);
         }
     }

@@ -42,6 +42,7 @@ static_assert(sizeof(LitPushConstants) == 208, "lit.vert/lit.frag esperan 208 by
 constexpr int kLitTexColor = 1;
 constexpr int kLitTexTile = 2;
 constexpr int kLitTexAlpha = 4;
+constexpr int kLitTexFresnel = 8; // la textura de Color es la tira del shader Fresnel (se muestrea en |N.V|)
 
 class LitPipeline {
 public:

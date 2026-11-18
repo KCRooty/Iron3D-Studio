@@ -348,6 +348,23 @@ else()
     target_compile_options(preset_library_test PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME preset_library COMMAND preset_library_test)
+
+# Shader Fresnel de C4D: horneado de la tira 256x1, modo fisico y ida y vuelta (sin GPU).
+add_executable(fresnel_test
+    tests/fresnel_test.cpp
+    src/core/ChannelBake.cpp
+    src/core/Material.cpp
+    src/core/ShaderTree.cpp
+    src/core/TextureImage.cpp)
+target_include_directories(fresnel_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+target_link_libraries(fresnel_test PRIVATE iron3d_lib4d)
+target_compile_definitions(fresnel_test PRIVATE GLM_FORCE_RADIANS)
+if(MSVC)
+    target_compile_options(fresnel_test PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(fresnel_test PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME fresnel COMMAND fresnel_test)
 if(IRON3D_HAS_C4D_ROUNDTRIP)
     add_test(NAME c4d_roundtrip COMMAND c4d_roundtrip_test)
 endif()

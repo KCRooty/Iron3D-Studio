@@ -32,7 +32,11 @@ enum class ShaderKind {
     Colorizer, // Colorizador
     Layer,     // Capa
     Gradient,  // Degradado
-    Other,     // procedural u otro que Iron3D no evalua (Ruido, Fresnel...)
+    Other,     // procedural u otro que Iron3D no evalua (Ruido...)
+    // Fresnel (2026-11-18). Va al final: el numero se guarda en los .iron. Se evalua por pixel en el
+    // visor (depende del angulo de vision), asi que no se hornea a una imagen: se hornea su degradado
+    // a una tira 1D que el shader muestrea en abs(dot(N, V)), como el GLSL de R19 (sla.cdl64).
+    Fresnel,
 };
 const char* shaderKindName(ShaderKind k); // en espanol, para la UI
 
@@ -76,6 +80,10 @@ struct ShaderNode {
     int gradientType = 2000; // SLA_GRADIENT_TYPE_* (2000 2D-U)
     float angle = 0.0f;    // radianes
     std::vector<GradientKnot> gradient;
+    // Fresnel: `gradient` es la rampa; `input` guarda el modo Render (SLA_FRESNEL_RENDER_*, 2005 = ambas caras).
+    bool fresnelPhysical = false;   // modo fisico (IOR) en vez de degradado
+    float fresnelIor = 1.333f;
+    bool fresnelInvert = false;
     // Capa
     std::vector<ShaderLayer> layers; // de arriba (indice 0) a abajo, como la lista de C4D
 
