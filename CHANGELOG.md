@@ -21,10 +21,13 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
   vuelta del `.iron`).
 
 **Probado**: compila, `iron3d_tests` y `fresnel_test` pasan; Toy Foxy importa el Fresnel como
-raíz del canal Color en sus 4 materiales (antes salía como «Otro», gris).
+raíz del canal Color en sus 4 materiales (antes salía como «Otro», gris). Capturas de Toy Foxy
+en Vulkan y OpenGL: el rosa sale en pajarita/pecho, lengua y espinillas y el resto queda blanco,
+igual en los dos (flag de verificación nuevo `IRON3D_NO_IMPORT_REPORT=1`, oculta el aviso de
+importación al capturar).
 
-**Sin probar / límites**: la comparación visual contra R19 (la captura de Toy Foxy quedó sin
-hacer porque el PC estaba en uso). Solo vale como **raíz del canal Color**: un Fresnel dentro de
+**Sin probar / límites**: no hay captura de R19 de Toy Foxy en disco, así que falta el contraste
+píxel a píxel (y confirmar la dirección del degradado contra R19). Solo vale como **raíz del canal Color**: un Fresnel dentro de
 una Capa o en otro canal no es por píxel (en Capa se toma de cara, |N·V| = 1; en otros canales
 se ignora). El modo Render se lee pero no se aplica: «frontal»/«trasera»/«transparentes» se
 tratan como «ambas caras». La opción «Usar relieve» tampoco. Los miniaturas del navegador (CPU)

@@ -5462,6 +5462,8 @@ void drawAboutDialog() {
 
 void drawImportReport() {
     if (!g.showImport) return;
+    // Verificacion por captura (2026-11-18): el aviso modal tapa el modelo. Solo oculta la ventana.
+    if (std::getenv("IRON3D_NO_IMPORT_REPORT")) { g.showImport = false; return; }
     const C4DImportReport& r = g.importReport;
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     const char* title = g.importError.empty() ? "Importar Cinema 4D###importrep" : "No se pudo abrir###importrep";
