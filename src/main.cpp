@@ -28,6 +28,7 @@ extern "C" __declspec(dllimport) int __stdcall MessageBoxW(void* hWnd, const wch
 #include "core/TransformGizmo.h"
 #include "core/Paths.h"
 #include "core/Preferences.h"
+#include "core/ChannelBake.h"
 #include "core/Material.h"
 #include "core/SceneSerializer.h"
 #include "ui/MainUi.h"
@@ -202,7 +203,11 @@ void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vect
     // dibujado). Los objetos transparentes entre si no se ordenan por distancia todavia.
     auto drawPart = [&](iron3d::MeshHandle mh, const glm::mat4& mdl, const glm::mat4& mp, const iron3d::Material& mat,
                         const iron3d::TexMapping& tx, uint32_t first, uint32_t count) {
-        if (iron3d::materialIsBlended(mat) == (pass == 1)) renderer.drawMesh(mh, mdl, mp, mat, tx, first, count);
+        if (iron3d::materialIsBlended(mat) != (pass == 1)) return;
+        // El Fresnel se muestrea por angulo de vision, no por UV: vale con cualquier proyeccion de la etiqueta.
+        iron3d::TexMapping tm = tx;
+        if (iron3d::channelIsFresnel(mat, iron3d::TexSlot::Color)) tm.enabled = true;
+        renderer.drawMesh(mh, mdl, mp, mat, tm, first, count);
     };
 
     using iron3d::PrimitiveType;
@@ -753,6 +758,14 @@ int main(int argc, char** argv) {
                              cc.shader.name.c_str(), (int)cc.shader.kind, cc.shader.c4dType, cc.shader.color.r,
                              cc.shader.color.g, cc.shader.color.b, cc.mixMode, cc.mixStrength,
                              m.texture(iron3d::TexSlot::Color).c_str());
+            if (cc.shader.kind == iron3d::ShaderKind::Fresnel) {
+                std::fprintf(stderr, "[dump]   Fresnel: render=%d fisico=%d ior=%.3f invertir=%d knots=%zu", cc.shader.input,
+                             (int)cc.shader.fresnelPhysical, cc.shader.fresnelIor, (int)cc.shader.fresnelInvert,
+                             cc.shader.gradient.size());
+                for (const iron3d::GradientKnot& k : cc.shader.gradient)
+                    std::fprintf(stderr, " [%.2f: %.2f %.2f %.2f]", k.pos, k.color.r, k.color.g, k.color.b);
+                std::fprintf(stderr, "\n");
+            }
             for (const iron3d::ReflectLayer& l : m.layers)
                 std::fprintf(stderr, "[dump]   capa '%s' activa=%d dist=%d fresnel=%d atten=%d reflejo=%.2f esp=%.2f "
                                      "rug=%.2f color=(%.2f %.2f %.2f)\n",

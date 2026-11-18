@@ -21,13 +21,23 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
   vuelta del `.iron`).
 
 **Probado**: compila, `iron3d_tests` y `fresnel_test` pasan; Toy Foxy importa el Fresnel como
-raíz del canal Color en sus 4 materiales (antes salía como «Otro», gris). Capturas de Toy Foxy
-en Vulkan y OpenGL: el rosa sale en pajarita/pecho, lengua y espinillas y el resto queda blanco,
-igual en los dos (flag de verificación nuevo `IRON3D_NO_IMPORT_REPORT=1`, oculta el aviso de
-importación al capturar).
+raíz del canal Color en sus 4 materiales (antes salía como «Otro», gris).
 
-**Sin probar / límites**: no hay captura de R19 de Toy Foxy en disco, así que falta el contraste
-píxel a píxel (y confirmar la dirección del degradado contra R19). Solo vale como **raíz del canal Color**: un Fresnel dentro de
+**Corregido tras comparar con R19 (2026-11-18)**: la primera versión dejaba el Fresnel sin
+aplicar en los objetos cuya etiqueta de textura no usa proyección UVW (el cinturón usa otra), así
+que pecho, cinturón, nariz, orejas y almohadillas salían blancos. Ahora el Fresnel se aplica con
+cualquier proyección. Contrastado a ojo con R19 (viewport del GUI y render de `Commandline.exe`,
+capturas en el vault `14-Iron3D-CoalMix/comparaciones_r19/`): el reparto del rosa coincide.
+Flags de verificación nuevos: `IRON3D_NO_IMPORT_REPORT=1` (oculta el aviso de importación al
+capturar) y línea `Fresnel:` con el degradado en `--dump-scene`.
+
+**Diferencias que quedan frente a R19** (sin resolver): (1) en Iron3D las siluetas de las piezas
+blancas tienen un borde marrón (el nudo oscuro del degradado) que en R19 apenas se ve; la
+interpolación/curva del degradado puede no ser la de R19. (2) La pajarita sale rosa pálido y en R19
+magenta oscuro: probablemente un objeto con varias etiquetas de textura donde Iron3D elige otra.
+(3) El cuerpo se ve más brillante que en R19 (iluminación distinta, no del Fresnel).
+
+**Sin probar / límites**: contraste solo visual, no píxel a píxel (cámaras distintas). Solo vale como **raíz del canal Color**: un Fresnel dentro de
 una Capa o en otro canal no es por píxel (en Capa se toma de cara, |N·V| = 1; en otros canales
 se ignora). El modo Render se lee pero no se aplica: «frontal»/«trasera»/«transparentes» se
 tratan como «ambas caras». La opción «Usar relieve» tampoco. Los miniaturas del navegador (CPU)
