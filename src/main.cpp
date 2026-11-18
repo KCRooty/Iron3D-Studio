@@ -763,7 +763,8 @@ int main(int argc, char** argv) {
                              (int)cc.shader.fresnelPhysical, cc.shader.fresnelIor, (int)cc.shader.fresnelInvert,
                              cc.shader.gradient.size());
                 for (const iron3d::GradientKnot& k : cc.shader.gradient)
-                    std::fprintf(stderr, " [%.2f: %.2f %.2f %.2f]", k.pos, k.color.r, k.color.g, k.color.b);
+                    std::fprintf(stderr, " [%.2f: %.2f %.2f %.2f interp=%d bias=%.2f]", k.pos, k.color.r, k.color.g,
+                                 k.color.b, k.interpolation, k.bias);
                 std::fprintf(stderr, "\n");
             }
             for (const iron3d::ReflectLayer& l : m.layers)
