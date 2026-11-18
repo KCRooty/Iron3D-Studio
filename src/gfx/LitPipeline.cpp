@@ -44,7 +44,7 @@ VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code
 void LitPipeline::create(VkDevice device, VkPhysicalDevice physicalDevice, VkRenderPass renderPass,
                           const std::filesystem::path& shaderDir, VkDescriptorSetLayout shadowSetLayout,
                           VkDescriptorSetLayout aoSetLayout, VkDescriptorSetLayout colorTexSetLayout,
-                          VkDescriptorSetLayout lightsSetLayout, VkCullModeFlags cullMode) {
+                          VkDescriptorSetLayout lightsSetLayout, VkCullModeFlags cullMode, bool blend) {
     VkPhysicalDeviceProperties props{};
     vkGetPhysicalDeviceProperties(physicalDevice, &props);
     if (props.limits.maxPushConstantsSize < sizeof(LitPushConstants)) {
@@ -110,13 +110,19 @@ void LitPipeline::create(VkDevice device, VkPhysicalDevice physicalDevice, VkRen
     // sigue sin profundidad a proposito -- ver su comentario.
     VkPipelineDepthStencilStateCreateInfo depthStencil{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
     depthStencil.depthTestEnable = VK_TRUE;
-    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = blend ? VK_FALSE : VK_TRUE;
     depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
 
     VkPipelineColorBlendAttachmentState blendAttachment{};
     blendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                                       VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    blendAttachment.blendEnable = VK_FALSE;
+    blendAttachment.blendEnable = blend ? VK_TRUE : VK_FALSE;
+    blendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    blendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    blendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+    blendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    blendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    blendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
     VkPipelineColorBlendStateCreateInfo colorBlend{VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
     colorBlend.attachmentCount = 1;
@@ -183,7 +189,7 @@ void LitPipeline::pushConstants(VkCommandBuffer cmd, const glm::mat4& model, con
     pc.eyePosAndRoughness = glm::vec4(eyePosWS, material.roughness);
     pc.baseColorAndMetallic = glm::vec4(material.baseColor, material.metallic);
     pc.uvTransform = uvTransform;
-    pc.emission = glm::vec4(material.emission, 0.0f);
+    pc.emission = glm::vec4(material.emission, materialOpacity(material));
     vkCmdPushConstants(cmd, layout_, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                         sizeof(LitPushConstants), &pc);
 }

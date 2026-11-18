@@ -194,10 +194,16 @@ void drawSceneGBuffer(iron3d::IRenderer& renderer, SceneMeshes& meshes, iron3d::
 // pero un hijo en Activado sigue viendose, igual que en C4D.
 void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vector<iron3d::Material>& materials,
                iron3d::SceneNode& node, const glm::mat4& parentWorld, const glm::mat4& viewProj,
-               bool parentVisible = true) {
+               bool parentVisible = true, int pass = 0) {
     const bool vis = iron3d::resolveVisibility(node.editorVis, parentVisible);
     glm::mat4 world = parentWorld * node.localMatrix();
     const iron3d::Material& material = iron3d::materialOrDefault(materials, node.materialIndex);
+    // Dos pasadas (2026-11-18): 0 = lo opaco, 1 = lo que tiene Transparencia (se mezcla con lo ya
+    // dibujado). Los objetos transparentes entre si no se ordenan por distancia todavia.
+    auto drawPart = [&](iron3d::MeshHandle mh, const glm::mat4& mdl, const glm::mat4& mp, const iron3d::Material& mat,
+                        const iron3d::TexMapping& tx, uint32_t first, uint32_t count) {
+        if (iron3d::materialIsBlended(mat) == (pass == 1)) renderer.drawMesh(mh, mdl, mp, mat, tx, first, count);
+    };
 
     using iron3d::PrimitiveType;
     switch (vis ? node.primitive : PrimitiveType::None) {
@@ -229,19 +235,19 @@ void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vect
                 end = part.firstIndex + part.indexCount;
             }
             if (!partsOk) {
-                renderer.drawMesh(h, world, mvp, material, mapping(node.texTag));
+                drawPart(h, world, mvp, material, mapping(node.texTag), 0, 0);
                 break;
             }
             uint32_t cur = 0;
             for (const iron3d::MaterialPart& part : node.materialParts) {
                 if (part.firstIndex > cur)
-                    renderer.drawMesh(h, world, mvp, material, mapping(node.texTag), cur, part.firstIndex - cur);
+                    drawPart(h, world, mvp, material, mapping(node.texTag), cur, part.firstIndex - cur);
                 if (part.indexCount > 0)
-                    renderer.drawMesh(h, world, mvp, iron3d::materialOrDefault(materials, part.materialIndex),
-                                      mapping(part.texTag), part.firstIndex, part.indexCount);
+                    drawPart(h, world, mvp, iron3d::materialOrDefault(materials, part.materialIndex),
+                             mapping(part.texTag), part.firstIndex, part.indexCount);
                 cur = part.firstIndex + part.indexCount;
             }
-            if (cur < total) renderer.drawMesh(h, world, mvp, material, mapping(node.texTag), cur, total - cur);
+            if (cur < total) drawPart(h, world, mvp, material, mapping(node.texTag), cur, total - cur);
             break;
         }
         case PrimitiveType::Light: {
@@ -252,13 +258,13 @@ void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vect
             const glm::mat4 iconWorld = parentWorld *
                 glm::translate(glm::mat4(1.0f), node.position) *
                 glm::scale(glm::mat4(1.0f), glm::vec3(0.12f));
-            renderer.drawMesh(meshes.sphere, iconWorld, viewProj * iconWorld, material);
+            if (pass == 0) renderer.drawMesh(meshes.sphere, iconWorld, viewProj * iconWorld, material);
             break;
         }
         case PrimitiveType::Camera: {
             // Marcador como la Luz, con un cubo (con su rotacion: se ve hacia donde mira).
             const glm::mat4 iconWorld = world * glm::scale(glm::mat4(1.0f), 0.15f / glm::max(node.scale, glm::vec3(1e-6f)));
-            renderer.drawMesh(meshes.cube, iconWorld, viewProj * iconWorld, material);
+            if (pass == 0) renderer.drawMesh(meshes.cube, iconWorld, viewProj * iconWorld, material);
             break;
         }
         case PrimitiveType::None:
@@ -267,7 +273,7 @@ void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vect
     }
 
     for (const auto& child : node.children()) {
-        drawScene(renderer, meshes, materials, *child, world, viewProj, vis);
+        drawScene(renderer, meshes, materials, *child, world, viewProj, vis, pass);
     }
 }
 
@@ -617,6 +623,10 @@ int main(int argc, char** argv) {
                     selected = nullptr;
                 }
                 const iron3d::PresetLibrary* lib = iron3d::findMountedLibrary(argPath);
+                // "--load-preset=?" (verificacion, 2026-11-18): lista las rutas de los modelos de la libreria.
+                if (loadPresetArg == "?")
+                    for (const iron3d::PresetItem& it : lib ? lib->items() : std::vector<iron3d::PresetItem>{})
+                        std::fprintf(stderr, "[preset] %s\n", it.path.c_str());
                 for (const iron3d::PresetItem& it : lib ? lib->items() : std::vector<iron3d::PresetItem>{}) {
                     if (loadPresetArg.empty() || it.path != loadPresetArg) continue;
                     iron3d::loadPresetIntoScene(*lib, it, sceneRoot, selected, history, materials);
@@ -730,6 +740,10 @@ int main(int argc, char** argv) {
         // Materiales tal como llegan al visor: color, metal, rugosidad y capas de Reflectancia.
         for (size_t i = 0; i < materials.size(); ++i) {
             const iron3d::Material& m = materials[i];
+            if (m.useTransparency || m.useAlpha)
+                std::fprintf(stderr, "[dump] material %zu '%s' TRANSPARENCIA=%d opacidad=%.2f ALFA=%d invertir=%d imagen=%d alfa_tex='%s'\n", i,
+                             m.name.c_str(), (int)m.useTransparency, iron3d::materialOpacity(m), (int)m.useAlpha,
+                             (int)m.alphaInvert, (int)m.alphaImage, m.texture(iron3d::TexSlot::Alpha).c_str());
             std::fprintf(stderr, "[dump] material %zu '%s' color=(%.2f %.2f %.2f)%s metal=%.2f rug=%.2f refl=%s\n", i,
                          m.name.c_str(), m.baseColor.r, m.baseColor.g, m.baseColor.b, m.useColor ? "" : " (Color off)",
                          m.metallic, m.roughness, m.useReflectance ? "on" : "off");
@@ -1088,7 +1102,8 @@ int main(int argc, char** argv) {
                 const glm::mat4 pvp = pn.proj * pn.view;
                 if (viewport.showGrid && !viewport.renderView)
                     renderer->drawGrid(gridVerts, pvp * gridModelFor(pn.kind));
-                drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), pvp);
+                drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), pvp, true, 0);
+                drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), pvp, true, 1);
 
                 // Gizmo encima de la escena (ningun buffer de profundidad todavia en
                 // Fase 1-2, asi que "despues" ya implica "por encima"). Solo en

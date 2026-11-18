@@ -6,6 +6,30 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-18: Transparencia y Alfa del material en el visor (Vulkan y OpenGL)
+
+**Nuevo**
+- **Transparencia**: un material con el canal Transparencia activo se ve translúcido
+  (opacidad = 1 menos la luminancia de color x brillo). Se dibuja en una segunda pasada,
+  tras lo opaco, con mezcla por alfa y sin escribir profundidad. En Vulkan es un pipeline
+  aparte; en OpenGL, `glBlendFunc` + `glDepthMask`.
+- **Alfa**: el canal Alfa (con Invertir y "Alfa de la imagen") se funde en el canal A de la
+  textura de Color y el shader descarta los píxeles con alfa < 0,5 (recorte, sin mezcla).
+- `--dump-scene` imprime una línea por material con Transparencia o Alfa, y
+  `--load-preset=?` lista los modelos de una `.lib4d` (solo verificación).
+
+**Probado**
+- Compila en Debug; los tres tests (`iron3d_tests`, `preset_library_test`, `c4d_roundtrip_test`) pasan.
+- Escena sintética (esfera con Transparencia 0,6 y plano con Alfa de imagen con agujeros):
+  captura PrintWindow en Vulkan y en OpenGL, ambas correctas.
+
+**Sin probar / límites**
+- Ninguno de los modelos reales que revisé (Toy Foxy, Elizabeth Afton, Crying Child y los
+  mapas de FNaF, entre otros) usa Transparencia ni Alfa, así que no está contrastado contra Cinema 4D R19 con un caso real.
+- Los objetos transparentes no se ordenan por distancia entre sí (se mezclan en el orden de
+  la escena). El Alfa es recorte duro: sin borde suave ("Alfa suave") ni color de alfa.
+- La Transparencia no aplica refracción, absorción ni el brillo de Fresnel de R19.
+
 ### 2026-11-11 (17): Simetría y Subdivision Surface al importar, Banking corregido y blancos que salían negros
 
 **Nuevo**

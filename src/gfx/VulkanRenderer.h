@@ -81,6 +81,7 @@ private:
     VmaAllocator allocator_ = VK_NULL_HANDLE;
 
     LitPipeline litPipeline_; // malla de escena con iluminacion (Fase 5)
+    LitPipeline litBlendPipeline_; // lo mismo con mezcla por alfa, para la Transparencia (2026-11-18)
     ShadowMap shadowMap_;     // mapa de sombras de la unica luz (Fase render 2)
     SsaoPass ssaoPass_;       // oclusion ambiental en espacio de pantalla (Fase 3)
     MaterialTextures materialTextures_; // texturas de Color de los materiales (2026-11-10)

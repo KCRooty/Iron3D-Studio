@@ -34,20 +34,22 @@ struct LitPushConstants {
     glm::vec4 eyePosAndRoughness;    // xyz = posicion de camara en mundo, w = roughness [0,1]
     glm::vec4 baseColorAndMetallic;  // xyz = color base (albedo) del material, w = metallic [0,1]
     glm::vec4 uvTransform;           // uv de la imagen = uv * xy + zw
-    glm::vec4 emission;              // xyz = Luminancia (color * brillo), w libre
+    glm::vec4 emission;              // xyz = Luminancia (color * brillo), w = opacidad (1 = opaco)
 };
 static_assert(sizeof(LitPushConstants) == 208, "lit.vert/lit.frag esperan 208 bytes");
 
 // Indicadores de LitPushConstants::lightPosAndFlags.w (mismos valores que lit.frag).
 constexpr int kLitTexColor = 1;
 constexpr int kLitTexTile = 2;
+constexpr int kLitTexAlpha = 4;
 
 class LitPipeline {
 public:
     void create(VkDevice device, VkPhysicalDevice physicalDevice, VkRenderPass renderPass,
                 const std::filesystem::path& shaderDir, VkDescriptorSetLayout shadowSetLayout,
                 VkDescriptorSetLayout aoSetLayout, VkDescriptorSetLayout colorTexSetLayout,
-                VkDescriptorSetLayout lightsSetLayout, VkCullModeFlags cullMode = VK_CULL_MODE_NONE);
+                VkDescriptorSetLayout lightsSetLayout, VkCullModeFlags cullMode = VK_CULL_MODE_NONE,
+                bool blend = false); // blend: mezcla por alfa y sin escribir profundidad (Transparencia)
     void destroy(VkDevice device);
 
     void bind(VkCommandBuffer cmd) const;

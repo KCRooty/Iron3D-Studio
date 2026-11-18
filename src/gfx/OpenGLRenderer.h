@@ -85,7 +85,7 @@ private:
     gl::GLint uLitEyePosLoc_ = -1;
     gl::GLint uLitDiffuseLoc_ = -1, uLitSpecularLoc_ = -1, uLitShininessLoc_ = -1;
     gl::GLint uLitColorTexLoc_ = -1, uLitTexFlagsLoc_ = -1, uLitUvTransformLoc_ = -1;
-    gl::GLint uLitEmissionLoc_ = -1, uLitAmbientLoc_ = -1;
+    gl::GLint uLitEmissionLoc_ = -1, uLitAmbientLoc_ = -1, uLitOpacityLoc_ = -1;
     // Luces de la escena (2026-11-10): arrays de uniforms, mismo contenido
     // que el buffer de luces de Vulkan (ver LightsUniform.h).
     gl::GLint uLitLightCountLoc_ = -1, uLitLightPosTypeLoc_ = -1, uLitLightDirFalloffLoc_ = -1;

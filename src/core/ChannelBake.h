@@ -29,4 +29,10 @@ std::string channelTextureKey(const Material& m, TexSlot s);
 // textura o no se encuentra ninguna imagen del arbol.
 bool loadChannelTexture(const Material& m, TexSlot s, TextureImage& out);
 
+// Canal Alfa de C4D en el visor (2026-11-18): la imagen de Color que devuelven
+// channelTextureKey/loadChannelTexture trae el Alfa fundido en su canal A (blanco = opaco;
+// "Invertir" lo da la vuelta; "Alfa de la imagen" usa el alfa de la imagen en vez de su
+// luminancia). true si el material recorta por Alfa.
+bool materialHasAlphaMask(const Material& m);
+
 } // namespace iron3d

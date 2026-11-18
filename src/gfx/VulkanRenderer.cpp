@@ -1,5 +1,6 @@
 #include "VulkanRenderer.h"
 #include "core/Paths.h"
+#include "core/ChannelBake.h"
 
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
@@ -63,6 +64,10 @@ void VulkanRenderer::init(GLFWwindow* window, int width, int height) {
                          shadowMap_.descriptorSetLayout(), ssaoPass_.descriptorSetLayout(),
                          materialTextures_.descriptorSetLayout(), lightsUniform_.descriptorSetLayout(),
                          VK_CULL_MODE_NONE);
+    litBlendPipeline_.create(ctx_.device, ctx_.physicalDevice, swapchain_.renderPass(), shaderDir,
+                              shadowMap_.descriptorSetLayout(), ssaoPass_.descriptorSetLayout(),
+                              materialTextures_.descriptorSetLayout(), lightsUniform_.descriptorSetLayout(),
+                              VK_CULL_MODE_NONE, true);
     gizmoLinePipeline_.create(ctx_.device, swapchain_.renderPass(), shaderDir,
                                VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
     gizmoTriPipeline_.create(ctx_.device, swapchain_.renderPass(), shaderDir,
@@ -98,6 +103,7 @@ void VulkanRenderer::shutdown() {
     gizmoLinePipeline_.destroy(ctx_.device);
     gizmoTriPipeline_.destroy(ctx_.device);
     litPipeline_.destroy(ctx_.device);
+    litBlendPipeline_.destroy(ctx_.device);
     shadowMap_.destroy(ctx_.device, allocator_);
     ssaoPass_.destroy(ctx_.device, allocator_);
     materialTextures_.destroy(ctx_.device, allocator_);
@@ -266,19 +272,21 @@ void VulkanRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     if (tex.enabled) {
         if (VkDescriptorSet s = materialTextures_.get(material, TexSlot::Color)) {
             texSet = s;
-            texFlags = kLitTexColor | (tex.tile ? kLitTexTile : 0);
+            texFlags = kLitTexColor | (tex.tile ? kLitTexTile : 0) | (materialHasAlphaMask(material) ? kLitTexAlpha : 0);
             uvTransform = texMappingUvTransform(tex);
         }
     }
     // Rebind siempre (no asume que nada mas dejo la pipeline comun activa):
     // drawGizmo cambia de pipeline, asi que el orden de llamadas no puede
     // importar.
-    litPipeline_.bind(currentCmd_);
-    litPipeline_.bindShadowMap(currentCmd_, shadowMap_.descriptorSet());
-    litPipeline_.bindAoMap(currentCmd_, ssaoPass_.descriptorSet());
-    litPipeline_.bindColorTexture(currentCmd_, texSet);
-    litPipeline_.bindLights(currentCmd_, lightsUniform_.descriptorSet());
-    litPipeline_.pushConstants(currentCmd_, model, mvp, eyePosWS_, material, texFlags, uvTransform);
+    // Transparencia del material: pipeline con mezcla (main.cpp dibuja estos despues de lo opaco).
+    const LitPipeline& lit = materialIsBlended(material) ? litBlendPipeline_ : litPipeline_;
+    lit.bind(currentCmd_);
+    lit.bindShadowMap(currentCmd_, shadowMap_.descriptorSet());
+    lit.bindAoMap(currentCmd_, ssaoPass_.descriptorSet());
+    lit.bindColorTexture(currentCmd_, texSet);
+    lit.bindLights(currentCmd_, lightsUniform_.descriptorSet());
+    lit.pushConstants(currentCmd_, model, mvp, eyePosWS_, material, texFlags, uvTransform);
     meshes_[mesh].draw(currentCmd_, firstIndex, indexCount);
 }
 

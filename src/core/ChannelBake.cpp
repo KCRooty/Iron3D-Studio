@@ -297,7 +297,11 @@ const ShaderNode* effectiveShader(const Material& m, TexSlot s) {
 
 bool channelHasTexture(const Material& m, TexSlot s) { return !treeFor(m, s).empty(); }
 
-std::string channelTextureKey(const Material& m, TexSlot s) {
+bool materialHasAlphaMask(const Material& m) { return m.useAlpha && channelHasTexture(m, TexSlot::Alpha); }
+
+namespace {
+
+std::string plainChannelKey(const Material& m, TexSlot s) {
     const ShaderNode tree = treeFor(m, s);
     if (tree.empty()) return {};
     std::string key = textureCacheKey(m.texture(s), m.texBaseDir);
@@ -313,7 +317,21 @@ std::string channelTextureKey(const Material& m, TexSlot s) {
     return key + o.str();
 }
 
-bool loadChannelTexture(const Material& m, TexSlot s, TextureImage& out) {
+} // namespace
+
+std::string channelTextureKey(const Material& m, TexSlot s) {
+    const std::string key = plainChannelKey(m, s);
+    if (s != TexSlot::Color || !materialHasAlphaMask(m)) return key;
+    std::ostringstream o;
+    o.imbue(std::locale::classic());
+    o << "\n#alpha " << plainChannelKey(m, TexSlot::Alpha) << ' ' << (int)m.alphaInvert << (int)m.alphaImage;
+    if (key.empty()) o << " flat " << m.baseColor.r << ',' << m.baseColor.g << ',' << m.baseColor.b;
+    return key + o.str();
+}
+
+namespace {
+
+bool loadPlainChannelTexture(const Material& m, TexSlot s, TextureImage& out) {
     out = {};
     const ShaderNode tree = treeFor(m, s);
     if (tree.empty()) return false;
@@ -362,6 +380,39 @@ bool loadChannelTexture(const Material& m, TexSlot s, TextureImage& out) {
             p[3] = (uint8_t)std::lround(std::clamp(t.a, 0.0f, 1.0f) * 255.0f);
         }
     }
+    return true;
+}
+
+} // namespace
+
+bool loadChannelTexture(const Material& m, TexSlot s, TextureImage& out) {
+    if (s != TexSlot::Color || !materialHasAlphaMask(m)) return loadPlainChannelTexture(m, s, out);
+    TextureImage mask;
+    if (!loadPlainChannelTexture(m, TexSlot::Alpha, mask) || mask.width <= 0 || mask.height <= 0)
+        return loadPlainChannelTexture(m, s, out); // sin imagen de Alfa: el Color solo, opaco
+    TextureImage color;
+    if (!loadPlainChannelTexture(m, TexSlot::Color, color)) {
+        // Color plano con mascara: la imagen sale del tamano de la mascara, en sRGB como las texturas.
+        color.width = mask.width;
+        color.height = mask.height;
+        color.rgba.resize((size_t)mask.width * mask.height * 4);
+        uint8_t flat[4];
+        for (int i = 0; i < 3; ++i)
+            flat[i] = (uint8_t)std::lround(std::pow(std::clamp(m.baseColor[i], 0.0f, 1.0f), 1.0f / 2.2f) * 255.0f);
+        flat[3] = 255;
+        for (size_t i = 0; i < color.rgba.size(); i += 4) std::copy(flat, flat + 4, &color.rgba[i]);
+    }
+    for (int y = 0; y < color.height; ++y) {
+        const int my = std::min(mask.height - 1, (int)(((y + 0.5f) / color.height) * mask.height));
+        for (int x = 0; x < color.width; ++x) {
+            const int mx = std::min(mask.width - 1, (int)(((x + 0.5f) / color.width) * mask.width));
+            const uint8_t* q = &mask.rgba[((size_t)my * mask.width + mx) * 4];
+            float a = m.alphaImage ? q[3] / 255.0f : (0.299f * q[0] + 0.587f * q[1] + 0.114f * q[2]) / 255.0f;
+            if (m.alphaInvert) a = 1.0f - a;
+            color.rgba[((size_t)y * color.width + x) * 4 + 3] = (uint8_t)std::lround(std::clamp(a, 0.0f, 1.0f) * 255.0f);
+        }
+    }
+    out = std::move(color);
     return true;
 }
 

@@ -122,6 +122,12 @@ bool layersMatchPbr(const Material& m) {
     return near(metal, m.metallic) && near(rough, m.roughness) && colorOk && roughTex == m.texture(TexSlot::Roughness);
 }
 
+float materialOpacity(const Material& m) {
+    if (!m.useTransparency) return 1.0f;
+    const glm::vec3 t = glm::clamp(m.transparency, glm::vec3(0.0f), glm::vec3(1.0f));
+    return 1.0f - (0.299f * t.r + 0.587f * t.g + 0.114f * t.b);
+}
+
 std::string resolveTexturePath(const std::string& path, const std::string& baseDir) {
     if (path.empty()) return {};
     namespace fs = std::filesystem;

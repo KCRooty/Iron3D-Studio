@@ -52,6 +52,9 @@ constexpr GLenum GL_COMPILE_STATUS = 0x8B81;
 constexpr GLenum GL_LINK_STATUS = 0x8B82;
 constexpr GLenum GL_CULL_FACE = 0x0B44;
 constexpr GLenum GL_DEPTH_TEST = 0x0B71;
+constexpr GLenum GL_BLEND = 0x0BE2;
+constexpr GLenum GL_SRC_ALPHA = 0x0302;
+constexpr GLenum GL_ONE_MINUS_SRC_ALPHA = 0x0303;
 // Texturas de la UI (miniaturas del Navegador de Contenido).
 constexpr GLenum GL_TEXTURE_2D = 0x0DE1;
 constexpr GLenum GL_RGBA = 0x1908;
@@ -76,6 +79,7 @@ using PFNGLENABLEPROC = void (*)(GLenum);
 using PFNGLDISABLEPROC = void (*)(GLenum);
 using PFNGLDEPTHFUNCPROC = void (*)(GLenum);
 using PFNGLDEPTHMASKPROC = void (*)(GLboolean);
+using PFNGLBLENDFUNCPROC = void (*)(GLenum, GLenum);
 using PFNGLDRAWARRAYSPROC = void (*)(GLenum, GLint, GLsizei);
 using PFNGLDRAWELEMENTSPROC = void (*)(GLenum, GLsizei, GLenum, const void*);
 
@@ -131,6 +135,7 @@ extern PFNGLENABLEPROC glEnable;
 extern PFNGLDISABLEPROC glDisable;
 extern PFNGLDEPTHFUNCPROC glDepthFunc;
 extern PFNGLDEPTHMASKPROC glDepthMask;
+extern PFNGLBLENDFUNCPROC glBlendFunc;
 extern PFNGLDRAWARRAYSPROC glDrawArrays;
 extern PFNGLDRAWELEMENTSPROC glDrawElements;
 

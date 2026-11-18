@@ -82,7 +82,8 @@ uniform float uMaterialShininess;
 uniform vec3 uEmission;    // Luminancia del material
 uniform float uAmbient;    // intensidad ambiente (baja con luces de escena)
 uniform sampler2D uColorTex;
-uniform int uTexFlags;     // 1 = hay textura de Color, 2 = Mosaico
+uniform int uTexFlags;     // 1 = hay textura de Color, 2 = Mosaico, 4 = el canal A es el Alfa
+uniform float uOpacity;    // 1 - Transparencia del material
 uniform vec4 uUvTransform; // uv de la imagen = uv * xy + zw
 // Luces de la escena (2026-11-10): mismo contenido que el buffer de luces de
 // Vulkan (LightsUniform.h). 0 luces = luz por defecto en la camara.
@@ -128,9 +129,12 @@ void main() {
     vec3 albedo = uMaterialDiffuse;
     if ((uTexFlags & 1) != 0) {
         vec2 uv = fragUV * uUvTransform.xy + uUvTransform.zw;
-        vec3 texel = texture(uColorTex, uv).rgb;
+        vec4 texel = texture(uColorTex, uv);
         bool inside = all(greaterThanEqual(uv, vec2(0.0))) && all(lessThanEqual(uv, vec2(1.0)));
-        if ((uTexFlags & 2) != 0 || inside) albedo = texel;
+        if ((uTexFlags & 2) != 0 || inside) {
+            albedo = texel.rgb;
+            if ((uTexFlags & 4) != 0 && texel.a < 0.5) discard;
+        }
     }
 
     vec3 direct = vec3(0.0);
@@ -152,7 +156,7 @@ void main() {
     }
 
     vec3 color = uAmbient * albedo + direct + uEmission;
-    outColor = vec4(min(color, vec3(1.0)), 1.0);
+    outColor = vec4(min(color, vec3(1.0)), uOpacity);
 }
 )GLSL";
 
@@ -275,6 +279,7 @@ void OpenGLRenderer::init(GLFWwindow* window, int width, int height) {
     uLitMvpLoc_ = gl::glGetUniformLocation(litProgram_, "uMvp");
     uLitEyePosLoc_ = gl::glGetUniformLocation(litProgram_, "uEyePos");
     uLitEmissionLoc_ = gl::glGetUniformLocation(litProgram_, "uEmission");
+    uLitOpacityLoc_ = gl::glGetUniformLocation(litProgram_, "uOpacity");
     uLitAmbientLoc_ = gl::glGetUniformLocation(litProgram_, "uAmbient");
     uLitLightCountLoc_ = gl::glGetUniformLocation(litProgram_, "uLightCount");
     uLitLightPosTypeLoc_ = gl::glGetUniformLocation(litProgram_, "uLightPosType");
@@ -497,7 +502,7 @@ void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     if (tex.enabled) {
         if (gl::GLuint t = materialTexture(material, TexSlot::Color)) {
             colorTex = t;
-            texFlags = 1 | (tex.tile ? 2 : 0);
+            texFlags = 1 | (tex.tile ? 2 : 0) | (materialHasAlphaMask(material) ? 4 : 0);
             uvTransform = texMappingUvTransform(tex);
         }
     }
@@ -510,6 +515,7 @@ void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     gl::glUniformMatrix4fv(uLitMvpLoc_, 1, gl::GL_FALSE_, &mvp[0][0]);
     gl::glUniform3fv(uLitEyePosLoc_, 1, &eyePosWS_.x);
     gl::glUniform3fv(uLitEmissionLoc_, 1, &material.emission.x);
+    gl::glUniform1f(uLitOpacityLoc_, materialOpacity(material));
     gl::glUniform1f(uLitAmbientLoc_, ambient_);
     gl::glUniform1i(uLitLightCountLoc_, lightCount_);
     if (lightCount_ > 0) {
@@ -531,8 +537,19 @@ void OpenGLRenderer::drawMesh(MeshHandle mesh, const glm::mat4& model, const glm
     gl::glBindVertexArray(meshes_[mesh].vao);
     const uint32_t total = (uint32_t)meshes_[mesh].indexCount;
     if (indexCount == 0 || firstIndex + indexCount > total) firstIndex = 0, indexCount = total;
+    // Transparencia: mezcla por alfa sin escribir profundidad (main.cpp los dibuja tras lo opaco).
+    const bool blended = materialIsBlended(material);
+    if (blended) {
+        gl::glEnable(gl::GL_BLEND);
+        gl::glBlendFunc(gl::GL_SRC_ALPHA, gl::GL_ONE_MINUS_SRC_ALPHA);
+        gl::glDepthMask((gl::GLboolean)0);
+    }
     gl::glDrawElements(gl::GL_TRIANGLES, (gl::GLsizei)indexCount, gl::GL_UNSIGNED_INT,
                        reinterpret_cast<const void*>((uintptr_t)firstIndex * sizeof(uint32_t)));
+    if (blended) {
+        gl::glDepthMask((gl::GLboolean)1);
+        gl::glDisable(gl::GL_BLEND);
+    }
 }
 
 gl::GLuint OpenGLRenderer::materialTexture(const Material& m, TexSlot slot) {

@@ -12,12 +12,13 @@ layout(push_constant) uniform PushConstants {
     vec4 eyePosAndRoughness;    // xyz = posicion de camara, w = roughness [0,1]
     vec4 baseColorAndMetallic;  // xyz = color base (albedo), w = metallic [0,1]
     vec4 uvTransform;           // 2026-11-10: uv de la imagen = uv * xy + zw (Etiqueta de Textura)
-    vec4 emission;              // xyz = Luminancia del material (color * brillo)
+    vec4 emission;              // xyz = Luminancia del material (color * brillo), w = opacidad (1 = opaco)
 } pc;
 
 // Indicadores de flags.x (entero guardado como float).
 const int kTexColor = 1; // hay textura de Color: sustituye al color base, como en C4D
 const int kTexTile = 2;  // Mosaico activo; sin el, fuera de 0..1 se ve el color base
+const int kTexAlpha = 4; // el canal A de la textura es el Alfa del material: bajo 0.5 se descarta
 
 // Luces de la escena (2026-11-10, ver LightsUniform.h / SceneLighting.h).
 // Sin luces (info.x == 0) se usa la luz por defecto: una puntual blanca en la
@@ -196,9 +197,13 @@ void main() {
         vec2 uv = fragUV * pc.uvTransform.xy + pc.uvTransform.zw;
         // Se muestrea siempre (fuera del if por pixel): las derivadas que
         // eligen el mip tienen que calcularse con todo el cuadro 2x2 activo.
-        vec3 texel = texture(colorTex, uv).rgb;
+        vec4 texel = texture(colorTex, uv);
         bool inside = all(greaterThanEqual(uv, vec2(0.0))) && all(lessThanEqual(uv, vec2(1.0)));
-        if ((flags & kTexTile) != 0 || inside) baseColor = texel;
+        if ((flags & kTexTile) != 0 || inside) {
+            baseColor = texel.rgb;
+            // Canal Alfa de C4D (2026-11-18): recorte, sin mezcla (no necesita orden de dibujo).
+            if ((flags & kTexAlpha) != 0 && texel.a < 0.5) discard;
+        }
     }
     float metallic = clamp(pc.baseColorAndMetallic.w, 0.0, 1.0);
 
@@ -268,5 +273,5 @@ void main() {
 
     color = softClip(color);
     color = pow(color, vec3(1.0 / 2.2));
-    outColor = vec4(color, 1.0);
+    outColor = vec4(color, pc.emission.w);
 }

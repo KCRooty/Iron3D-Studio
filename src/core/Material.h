@@ -132,6 +132,12 @@ struct Material {
 // esta fuera de rango, en vez de que cada llamador tenga que comprobarlo.
 const Material& materialOrDefault(const std::vector<Material>& materials, int index);
 
+// Opacidad del material en el visor, de 0 a 1 (2026-11-18): 1 menos la luminancia de la
+// Transparencia (color * brillo) cuando el canal esta activo; 1 = opaco.
+float materialOpacity(const Material& m);
+// true si hay que dibujarlo con mezcla (despues de lo opaco y sin escribir profundidad).
+inline bool materialIsBlended(const Material& m) { return materialOpacity(m) < 0.999f; }
+
 // Campos PBR (color, metal, rugosidad) que salen de las capas de Reflectancia
 // de C4D: la primera capa que refleja manda. `colorOn` = canal Color activo.
 // Devuelve false si ninguna capa aporta reflejo (deja los campos como estan).
