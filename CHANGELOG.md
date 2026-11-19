@@ -6,6 +6,15 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-19 (4): Rig, primer paso: articulaciones y etiqueta IK
+
+**Nuevo**
+- Las **articulaciones** de C4D se marcan como tales (`isJoint`) al importar, aunque siguen viéndose como Nulo.
+- La **etiqueta IK** de C4D (tipo 1019561) se importa con su estado (activada), solver (2D/3D) y los enlaces a Punta, Objetivo y Polo (por ruta de nombres). Se guarda en `.iron` (líneas `JOINT`/`IK`) y se conserva al duplicar.
+- Diagnóstico: `IRON3D_DUMP_TAGS=1` imprime las etiquetas de cada objeto al importar un `.c4d`.
+
+**Probado**: `obj_test` (guardar/abrir/duplicar articulación e IK), los otros tres tests, e importación real de `MODELOS DONNIE.c4d` (aparecen las 6 etiquetas IK). **No hecho todavía**: resolver la IK (mover el objetivo no mueve la cadena), exportar la etiqueta a `.c4d`, y la etiqueta/ajustes de Límite (no estaba en ningún modelo de prueba, su ID sigue sin medir).
+
 ### 2026-11-19 (3): Puente y Comprobar Malla
 
 **Nuevo**

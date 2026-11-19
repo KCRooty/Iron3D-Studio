@@ -68,6 +68,7 @@ struct Ctx {
     int materialBase = 0;                    // indice que tendra materials[0] en la lista de la escena
     std::unordered_map<BaseMaterial*, int> materialIndex;
     std::map<std::string, int> warnings;
+    int ikTags = 0;
     std::string docDir;                      // carpeta del .c4d (texturas relativas)
     Float fps = 30.0;
 
@@ -925,8 +926,9 @@ void importTracks(BaseObject* op, SceneNode& node, Ctx& ctx) {
 }
 
 struct PendingTarget {
-    SceneNode* camera;
+    SceneNode* camera;   // nodo que recibe el enlace (camara, o el nodo con la etiqueta IK)
     BaseObject* target;
+    int kind = 0;        // 0 objetivo de camara, 1 IK tip, 2 IK target, 3 IK pole
 };
 
 // Generadores Simetria y Subdivision Surface sin cache en el archivo
@@ -1058,6 +1060,23 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
     const std::string name = utf8(op->GetName());
     SceneNode* node = parent.addChild(name.empty() ? std::string("Objeto") : name);
     ++rep.objects;
+    if (op->GetType() == Ojoint) node->isJoint = true;
+    // Etiqueta IK (tipo 1019561, ID_CA_IK_TAG): enlaces y ajustes basicos.
+    if (BaseTag* ikt = op->GetTag(1019561)) {
+        BaseContainer* bc = ikt->GetDataInstance();
+        node->ik.present = true;
+        node->ik.enabled = bc->GetBool(2034, true);   // ID_CA_IK_TAG_ENABLE
+        node->ik.solver = (int)bc->GetInt32(2003);    // ID_CA_IK_TAG_SOLVER
+        const std::pair<int, int> links[] = {{2000, 1}, {2001, 2}, {2005, 3}};   // TIP, TARGET, POLE
+        for (const auto& [id, kind] : links)
+            if (BaseList2D* l = bc->GetLink(id)) targets.push_back({node, static_cast<BaseObject*>(l), kind});
+        ++ctx.ikTags;
+    }
+    // Diagnostico: IRON3D_DUMP_TAGS=1 lista las etiquetas (tipo y nombre) de cada objeto.
+    if (std::getenv("IRON3D_DUMP_TAGS"))
+        for (BaseTag* dt = op->GetFirstTag(); dt; dt = dt->GetNext())
+            std::fprintf(stderr, "[tag] obj='%s' objtype=%d tagtype=%d nombre='%s'\n", name.c_str(), (int)op->GetType(),
+                         (int)dt->GetType(), utf8(dt->GetName()).c_str());
 
     // Transformacion: los numeros de C4D tal cual (HPB incluido) si no hay
     // transformacion congelada; si la hay, desde la matriz.
@@ -1254,7 +1273,15 @@ bool importC4D(const std::filesystem::path& file, SceneNode& parent, std::vector
     for (BaseObject* op = doc->GetFirstObject(); op; op = op->GetNext())
         importObject(op, temp, -1, TextureTagData{}, false, ctx, targets);
     // Etiqueta Objetivo: el objetivo se guarda por su ruta de nombres.
-    for (const PendingTarget& t : targets) t.camera->camera.target = namePath(t.target);
+    for (const PendingTarget& t : targets) {
+        const std::string path = namePath(t.target);
+        if (t.kind == 0) t.camera->camera.target = path;
+        else if (t.kind == 1) t.camera->ik.tip = path;
+        else if (t.kind == 2) t.camera->ik.target = path;
+        else t.camera->ik.pole = path;
+    }
+    if (ctx.ikTags)
+        ctx.warn("Etiquetas IK: se conservan (cadena, objetivo, polo) pero Iron3D todavía no resuelve la IK");
     BaseDocument::Free(doc);
 
     for (const auto& w : ctx.warnings)

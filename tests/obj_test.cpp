@@ -1,6 +1,7 @@
 // Prueba de importar/exportar OBJ (importers/obj/ObjIO). Sin GPU ni Cineware.
 
 #include "importers/obj/ObjIO.h"
+#include "core/SceneSerializer.h"
 
 #include <cstdio>
 #include <filesystem>
@@ -85,6 +86,32 @@ int main() {
     std::vector<Material> m3;
     ObjReport rep4;
     CHECK(!importObj(dir / "mal.obj", r3, m3, rep4, &err));
+
+    // Rig: articulacion + etiqueta IK sobreviven a guardar/abrir y a duplicar.
+    {
+        SceneNode r("raiz");
+        SceneNode* hueso = r.addChild("Hueso");
+        hueso->isJoint = true;
+        hueso->ik.present = true;
+        hueso->ik.enabled = false;
+        hueso->ik.solver = 1;
+        hueso->ik.tip = "Hueso/Punta";
+        hueso->ik.target = "Control IK";
+        hueso->ik.pole = "Polo \"rodilla\"";
+        std::vector<Material> none;
+        CHECK(saveScene(dir / "rig.iron", r, none, &err));
+        SceneNode r2("otra");
+        std::vector<Material> none2;
+        CHECK(loadScene(dir / "rig.iron", r2, none2, &err));
+        CHECK(r2.children().size() == 1);
+        if (r2.children().size() == 1) {
+            const SceneNode& h = *r2.children()[0];
+            CHECK(h.isJoint);
+            CHECK(h.ik == hueso->ik);
+        }
+        SceneNode* copia = duplicateSubtree(r, *hueso);
+        CHECK(copia && copia->isJoint && copia->ik == hueso->ik);
+    }
 
     std::error_code ec;
     fs::remove_all(dir, ec);

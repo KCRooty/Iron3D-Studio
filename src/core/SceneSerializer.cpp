@@ -128,6 +128,10 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
         out << indent << "  CAMERA proj=" << c.projection << " focal=" << c.focalMm << " sensor=" << c.sensorMm
             << " zoom=" << c.zoom << " target=" << quoted(c.target) << "\n";
     }
+    if (node.isJoint) out << indent << "  JOINT\n";
+    if (node.ik.present)
+        out << indent << "  IK enabled=" << (int)node.ik.enabled << " solver=" << node.ik.solver
+            << " tip=" << quoted(node.ik.tip) << " target=" << quoted(node.ik.target) << " pole=" << quoted(node.ik.pole) << "\n";
     if (node.materialIndex >= 0 && !(node.texTag == TextureTagData{})) {
         const TextureTagData& t = node.texTag;
         out << indent << "  TEXTAG proj=" << t.projection << " ou=" << t.offset.x << " ov=" << t.offset.y
@@ -391,7 +395,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras los atributos de NODE"; return false; }
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
     while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG" ||
-                            p.peek() == "PART")) {
+                            p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "IK")) {
         const std::string kind = p.next();
         bool ok = true;
         if (kind == "LIGHT") {
@@ -424,6 +428,18 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
                 else if (k == "sensor") c.sensorMm = std::stof(v);
                 else if (k == "zoom") c.zoom = std::stof(v);
                 else if (k == "target") c.target = unquote(v);
+            });
+        } else if (kind == "JOINT") {
+            node.isJoint = true;
+        } else if (kind == "IK") {
+            IkTagData& t = node.ik;
+            t.present = true;
+            ok = readAttrs(p, "IK", err, [&](const std::string& k, const std::string& v) {
+                if (k == "enabled") t.enabled = std::stoi(v) != 0;
+                else if (k == "solver") t.solver = std::stoi(v);
+                else if (k == "tip") t.tip = unquote(v);
+                else if (k == "target") t.target = unquote(v);
+                else if (k == "pole") t.pole = unquote(v);
             });
         } else if (kind == "PART") {
             // Formato con partes (2026-11-11): material por Seleccion de Poligonos.
@@ -701,6 +717,8 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.light = temp.light;
     root.camera = temp.camera;
     root.texTag = temp.texTag;
+    root.isJoint = temp.isJoint;
+    root.ik = temp.ik;
     root.materialParts = temp.materialParts;
     root.animPos = temp.animPos;
     root.animRot = temp.animRot;

@@ -155,6 +155,8 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
     copy->light = src.light;
     copy->camera = src.camera;
     copy->texTag = src.texTag;
+    copy->isJoint = src.isJoint;
+    copy->ik = src.ik;
     copy->materialParts = src.materialParts;
     copy->animPos = src.animPos;
     copy->animRot = src.animRot;

@@ -108,6 +108,18 @@ struct CameraData {
     bool operator==(const CameraData&) const = default;
 };
 
+// Etiqueta IK de C4D (ID_CA_IK_TAG): cadena que acaba en `tip` (vacio = el propio
+// objeto) y apunta a `target`; `pole` es el vector polo. Las referencias son rutas
+// por nombres desde la raiz, como CameraData::target. Por ahora solo se conserva
+// (importar/guardar/duplicar); resolverla es el solver IK pendiente.
+struct IkTagData {
+    bool present = false;
+    bool enabled = true;
+    int solver = 0;                  // ID_CA_IK_TAG_SOLVER: 0 = 2D, 1 = 3D
+    std::string tip, target, pole;
+    bool operator==(const IkTagData&) const = default;
+};
+
 // Etiqueta de Textura del nodo (la que asigna materialIndex): proyeccion y
 // mosaico como en C4D (2026-11-07).
 struct TextureTagData {
@@ -195,6 +207,9 @@ public:
     LightData light;
     CameraData camera;
     TextureTagData texTag;
+    // Rig: articulacion de C4D (se muestra como Nulo) y etiqueta IK.
+    bool isJoint = false;
+    IkTagData ik;
     // Solo con primitive == Mesh: partes con su propio material, ordenadas por
     // firstIndex y sin solaparse (ver MaterialPart).
     std::vector<MaterialPart> materialParts;
