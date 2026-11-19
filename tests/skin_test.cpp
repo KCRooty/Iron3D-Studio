@@ -5,6 +5,8 @@
 #include "core/SceneNode.h"
 #include "core/Symmetry.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <cmath>
 #include <cstdio>
 
@@ -138,6 +140,34 @@ int main() {
         CHECK(!rayHitsNullShape(ctl, w, glm::vec3(0.5f, 0.0f, -5.0f), glm::vec3(0, 0, 1), t) == false);   // por detras tambien toca
         ctl.nullDisplay.shape = NullNone;
         CHECK(!rayHitsNullShape(ctl, w, glm::vec3(0.5f, 0.0f, 5.0f), glm::vec3(0, 0, -1), t));
+    }
+
+    // Orientacion Pantalla: el circulo mira a la camara (aqui mira a lo largo de -X: el circulo queda en el plano YZ).
+    {
+        SceneNode sc("sc");
+        SceneNode* c = sc.addChild("Control");
+        c->position = glm::vec3(1, 2, 3);
+        c->nullDisplay.shape = NullCircle;
+        c->nullDisplay.radius = 0.5f;
+        c->nullDisplay.orientation = 0;
+        setNullScreenAxes(glm::lookAt(glm::vec3(9, 2, 3), glm::vec3(1, 2, 3), glm::vec3(0, 1, 0)));
+        std::vector<Vertex> ls;
+        buildNullShapes(sc, nullptr, ls);
+        CHECK(ls.size() == 96);
+        for (const Vertex& vx : ls) {
+            CHECK(std::fabs(vx.position.x - 1.0f) < 1e-3f);                                        // plano perpendicular a la vista
+            CHECK(std::fabs(glm::length(vx.position - glm::vec3(1, 2, 3)) - 0.5f) < 1e-3f);        // mismo radio
+        }
+        float t = 0.0f;
+        const glm::mat4 w = c->localMatrix();
+        CHECK(rayHitsNullShape(*c, w, glm::vec3(9, 2, 3.5f), glm::vec3(-1, 0, 0), t));             // borde visto de frente
+        c->nullDisplay.orientation = 1;                                                            // XY fijo: de canto no se ve
+        ls.clear();
+        buildNullShapes(sc, nullptr, ls);
+        bool flat = true;
+        for (const Vertex& vx : ls) flat = flat && std::fabs(vx.position.z - 3.0f) < 1e-3f;
+        CHECK(flat);
+        setNullScreenAxes(glm::mat4(1.0f));
     }
 
     // Objeto Simetria: refleja a su hijo respecto al plano X del nodo, sin tocar al hijo.

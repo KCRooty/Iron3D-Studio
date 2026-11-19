@@ -109,6 +109,22 @@ void nullShapeLocalLines(const NullDisplay& d, std::vector<glm::vec3>& out) {
 
 namespace {
 
+glm::vec3 g_screenRight(1.0f, 0.0f, 0.0f), g_screenUp(0.0f, 1.0f, 0.0f);
+
+// Formas planas (circulo..estrella): con orientacion Pantalla miran a la camara.
+bool facesScreen(const NullDisplay& d) {
+    return d.orientation == 0 && d.shape >= NullCircle && d.shape <= NullStar;
+}
+
+// Punto local de la forma -> mundo. Pantalla: se coloca sobre los ejes de la camara, con la
+// escala de la columna X de la matriz (la escala no uniforme no se aplica en este modo).
+glm::vec3 toWorld(const NullDisplay& d, const glm::mat4& w, const glm::vec3& p) {
+    if (!facesScreen(d)) return glm::vec3(w * glm::vec4(p, 1.0f));
+    const glm::vec3 o(w[3]);
+    const float s = glm::length(glm::vec3(w[0]));
+    return o + g_screenRight * (p.x * s) + g_screenUp * (p.y * s);
+}
+
 void walk(const SceneNode& n, const glm::mat4& parent, bool parentVis, const SceneNode* selected,
           std::vector<Vertex>& lines, std::vector<glm::vec3>& tmp) {
     const glm::mat4 w = parent * n.localMatrix();
@@ -119,7 +135,7 @@ void walk(const SceneNode& n, const glm::mat4& parent, bool parentVis, const Sce
         const glm::vec3 col = &n == selected ? glm::vec3(1.0f, 0.85f, 0.2f) : glm::vec3(0.88f, 0.9f, 0.92f);
         for (const glm::vec3& p : tmp) {
             Vertex vtx{};
-            vtx.position = glm::vec3(w * glm::vec4(p, 1.0f));
+            vtx.position = toWorld(n.nullDisplay, w, p);
             vtx.color = col;
             vtx.normal = glm::vec3(0.0f, 0.0f, 1.0f);
             lines.push_back(vtx);
@@ -130,6 +146,11 @@ void walk(const SceneNode& n, const glm::mat4& parent, bool parentVis, const Sce
 
 } // namespace
 
+void setNullScreenAxes(const glm::mat4& view) {
+    g_screenRight = glm::vec3(view[0][0], view[1][0], view[2][0]);
+    g_screenUp = glm::vec3(view[0][1], view[1][1], view[2][1]);
+}
+
 bool rayHitsNullShape(const SceneNode& node, const glm::mat4& world, const glm::vec3& o, const glm::vec3& d,
                       float& dist) {
     if (node.nullDisplay.shape < 0 || node.nullDisplay.shape == NullNone) return false;
@@ -138,8 +159,8 @@ bool rayHitsNullShape(const SceneNode& node, const glm::mat4& world, const glm::
     bool hit = false;
     float best = 1e30f;
     for (size_t i = 0; i + 1 < seg.size(); i += 2) {
-        const glm::vec3 a = glm::vec3(world * glm::vec4(seg[i], 1.0f));
-        const glm::vec3 b = glm::vec3(world * glm::vec4(seg[i + 1], 1.0f));
+        const glm::vec3 a = toWorld(node.nullDisplay, world, seg[i]);
+        const glm::vec3 b = toWorld(node.nullDisplay, world, seg[i + 1]);
         // Punto mas cercano entre el rayo (o + t d, t >= 0) y el segmento (a + s e, 0 <= s <= 1).
         const glm::vec3 e = b - a, w0 = o - a;
         const float A = glm::dot(d, d), B = glm::dot(d, e), C = glm::dot(e, e);

@@ -22,6 +22,10 @@ enum NullShape {
 // `selected` se dibuja resaltado. Los nodos sin forma (shape < 0 o NullNone) no dibujan nada.
 void buildNullShapes(const SceneNode& root, const SceneNode* selected, std::vector<Vertex>& lines);
 
+// Ejes derecha/arriba de la camara activa (de su matriz de vista) para las formas con orientacion
+// Pantalla, que miran a la camara. Llamar una vez por fotograma antes de dibujar y de elegir.
+void setNullScreenAxes(const glm::mat4& view);
+
 // Segmentos de una forma en espacio local del nodo (radio en unidades de escena).
 void nullShapeLocalLines(const NullDisplay& d, std::vector<glm::vec3>& segments);
 

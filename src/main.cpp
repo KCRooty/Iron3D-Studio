@@ -877,6 +877,7 @@ int main(int argc, char** argv) {
         const glm::mat4 proj = camera.projectionMatrix(aspect, renderer->needsProjectionYFlip());
         const glm::vec3 eye = camera.eyePosition();
         const glm::mat4 viewProj = proj * view;
+        iron3d::setNullScreenAxes(view);
 
         renderer->imguiNewFrame();
         ImGui_ImplGlfw_NewFrame();
