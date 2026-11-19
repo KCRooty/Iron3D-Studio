@@ -204,6 +204,8 @@ struct UiState {
     int pendingCompMode = 0;
     std::vector<int> pendingCompSel;
     bool compDeleteRequested = false;  // --ui-cmd=comp-del
+    bool compMoveRequested = false;    // --ui-cmd=comp-move=dx,dy,dz (cm, en el espacio del mundo): verificacion de la simetria
+    glm::vec3 compMoveCm{0.0f};
     std::string compOp;                // Seleccion/Malla sobre componentes (menu o --ui-cmd=meshop=...)
     int compSelectAllRequested = 0;    // --ui-cmd=sel-all-visible|sel-all-through
     // Herramientas de modelado (Malla).
@@ -6903,6 +6905,38 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
         g.pendingCompMode = 0;
         if (syncComponents(selected)) g.comp.sel.insert(g.pendingCompSel.begin(), g.pendingCompSel.end());
     }
+    if (g.compMoveRequested && !g.pendingCompMode && !g.compSelectAllRequested && g.compOp.empty() && g.pendingTool.empty() &&
+        g.cmdQueue.empty() && viewport.w > 64.0f && ImGui::GetFrameCount() > 8) {
+        g.compMoveRequested = false;
+        SceneNode* tgt = componentGizmoTarget(selected, false);
+        if (tgt && selected && selected->mesh) {
+            history.commitBefore(root);
+            beginComponentDrag(*selected);
+            tgt->position += g.compMoveCm / kCmPerUnit;
+            applyComponentDrag(*selected);
+            // Resumen para la verificacion: cuantos puntos se movieron y la simetria resultante.
+            const auto& vs = selected->mesh->vertices;
+            const int ax = std::max(0, g.symAxis);
+            int asym = 0;
+            for (const auto& a : vs) {
+                glm::vec3 mp = a.position;
+                mp[ax] = -mp[ax];
+                float best = 1e9f;
+                for (const auto& b : vs) best = std::min(best, glm::length(b.position - mp));
+                if (best > 1e-3f) ++asym;
+            }
+            int up = 0;
+            for (const auto& a : vs) if (a.position.y > 1e-4f) ++up;
+            if (const char* tmp = std::getenv("TEMP")) {
+                const std::string fn = std::string(tmp) + "/iron3d_symtest.txt";
+                if (FILE* f = std::fopen(fn.c_str(), "a")) {
+                    std::fprintf(f, "sym=%d vertices=%zu elevados=%d sin_espejo=%d\n", g.symAxis, vs.size(), up, asym);
+                    std::fclose(f);
+                }
+            }
+            flashStatus("comp-move: " + std::to_string(asym) + " vertices sin espejo.");
+        }
+    }
     if (g.compSelectAllRequested && !g.pendingCompMode && viewport.w > 64.0f && ImGui::GetFrameCount() > 5) {
         const bool keepVis = g.selVisibleOnly;
         g.selVisibleOnly = g.compSelectAllRequested == 1;
@@ -7094,6 +7128,16 @@ bool queueUiCommand(const std::string& cmd) {
         } catch (...) { return false; }
     }
     else if (cmd == "comp-del") g.compDeleteRequested = true;
+    else if (cmd.rfind("sym=", 0) == 0) {  // sym=off|x|y|z
+        const std::string v = cmd.substr(4);
+        g.symAxis = v == "x" ? 0 : v == "y" ? 1 : v == "z" ? 2 : -1;
+    }
+    else if (cmd.rfind("comp-move=", 0) == 0) {
+        float x = 0, y = 0, z = 0;
+        if (std::sscanf(cmd.c_str() + 10, "%f,%f,%f", &x, &y, &z) != 3) return false;
+        g.compMoveCm = glm::vec3(x, y, z);
+        g.compMoveRequested = true;
+    }
     else if (cmd.rfind("meshop=", 0) == 0) g.compOp = cmd.substr(7);
     else if (cmd.rfind("tool=", 0) == 0 || cmd.rfind("knife=", 0) == 0) g.pendingTool = cmd;
     else if (cmd == "sel-all-visible") g.compSelectAllRequested = 1;   // marco que cubre todo el visor
