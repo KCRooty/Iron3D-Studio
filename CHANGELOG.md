@@ -1217,3 +1217,6 @@ presets) y una ventana muy pequeña.
 ### 2026-11-19 (9): Seleccion de Nulos pinchando su forma
 - Un Nulo con forma (controlador de rig) se elige con clic sobre sus lineas en el visor (core/NullShapes: rayHitsNullShape; tolerancia ~1.2% de la distancia). Probado por test (borde, centro vacio, fuera, Ninguno).
 - Sin probar en pantalla con un rig real.
+
+### 2026-11-19 (10): IK en vivo
+- La IK se resuelve cada fotograma (antes solo a mano desde el menu Personaje): al mover el controlador la cadena lo sigue y la Piel acompana. Una etiqueta IK desactivada no actua. Compila y ik_test/skin_test pasan; sin probar en pantalla con un rig real ni su coste con rigs grandes.

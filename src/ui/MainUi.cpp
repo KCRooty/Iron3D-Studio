@@ -6814,6 +6814,9 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
         evaluateAnimation(root, g.frame);
         g.lastEvalFrame = g.frame;
     }
+    // IK en vivo: las cadenas con etiqueta IK activa siguen a su objetivo cada fotograma (mover el
+    // controlador mueve la cadena, como en C4D). Una cadena ya resuelta converge en una iteracion.
+    solveAllIk(root);
     // Piel en vivo: las mallas con pesos siguen a las articulaciones (no hace nada si no se han movido).
     evaluateSkins(root);
     if (g.recordRequested) {
