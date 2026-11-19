@@ -27,6 +27,7 @@
 #include "importers/c4d_compat/C4DGeometry.h"
 #include "core/Paths.h"
 #include "core/Material.h"
+#include "core/Skin.h"
 
 #include "c4d.h"
 #include "c4d_selectiontag.h"
@@ -628,7 +629,13 @@ double phongAngle(BaseObject* op) {
 // pose es la que C4D guardo en el archivo (sin animacion de las
 // articulaciones todavia). Metodo publico (linear blend skinning), datos via
 // la API documentada de Cineware (WeightTagData), sin codigo de Maxon.
-bool skinnedPoints(PolygonObject* op, std::vector<cineware::Vector>& out) {
+std::string namePath(BaseObject* op);
+
+// `infl`/`jointPaths` (opcionales): pesos por punto (hasta 4 articulaciones, normalizados si suman
+// mas de 1) y la ruta de cada articulacion, para la Piel en vivo (core/Skin.h).
+bool skinnedPoints(PolygonObject* op, std::vector<cineware::Vector>& out,
+                   std::vector<iron3d::SkinInfluence>* infl = nullptr,
+                   std::vector<std::string>* jointPaths = nullptr) {
     BaseTag* tag = op->GetTag(Tweights);
     if (!tag) return false;
     bool skinOn = false;
@@ -652,9 +659,15 @@ bool skinnedPoints(PolygonObject* op, std::vector<cineware::Vector>& out) {
     // Afton.lib4d, GetWeightCount/GetIndexWeight dejaba casi todos los puntos
     // con suma < 1 y la cabeza seguia lejos; el mapa da suma 1 en todos.
     std::vector<cineware::Float> map((size_t)np);
+    if (infl) infl->assign((size_t)np, iron3d::SkinInfluence{});
     for (Int32 j = 0; j < nj; ++j) {
         BaseObject* joint = wt->GetJoint(j, doc);
         if (!joint) continue;
+        int slotJoint = -1;
+        if (infl && jointPaths) {
+            slotJoint = (int)jointPaths->size();
+            jointPaths->push_back(namePath(joint));
+        }
         const cineware::Matrix d = joint->GetMg() * wt->GetJointRestState(j).m_oMi;
         std::fill(map.begin(), map.end(), 0.0);
         wt->GetWeightMap(j, map.data(), np);
@@ -664,9 +677,31 @@ bool skinnedPoints(PolygonObject* op, std::vector<cineware::Vector>& out) {
             acc[(size_t)pi] += (d * bind[(size_t)pi]) * w;
             wsum[(size_t)pi] += w;
             any = true;
+            if (infl && slotJoint >= 0) {
+                iron3d::SkinInfluence& si = (*infl)[(size_t)pi];
+                int k = -1;
+                for (int t = 0; t < 4 && k < 0; ++t)
+                    if (si.joint[t] < 0) k = t;
+                if (k < 0) {
+                    k = 0;
+                    for (int t = 1; t < 4; ++t)
+                        if (si.weight[t] < si.weight[k]) k = t;
+                    if (si.weight[k] >= (float)w) continue;
+                }
+                si.joint[k] = slotJoint;
+                si.weight[k] = (float)w;
+            }
         }
     }
     if (!any) return false;
+    if (infl) {
+        for (iron3d::SkinInfluence& si : *infl) {
+            float s = 0.0f;
+            for (int t = 0; t < 4; ++t) s += si.weight[t];
+            if (s > 1.0f)
+                for (int t = 0; t < 4; ++t) si.weight[t] /= s;
+        }
+    }
     // La parte sin peso no se mueve: se queda en su posicion local del objeto.
     const cineware::Matrix mg = op->GetMg();
     const cineware::Matrix toLocal = ~mg;
@@ -1132,6 +1167,8 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
     std::vector<MaterialPart> parts;
     std::vector<int> polySlot;
     double phong = phongAngle(op);
+    std::vector<iron3d::SkinInfluence> skinInfl;   // Piel en vivo (por punto), si el objeto la tiene
+    std::vector<std::string> skinJoints;
     bool childrenAreInputs = false;
     bool firstChildIsInput = false; // Simetria / SDS evaluados: solo el primer hijo es su entrada
 
@@ -1140,10 +1177,10 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
         PolygonObject* po = (dc && dc->GetType() == Opolygon) ? static_cast<PolygonObject*>(dc)
                                                                : static_cast<PolygonObject*>(op);
         std::vector<cineware::Vector> skinned;
-        if (po == op && skinnedPoints(po, skinned)) {
+        if (po == op && skinnedPoints(po, skinned, &skinInfl, &skinJoints)) {
             appendPolygons(po, glm::dmat4(1.0), soup, &skinned);
-            ctx.warn("Piel: aplicada con la pose de las articulaciones guardada en el archivo (todavía sin animación "
-                     "ni morphs de Pose Morph)");
+            ctx.warn("Piel: aplicada con la pose de las articulaciones guardada en el archivo; la malla sigue a las "
+                     "articulaciones al moverlas (sin morphs de Pose Morph)");
         } else {
             appendPolygons(po, glm::dmat4(1.0), soup);
         }
@@ -1169,7 +1206,15 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
             ctx.warn("Cámaras con proyección especial (Izquierda, Isométrica...): se conserva, el visor la trata como paralela");
         ++rep.cameras;
     } else if (type == Onull) {
-        // grupo, nada mas
+        // Forma de visualizacion (onull.h 1000..1003); Punto y Ninguno no se dibujan.
+        const BaseContainer* nb = op->GetDataInstance();
+        const int shape = (int)nb->GetInt32(1000, 0);
+        if (shape >= 2 && shape <= 13) {
+            node->nullDisplay.shape = shape;
+            node->nullDisplay.radius = (float)(nb->GetFloat(1001, 50.0) / 200.0);
+            node->nullDisplay.aspect = (float)nb->GetFloat(1002, 1.0);
+            node->nullDisplay.orientation = (int)nb->GetInt32(1003, 0);
+        }
     } else if (isEvaluatedGenerator(op)) {
         GeneratedInput gen;
         if (generatedGeometry(op, inheritedMaterial, inheritedTag, ctx, gen, 0)) {
@@ -1224,7 +1269,9 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
     }
     if (!soup.empty()) {
         std::vector<uint32_t> trisPerPoly;
-        auto mesh = std::make_shared<MeshData>(c4d::toIronMesh(soup, phong, parts.empty() ? nullptr : &trisPerPoly));
+        std::vector<uint32_t> sourcePoint;
+        auto mesh = std::make_shared<MeshData>(
+            c4d::toIronMesh(soup, phong, parts.empty() ? nullptr : &trisPerPoly, skinInfl.empty() ? nullptr : &sourcePoint));
         if (!parts.empty() && trisPerPoly.size() == slotOfPoly.size()) {
             uint32_t idx = 0;
             for (size_t i = 0; i < slotOfPoly.size(); ++i) {
@@ -1245,6 +1292,15 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
         rep.polygons += (long long)soup.polys.size();
         if (!mesh->indices.empty()) {
             node->primitive = PrimitiveType::Mesh;
+            if (!skinInfl.empty() && sourcePoint.size() == mesh->vertices.size()) {
+                auto sk = std::make_shared<iron3d::SkinData>();
+                sk->jointPaths = std::move(skinJoints);
+                sk->influences.reserve(sourcePoint.size());
+                for (uint32_t pi : sourcePoint)
+                    sk->influences.push_back(pi < skinInfl.size() ? skinInfl[pi] : iron3d::SkinInfluence{});
+                sk->bindMesh = mesh;
+                node->skin = std::move(sk);
+            }
             node->mesh = std::move(mesh);
             ++rep.meshes;
         }
@@ -1304,6 +1360,7 @@ bool importC4D(const std::filesystem::path& file, SceneNode& parent, std::vector
         report.warnings.push_back(w.second > 1 ? w.first + " (" + std::to_string(w.second) + ")" : w.first);
     for (iron3d::Material& m : ctx.materials) materials.push_back(std::move(m));
     parent.appendChildrenFrom(temp);
+    iron3d::bindSkins(parent); // la pose importada es la pose de bind de cada Piel
     return true;
 }
 

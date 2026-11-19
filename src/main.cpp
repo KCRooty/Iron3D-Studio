@@ -47,6 +47,8 @@ extern "C" __declspec(dllimport) int __stdcall MessageBoxW(void* hWnd, const wch
 #include <filesystem>
 #include <functional>
 #include "ui/AppIconData.h"
+#include "core/Skin.h"
+#include "core/NullShapes.h"
 
 namespace {
 
@@ -748,6 +750,9 @@ int main(int argc, char** argv) {
                     std::fprintf(stderr, "[dump] %*s  local pos=(%.2f %.2f %.2f) rot=(%.1f %.1f %.1f) esc=(%.2f %.2f %.2f)\n",
                                  depth * 2, "", n.position.x, n.position.y, n.position.z, n.rotationDeg.x,
                                  n.rotationDeg.y, n.rotationDeg.z, n.scale.x, n.scale.y, n.scale.z);
+                    if (n.skin)
+                        std::fprintf(stderr, "[dump] %*s  piel: articulaciones=%zu vinculada=%d vertices=%zu\n", depth * 2, "",
+                                     n.skin->jointPaths.size(), (int)n.skin->bound, n.skin->influences.size());
                     // Partes por Seleccion de Poligonos: tapan al material del objeto en sus triangulos.
                     for (const iron3d::MaterialPart& p : n.materialParts) {
                         const iron3d::Material& pm = iron3d::materialOrDefault(materials, p.materialIndex);
@@ -1132,6 +1137,11 @@ int main(int argc, char** argv) {
 
             renderer->beginMainPass();
 
+            // Formas de los Nulos (controladores de rig): lineas en mundo, una vez por fotograma.
+            std::vector<Vertex> nullLines;
+            if (!viewport.renderView) iron3d::buildNullShapes(sceneRoot, selected, nullLines);
+            const std::vector<Vertex> noTris;
+
             for (const Panel& pn : panels) {
                 renderer->setDrawRect(pn.x, pn.y, pn.w, pn.h);
                 renderer->setEyePosition(pn.eye);
@@ -1145,6 +1155,7 @@ int main(int argc, char** argv) {
                 // Fase 1-2, asi que "despues" ya implica "por encima"). Solo en
                 // el panel activo: sus vertices dependen de su camara.
                 if (pn.active && !viewport.renderView) renderer->drawGizmo(gizmoLineVerts, gizmoTriVerts, viewProj);
+                if (!nullLines.empty()) renderer->drawGizmo(nullLines, noTris, pvp);
             }
 
             renderer->endFrame(); // compone ImGui y presenta

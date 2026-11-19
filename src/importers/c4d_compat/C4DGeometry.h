@@ -78,7 +78,10 @@ glm::vec3 toIronPoint(const glm::dvec3& p);
 // `trisPerPoly` (opcional): cuantos triangulos salen de cada poligono de
 // soup.polys, en orden (0 = descartado); sirve para saber que rango de
 // indices es de cada poligono.
-MeshData toIronMesh(const PolySoup& soup, double smoothAngleRad, std::vector<uint32_t>* trisPerPoly = nullptr);
+// `sourcePoint` (opcional): indice del punto de soup.points del que sale cada vertice de la malla
+// (los vertices se repiten por cara); lo usa la Piel para llevar los pesos por punto a la malla.
+MeshData toIronMesh(const PolySoup& soup, double smoothAngleRad, std::vector<uint32_t>* trisPerPoly = nullptr,
+                    std::vector<uint32_t>* sourcePoint = nullptr);
 
 struct TRS {
     glm::vec3 position{0.0f};

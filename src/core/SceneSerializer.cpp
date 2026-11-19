@@ -129,6 +129,9 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             << " zoom=" << c.zoom << " target=" << quoted(c.target) << "\n";
     }
     if (node.isJoint) out << indent << "  JOINT\n";
+    if (node.nullDisplay.shape >= 0)
+        out << indent << "  NULLSHAPE shape=" << node.nullDisplay.shape << " radius=" << node.nullDisplay.radius
+            << " aspect=" << node.nullDisplay.aspect << " orient=" << node.nullDisplay.orientation << "\n";
     if (node.jointLimits.present) {
         const JointLimits& l = node.jointLimits;
         out << indent << "  JLIMIT use=" << (int)l.use[0] << (int)l.use[1] << (int)l.use[2] << " min=" << l.minDeg.x << ","
@@ -401,7 +404,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras los atributos de NODE"; return false; }
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
     while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG" ||
-                            p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "IK")) {
+                            p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "IK" || p.peek() == "NULLSHAPE")) {
         const std::string kind = p.next();
         bool ok = true;
         if (kind == "LIGHT") {
@@ -437,6 +440,14 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
             });
         } else if (kind == "JOINT") {
             node.isJoint = true;
+        } else if (kind == "NULLSHAPE") {
+            NullDisplay& nd = node.nullDisplay;
+            ok = readAttrs(p, "NULLSHAPE", err, [&](const std::string& k, const std::string& v) {
+                if (k == "shape") nd.shape = std::stoi(v);
+                else if (k == "radius") nd.radius = std::stof(v);
+                else if (k == "aspect") nd.aspect = std::stof(v);
+                else if (k == "orient") nd.orientation = std::stoi(v);
+            });
         } else if (kind == "JLIMIT") {
             JointLimits& l = node.jointLimits;
             l.present = true;

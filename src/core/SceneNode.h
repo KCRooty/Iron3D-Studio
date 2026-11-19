@@ -130,6 +130,16 @@ struct JointLimits {
     bool operator==(const JointLimits&) const = default;
 };
 
+// Forma de visualizacion de un Nulo (onull.h: NULLOBJECT_DISPLAY/RADIUS/ASPECTRATIO/ORIENTATION).
+// shape < 0 = sin forma (no se dibuja); si no, un NullShape de core/NullShapes.h. Radio en unidades de escena.
+struct NullDisplay {
+    int shape = -1;
+    float radius = 0.25f;   // 50 cm, el valor por defecto de C4D
+    float aspect = 1.0f;
+    int orientation = 0;    // 0 Pantalla (se dibuja como XY), 1 XY, 2 ZY, 3 XZ
+    bool operator==(const NullDisplay&) const = default;
+};
+
 // Etiqueta de Textura del nodo (la que asigna materialIndex): proyeccion y
 // mosaico como en C4D (2026-11-07).
 struct TextureTagData {
@@ -220,10 +230,13 @@ public:
     // Rig: articulacion de C4D (se muestra como Nulo) y etiqueta IK.
     bool isJoint = false;
     JointLimits jointLimits;
+    NullDisplay nullDisplay;
     IkTagData ik;
     // Solo con primitive == Mesh: partes con su propio material, ordenadas por
     // firstIndex y sin solaparse (ver MaterialPart).
     std::vector<MaterialPart> materialParts;
+    // Piel en vivo (ver Skin.h); compartida entre copias hasta que alguien la edite.
+    std::shared_ptr<struct SkinData> skin;
 
     // Pistas de animacion (vacias = sin animar).
     AnimTrack animPos, animRot, animScale;

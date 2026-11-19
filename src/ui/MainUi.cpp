@@ -25,6 +25,7 @@
 #include "importers/obj/ObjIO.h"
 #include "importers/gltf/GltfIO.h"
 #include "core/IkSolver.h"
+#include "core/Skin.h"
 #include "importers/lib4d/PresetTextures.h"
 #include "core/ChannelBake.h"
 #include "ContentBrowser.h"
@@ -6813,6 +6814,8 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
         evaluateAnimation(root, g.frame);
         g.lastEvalFrame = g.frame;
     }
+    // Piel en vivo: las mallas con pesos siguen a las articulaciones (no hace nada si no se han movido).
+    evaluateSkins(root);
     if (g.recordRequested) {
         g.recordRequested = false;
         recordActiveObjects(root, selected, &history);

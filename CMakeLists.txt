@@ -100,6 +100,8 @@ target_link_libraries(imgui PUBLIC glfw Vulkan::Vulkan)
 add_executable(Iron3DStudio
     src/main.cpp
     src/core/IkSolver.cpp
+    src/core/Skin.cpp
+    src/core/NullShapes.cpp
     src/importers/obj/ObjIO.cpp
     src/importers/gltf/GltfIO.cpp
     src/gfx/VulkanContext.cpp
@@ -208,6 +210,7 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
     add_executable(c4d_roundtrip_test
         tests/c4d_roundtrip_test.cpp
         src/importers/cineware/CinewareImporter.cpp
+        src/core/Skin.cpp
         src/importers/cineware/CinewareExporter.cpp
         src/importers/c4d_compat/C4DGeometry.cpp
         src/core/MeshData.cpp
@@ -395,6 +398,28 @@ else()
     target_compile_options(ik_test PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME ik COMMAND ik_test)
+add_executable(skin_test
+    tests/skin_test.cpp
+    src/core/Skin.cpp
+    src/core/NullShapes.cpp
+    src/core/MeshData.cpp
+    src/core/MeshTopology.cpp
+    src/core/MeshEdit.cpp
+    src/core/SceneNode.cpp
+    src/core/Material.cpp
+    src/core/ShaderTree.cpp
+    src/core/SceneSerializer.cpp
+    src/core/ThumbnailRenderer.cpp
+    src/core/TransformGizmo.cpp)
+target_include_directories(skin_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+target_link_libraries(skin_test PRIVATE iron3d_lib4d)
+target_compile_definitions(skin_test PRIVATE GLM_FORCE_RADIANS)
+if(MSVC)
+    target_compile_options(skin_test PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(skin_test PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME skin COMMAND skin_test)
 add_executable(gltf_test
     tests/gltf_test.cpp
     src/importers/gltf/GltfIO.cpp

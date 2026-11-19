@@ -6,6 +6,16 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-19 (8): Piel en vivo y formas de los Nulos
+
+**Nuevo**
+- **Piel en vivo:** una malla con Piel importada de un .c4d/.lib4d guarda los pesos por vértice (hasta 4 articulaciones) y **sigue a las articulaciones** al moverlas, girarlas, animarlas o resolver la IK (skinning lineal; lo que no suma peso 1 queda rígido). La pose del archivo es la pose de bind. Si editas la malla, la Piel se descarta. Código en `core/Skin.*`.
+- **Formas de los Nulos** (círculo, rectángulo, rombo, triángulo, pentágono, hexágono, octógono, estrella, ejes, cubo, pirámide, esfera; radio, proporción y orientación, ids 1000-1003 de `onull.h`): se importan del .c4d, se guardan en .iron y se dibujan en el visor. Son los controladores típicos de un rig con IK. Código en `core/NullShapes.*`.
+
+**Probado:** `skin_test` (rotación de hueso, pesos parciales, caché, malla editada, articulación inexistente, formas de Nulo, visibilidad), roundtrip .iron de la forma, los 7 tests en verde.
+
+**Sin probar:** Piel y formas con un .lib4d real en pantalla (el volcado `--dump-scene` no carga .lib4d); la orientación "Pantalla" se dibuja como XY; los Nulos con forma Punto/Ninguno no se dibujan; las Pieles no se guardan en .iron (al guardar queda la malla deformada); los morphs de Pose Morph no se evalúan; no se puede seleccionar un Nulo pinchando su forma en el visor (solo desde el Gestor de Objetos).
+
 ### 2026-11-19 (7): Límites de rotación de las articulaciones
 
 **Nuevo**
