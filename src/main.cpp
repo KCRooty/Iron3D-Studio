@@ -46,6 +46,7 @@ extern "C" __declspec(dllimport) int __stdcall MessageBoxW(void* hWnd, const wch
 #include <vector>
 #include <filesystem>
 #include <functional>
+#include "ui/AppIconData.h"
 
 namespace {
 
@@ -541,6 +542,14 @@ int main(int argc, char** argv) {
                     L"Iron3D Studio", 0x10 /* MB_ICONERROR */);
 #endif
         return 1;
+    }
+    {
+        // Icono de la ventana (logo I3DS); en Windows el .exe lleva ademas el suyo (resources/iron3d.rc).
+        GLFWimage icon;
+        icon.width = iron3d::kAppIconSize;
+        icon.height = iron3d::kAppIconSize;
+        icon.pixels = const_cast<unsigned char*>(iron3d::kAppIconRgba);
+        glfwSetWindowIcon(window, 1, &icon);
     }
     glfwSetScrollCallback(window, glfwScrollCallback);
     glfwSetDropCallback(window, glfwDropCallback);

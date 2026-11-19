@@ -437,3 +437,8 @@ add_test(NAME fresnel COMMAND fresnel_test)
 if(IRON3D_HAS_C4D_ROUNDTRIP)
     add_test(NAME c4d_roundtrip COMMAND c4d_roundtrip_test)
 endif()
+
+# Icono del ejecutable (logo I3DS)
+if(WIN32)
+    target_sources(Iron3DStudio PRIVATE resources/iron3d.rc)
+endif()

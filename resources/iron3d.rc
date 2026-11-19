@@ -1,0 +1,3 @@
+// Icono del ejecutable (Explorador, barra de tareas, Alt+Tab). GLFW usa "GLFW_ICON" para su ventana.
+GLFW_ICON ICON "../assets/icon.ico"
+1 ICON "../assets/icon.ico"
