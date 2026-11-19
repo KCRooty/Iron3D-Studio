@@ -1213,3 +1213,7 @@ presets) y una ventana muy pequeña.
   **Pendiente** de una prueba a fondo con el ratón.
 - El formato `.iron` guarda `metallic`/`roughness` en vez de `specular`/`shininess`,
   sin migración.
+
+### 2026-11-19 (9): Seleccion de Nulos pinchando su forma
+- Un Nulo con forma (controlador de rig) se elige con clic sobre sus lineas en el visor (core/NullShapes: rayHitsNullShape; tolerancia ~1.2% de la distancia). Probado por test (borde, centro vacio, fuera, Ninguno).
+- Sin probar en pantalla con un rig real.

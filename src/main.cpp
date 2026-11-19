@@ -411,6 +411,14 @@ void pickNode(iron3d::SceneNode& node, const glm::mat4& parentWorld, const iron3
             }
         }
     }
+    if (vis && node.primitive == iron3d::PrimitiveType::None && node.nullDisplay.shape >= 0) {
+        // Nulo con forma (controlador de rig): se elige pinchando sus lineas.
+        float t = 0.0f;
+        if (iron3d::rayHitsNullShape(node, world, ray.origin, glm::normalize(ray.direction), t) && t < bestDist) {
+            bestDist = t;
+            best = &node;
+        }
+    }
     for (const auto& child : node.children()) pickNode(*child, world, ray, best, bestDist, vis);
 }
 

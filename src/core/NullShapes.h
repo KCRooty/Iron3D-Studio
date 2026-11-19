@@ -25,4 +25,10 @@ void buildNullShapes(const SceneNode& root, const SceneNode* selected, std::vect
 // Segmentos de una forma en espacio local del nodo (radio en unidades de escena).
 void nullShapeLocalLines(const NullDisplay& d, std::vector<glm::vec3>& segments);
 
+// Seleccion por clic: true si el rayo (origen `o`, direccion `d` normalizada, en mundo) pasa lo bastante
+// cerca de las lineas de la forma del Nulo (matriz de mundo `world`). La tolerancia crece con la distancia
+// (aprox. unos pixeles en pantalla). `dist` = distancia a lo largo del rayo hasta el punto mas cercano.
+bool rayHitsNullShape(const SceneNode& node, const glm::mat4& world, const glm::vec3& o, const glm::vec3& d,
+                      float& dist);
+
 } // namespace iron3d

@@ -123,6 +123,22 @@ int main() {
         CHECK(copy->nullDisplay == ctrl->nullDisplay);
     }
 
+    // Seleccion por clic: el rayo toca las lineas del circulo, no su interior ni lo que queda lejos.
+    {
+        SceneNode ctl("Ctl");
+        ctl.nullDisplay.shape = NullCircle;
+        ctl.nullDisplay.radius = 0.5f;
+        const glm::mat4 w(1.0f);
+        float t = 0.0f;
+        CHECK(rayHitsNullShape(ctl, w, glm::vec3(0.5f, 0.0f, 5.0f), glm::vec3(0, 0, -1), t));   // borde (+X)
+        CHECK(std::fabs(t - 5.0f) < 0.1f);
+        CHECK(!rayHitsNullShape(ctl, w, glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0, 0, -1), t));  // centro vacio
+        CHECK(!rayHitsNullShape(ctl, w, glm::vec3(2.0f, 0.0f, 5.0f), glm::vec3(0, 0, -1), t));  // fuera
+        CHECK(!rayHitsNullShape(ctl, w, glm::vec3(0.5f, 0.0f, -5.0f), glm::vec3(0, 0, 1), t) == false);   // por detras tambien toca
+        ctl.nullDisplay.shape = NullNone;
+        CHECK(!rayHitsNullShape(ctl, w, glm::vec3(0.5f, 0.0f, 5.0f), glm::vec3(0, 0, -1), t));
+    }
+
     if (g_fail == 0) std::printf("skin_test: todo OK\n");
     return g_fail == 0 ? 0 : 1;
 }

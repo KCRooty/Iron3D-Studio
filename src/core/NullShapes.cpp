@@ -130,6 +130,33 @@ void walk(const SceneNode& n, const glm::mat4& parent, bool parentVis, const Sce
 
 } // namespace
 
+bool rayHitsNullShape(const SceneNode& node, const glm::mat4& world, const glm::vec3& o, const glm::vec3& d,
+                      float& dist) {
+    if (node.nullDisplay.shape < 0 || node.nullDisplay.shape == NullNone) return false;
+    std::vector<glm::vec3> seg;
+    nullShapeLocalLines(node.nullDisplay, seg);
+    bool hit = false;
+    float best = 1e30f;
+    for (size_t i = 0; i + 1 < seg.size(); i += 2) {
+        const glm::vec3 a = glm::vec3(world * glm::vec4(seg[i], 1.0f));
+        const glm::vec3 b = glm::vec3(world * glm::vec4(seg[i + 1], 1.0f));
+        // Punto mas cercano entre el rayo (o + t d, t >= 0) y el segmento (a + s e, 0 <= s <= 1).
+        const glm::vec3 e = b - a, w0 = o - a;
+        const float A = glm::dot(d, d), B = glm::dot(d, e), C = glm::dot(e, e);
+        const float D = glm::dot(d, w0), E = glm::dot(e, w0);
+        const float den = A * C - B * B;
+        float s = den > 1e-12f ? (A * E - B * D) / den : 0.0f;
+        s = glm::clamp(s, 0.0f, 1.0f);
+        float t = (B * s - D) / A;
+        if (t < 0.0f) { t = 0.0f; s = C > 1e-12f ? glm::clamp(E / C, 0.0f, 1.0f) : 0.0f; }
+        const float gap = glm::length((o + d * t) - (a + e * s));
+        const float tol = glm::max(0.01f, 0.012f * t);
+        if (gap <= tol && t < best) { best = t; hit = true; }
+    }
+    if (hit) dist = best;
+    return hit;
+}
+
 void buildNullShapes(const SceneNode& root, const SceneNode* selected, std::vector<Vertex>& lines) {
     std::vector<glm::vec3> tmp;
     walk(root, glm::mat4(1.0f), true, selected, lines, tmp);
