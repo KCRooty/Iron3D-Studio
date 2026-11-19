@@ -6,6 +6,15 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-19 (9): Nulos con forma, orientación «Pantalla»
+
+**Nuevo**
+- Las formas planas de un Nulo (círculo, rectángulo, rombo, triángulo, pentágono, hexágono, octógono, estrella) con orientación **Pantalla** ahora **miran a la cámara activa**, como en C4D, en vez de dibujarse fijas en XY. También al elegirlas con el clic. El tamaño sale de la escala X del nodo (la escala no uniforme no se aplica en este modo).
+
+**Probado:** `skin_test` (círculo en el plano perpendicular a la vista, mismo radio, clic en el borde, orientación XY fija sin cambios).
+
+**Sin probar:** en pantalla con un rig real, y con cuatro vistas (F5): las líneas se calculan una vez por fotograma con la cámara activa, así que en las otras tres vistas la forma mira a la activa, no a la suya.
+
 ### 2026-11-19 (8): Piel en vivo y formas de los Nulos
 
 **Nuevo**
