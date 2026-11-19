@@ -209,6 +209,10 @@ struct UiState {
     // Herramientas de modelado (Malla).
     enum class ModelTool { None, Extrude, InnerExtrude, Bevel, Knife };
     ModelTool modelTool = ModelTool::None;
+    // Simetria de edicion (como la "True Symmetry" de R19): -1 = apagada, 0/1/2 = plano X/Y/Z local del objeto.
+    // Al mover puntos, sus espejos sin seleccionar se mueven reflejados; los que estan sobre el plano no lo abandonan.
+    int symAxis = -1;
+    float symTolCm = 0.5f;
     float extrudeCm = 20.0f, innerInsetCm = 10.0f, bevelInsetCm = 10.0f, bevelExtrudeCm = 10.0f;
     bool knifeVisibleOnly = true;
     int chordM = -1000;  // fotograma en que se pulso M (atajos M~S)
@@ -2476,6 +2480,15 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         }
         if (ImGui::MenuItem("Conectar Objetos + Eliminar", nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::ConnectDelete;
         ImGui::Separator();
+        if (ImGui::BeginMenu("Simetría de edición", editableMesh(selected) != nullptr)) {
+            if (ImGui::MenuItem("Apagada", nullptr, g.symAxis < 0)) g.symAxis = -1;
+            if (ImGui::MenuItem("Plano X (izquierda/derecha)", nullptr, g.symAxis == 0)) g.symAxis = 0;
+            if (ImGui::MenuItem("Plano Y (arriba/abajo)", nullptr, g.symAxis == 1)) g.symAxis = 1;
+            if (ImGui::MenuItem("Plano Z (delante/detrás)", nullptr, g.symAxis == 2)) g.symAxis = 2;
+            ImGui::SetNextItemWidth(110.0f);
+            ImGui::DragFloat("Tolerancia (cm)", &g.symTolCm, 0.05f, 0.01f, 20.0f, "%.2f");
+            ImGui::EndMenu();
+        }
         {
             using MT = UiState::ModelTool;
             const bool editable = editableMesh(selected) != nullptr;
@@ -6518,11 +6531,65 @@ void applyComponentDrag(SceneNode& node) {
     const std::set<int> pts = selectedPoints();
     MeshData m = *c.dragStartMesh;
     std::vector<char> moved(m.vertices.size(), 0);
-    for (size_t v = 0; v < m.vertices.size(); ++v)
-        if (pts.count(c.topo.vertexPoint[v])) {
-            m.vertices[v].position = glm::vec3(l * glm::vec4(m.vertices[v].position, 1.0f));
+    // Posicion nueva por punto de la topologia: los seleccionados siguen el gizmo; con la simetria activa,
+    // su espejo sin seleccionar copia la posicion reflejada y los puntos sobre el plano se quedan en el.
+    const size_t np = c.topo.points.size();
+    std::vector<glm::vec3> newPos(np, glm::vec3(0.0f)), startPos(np, glm::vec3(0.0f));
+    std::vector<char> has(np, 0);
+    for (size_t v = 0; v < m.vertices.size(); ++v) {
+        const int q = c.topo.vertexPoint[v];
+        if (q >= 0 && (size_t)q < np) startPos[(size_t)q] = m.vertices[v].position;
+    }
+    for (int q : pts) {
+        if (q < 0 || (size_t)q >= np) continue;
+        newPos[(size_t)q] = glm::vec3(l * glm::vec4(startPos[(size_t)q], 1.0f));
+        has[(size_t)q] = 1;
+    }
+    if (g.symAxis >= 0 && g.symAxis < 3) {
+        const int ax = g.symAxis;
+        const float tol = std::max(1e-5f, g.symTolCm / kCmPerUnit);
+        const float cell = tol * 2.0f;
+        auto key = [&](const glm::vec3& p) {
+            return std::array<int, 3>{(int)std::floor(p.x / cell), (int)std::floor(p.y / cell), (int)std::floor(p.z / cell)};
+        };
+        std::map<std::array<int, 3>, std::vector<int>> grid;
+        for (size_t q = 0; q < np; ++q) grid[key(startPos[q])].push_back((int)q);
+        auto mirror = [&](glm::vec3 p) { p[ax] = -p[ax]; return p; };
+        std::vector<std::pair<int, int>> pairs;  // (seleccionado, espejo)
+        for (int q : pts) {
+            if (q < 0 || (size_t)q >= np) continue;
+            const glm::vec3 target = mirror(startPos[(size_t)q]);
+            const auto k = key(target);
+            int best = -1;
+            float bestD = tol;
+            for (int dx = -1; dx <= 1; ++dx)
+                for (int dy = -1; dy <= 1; ++dy)
+                    for (int dz = -1; dz <= 1; ++dz) {
+                        const auto it = grid.find({k[0] + dx, k[1] + dy, k[2] + dz});
+                        if (it == grid.end()) continue;
+                        for (int o : it->second) {
+                            const float d = glm::length(startPos[(size_t)o] - target);
+                            if (d <= bestD) { bestD = d; best = o; }
+                        }
+                    }
+            if (best >= 0) pairs.push_back({q, best});
+        }
+        for (const auto& pr : pairs) {
+            if (pr.second == pr.first) {  // sobre el plano: se queda en el plano
+                newPos[(size_t)pr.first][ax] = 0.0f;
+            } else if (!pts.count(pr.second)) {
+                newPos[(size_t)pr.second] = mirror(newPos[(size_t)pr.first]);
+                has[(size_t)pr.second] = 1;
+            }
+        }
+    }
+    for (size_t v = 0; v < m.vertices.size(); ++v) {
+        const int q = c.topo.vertexPoint[v];
+        if (q >= 0 && (size_t)q < np && has[(size_t)q]) {
+            m.vertices[v].position = newPos[(size_t)q];
             moved[v] = 1;
         }
+    }
     // Normales: se recalculan solo en los vertices de los triangulos tocados,
     // sumando las normales de cara (ponderadas por area) de cada vertice de
     // render -- las aristas vivas siguen vivas y las suaves, suaves.

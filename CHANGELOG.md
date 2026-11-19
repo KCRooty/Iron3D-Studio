@@ -1220,3 +1220,6 @@ presets) y una ventana muy pequeña.
 
 ### 2026-11-19 (10): IK en vivo
 - La IK se resuelve cada fotograma (antes solo a mano desde el menu Personaje): al mover el controlador la cadena lo sigue y la Piel acompana. Una etiqueta IK desactivada no actua. Compila y ik_test/skin_test pasan; sin probar en pantalla con un rig real ni su coste con rigs grandes.
+
+### 2026-11-19 (11): Simetria de edicion (estilo True Symmetry)
+- Malla > Simetria de edicion: plano X/Y/Z local del objeto y tolerancia en cm. Al mover puntos/aristas/poligonos con el gizmo, los puntos espejo sin seleccionar se mueven reflejados y los que estan sobre el plano no lo abandonan. Compila; SIN probar en pantalla (no hay test automatico del arrastre). No cubre aun Extruir/Bisel/Cuchillo ni escultura, ni simetria radial.
