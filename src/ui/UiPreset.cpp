@@ -22,19 +22,37 @@ glm::vec3 hex(unsigned rgb) {
 std::vector<UiPreset> makeBuiltins() {
     std::vector<UiPreset> v;
 
-    UiPreset c4d; // todo por defecto = el Iron3D de siempre
+    // Iron3D: el aspecto de la web de Static Forge (staticforge.me/i3ds.html): fondo casi negro #101112,
+    // paneles #1E2124, bordes suaves, verde #9CD86A de acento y esquinas redondeadas. Es el predeterminado.
+    UiPreset i3;
+    i3.id = "iron3d";
+    i3.name = "Iron3D";
+    i3.theme.panelBg = hex(0x23272B);
+    i3.theme.fieldBg = hex(0x15171A);
+    i3.theme.accent = hex(0x9CD86A);
+    i3.theme.toolBlue = hex(0x5B9CC4);
+    i3.theme.text = hex(0xEEF0F1);
+    i3.theme.selection = hex(0xC6F29B);
+    i3.theme.viewportBg = hex(0x17191B);
+    i3.layout.toolbarH = 40.0f;
+    i3.style = {7.0f, 0.0f, 10.0f, 6.0f, 6.0f, 8.0f, 4.0f};
+    v.push_back(i3);
+
+    UiPreset c4d; // todo por defecto = el Cinema 4D de siempre
+    c4d.id = "c4d";
+    c4d.name = "Cinema 4D";
     v.push_back(c4d);
 
     UiPreset b;
     b.id = "blender";
     b.name = "Blender";
     b.theme.panelBg = hex(0x303030);
-    b.theme.fieldBg = hex(0x1D1D1D);
+    b.theme.fieldBg = hex(0x545454); // wcol_regular.inner de Blender 4.5 Dark (leido del tema oficial, solo colores)
     b.theme.accent = hex(0x4772B3);
     b.theme.toolBlue = hex(0x4772B3);
     b.theme.text = hex(0xE6E6E6);
     b.theme.selection = hex(0xFFA028);
-    b.theme.viewportBg = hex(0x3F3F3F);
+    b.theme.viewportBg = hex(0x3D3D3D);
     b.layout.arrangement = Arrangement::Blender;
     b.layout.toolbarH = 32.0f;
     b.layout.leftToolbarW = 38.0f;
@@ -248,6 +266,18 @@ const UiPreset* findBuiltinPreset(const std::string& id) {
     for (const UiPreset& p : builtinPresets())
         if (p.id == id) return &p;
     return nullptr;
+}
+
+const UiPreset& defaultUiPreset() { return *findBuiltinPreset("iron3d"); }
+
+const UiPreset& builtinForArrangement(Arrangement a) {
+    const UiPreset* p = findBuiltinPreset(arrangementCode(a));
+    return p ? *p : builtinPresets().front();
+}
+
+const UiPreset& resetTargetFor(const UiPreset& p) {
+    if (const UiPreset* b = findBuiltinPreset(p.id)) return *b;
+    return builtinForArrangement(p.layout.arrangement);
 }
 
 void writePresetKeys(std::ostream& out, const UiPreset& p) {

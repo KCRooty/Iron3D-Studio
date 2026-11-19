@@ -5207,7 +5207,7 @@ void drawInterfacePage(Preferences& prefs, const std::filesystem::path& prefsPat
     const char* arrNames[] = {"Cinema 4D", "Blender", "Maya", "3ds Max", "Source Filmmaker"};
     ImGui::SetNextItemWidth(220);
     if (ImGui::Combo("Disposición", &arr, arrNames, IM_ARRAYSIZE(arrNames))) {
-        const UiPreset& base = builtinPresets()[(size_t)arr];
+        const UiPreset& base = builtinForArrangement((Arrangement)arr);
         cur.layout = base.layout;
         cur.style = base.style;
         changed = true;
@@ -5286,15 +5286,15 @@ void drawInterfacePage(Preferences& prefs, const std::filesystem::path& prefsPat
     if (ImGui::Button("Eliminar")) {
         if (deleteUserPreset(presetsDir, cur.name)) {
             userPresets = loadUserPresets(presetsDir);
-            choose(builtinPresets()[(size_t)cur.layout.arrangement]);
+            choose(resetTargetFor(cur));
             statusMsg = "Preset eliminado.";
         }
     }
     if (!isUser) ImGui::EndDisabled();
     ImGui::SameLine();
-    if (ImGui::Button("Restablecer")) choose(builtinPresets()[(size_t)cur.layout.arrangement]);
+    if (ImGui::Button("Restablecer")) choose(resetTargetFor(cur));
     if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("Vuelve al preset integrado de %s.", arrangementName(cur.layout.arrangement));
+        ImGui::SetTooltip("Vuelve al preset integrado «%s».", resetTargetFor(cur).name.c_str());
 
     ImGui::Dummy(ImVec2(0, 4));
     if (ImGui::Button("Guardar##prefsui", ImVec2(120, 0))) {

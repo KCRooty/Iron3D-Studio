@@ -6,6 +6,16 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-19: Preset «Iron3D» (el aspecto de la web) como interfaz predeterminada
+
+**Nuevo**
+- Preset de interfaz **Iron3D**: fondo casi negro, paneles #23272B, acento verde #9CD86A y esquinas redondeadas, como staticforge.me/i3ds.html. Es el predeterminado en instalaciones nuevas; Cinema 4D, Blender, Maya, 3ds Max y Source Filmmaker siguen como presets.
+- El preset **Blender** toma ahora sus colores del tema oscuro oficial de Blender 4.5 (solo colores y proporciones, ningún código).
+
+**Corregido**: «Restablecer» y el cambio de disposición ya no dependen del orden de la lista de presets.
+
+**Probado**: compila (Debug), `iron3d_tests` y `preset_library_test` pasan, captura del visor con `--ui-preset=iron3d`. **Sin probar**: Release, Linux, y los demás presets a ojo tras el cambio de orden.
+
 ### 2026-11-18: Shader Fresnel por píxel en el canal Color (Vulkan y OpenGL)
 
 **Nuevo**

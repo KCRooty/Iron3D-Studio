@@ -70,6 +70,12 @@ const PanelNames& panelNames(Arrangement a);
 const std::vector<UiPreset>& builtinPresets();
 // Preset integrado por id, o nullptr.
 const UiPreset* findBuiltinPreset(const std::string& id);
+// El preset por defecto de Iron3D (id "iron3d"): la paleta y las formas de la web de Static Forge.
+const UiPreset& defaultUiPreset();
+// El preset integrado de un programa (c4d, blender, maya, max, sfm), sin depender del orden de la lista.
+const UiPreset& builtinForArrangement(Arrangement a);
+// A que preset integrado vuelve "Restablecer": el mismo id si es integrado, si no el del programa.
+const UiPreset& resetTargetFor(const UiPreset& p);
 
 // Serializacion clave=valor (la comparten preferences.cfg y los .i3dui).
 void writePresetKeys(std::ostream& out, const UiPreset& preset);

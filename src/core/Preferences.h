@@ -18,8 +18,8 @@ struct Preferences {
     // Preset de interfaz activo (Preferencias > Interfaz) -- ver UiPreset.h:
     // colores + disposicion de paneles + metricas. Se guarda entero (no solo
     // el id) para que un preset tocado y sin guardar sobreviva al reinicio.
-    // Por defecto es el C4D de siempre.
-    UiPreset uiPreset;
+    // Por defecto es el preset Iron3D (la paleta de la web); el C4D de siempre sigue en la lista.
+    UiPreset uiPreset = defaultUiPreset();
 };
 
 // Si el archivo no existe o no parsea, devuelve Preferences{} (default
