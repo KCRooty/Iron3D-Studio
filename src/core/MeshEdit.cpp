@@ -589,4 +589,107 @@ MeshEditResult flipPolygons(const MeshData& mesh, const MeshTopology& topo, cons
     return finish(std::move(verts), faces, changed);
 }
 
+MeshEditResult bridgePolygons(const MeshData& mesh, const MeshTopology& topo, int polyA, int polyB) {
+    const int np = (int)topo.polys.size();
+    if (polyA == polyB || polyA < 0 || polyB < 0 || polyA >= np || polyB >= np) return {};
+    const auto& A = topo.polys[(size_t)polyA];
+    const auto& B = topo.polys[(size_t)polyB];
+    const int n = (int)A.size();
+    if (n < 3 || (int)B.size() != n) return {};
+    // Mejor emparejamiento: direccion (dir) y giro (shift) con la menor suma de distancias^2.
+    float best = 1e30f;
+    int bestDir = 1, bestShift = 0;
+    for (int dir = -1; dir <= 1; dir += 2)
+        for (int shift = 0; shift < n; ++shift) {
+            float cost = 0.0f;
+            for (int i = 0; i < n; ++i) {
+                const glm::vec3 d = topo.points[(size_t)A[(size_t)i]] - topo.points[(size_t)B[(size_t)(((dir * i + shift) % n + n) % n)]];
+                cost += glm::dot(d, d);
+            }
+            if (cost < best) {
+                best = cost;
+                bestDir = dir;
+                bestShift = shift;
+            }
+        }
+    auto bAt = [&](int i) { return B[(size_t)(((bestDir * i + bestShift) % n + n) % n)]; };
+    glm::vec3 cA(0.0f), cB(0.0f);
+    for (int i = 0; i < n; ++i) {
+        cA += topo.points[(size_t)A[(size_t)i]];
+        cB += topo.points[(size_t)B[(size_t)i]];
+    }
+    cA /= (float)n;
+    cB /= (float)n;
+    glm::vec3 axis = cB - cA;
+    axis = glm::length(axis) > 1e-12f ? glm::normalize(axis) : glm::vec3(0, 1, 0);
+
+    std::vector<Vertex> verts = mesh.vertices;
+    std::vector<Face> faces = polyFaces(mesh, topo);
+    const glm::vec3 color = verts.empty() ? glm::vec3(1.0f) : verts[0].color;
+    int changed = 0;
+    for (int i = 0; i < n; ++i) {
+        const int j = (i + 1) % n;
+        std::vector<glm::vec3> quad = {topo.points[(size_t)A[(size_t)i]], topo.points[(size_t)A[(size_t)j]],
+                                       topo.points[(size_t)bAt(j)], topo.points[(size_t)bAt(i)]};
+        glm::vec3 qc = (quad[0] + quad[1] + quad[2] + quad[3]) * 0.25f;
+        glm::vec3 radial = (qc - cA) - axis * glm::dot(qc - cA, axis);
+        glm::vec3 nrm = newellNormal(quad);
+        if (glm::dot(nrm, radial) < 0.0f) std::reverse(quad.begin(), quad.end());
+        Face f = flatFace(verts, quad, color, radial);
+        f.sel = true;
+        faces.push_back(f);
+        ++changed;
+    }
+    // Fuera los dos poligonos originales.
+    faces[(size_t)polyA].v.clear();
+    faces[(size_t)polyB].v.clear();
+    return finish(std::move(verts), faces, changed);
+}
+
+MeshCheck checkMesh(const MeshTopology& topo) {
+    MeshCheck r;
+    std::map<std::pair<int, int>, int> uses;
+    std::vector<char> pointUsed(topo.points.size(), 0);
+    for (size_t p = 0; p < topo.polys.size(); ++p) {
+        const auto& pl = topo.polys[p];
+        std::vector<glm::vec3> pts;
+        for (size_t k = 0; k < pl.size(); ++k) {
+            const int a = pl[k], b = pl[(k + 1) % pl.size()];
+            ++uses[{std::min(a, b), std::max(a, b)}];
+            pointUsed[(size_t)a] = 1;
+            pts.push_back(topo.points[(size_t)a]);
+        }
+        // Area ~ 0 (longitud de la normal de Newell = 2 * area).
+        glm::vec3 n(0.0f);
+        for (size_t i = 0; i < pts.size(); ++i) {
+            const glm::vec3& a = pts[i];
+            const glm::vec3& b = pts[(i + 1) % pts.size()];
+            n.x += (a.y - b.y) * (a.z + b.z);
+            n.y += (a.z - b.z) * (a.x + b.x);
+            n.z += (a.x - b.x) * (a.y + b.y);
+        }
+        if (pl.size() < 3 || glm::length(n) < 1e-10f) {
+            ++r.degeneratePolys;
+            r.degeneratePolySet.insert((int)p);
+        }
+    }
+    for (size_t e = 0; e < topo.edges.size(); ++e) {
+        auto it = uses.find(topo.edges[e]);
+        const int u = it == uses.end() ? 0 : it->second;
+        if (u == 1) {
+            ++r.openEdges;
+            r.openEdgeSet.insert((int)e);
+        } else if (u > 2) {
+            ++r.nonManifoldEdges;
+            r.nonManifoldEdgeSet.insert((int)e);
+        }
+    }
+    for (size_t q = 0; q < pointUsed.size(); ++q)
+        if (!pointUsed[q]) {
+            ++r.loosePoints;
+            r.loosePointSet.insert((int)q);
+        }
+    return r;
+}
+
 } // namespace iron3d

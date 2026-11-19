@@ -678,6 +678,30 @@ int main() {
               "cerrar agujero: la tapa nueva mira hacia arriba");
         check(closeHoles(open, ot, {999999}).changed == 0, "cerrar agujero: solo los bordes que tocan la seleccion");
 
+        // Comprobar Malla: el cubo cerrado esta limpio; sin la cara de arriba tiene 4 aristas abiertas.
+        check(checkMesh(t).clean(), "comprobar malla: el cubo esta limpio");
+        check(checkMesh(ot).openEdges == 4 && !checkMesh(ot).clean(), "comprobar malla: 4 aristas abiertas sin la tapa");
+
+        // Puente: dos cubos de una cara (arriba del de abajo, abajo del de arriba) -> el anillo vuelve a unirlos.
+        {
+            // Dos cuadrados paralelos: A (y=0, mira abajo) y B (y=1, mira arriba) del mismo cubo sin laterales.
+            std::vector<char> keepCaps(t.polys.size(), 0);
+            int bot = -1;
+            for (int p = 0; p < (int)t.polys.size(); ++p)
+                if (t.polyNormals[(size_t)p].y < -0.9f) bot = p;
+            keepCaps[(size_t)top] = 1;
+            keepCaps[(size_t)bot] = 1;
+            const MeshData caps = keepPolygons(cube, t, keepCaps);
+            const MeshTopology capt = buildMeshTopology(caps);
+            const MeshEditResult br = bridgePolygons(caps, capt, 0, 1);
+            const MeshTopology brt = buildMeshTopology(br.mesh);
+            check(br.changed == 4 && brt.polys.size() == 4 && brt.points.size() == 8, "puente: 4 cuadrilateros entre las dos tapas");
+            check(bridgePolygons(caps, capt, 0, 0).changed == 0, "puente: no con el mismo poligono");
+            // El tubo no tiene tapas: 8 aristas abiertas, ninguna no manifold.
+            const MeshCheck tc = checkMesh(brt);
+            check(tc.openEdges == 8 && tc.nonManifoldEdges == 0, "puente: tubo abierto por arriba y abajo");
+        }
+
         // Subdividir la cara de arriba: 4 cuadrilateros, vecinos con punto medio.
         const MeshEditResult sd = subdividePolygons(cube, t, {top});
         const MeshTopology sdt = buildMeshTopology(sd.mesh);

@@ -6,6 +6,14 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-19 (3): Puente y Comprobar Malla
+
+**Nuevo**
+- **Malla > Puente**: une dos polígonos con el mismo número de lados con un anillo de cuadriláteros (elige dirección y giro con la menor distancia) y quita los dos originales.
+- **Malla > Comprobar Malla**: cuenta aristas abiertas, aristas no manifold, puntos sueltos y polígonos sin área, y selecciona los problemáticos del modo activo.
+
+**Probado**: `c4d_geometry` (cubo limpio, cubo sin tapa = 4 aristas abiertas, puente entre las dos tapas = tubo de 4 cuadriláteros y 8 aristas abiertas). **Sin probar**: en la GUI con ratón, polígonos de más de 4 lados con giros muy distintos.
+
 ### 2026-11-19 (2): Wavefront OBJ y estilo de iconos plano
 
 **Nuevo**

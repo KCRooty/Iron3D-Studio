@@ -75,4 +75,21 @@ MeshEditResult subdividePolygons(const MeshData& mesh, const MeshTopology& topo,
 // Invertir Normales de los poligonos indicados.
 MeshEditResult flipPolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);
 
+// Puente (M~B): une dos poligonos con el mismo numero de lados con un anillo de
+// cuadrilateros y quita los dos originales. Prueba las dos direcciones y todos los giros
+// y se queda con el emparejamiento de puntos mas corto. changed = 0 si no se puede
+// (mismo poligono, distinto numero de lados, indices fuera de rango).
+MeshEditResult bridgePolygons(const MeshData& mesh, const MeshTopology& topo, int polyA, int polyB);
+
+// Comprobar Malla: problemas de la topologia (indices de MeshTopology).
+struct MeshCheck {
+    int openEdges = 0;          // aristas con un solo poligono (borde abierto)
+    int nonManifoldEdges = 0;   // aristas con mas de dos poligonos
+    int loosePoints = 0;        // puntos que no usa ningun poligono
+    int degeneratePolys = 0;    // poligonos sin area
+    std::set<int> openEdgeSet, nonManifoldEdgeSet, loosePointSet, degeneratePolySet;
+    bool clean() const { return openEdges == 0 && nonManifoldEdges == 0 && loosePoints == 0 && degeneratePolys == 0; }
+};
+MeshCheck checkMesh(const MeshTopology& topo);
+
 } // namespace iron3d

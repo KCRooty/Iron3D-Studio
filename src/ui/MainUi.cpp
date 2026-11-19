@@ -2436,7 +2436,9 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
             if (ImGui::MenuItemEx("Cerrar Agujero Poligonal", kIconGutterText, "M~D", false, cm != 0)) g.compOp = "close";
             if (ImGui::MenuItemEx("Soldar", kIconGutterText, "M~Q", false, cm != 0)) g.compOp = "weld";
             if (ImGui::MenuItemEx("Subdividir", kIconGutterText, "U~S", false, cm != 0)) g.compOp = "subdiv";
-            disabledItems({{"Puente", "M~B"}, {"Pincel", "M~C"}, {"Planchar", "M~G"}, {nullptr, nullptr}});
+            if (ImGui::MenuItemEx("Puente", kIconGutterText, "M~B", false, cm == 3)) g.compOp = "bridge";
+            if (ImGui::MenuItemEx("Comprobar Malla", kIconGutterText, nullptr, false, cm != 0)) g.compOp = "check";
+            disabledItems({{"Pincel", "M~C"}, {"Planchar", "M~G"}, {nullptr, nullptr}});
             if (ImGui::MenuItemEx("Invertir Normales", kIconGutterText, "U~R", false, cm != 0)) g.compOp = "flip";
             disabledItems({{"Alinear Normales", "U~A"}});
         }
@@ -6338,9 +6340,27 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
         return done("Invertir Selección");
     }
 
+    if (op == "check") {
+        const MeshCheck chk = checkMesh(t);
+        if (chk.clean()) { flashStatus("Comprobar Malla: sin problemas."); return true; }
+        // Selecciona lo malo del modo actual: puntos sueltos, aristas abiertas/no manifold, poligonos sin area.
+        if (mode == 1) c.sel = chk.loosePointSet;
+        else if (mode == 2) { c.sel = chk.openEdgeSet; c.sel.insert(chk.nonManifoldEdgeSet.begin(), chk.nonManifoldEdgeSet.end()); }
+        else c.sel = chk.degeneratePolySet;
+        flashStatus("Comprobar Malla: " + std::to_string(chk.openEdges) + " aristas abiertas, " +
+                    std::to_string(chk.nonManifoldEdges) + " no manifold, " + std::to_string(chk.loosePoints) +
+                    " puntos sueltos, " + std::to_string(chk.degeneratePolys) + " polígonos sin área.");
+        return true;
+    }
+
     MeshEditResult r;
     const char* name = "";
-    if (op == "weld") {
+    if (op == "bridge") {
+        name = "Puente";
+        if (mode != 3 || c.sel.size() != 2) { flashStatus("Puente: selecciona exactamente 2 polígonos (modo Polígonos)."); return false; }
+        r = bridgePolygons(*c.mesh, t, *c.sel.begin(), *c.sel.rbegin());
+        if (!r.changed) { flashStatus("Puente: los dos polígonos deben tener el mismo número de lados."); return false; }
+    } else if (op == "weld") {
         name = "Soldar";
         r = weldPoints(*c.mesh, t, selectedPoints());
         if (!r.changed) { flashStatus("Soldar: selecciona al menos 2 puntos."); return false; }
