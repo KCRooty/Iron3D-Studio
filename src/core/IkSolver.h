@@ -34,6 +34,11 @@ IkResult solveIkChain(const std::vector<SceneNode*>& chain, const glm::vec3& tar
                       const std::optional<glm::vec3>& pole = std::nullopt, int maxIterations = 24,
                       float tolerance = 1e-3f);
 
+// Aplica los limites de rotacion (SceneNode::jointLimits) de `node` y sus descendientes:
+// cada eje activo se recorta a [min, max] (mezclado por la fuerza). Devuelve cuantos ejes
+// se recortaron. Los hijos conservan su rotacion local, asi que la punta se mueve.
+int applyJointLimits(SceneNode& node);
+
 // Resuelve todas las etiquetas IK activas del arbol (las que tienen `tip` y `target` validos).
 // Devuelve cuantas cadenas se resolvieron.
 int solveAllIk(SceneNode& root);

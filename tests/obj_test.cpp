@@ -98,6 +98,8 @@ int main() {
         hueso->ik.tip = "Hueso/Punta";
         hueso->ik.target = "Control IK";
         hueso->ik.pole = "Polo \"rodilla\"";
+        hueso->jointLimits.present = true; hueso->jointLimits.use[0] = true; hueso->jointLimits.use[2] = true;
+        hueso->jointLimits.minDeg = glm::vec3(-45.5f, 0.0f, -10.0f); hueso->jointLimits.maxDeg = glm::vec3(90.0f, 0.0f, 10.0f); hueso->jointLimits.strength = 0.5f;
         std::vector<Material> none;
         CHECK(saveScene(dir / "rig.iron", r, none, &err));
         SceneNode r2("otra");
@@ -108,9 +110,10 @@ int main() {
             const SceneNode& h = *r2.children()[0];
             CHECK(h.isJoint);
             CHECK(h.ik == hueso->ik);
+            CHECK(h.jointLimits == hueso->jointLimits);
         }
         SceneNode* copia = duplicateSubtree(r, *hueso);
-        CHECK(copia && copia->isJoint && copia->ik == hueso->ik);
+        CHECK(copia && copia->isJoint && copia->ik == hueso->ik && copia->jointLimits == hueso->jointLimits);
     }
 
     std::error_code ec;

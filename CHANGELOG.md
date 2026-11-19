@@ -6,6 +6,14 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-19 (7): Límites de rotación de las articulaciones
+
+**Nuevo**
+- Las articulaciones de un .c4d traen sus **límites de rotación** (H/P/B, mínimo, máximo y fuerza; ids 3009-3015 de `ocajoint.h`, leídos del SDK de R19). Se guardan en .iron y se copian al duplicar.
+- **Resolver IK** recorta cada articulación de la cadena a sus límites tras resolver.
+
+**Probado**: recorte por eje, ida y vuelta .iron, duplicado (`ik_test`, `obj_test`). **Sin probar**: que los ids se lean bien en un .c4d real con límites (salen del SDK, no medidos en un archivo), ni el Límite como etiqueta suelta de C4D (otro id, sin medir). Tras recortar, la punta puede quedarse corta del objetivo: no se vuelve a iterar.
+
 ### 2026-11-19 (6): glTF 2.0 (.glb / .gltf)
 
 **Nuevo**

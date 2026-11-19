@@ -129,6 +129,12 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             << " zoom=" << c.zoom << " target=" << quoted(c.target) << "\n";
     }
     if (node.isJoint) out << indent << "  JOINT\n";
+    if (node.jointLimits.present) {
+        const JointLimits& l = node.jointLimits;
+        out << indent << "  JLIMIT use=" << (int)l.use[0] << (int)l.use[1] << (int)l.use[2] << " min=" << l.minDeg.x << ","
+            << l.minDeg.y << "," << l.minDeg.z << " max=" << l.maxDeg.x << "," << l.maxDeg.y << "," << l.maxDeg.z
+            << " strength=" << l.strength << "\n";
+    }
     if (node.ik.present)
         out << indent << "  IK enabled=" << (int)node.ik.enabled << " solver=" << node.ik.solver
             << " tip=" << quoted(node.ik.tip) << " target=" << quoted(node.ik.target) << " pole=" << quoted(node.ik.pole) << "\n";
@@ -395,7 +401,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras los atributos de NODE"; return false; }
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
     while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG" ||
-                            p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "IK")) {
+                            p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "IK")) {
         const std::string kind = p.next();
         bool ok = true;
         if (kind == "LIGHT") {
@@ -431,6 +437,20 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
             });
         } else if (kind == "JOINT") {
             node.isJoint = true;
+        } else if (kind == "JLIMIT") {
+            JointLimits& l = node.jointLimits;
+            l.present = true;
+            auto vec3 = [](const std::string& v, glm::vec3& o) {
+                float a = 0, b = 0, c = 0;
+                if (std::sscanf(v.c_str(), "%f,%f,%f", &a, &b, &c) == 3) o = {a, b, c};
+            };
+            ok = readAttrs(p, "JLIMIT", err, [&](const std::string& k, const std::string& v) {
+                if (k == "use" && v.size() >= 3) {
+                    for (int i = 0; i < 3; ++i) l.use[i] = v[(size_t)i] == '1';
+                } else if (k == "min") vec3(v, l.minDeg);
+                else if (k == "max") vec3(v, l.maxDeg);
+                else if (k == "strength") l.strength = std::stof(v);
+            });
         } else if (kind == "IK") {
             IkTagData& t = node.ik;
             t.present = true;
@@ -718,6 +738,7 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.camera = temp.camera;
     root.texTag = temp.texTag;
     root.isJoint = temp.isJoint;
+    root.jointLimits = temp.jointLimits;
     root.ik = temp.ik;
     root.materialParts = temp.materialParts;
     root.animPos = temp.animPos;

@@ -120,6 +120,16 @@ struct IkTagData {
     bool operator==(const IkTagData&) const = default;
 };
 
+// Limites de rotacion de una articulacion (Ojoint, pestana IK > Limites de C4D, ids 3009..3015
+// de ocajoint.h). Orden H, P, B en grados, como en C4D. Solo se usan los ejes con use = true.
+struct JointLimits {
+    bool present = false;
+    bool use[3] = {false, false, false};
+    glm::vec3 minDeg{0.0f}, maxDeg{0.0f};
+    float strength = 1.0f; // ID_CA_JOINT_OBJECT_JOINT_IK_LIMITROT_STRENGTH (0..1)
+    bool operator==(const JointLimits&) const = default;
+};
+
 // Etiqueta de Textura del nodo (la que asigna materialIndex): proyeccion y
 // mosaico como en C4D (2026-11-07).
 struct TextureTagData {
@@ -209,6 +219,7 @@ public:
     TextureTagData texTag;
     // Rig: articulacion de C4D (se muestra como Nulo) y etiqueta IK.
     bool isJoint = false;
+    JointLimits jointLimits;
     IkTagData ik;
     // Solo con primitive == Mesh: partes con su propio material, ordenadas por
     // firstIndex y sin solaparse (ver MaterialPart).

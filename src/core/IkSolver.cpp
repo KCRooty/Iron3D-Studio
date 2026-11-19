@@ -162,6 +162,26 @@ void collectIk(SceneNode& n, std::vector<SceneNode*>& out) {
 
 } // namespace
 
+int applyJointLimits(SceneNode& node) {
+    int clamped = 0;
+    const JointLimits& l = node.jointLimits;
+    if (l.present) {
+        // rotationDeg: x = P, y = H, z = B; los limites van en orden H, P, B.
+        float* axis[3] = {&node.rotationDeg.y, &node.rotationDeg.x, &node.rotationDeg.z};
+        for (int i = 0; i < 3; ++i) {
+            if (!l.use[i]) continue;
+            const float lo = std::min(l.minDeg[i], l.maxDeg[i]), hi = std::max(l.minDeg[i], l.maxDeg[i]);
+            const float v = *axis[i], c = std::clamp(v, lo, hi);
+            if (c != v) {
+                *axis[i] = v + (c - v) * std::clamp(l.strength, 0.0f, 1.0f);
+                ++clamped;
+            }
+        }
+    }
+    for (const auto& c : node.children()) clamped += applyJointLimits(*c);
+    return clamped;
+}
+
 int solveAllIk(SceneNode& root) {
     std::vector<SceneNode*> tagged;
     collectIk(root, tagged);
@@ -174,7 +194,9 @@ int solveAllIk(SceneNode& root) {
         if (chain.size() < 2) continue;
         std::optional<glm::vec3> pole;
         if (SceneNode* p = findNodeByPath(*n, n->ik.pole)) pole = worldPos(*p);
-        if (solveIkChain(chain, worldPos(*goal), pole).solved) ++solved;
+        const bool ok = solveIkChain(chain, worldPos(*goal), pole).solved;
+        for (SceneNode* j : chain) applyJointLimits(*j);
+        if (ok) ++solved;
     }
     return solved;
 }

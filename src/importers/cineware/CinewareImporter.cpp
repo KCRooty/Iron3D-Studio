@@ -1060,7 +1060,23 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
     const std::string name = utf8(op->GetName());
     SceneNode* node = parent.addChild(name.empty() ? std::string("Objeto") : name);
     ++rep.objects;
-    if (op->GetType() == Ojoint) node->isJoint = true;
+    if (op->GetType() == Ojoint) {
+        node->isJoint = true;
+        // Limites de rotacion (ocajoint.h: 3009 fuerza, 3010..3012 usar H/P/B, 3013 minimo, 3015 maximo).
+        const BaseContainer* jb = op->GetDataInstance();
+        JointLimits& jl = node->jointLimits;
+        jl.use[0] = jb->GetBool(3010, false);
+        jl.use[1] = jb->GetBool(3011, false);
+        jl.use[2] = jb->GetBool(3012, false);
+        if (jl.use[0] || jl.use[1] || jl.use[2]) {
+            const Vector mn = jb->GetVector(3013), mx = jb->GetVector(3015);
+            const float k = 57.29577951f;
+            jl.present = true;
+            jl.minDeg = {(float)mn.x * k, (float)mn.y * k, (float)mn.z * k};
+            jl.maxDeg = {(float)mx.x * k, (float)mx.y * k, (float)mx.z * k};
+            jl.strength = (float)jb->GetFloat(3009, 1.0);
+        }
+    }
     // Etiqueta IK (tipo 1019561, ID_CA_IK_TAG): enlaces y ajustes basicos.
     if (BaseTag* ikt = op->GetTag(1019561)) {
         BaseContainer* bc = ikt->GetDataInstance();

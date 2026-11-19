@@ -101,6 +101,24 @@ int main() {
         CHECK(findNodeByPath(root, "J0/nada") == nullptr);
         CHECK(chainBetween(*j2, *j0).empty());
     }
+    {
+        // Limites de rotacion: H entre -10 y 10 grados, P libre.
+        SceneNode root("raiz");
+        SceneNode* j = root.addChild("J");
+        j->isJoint = true;
+        j->rotationDeg = glm::vec3(40.0f, 35.0f, 0.0f); // P = 40, H = 35
+        j->jointLimits.present = true;
+        j->jointLimits.use[0] = true; // H
+        j->jointLimits.minDeg = glm::vec3(-10.0f, 0.0f, 0.0f);
+        j->jointLimits.maxDeg = glm::vec3(10.0f, 0.0f, 0.0f);
+        CHECK(applyJointLimits(root) == 1);
+        CHECK(std::abs(j->rotationDeg.y - 10.0f) < 1e-4f);
+        CHECK(std::abs(j->rotationDeg.x - 40.0f) < 1e-4f);
+        CHECK(applyJointLimits(root) == 0);
+        SceneNode* dup = root.addChild("Copia");
+        dup->jointLimits = j->jointLimits;
+        CHECK(dup->jointLimits == j->jointLimits);
+    }
     if (g_fail == 0) std::printf("ik: todo correcto\n");
     return g_fail == 0 ? 0 : 1;
 }
