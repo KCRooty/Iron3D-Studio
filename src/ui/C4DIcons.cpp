@@ -17,6 +17,10 @@ const char* name(Icon icon) {
     return i >= 0 && i < (int)Icon::Count_ ? kNames[i] : "?";
 }
 
+static IconStyle g_iconStyle = IconStyle::Color;
+void setIconStyle(IconStyle s) { g_iconStyle = s; }
+IconStyle iconStyle() { return g_iconStyle; }
+
 void draw(ImDrawList* dl, Icon icon, ImVec2 min, float size, bool enabled) {
     const Pen P{dl, min, size, enabled ? 1.0f : 0.35f};
     const ImU32 gray = P.c(206, 206, 206);

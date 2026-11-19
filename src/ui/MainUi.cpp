@@ -2473,7 +2473,9 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
     // Selector de "Entorno" a la derecha (seccion 13): de momento solo el de
     // Arranque existe en Iron3D. La etiqueta sigue al preset ("Espacio de
     // trabajo:" en Blender, "Workspace:" en Maya...).
-    static const char* kLayouts[] = {"Arranque", "Animar", "Modelado", "BP - UV Edit", "Esculpir", "Visualizar"};
+    static const char* kLayoutsC4D[] = {"Arranque", "Animar", "Modelado", "BP - UV Edit", "Esculpir", "Visualizar"};
+    static const char* kLayoutsBlender[] = {"Layout", "Modeling", "Sculpting", "UV Editing", "Texture Paint", "Animation"};
+    const char* const* kLayouts = g_preset.layout.arrangement == Arrangement::Blender ? kLayoutsBlender : kLayoutsC4D;
     const char* layoutLabel = names().layoutLabel;
     const float comboW = 140.0f;
     const float labelW = ImGui::CalcTextSize(layoutLabel).x;
@@ -2481,7 +2483,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
     ImGui::TextUnformatted(layoutLabel);
     ImGui::SetNextItemWidth(comboW);
     if (ImGui::BeginCombo("##layout", kLayouts[g.layoutPreset])) {
-        for (int i = 0; i < IM_ARRAYSIZE(kLayouts); ++i) {
+        for (int i = 0; i < 6; ++i) {
             if (i > 0) ImGui::BeginDisabled();
             if (ImGui::Selectable(kLayouts[i], g.layoutPreset == i)) g.layoutPreset = i;
             if (i > 0) ImGui::EndDisabled();
@@ -5672,6 +5674,8 @@ ImU32 shadeU32(const glm::vec3& base, float delta) {
 void applyPreset(const UiPreset& preset) {
     g_preset = preset;
     g_names = &panelNames(preset.layout.arrangement);
+    icons::setIconStyle(preset.layout.arrangement == Arrangement::Blender ? icons::IconStyle::Flat
+                                                                          : icons::IconStyle::Color);
     const UiTheme& theme = preset.theme;
     // Cromo: mismos grises que los literales de antes con el fondo C4D
     // (#3C3C3C -> 78, 52, 120, 48).

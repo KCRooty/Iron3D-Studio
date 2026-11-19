@@ -23,8 +23,21 @@ struct Pen {
     float alpha;
 
     ImVec2 p(float x, float y) const { return ImVec2(o.x + x * s, o.y + y * s); }
-    ImU32 c(int r, int g, int b, int a = 255) const { return IM_COL32(r, g, b, (int)((float)a * alpha)); }
-    float w(float px) const { return std::max(1.0f, px * s / 20.0f); }
+    ImU32 c(int r, int g, int b, int a = 255) const {
+        if (iconStyle() == IconStyle::Flat) {
+            // Mano "plana": se acerca cada color a un gris claro segun su luminosidad y conserva un 35% del tono.
+            const float luma = 0.299f * (float)r + 0.587f * (float)g + 0.114f * (float)b;
+            const float grey = 110.0f + luma * 0.50f;
+            r = (int)(grey * 0.65f + (float)r * 0.35f);
+            g = (int)(grey * 0.65f + (float)g * 0.35f);
+            b = (int)(grey * 0.65f + (float)b * 0.35f);
+        }
+        return IM_COL32(r, g, b, (int)((float)a * alpha));
+    }
+    float w(float px) const {
+        const float k = iconStyle() == IconStyle::Flat ? 1.3f : 1.0f;
+        return std::max(1.0f, px * k * s / 20.0f);
+    }
 
     void line(float x0, float y0, float x1, float y1, ImU32 col, float th = 1.5f) const {
         dl->AddLine(p(x0, y0), p(x1, y1), col, w(th));

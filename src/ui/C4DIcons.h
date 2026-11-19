@@ -68,6 +68,12 @@ enum class Icon {
     Count_
 };
 
+// Estilo de los iconos: Color = la familia de color de C4D; Flat = trazo mas grueso y colores
+// atenuados hacia un gris claro (el preset Blender). Son los mismos dibujos propios, otra mano.
+enum class IconStyle { Color, Flat };
+void setIconStyle(IconStyle s);
+IconStyle iconStyle();
+
 // Nombre del enumerador (hoja de iconos de depuracion).
 const char* name(Icon icon);
 
