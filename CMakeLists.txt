@@ -101,6 +101,7 @@ add_executable(Iron3DStudio
     src/main.cpp
     src/core/IkSolver.cpp
     src/importers/obj/ObjIO.cpp
+    src/importers/gltf/GltfIO.cpp
     src/gfx/VulkanContext.cpp
     src/gfx/SwapchainWindow.cpp
     src/gfx/BasicPipeline.cpp
@@ -394,6 +395,28 @@ else()
     target_compile_options(ik_test PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME ik COMMAND ik_test)
+add_executable(gltf_test
+    tests/gltf_test.cpp
+    src/importers/gltf/GltfIO.cpp
+    src/core/MeshData.cpp
+    src/core/MeshTopology.cpp
+    src/core/MeshEdit.cpp
+    src/core/SceneNode.cpp
+    src/core/Material.cpp
+    src/core/ShaderTree.cpp
+    src/core/SceneSerializer.cpp
+    src/core/ThumbnailRenderer.cpp
+    src/core/TransformGizmo.cpp)
+target_include_directories(gltf_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+target_link_libraries(gltf_test PRIVATE iron3d_lib4d)
+target_compile_definitions(gltf_test PRIVATE GLM_FORCE_RADIANS)
+if(MSVC)
+    target_compile_options(gltf_test PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(gltf_test PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME gltf COMMAND gltf_test)
+
 
 # Shader Fresnel de C4D: horneado de la tira 256x1, modo fisico y ida y vuelta (sin GPU).
 add_executable(fresnel_test

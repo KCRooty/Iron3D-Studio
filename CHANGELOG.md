@@ -6,6 +6,15 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-19 (6): glTF 2.0 (.glb / .gltf)
+
+**Nuevo**
+- **Archivo > Abrir / Fusionar** acepta `.glb` y `.gltf` (jerarquía con sus transformaciones, mallas de triángulos con normales/UV/color de vértice, varias primitivas por malla con su material, materiales PBR básicos: color base, metálico, rugosidad, emisión, alfa y textura de color externa; buffers incrustados, base64 y externos).
+- **Archivo > Exportar > glTF binario (*.glb)**: mallas y primitivas con su transformación de mundo, materiales PBR y ruta de la textura de color.
+- Lector de JSON propio: sin dependencias nuevas ni Cineware.
+
+**Probado**: `gltf_test` (ida y vuelta .glb con posición y material, un .gltf escrito a mano con buffer base64 y normales calculadas, archivos rotos). **Sin probar**: archivos reales de otras herramientas (Blender, etc.), texturas incrustadas en el .glb (se avisa, no se extraen), pieles, animaciones, cámaras y luces de glTF (no se importan), ni la GUI.
+
 ### 2026-11-19 (5): Solver IK
 
 **Nuevo**

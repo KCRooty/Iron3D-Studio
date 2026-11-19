@@ -23,6 +23,7 @@
 #include "importers/cineware/CinewareImporter.h"
 #include "importers/lib4d/PresetLibrary.h"
 #include "importers/obj/ObjIO.h"
+#include "importers/gltf/GltfIO.h"
 #include "core/IkSolver.h"
 #include "importers/lib4d/PresetTextures.h"
 #include "core/ChannelBake.h"
@@ -998,6 +999,27 @@ bool importObjInto(const std::filesystem::path& path, SceneNode& dest, std::vect
     return true;
 }
 
+bool importGltfInto(const std::filesystem::path& path, SceneNode& dest, std::vector<Material>& mats) {
+    GltfReport grep;
+    std::string err;
+    if (!importGltf(path, dest, mats, grep, &err)) {
+        reportFileError(path, err);
+        return false;
+    }
+    g.importReport = C4DImportReport{};
+    g.importReport.fileName = pathUtf8(path.filename());
+    g.importReport.objects = grep.nodes;
+    g.importReport.meshes = grep.meshes;
+    g.importReport.points = grep.points;
+    g.importReport.polygons = grep.polygons;
+    g.importReport.materials = grep.materials;
+    g.importReport.warnings = grep.warnings;
+    g.importError.clear();
+    g.importTitle = "Importar glTF";
+    g.showImport = true;
+    return true;
+}
+
 // Archivo > Abrir (Ctrl+O): .iron o .c4d con el dialogo del sistema. Sin
 // dialogo nativo (Linux por ahora) se usa el propio de la carpeta scenes/.
 void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history, std::vector<Material>& materials,
@@ -1007,18 +1029,19 @@ void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history,
         g.sceneLoadMode = true;
         return;
     }
-    const auto path = openFileDialog("Abrir", {{"Escenas y librerías (iron, c4d, obj, lib4d)", "*.iron;*.c4d;*.obj;*.lib4d"},
+    const auto path = openFileDialog("Abrir", {{"Escenas y librerías (iron, c4d, obj, glb, lib4d)", "*.iron;*.c4d;*.obj;*.glb;*.gltf;*.lib4d"},
                                                {"Iron3D", "*.iron"}, {"Cinema 4D", "*.c4d"}, {"Wavefront", "*.obj"},
+                                               {"glTF", "*.glb;*.gltf"},
                                                {"Librería de preestablecidos de Cinema 4D", "*.lib4d"}});
     if (!path) return;
     // Una .lib4d no sustituye la escena: se monta en el Navegador de Contenido
     // (Preestablecidos, solo esta sesion) y se abre su ventana, como en C4D.
     if (isLib4dPath(*path)) return openPresetLibrary(*path);
     std::string err;
-    if (isObjPath(*path)) {
+    if (isObjPath(*path) || isGltfPath(*path)) {
         SceneNode temp("tmp");
         std::vector<Material> mats;
-        if (!importObjInto(*path, temp, mats)) return;
+        if (isGltfPath(*path) ? !importGltfInto(*path, temp, mats) : !importObjInto(*path, temp, mats)) return;
         root.clearChildren();
         root.adoptChildrenFrom(temp);
         materials = std::move(mats);
@@ -1051,13 +1074,16 @@ void mergeSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history
                                     "plataforma todavía no existe.");
         return;
     }
-    const auto path = openFileDialog("Fusionar", {{"Escenas de Cinema 4D, OBJ e Iron3D", "*.c4d;*.obj;*.iron"},
-                                                  {"Cinema 4D", "*.c4d"}, {"Wavefront", "*.obj"}, {"Iron3D", "*.iron"}});
+    const auto path = openFileDialog("Fusionar", {{"Escenas de Cinema 4D, OBJ, glTF e Iron3D", "*.c4d;*.obj;*.glb;*.gltf;*.iron"},
+                                                  {"Cinema 4D", "*.c4d"}, {"Wavefront", "*.obj"},
+                                                  {"glTF", "*.glb;*.gltf"}, {"Iron3D", "*.iron"}});
     if (!path) return;
     const std::string before = history.snapshot(root);
     std::string err;
     if (isObjPath(*path)) {
         if (!importObjInto(*path, root, materials)) return;
+    } else if (isGltfPath(*path)) {
+        if (!importGltfInto(*path, root, materials)) return;
     } else if (isC4DPath(*path)) {
         C4DImportReport rep;
         if (!importC4D(*path, root, materials, rep, &err)) return reportFileError(*path, err);
@@ -1133,6 +1159,31 @@ void exportSceneObj(SceneNode& root, const std::vector<Material>& materials) {
     g.importReport.warnings = orep.warnings;
     g.importError.clear();
     g.importTitle = "Exportar OBJ";
+    g.showImport = true;
+}
+
+// Archivo > Exportar > glTF binario (*.glb): toda la escena.
+void exportSceneGlb(SceneNode& root, const std::vector<Material>& materials) {
+    std::vector<const SceneNode*> roots;
+    for (const auto& c : root.children()) roots.push_back(c.get());
+    if (roots.empty()) return reportNamedError("Exportar", "La escena está vacía.");
+    if (!nativeFileDialogAvailable())
+        return reportNamedError("Exportar", "Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.");
+    const auto path = saveFileDialog("Exportar a glTF", {{"glTF binario", "*.glb"}}, "Escena.glb", "glb");
+    if (!path) return;
+    GltfReport grep;
+    std::string err;
+    if (!exportGlb(*path, roots, materials, grep, &err)) return reportFileError(*path, err);
+    g.importReport = C4DImportReport{};
+    g.importReport.fileName = pathUtf8(path->filename());
+    g.importReport.objects = grep.nodes;
+    g.importReport.meshes = grep.meshes;
+    g.importReport.points = grep.points;
+    g.importReport.polygons = grep.polygons;
+    g.importReport.materials = grep.materials;
+    g.importReport.warnings = grep.warnings;
+    g.importError.clear();
+    g.importTitle = "Exportar glTF";
     g.showImport = true;
 }
 
@@ -2286,6 +2337,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
             if (!cinewareAvailable() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
                 ImGui::SetTooltip("Esta compilación no lleva el Cineware SDK de MAXON");
             if (ImGui::MenuItem("Wavefront (*.obj)...")) exportSceneObj(root, materials);
+            if (ImGui::MenuItem("glTF binario (*.glb)...")) exportSceneGlb(root, materials);
             disabledItems({{"FBX (*.fbx)", ""}, {"Alembic (*.abc)", ""},
                            {"STL (*.stl)", ""}, {"Collada 1.4 (*.dae)", ""}});
             ImGui::EndMenu();
