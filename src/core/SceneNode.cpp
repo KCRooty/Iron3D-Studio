@@ -159,6 +159,9 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
     copy->jointLimits = src.jointLimits;
     copy->nullDisplay = src.nullDisplay;
     copy->ik = src.ik;
+    copy->symmetry.present = src.symmetry.present;  // la cache se rehace sola
+    copy->symmetry.axis = src.symmetry.axis;
+    copy->symmetry.tolCm = src.symmetry.tolCm;
     copy->materialParts = src.materialParts;
     copy->skin = src.skin;
     copy->animPos = src.animPos;

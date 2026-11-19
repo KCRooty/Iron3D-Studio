@@ -3,6 +3,7 @@
 #include "core/Skin.h"
 #include "core/NullShapes.h"
 #include "core/SceneNode.h"
+#include "core/Symmetry.h"
 
 #include <cmath>
 #include <cstdio>
@@ -137,6 +138,49 @@ int main() {
         CHECK(!rayHitsNullShape(ctl, w, glm::vec3(0.5f, 0.0f, -5.0f), glm::vec3(0, 0, 1), t) == false);   // por detras tambien toca
         ctl.nullDisplay.shape = NullNone;
         CHECK(!rayHitsNullShape(ctl, w, glm::vec3(0.5f, 0.0f, 5.0f), glm::vec3(0, 0, -1), t));
+    }
+
+    // Objeto Simetria: refleja a su hijo respecto al plano X del nodo, sin tocar al hijo.
+    {
+        SceneNode r2("r2");
+        SceneNode* sym = r2.addChild("Simetria");
+        sym->symmetry.present = true;
+        SceneNode* hijo = sym->addChild("Hijo", PrimitiveType::Mesh);
+        hijo->position = glm::vec3(2.0f, 0.0f, 0.0f);
+        auto hm = std::make_shared<MeshData>();
+        Vertex v{};
+        v.normal = glm::vec3(1, 0, 0);
+        v.position = glm::vec3(0.0f, 0.0f, 0.0f); hm->vertices.push_back(v);   // en el hijo; en el padre queda en x = 2
+        v.position = glm::vec3(0.0f, 1.0f, 0.0f); hm->vertices.push_back(v);
+        v.position = glm::vec3(0.0f, 0.0f, 1.0f); hm->vertices.push_back(v);
+        hm->indices = {0, 1, 2};
+        updateBounds(*hm);
+        hijo->mesh = hm;
+        CHECK(evaluateSymmetry(r2) == 1);
+        CHECK(sym->mesh && sym->primitive == PrimitiveType::Mesh);
+        if (sym->mesh) {
+            CHECK(sym->mesh->vertices.size() == 3);
+            CHECK(near(sym->mesh->vertices[0].position, glm::vec3(-2.0f, 0.0f, 0.0f)));
+            CHECK(near(sym->mesh->vertices[1].position, glm::vec3(-2.0f, 1.0f, 0.0f)));
+            CHECK(near(sym->mesh->vertices[0].normal, glm::vec3(-1, 0, 0)));
+            CHECK(sym->mesh->indices[1] == 2 && sym->mesh->indices[2] == 1);  // giro invertido
+        }
+        CHECK(near(hijo->mesh->vertices[0].position, glm::vec3(0.0f)));       // el hijo no cambia
+        CHECK(evaluateSymmetry(r2) == 0);                                      // sin cambios: no recalcula
+        hijo->position = glm::vec3(3.0f, 0.0f, 0.0f);
+        CHECK(evaluateSymmetry(r2) == 1);
+        CHECK(near(sym->mesh->vertices[0].position, glm::vec3(-3.0f, 0.0f, 0.0f)));
+        sym->symmetry.axis = 1;                                                // plano Y
+        CHECK(evaluateSymmetry(r2) == 1);
+        CHECK(near(sym->mesh->vertices[1].position, glm::vec3(3.0f, -1.0f, 0.0f)));
+        // Puntos sobre el plano se pegan a el (tolerancia): la mitad refleja y toca la original sin hueco.
+        hijo->position = glm::vec3(0.0f);
+        sym->symmetry.axis = 0;
+        sym->symmetry.tolCm = 1.0f;
+        hm->vertices[0].position.x = 0.001f;
+        hijo->mesh = std::make_shared<MeshData>(*hm);
+        evaluateSymmetry(r2);
+        CHECK(sym->mesh && near(sym->mesh->vertices[0].position, glm::vec3(0.0f, 0.0f, 0.0f), 1e-6f));
     }
 
     if (g_fail == 0) std::printf("skin_test: todo OK\n");

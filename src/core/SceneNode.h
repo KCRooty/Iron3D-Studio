@@ -120,6 +120,18 @@ struct IkTagData {
     bool operator==(const IkTagData&) const = default;
 };
 
+// Objeto Simetria (generador de Modelado, ver Symmetry.h). La cache evita recalcular el
+// reflejo mientras ni el hijo ni los ajustes cambian; no se guarda ni se copia.
+struct SymmetryData {
+    bool present = false;
+    int axis = 0;          // plano reflejado: 0 = X, 1 = Y, 2 = Z del nodo
+    float tolCm = 0.5f;    // los puntos a menos de esto del plano se pegan a el
+    std::shared_ptr<const MeshData> output, lastSource;
+    glm::mat4 lastChildMatrix{1.0f};
+    int lastAxis = -1;
+    float lastTolCm = -1.0f;
+};
+
 // Limites de rotacion de una articulacion (Ojoint, pestana IK > Limites de C4D, ids 3009..3015
 // de ocajoint.h). Orden H, P, B en grados, como en C4D. Solo se usan los ejes con use = true.
 struct JointLimits {
@@ -232,6 +244,7 @@ public:
     JointLimits jointLimits;
     NullDisplay nullDisplay;
     IkTagData ik;
+    SymmetryData symmetry;
     // Solo con primitive == Mesh: partes con su propio material, ordenadas por
     // firstIndex y sin solaparse (ver MaterialPart).
     std::vector<MaterialPart> materialParts;

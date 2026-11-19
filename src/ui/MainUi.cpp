@@ -26,6 +26,7 @@
 #include "importers/gltf/GltfIO.h"
 #include "core/IkSolver.h"
 #include "core/Skin.h"
+#include "core/Symmetry.h"
 #include "importers/lib4d/PresetTextures.h"
 #include "core/ChannelBake.h"
 #include "ContentBrowser.h"
@@ -108,7 +109,7 @@ enum class AttrFocus { Object, Material, Tag, Project };
 // menu contextual del visor) y se ejecutan al principio del frame siguiente.
 enum class UiCmd { None, MakeEditable, FrameSelected, FrameAll, ResetView, Group, SelectChildren,
                    CurrentState, Connect, ConnectDelete, SelectAll, ViewPersp, ViewTop, ViewRight, ViewFront,
-                   ViewLeft, ViewBack, ViewBottom, ViewQuad, ClearAnimation };
+                   ViewLeft, ViewBack, ViewBottom, ViewQuad, ClearAnimation, SymmetryObject };
 
 struct UiState {
     UiCmd pendingCmd = UiCmd::None;
@@ -204,6 +205,7 @@ struct UiState {
     int pendingCompMode = 0;
     std::vector<int> pendingCompSel;
     bool compDeleteRequested = false;  // --ui-cmd=comp-del
+    bool symObjRequested = false;      // --ui-cmd=sym-obj: crear el objeto Simetria (tras comp=/comp-move=)
     bool compMoveRequested = false;    // --ui-cmd=comp-move=dx,dy,dz (cm, en el espacio del mundo): verificacion de la simetria
     glm::vec3 compMoveCm{0.0f};
     std::string compOp;                // Seleccion/Malla sobre componentes (menu o --ui-cmd=meshop=...)
@@ -1668,6 +1670,19 @@ struct PaletteItem {
 // Crea el objeto de un elemento de menu/paleta; las luces salen con su tipo
 // y con el nombre del menu, como en C4D ("Foco", "Luz Infinita"...).
 void createPaletteItem(SceneNode& root, SceneNode*& selected, SceneHistory& history, const PaletteItem& it) {
+    // Simetria (generador): un Nulo con SymmetryData; si hay un objeto con malla seleccionado se mete dentro.
+    if (std::string(it.name) == "Simetría") {
+        SceneNode* sel = selected;
+        const bool wrap = sel && sel->mesh && sel->parent();
+        if (wrap) groupObjects(root, selected, history, nullptr);
+        else createObject(root, selected, history, PrimitiveType::None);
+        if (selected) {
+            selected->setName("Simetría");
+            selected->symmetry.present = true;
+            g.collapsed.erase(selected->id());
+        }
+        return;
+    }
     SceneNode* n = createObject(root, selected, history, it.type);
     if (n && it.type == PrimitiveType::Light && it.lightKind >= 0) {
         n->light.kind = (LightKind)it.lightKind;
@@ -1792,7 +1807,7 @@ const PaletteItem kModeling[] = {
     {"Booleano", Icon::ModBoole, kNone, false},
     {"Máscara de Spline", Icon::ModSplineMask, kNone, false},
     {"Conector", Icon::ModConnect, kNone, false},
-    {"Simetría", Icon::ModSymmetry, kNone, false},
+    {"Simetría", Icon::ModSymmetry, kNone, true},
     {"Generador Python", Icon::ModPython, kNone, false},
     {"LOD", Icon::ModLod, kNone, false},
     {"Reducción de Polígonos", Icon::ModPolyReduction, kNone, false},
@@ -2064,6 +2079,11 @@ void runPendingCmd(SceneNode& root, SceneNode*& selected, SceneHistory& history,
             }
             break;
         case UiCmd::SelectAll: selectAllObjects(root, selected); break;
+        case UiCmd::SymmetryObject: {  // --ui-cmd=sym-obj: igual que Modelado > Simetria
+            const PaletteItem it{"Simetría", Icon::ModSymmetry, PrimitiveType::None, true};
+            createPaletteItem(root, selected, history, it);
+            break;
+        }
         case UiCmd::ViewPersp: selectView(camera, CamView::Perspective); break;
         case UiCmd::ViewTop: selectView(camera, CamView::Top); break;
         case UiCmd::ViewRight: selectView(camera, CamView::Right); break;
@@ -3879,6 +3899,24 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
             roCheck("Mostrar Luz Visible", false, false);
             check("Especular", "##lspec", l.specular);
             roCheck("Iluminación de IG", true);
+        } else if (node.symmetry.present) {
+            sectionHeader("Propiedades del Objeto");
+            propLabel("Plano de Simetría");
+            int ax = node.symmetry.axis;
+            const char* planes[] = {"ZY (refleja X)", "XZ (refleja Y)", "XY (refleja Z)"};
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::Combo("##symplane", &ax, planes, 3)) {
+                history.commitBefore(root);
+                node.symmetry.axis = ax;
+            }
+            propLabel("Tolerancia");
+            float tol = node.symmetry.tolCm;
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::DragFloat("##symtol", &tol, 0.05f, 0.0f, 50.0f, "%.2f cm")) {
+                if (ImGui::IsItemActivated()) history.commitBefore(root);
+                node.symmetry.tolCm = tol;
+            }
+            ImGui::TextDisabled("  Refleja al primer hijo con malla; el hijo se edita aparte.");
         } else if (isNull) {
             sectionHeader("Propiedades del Objeto");
             roCombo("Mostrar", "Punto");
@@ -6888,6 +6926,8 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     solveAllIk(root);
     // Piel en vivo: las mallas con pesos siguen a las articulaciones (no hace nada si no se han movido).
     evaluateSkins(root);
+    // Objetos Simetria: reflejan a su hijo (despues de la Piel y la animacion, que son las que lo mueven).
+    evaluateSymmetry(root);
     if (g.recordRequested) {
         g.recordRequested = false;
         recordActiveObjects(root, selected, &history);
@@ -6936,6 +6976,12 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
             }
             flashStatus("comp-move: " + std::to_string(asym) + " vertices sin espejo.");
         }
+    }
+    if (g.symObjRequested && !g.compMoveRequested && !g.pendingCompMode && g.cmdQueue.empty() && ImGui::GetFrameCount() > 12) {
+        g.symObjRequested = false;
+        viewport.compMode = 0;
+        const PaletteItem it{"Simetría", Icon::ModSymmetry, PrimitiveType::None, true};
+        createPaletteItem(root, selected, history, it);
     }
     if (g.compSelectAllRequested && !g.pendingCompMode && viewport.w > 64.0f && ImGui::GetFrameCount() > 5) {
         const bool keepVis = g.selVisibleOnly;
@@ -7094,6 +7140,7 @@ bool queueUiCommand(const std::string& cmd) {
     if (cmd == "make-editable") g.cmdQueue.push_back(UiCmd::MakeEditable);
     else if (cmd == "frame-selected") g.cmdQueue.push_back(UiCmd::FrameSelected);
     else if (cmd == "select-all") g.cmdQueue.push_back(UiCmd::SelectAll);
+    else if (cmd == "sym-obj") g.symObjRequested = true;
     else if (cmd == "current-state") g.cmdQueue.push_back(UiCmd::CurrentState);
     else if (cmd == "connect") g.cmdQueue.push_back(UiCmd::Connect);
     else if (cmd == "connect-delete") g.cmdQueue.push_back(UiCmd::ConnectDelete);

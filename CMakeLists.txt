@@ -101,6 +101,7 @@ add_executable(Iron3DStudio
     src/main.cpp
     src/core/IkSolver.cpp
     src/core/Skin.cpp
+    src/core/Symmetry.cpp
     src/core/NullShapes.cpp
     src/importers/obj/ObjIO.cpp
     src/importers/gltf/GltfIO.cpp
@@ -211,6 +212,7 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         tests/c4d_roundtrip_test.cpp
         src/importers/cineware/CinewareImporter.cpp
         src/core/Skin.cpp
+        src/core/Symmetry.cpp
         src/importers/cineware/CinewareExporter.cpp
         src/importers/c4d_compat/C4DGeometry.cpp
         src/core/MeshData.cpp
@@ -401,6 +403,7 @@ add_test(NAME ik COMMAND ik_test)
 add_executable(skin_test
     tests/skin_test.cpp
     src/core/Skin.cpp
+    src/core/Symmetry.cpp
     src/core/NullShapes.cpp
     src/core/MeshData.cpp
     src/core/MeshTopology.cpp

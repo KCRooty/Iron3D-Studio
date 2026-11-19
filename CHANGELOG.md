@@ -1223,3 +1223,7 @@ presets) y una ventana muy pequeña.
 
 ### 2026-11-19 (11): Simetria de edicion (estilo True Symmetry)
 - Malla > Simetria de edicion: plano X/Y/Z local del objeto y tolerancia en cm. Al mover puntos/aristas/poligonos con el gizmo, los puntos espejo sin seleccionar se mueven reflejados y los que estan sobre el plano no lo abandonan. Compila; SIN probar en pantalla (no hay test automatico del arrastre). No cubre aun Extruir/Bisel/Cuchillo ni escultura, ni simetria radial.
+
+### 2026-11-19 (12): Objeto Simetria (generador, como el de C4D)
+- Modelado > Simetria crea un Nulo con simetria (si hay un objeto con malla seleccionado, lo mete dentro). El nodo dibuja la copia reflejada de su primer hijo respecto a un plano del propio nodo (X/Y/Z, tolerancia en cm en Atributos); el hijo se queda editable y visible, y cualquier cambio suyo se refleja al instante. Se guarda en .iron (linea SYM) y se duplica. Test en skin_test (reflejo, giro de triangulos, normales, cache, plano, tolerancia) y captura en pantalla (rejilla con bulto a un lado: sale simetrica). No hay soldado real de puntos (las dos mitades se tocan pero son mallas separadas), ni exporta a .c4d como generador, ni admite varios hijos. Dos simetrias en total: esta (objeto) y la de edicion (Malla > Simetria de edicion).
+- Flags de verificacion: --ui-cmd=sym=x|y|z|off, comp-move=dx,dy,dz y sym-obj.

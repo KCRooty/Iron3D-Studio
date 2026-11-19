@@ -141,6 +141,8 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
     if (node.ik.present)
         out << indent << "  IK enabled=" << (int)node.ik.enabled << " solver=" << node.ik.solver
             << " tip=" << quoted(node.ik.tip) << " target=" << quoted(node.ik.target) << " pole=" << quoted(node.ik.pole) << "\n";
+    if (node.symmetry.present)
+        out << indent << "  SYM axis=" << node.symmetry.axis << " tol=" << node.symmetry.tolCm << "\n";
     if (node.materialIndex >= 0 && !(node.texTag == TextureTagData{})) {
         const TextureTagData& t = node.texTag;
         out << indent << "  TEXTAG proj=" << t.projection << " ou=" << t.offset.x << " ov=" << t.offset.y
@@ -462,6 +464,12 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
                 else if (k == "max") vec3(v, l.maxDeg);
                 else if (k == "strength") l.strength = std::stof(v);
             });
+        } else if (kind == "SYM") {
+            node.symmetry.present = true;
+            ok = readAttrs(p, "SYM", err, [&](const std::string& k, const std::string& v) {
+                if (k == "axis") node.symmetry.axis = std::clamp(std::stoi(v), 0, 2);
+                else if (k == "tol") node.symmetry.tolCm = std::stof(v);
+            });
         } else if (kind == "IK") {
             IkTagData& t = node.ik;
             t.present = true;
@@ -751,6 +759,9 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.isJoint = temp.isJoint;
     root.jointLimits = temp.jointLimits;
     root.ik = temp.ik;
+    root.symmetry.present = temp.symmetry.present;
+    root.symmetry.axis = temp.symmetry.axis;
+    root.symmetry.tolCm = temp.symmetry.tolCm;
     root.materialParts = temp.materialParts;
     root.animPos = temp.animPos;
     root.animRot = temp.animRot;
