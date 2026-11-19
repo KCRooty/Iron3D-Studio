@@ -22,6 +22,7 @@
 #include "core/Paths.h"
 #include "importers/cineware/CinewareImporter.h"
 #include "importers/lib4d/PresetLibrary.h"
+#include "importers/obj/ObjIO.h"
 #include "importers/lib4d/PresetTextures.h"
 #include "core/ChannelBake.h"
 #include "ContentBrowser.h"
@@ -142,6 +143,7 @@ struct UiState {
     } camTrip;
     // Resultado de Abrir/Fusionar un .c4d (o el error de abrir cualquier archivo).
     bool showImport = false;
+    std::string importTitle = "Importar Cinema 4D"; // titulo del informe (c4d, obj...)
     C4DImportReport importReport;
     std::string importError;
     // Resultado de Exportar a Cinema 4D / Guardar Objetos Seleccionados como.
@@ -892,6 +894,7 @@ void offsetMaterialIndices(SceneNode& node, int base) {
 
 void reportFileError(const std::filesystem::path& path, const std::string& err) {
     g.importReport = C4DImportReport{};
+    g.importTitle = "Importar Cinema 4D";
     g.importReport.fileName = pathUtf8(path.filename());
     g.importError = err;
     g.showImport = true;
@@ -972,6 +975,28 @@ void loadPresetImpl(const PresetLibrary& lib, const PresetItem& item, SceneNode&
     }
 }
 
+// Importa un OBJ en `dest` y deja el informe listo para mostrar.
+bool importObjInto(const std::filesystem::path& path, SceneNode& dest, std::vector<Material>& mats) {
+    ObjReport orep;
+    std::string err;
+    if (!importObj(path, dest, mats, orep, &err)) {
+        reportFileError(path, err);
+        return false;
+    }
+    g.importReport = C4DImportReport{};
+    g.importReport.fileName = pathUtf8(path.filename());
+    g.importReport.objects = orep.objects;
+    g.importReport.meshes = orep.objects;
+    g.importReport.points = orep.points;
+    g.importReport.polygons = orep.polygons;
+    g.importReport.materials = orep.materials;
+    g.importReport.warnings = orep.warnings;
+    g.importError.clear();
+    g.importTitle = "Importar OBJ";
+    g.showImport = true;
+    return true;
+}
+
 // Archivo > Abrir (Ctrl+O): .iron o .c4d con el dialogo del sistema. Sin
 // dialogo nativo (Linux por ahora) se usa el propio de la carpeta scenes/.
 void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history, std::vector<Material>& materials,
@@ -981,15 +1006,22 @@ void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history,
         g.sceneLoadMode = true;
         return;
     }
-    const auto path = openFileDialog("Abrir", {{"Escenas y librerías (iron, c4d, lib4d)", "*.iron;*.c4d;*.lib4d"},
-                                               {"Iron3D", "*.iron"}, {"Cinema 4D", "*.c4d"},
+    const auto path = openFileDialog("Abrir", {{"Escenas y librerías (iron, c4d, obj, lib4d)", "*.iron;*.c4d;*.obj;*.lib4d"},
+                                               {"Iron3D", "*.iron"}, {"Cinema 4D", "*.c4d"}, {"Wavefront", "*.obj"},
                                                {"Librería de preestablecidos de Cinema 4D", "*.lib4d"}});
     if (!path) return;
     // Una .lib4d no sustituye la escena: se monta en el Navegador de Contenido
     // (Preestablecidos, solo esta sesion) y se abre su ventana, como en C4D.
     if (isLib4dPath(*path)) return openPresetLibrary(*path);
     std::string err;
-    if (isC4DPath(*path)) {
+    if (isObjPath(*path)) {
+        SceneNode temp("tmp");
+        std::vector<Material> mats;
+        if (!importObjInto(*path, temp, mats)) return;
+        root.clearChildren();
+        root.adoptChildrenFrom(temp);
+        materials = std::move(mats);
+    } else if (isC4DPath(*path)) {
         SceneNode temp("tmp");
         std::vector<Material> mats;
         C4DImportReport rep;
@@ -999,6 +1031,7 @@ void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history,
         materials = std::move(mats);
         g.importReport = rep;
         g.importError.clear();
+        g.importTitle = "Importar Cinema 4D";
         g.showImport = true;
     } else if (!loadScene(*path, root, materials, &err)) {
         return reportFileError(*path, err);
@@ -1017,16 +1050,19 @@ void mergeSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history
                                     "plataforma todavía no existe.");
         return;
     }
-    const auto path = openFileDialog("Fusionar", {{"Escenas de Cinema 4D e Iron3D", "*.c4d;*.iron"},
-                                                  {"Cinema 4D", "*.c4d"}, {"Iron3D", "*.iron"}});
+    const auto path = openFileDialog("Fusionar", {{"Escenas de Cinema 4D, OBJ e Iron3D", "*.c4d;*.obj;*.iron"},
+                                                  {"Cinema 4D", "*.c4d"}, {"Wavefront", "*.obj"}, {"Iron3D", "*.iron"}});
     if (!path) return;
     const std::string before = history.snapshot(root);
     std::string err;
-    if (isC4DPath(*path)) {
+    if (isObjPath(*path)) {
+        if (!importObjInto(*path, root, materials)) return;
+    } else if (isC4DPath(*path)) {
         C4DImportReport rep;
         if (!importC4D(*path, root, materials, rep, &err)) return reportFileError(*path, err);
         g.importReport = rep;
         g.importError.clear();
+        g.importTitle = "Importar Cinema 4D";
         g.showImport = true;
     } else {
         SceneNode temp("tmp");
@@ -1072,6 +1108,31 @@ void exportC4DDialog(const std::vector<const SceneNode*>& roots, const std::vect
     g.exportReport = rep;
     g.exportPath = pathUtf8(*path);
     g.showExport = true;
+}
+
+// Archivo > Exportar > Wavefront (*.obj): toda la escena.
+void exportSceneObj(SceneNode& root, const std::vector<Material>& materials) {
+    std::vector<const SceneNode*> roots;
+    for (const auto& c : root.children()) roots.push_back(c.get());
+    if (roots.empty()) return reportNamedError("Exportar", "La escena está vacía.");
+    if (!nativeFileDialogAvailable())
+        return reportNamedError("Exportar", "Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.");
+    const auto path = saveFileDialog("Exportar a Wavefront", {{"Wavefront", "*.obj"}}, "Escena.obj", "obj");
+    if (!path) return;
+    ObjReport orep;
+    std::string err;
+    if (!exportObj(*path, roots, materials, orep, &err)) return reportFileError(*path, err);
+    g.importReport = C4DImportReport{};
+    g.importReport.fileName = pathUtf8(path->filename());
+    g.importReport.objects = orep.objects;
+    g.importReport.meshes = orep.objects;
+    g.importReport.points = orep.points;
+    g.importReport.polygons = orep.polygons;
+    g.importReport.materials = orep.materials;
+    g.importReport.warnings = orep.warnings;
+    g.importError.clear();
+    g.importTitle = "Exportar OBJ";
+    g.showImport = true;
 }
 
 void exportSceneC4D(SceneNode& root, const std::vector<Material>& materials) {
@@ -2223,7 +2284,8 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
                 exportSceneC4D(root, materials);
             if (!cinewareAvailable() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
                 ImGui::SetTooltip("Esta compilación no lleva el Cineware SDK de MAXON");
-            disabledItems({{"Wavefront (*.obj)", ""}, {"FBX (*.fbx)", ""}, {"Alembic (*.abc)", ""},
+            if (ImGui::MenuItem("Wavefront (*.obj)...")) exportSceneObj(root, materials);
+            disabledItems({{"FBX (*.fbx)", ""}, {"Alembic (*.abc)", ""},
                            {"STL (*.stl)", ""}, {"Collada 1.4 (*.dae)", ""}});
             ImGui::EndMenu();
         }
@@ -5468,7 +5530,8 @@ void drawImportReport() {
     if (std::getenv("IRON3D_NO_IMPORT_REPORT")) { g.showImport = false; return; }
     const C4DImportReport& r = g.importReport;
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    const char* title = g.importError.empty() ? "Importar Cinema 4D###importrep" : "No se pudo abrir###importrep";
+    const std::string titleStr = (g.importError.empty() ? g.importTitle : std::string("No se pudo abrir")) + "###importrep";
+    const char* title = titleStr.c_str();
     if (ImGui::Begin(title, &g.showImport, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
         // Al abrir Iron3D con un .c4d el informe sale en el primer frame y las
         // ventanas que se crean despues lo taparian. Se queda delante de los

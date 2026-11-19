@@ -99,6 +99,7 @@ target_link_libraries(imgui PUBLIC glfw Vulkan::Vulkan)
 # -----------------------------------------------------------------------------
 add_executable(Iron3DStudio
     src/main.cpp
+    src/importers/obj/ObjIO.cpp
     src/gfx/VulkanContext.cpp
     src/gfx/SwapchainWindow.cpp
     src/gfx/BasicPipeline.cpp
@@ -348,6 +349,28 @@ else()
     target_compile_options(preset_library_test PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME preset_library COMMAND preset_library_test)
+
+add_executable(obj_test
+    tests/obj_test.cpp
+    src/importers/obj/ObjIO.cpp
+    src/core/MeshData.cpp
+    src/core/MeshTopology.cpp
+    src/core/MeshEdit.cpp
+    src/core/SceneNode.cpp
+    src/core/Material.cpp
+    src/core/ShaderTree.cpp
+    src/core/SceneSerializer.cpp
+    src/core/ThumbnailRenderer.cpp
+    src/core/TransformGizmo.cpp)
+target_include_directories(obj_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+target_link_libraries(obj_test PRIVATE iron3d_lib4d)
+target_compile_definitions(obj_test PRIVATE GLM_FORCE_RADIANS)
+if(MSVC)
+    target_compile_options(obj_test PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(obj_test PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME obj COMMAND obj_test)
 
 # Shader Fresnel de C4D: horneado de la tira 256x1, modo fisico y ida y vuelta (sin GPU).
 add_executable(fresnel_test

@@ -34,6 +34,7 @@ extern "C" __declspec(dllimport) int __stdcall MessageBoxW(void* hWnd, const wch
 #include "ui/MainUi.h"
 #include "ui/ContentBrowser.h"
 #include "importers/lib4d/PresetLibrary.h"
+#include "importers/obj/ObjIO.h"
 
 #include "importers/cineware/CinewareImporter.h"
 
@@ -641,6 +642,18 @@ int main(int argc, char** argv) {
                 }
             }
             else std::fprintf(stderr, "[Iron3D] No se pudo abrir la librería '%s': %s\n", sceneArg, err.c_str());
+        } else if (iron3d::isObjPath(argPath)) {
+            iron3d::ObjReport orep;
+            sceneRoot.clearChildren();
+            if (iron3d::importObj(argPath, sceneRoot, materials, orep, &err)) {
+                selected = nullptr;
+                iron3d::frameScene(camera, sceneRoot);
+                std::fprintf(stderr, "[Iron3D] OBJ importado: %d objetos, %lld poligonos, %d materiales\n", orep.objects,
+                             orep.polygons, orep.materials);
+            } else {
+                std::fprintf(stderr, "[Iron3D] No se pudo importar '%s': %s\n", sceneArg, err.c_str());
+                selected = sceneRoot.addChild("Cubo", PrimitiveType::Cube);
+            }
         } else if (iron3d::isC4DPath(argPath)) {
             iron3d::C4DImportReport report;
             sceneRoot.clearChildren();

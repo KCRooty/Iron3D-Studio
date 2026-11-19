@@ -6,6 +6,14 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-19 (2): Wavefront OBJ y estilo de iconos plano
+
+**Nuevo**
+- **Importar y exportar OBJ + MTL** (Archivo > Abrir/Fusionar y Exportar > Wavefront; también `Iron3DStudio.exe archivo.obj`). Funciona sin Cineware, también en Linux. Importa polígonos de n lados (se guardan como tales), UV (con la v invertida a la convención de C4D), normales del archivo o suaves calculadas, un objeto por `o`/`g`, y materiales del `.mtl` (color, brillo, emisión, opacidad, textura de Color) con partes por material. Exporta con la transformación de mundo, un `.mtl` aparte y los polígonos originales.
+- Preset **Blender**: iconos con **estilo plano propio** (`IconStyle::Flat`: trazo más grueso y colores atenuados; los mismos dibujos de Iron3D, no los de Blender) y espacios de trabajo con sus nombres (Layout, Modeling, Sculpting, UV Editing, Texture Paint, Animation).
+
+**Probado**: `obj_test` (importar, ida y vuelta, material por partes, archivo roto), compilación Debug, apertura de un OBJ de prueba por línea de comandos y captura del preset Blender. **Sin probar**: OBJ grandes (rendimiento), texturas relativas en subcarpetas con la GUI, Linux; los espacios de trabajo de Blender todavía solo cambian la etiqueta.
+
 ### 2026-11-19: Preset «Iron3D» (el aspecto de la web) como interfaz predeterminada
 
 **Nuevo**
