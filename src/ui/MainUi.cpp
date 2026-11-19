@@ -23,6 +23,7 @@
 #include "importers/cineware/CinewareImporter.h"
 #include "importers/lib4d/PresetLibrary.h"
 #include "importers/obj/ObjIO.h"
+#include "core/IkSolver.h"
 #include "importers/lib4d/PresetTextures.h"
 #include "core/ChannelBake.h"
 #include "ContentBrowser.h"
@@ -2470,6 +2471,18 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         if (iconMenuItem(Icon::StepBack, "Fotograma Anterior", "F")) g.frame = std::max((float)g.minFrame, std::ceil(g.frame) - 1);
         ImGui::Separator();
         iconMenuItem(Icon::MnuLoop, "Repetir (Loop)", nullptr, &g.loop);
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Personaje")) {
+        if (ImGui::MenuItem("Resolver IK (experimental)")) {
+            history.commitBefore(root);
+            const int n = solveAllIk(root);
+            flashStatus(n > 0 ? "IK: " + std::to_string(n) + " cadenas resueltas."
+                              : "IK: ninguna etiqueta IK activa con Punta y Objetivo alcanzables.");
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Mueve las articulaciones de cada etiqueta IK para que la punta llegue a su objetivo");
+        disabledItems({{"Articulación", ""}, {"Piel", ""}, {"Pesos", ""}, {"Restricción", ""}});
         ImGui::EndMenu();
     }
     stubTop("Simulación", {{"Partículas", ""}, {"Thinking Particles", ""}, {"Dinámicas", ""}, {"Cloth", ""},

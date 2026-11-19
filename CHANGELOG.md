@@ -6,6 +6,14 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-19 (5): Solver IK
+
+**Nuevo**
+- **Personaje > Resolver IK (experimental)**: para cada etiqueta IK activa con Punta y Objetivo, mueve la cadena (FABRIK: conserva la longitud de cada hueso) para que la punta llegue al objetivo; con Polo, el codo/rodilla se dobla hacia él. Si el objetivo queda fuera de alcance la cadena se estira recta hacia él. Se puede deshacer.
+- Menú **Personaje** nuevo (Articulación, Piel, Pesos y Restricción aparecen desactivados: son lo siguiente).
+
+**Probado**: `ik_test` (cadena de 3 huesos alcanzable, fuera de alcance, polo a ambos lados, cadena bajo una base girada y desplazada, etiqueta IK con rutas por nombre y objetivo que se mueve, etiqueta desactivada). **Sin probar**: contra el resultado real de C4D en un rig importado (los límites de giro, el solver 2D y el peso preferido de C4D todavía no se aplican; se resuelve a mano desde el menú, no en cada fotograma), ni en la GUI.
+
 ### 2026-11-19 (4): Rig, primer paso: articulaciones y etiqueta IK
 
 **Nuevo**
