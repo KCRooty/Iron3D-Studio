@@ -2645,6 +2645,9 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         if (ImGui::MenuItemEx(tr("Selección de Anillo"), kIconGutterText, "U~B", false, cm == 2)) g.compOp = "ring";
         if (ImGui::MenuItemEx(tr("Selección Contorno"), kIconGutterText, "U~Q", false, cm != 0)) g.compOp = "outline";
         if (ImGui::MenuItemEx(tr("Rellenar Selección"), kIconGutterText, "U~F", false, cm == 3)) g.compOp = "fill";
+        if (ImGui::MenuItemEx(tr("Patrón: 1 de cada 2"), kIconGutterText, "", false, cm != 0)) g.compOp = "pattern2";
+        if (ImGui::MenuItemEx(tr("Patrón: 1 de cada 2 (desfasado)"), kIconGutterText, "", false, cm != 0)) g.compOp = "pattern2b";
+        if (ImGui::MenuItemEx(tr("Patrón: 1 de cada 3"), kIconGutterText, "", false, cm != 0)) g.compOp = "pattern3";
         ImGui::Separator();
         if (ImGui::MenuItemEx(tr("Ocultar Selección"), kIconGutterText, "", false, cm != 0)) g.compOp = "hide";
         if (ImGui::MenuItemEx(tr("Ocultar No Seleccionados"), kIconGutterText, "", false, cm != 0)) g.compOp = "hideinv";
@@ -6835,6 +6838,11 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
         }
         c.sel = out;
         return done(op == "loop" ? tr("Selección de Bucle") : tr("Selección de Anillo"));
+    }
+    if (op == "pattern2" || op == "pattern2b" || op == "pattern3") {
+        const int step = op == "pattern3" ? 3 : 2;
+        c.sel = patternSelection(c.sel, step, op == "pattern2b" ? 1 : 0);
+        return done(tr("Seleccionar Patrón"));
     }
     if (op == "grow") { c.sel = growSelection(t, mode, c.sel); return done(tr("Aumentar Selección")); }
     if (op == "shrink") { c.sel = shrinkSelection(t, mode, c.sel); return done(tr("Reducir Selección")); }

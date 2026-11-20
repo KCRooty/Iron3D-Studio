@@ -1052,6 +1052,10 @@ Giro Aleatorio	Rotazione casuale
 Escala Aleatoria	Scala casuale
 Semilla	Seme
   Modo Objeto: una copia en cada punto del 2.º hijo con malla.	  Modalità Oggetto: un clone su ogni punto del 2º figlio con mesh.
+Seleccionar Patrón	Seleziona schema
+Patrón: 1 de cada 2	Schema: 1 ogni 2
+Patrón: 1 de cada 2 (desfasado)	Schema: 1 ogni 2 (sfalsato)
+Patrón: 1 de cada 3	Schema: 1 ogni 3
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula

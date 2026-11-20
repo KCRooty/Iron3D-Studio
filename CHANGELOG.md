@@ -6,6 +6,19 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (23): Seleccionar Patrón
+
+**Añadido**
+- Menú Selección, en modo Puntos, Aristas o Polígonos: **Patrón: 1 de cada 2**, **1 de cada 2 (desfasado)** y **1 de cada 3**. Parten de la selección actual y se quedan con una de cada N (los dos desfases de «cada 2» juntos reconstruyen la selección original). También con `--ui-cmd=meshop=pattern2|pattern2b|pattern3`.
+- Tests con selección conocida: 1 de cada 2, desfasado, 1 de cada 3, paso 1 / vacío sin cambios y reconstrucción con los dos desfases.
+
+**Límites**
+- El orden es el de los **índices de la topología**, no el recorrido geométrico de un bucle: en mallas generadas por Iron3D suele coincidir con el orden de creación, pero en una malla editada a mano puede dar saltos.
+- Solo N = 2 y 3 desde el menú (la función admite cualquier paso y desfase, falta un diálogo).
+- Sobre la petición de ocultar puntos y aristas: **no se ha tocado**. Ocultar ya funciona en modo Puntos/Aristas/Polígonos, pero oculta *polígonos* (los que tienen todos sus puntos elegidos), no puntos o aristas sueltos. Ocultarlos de verdad exige cambios en el dibujado del visor y queda pendiente.
+
+**Verificado:** tests y compilación. **Sin probar:** en el visor ni con clics reales.
+
 ### 2026-11-20 (22): Clonador: modo Objeto
 
 **Añadido**

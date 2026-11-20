@@ -1088,6 +1088,10 @@ Giro Aleatorio	Random Rotation
 Escala Aleatoria	Random Scale
 Semilla	Seed
   Modo Objeto: una copia en cada punto del 2.º hijo con malla.	  Object mode: one clone at each point of the 2nd child with a mesh.
+Seleccionar Patrón	Select Pattern
+Patrón: 1 de cada 2	Pattern: every 2nd
+Patrón: 1 de cada 2 (desfasado)	Pattern: every 2nd (offset)
+Patrón: 1 de cada 3	Pattern: every 3rd
 Polígono Vacío	Empty Polygon
 Guía	Guide
 Cono	Cone

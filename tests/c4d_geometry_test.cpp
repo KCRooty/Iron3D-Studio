@@ -918,6 +918,19 @@ int main() {
                   "clonador: ajustes conservados tras guardar");
         }
 
+        // Seleccionar Patron.
+        {
+            const std::set<int> base = {2, 3, 5, 8, 9, 12};
+            const std::set<int> p2 = patternSelection(base, 2, 0), p2b = patternSelection(base, 2, 1), p3 = patternSelection(base, 3, 0);
+            check(p2 == std::set<int>({2, 5, 9}), "patron 1 de cada 2: 2, 5, 9");
+            check(p2b == std::set<int>({3, 8, 12}), "patron 1 de cada 2 desfasado: 3, 8, 12");
+            check(p3 == std::set<int>({2, 8}), "patron 1 de cada 3: 2, 8");
+            check(patternSelection(base, 1, 0) == base && patternSelection({}, 2, 0).empty(), "patron: paso 1 y vacio no cambian nada");
+            std::set<int> un = p2;
+            un.insert(p2b.begin(), p2b.end());
+            check(un == base, "patron: los dos desfases juntos reconstruyen la seleccion");
+        }
+
         // Booleanos: volumen con signo de la malla resultante.
         {
             auto vol = [](const MeshData& m) {

@@ -451,6 +451,17 @@ std::set<int> growSelection(const MeshTopology& topo, int mode, const std::set<i
     return out;
 }
 
+std::set<int> patternSelection(const std::set<int>& sel, int step, int offset) {
+    if (step < 2) return sel;
+    std::set<int> out;
+    int k = 0;
+    for (int i : sel) {
+        if (((k - offset) % step + step) % step == 0) out.insert(i);
+        ++k;
+    }
+    return out;
+}
+
 std::set<int> shrinkSelection(const MeshTopology& topo, int mode, const std::set<int>& sel) {
     const auto nb = neighbours(topo, mode);
     std::set<int> out;

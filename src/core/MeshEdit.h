@@ -62,6 +62,10 @@ std::set<int> edgeRing(const MeshTopology& topo, int edge);
 // aristas y poligonos por punto comun.
 std::set<int> growSelection(const MeshTopology& topo, int mode, const std::set<int>& sel);
 std::set<int> shrinkSelection(const MeshTopology& topo, int mode, const std::set<int>& sel);
+// Seleccionar Patron: de la seleccion actual, ordenada por indice, se queda con 1 de cada `step` empezando
+// por la posicion `offset` (0 = la primera, 1 = la segunda...). step < 2 deja la seleccion como esta.
+// Limite: el orden es el de los indices de la topologia, no el recorrido geometrico de un bucle.
+std::set<int> patternSelection(const std::set<int>& sel, int step, int offset);
 // Contorno: de la seleccion, solo los elementos del borde (los que tocan algo sin seleccionar).
 std::set<int> outlineSelection(const MeshTopology& topo, int mode, const std::set<int>& sel);
 // Rellenar (modo Poligonos): los huecos de poligonos sin seleccionar rodeados por la seleccion se seleccionan.
