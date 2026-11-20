@@ -6,6 +6,16 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (11): Exportar a Source (Valve SMD)
+
+**Añadido**
+- **Archivo › Exportar › Valve SMD (Source)**: escribe toda la escena como malla de referencia estática (un hueso `root`, una pose, triángulos con posición, normal y UV) lista para `studiomdl`. Ejes girados de Y arriba a Z arriba (`(x,y,z) → (x,-z,y)`), 1 unidad de Iron3D = 200 cm escalada a unidades de Source (1 unidad ≈ 1,905 cm), caras en sentido horario. El material es el nombre del archivo de la textura de Color (o el del material) en minúsculas: ese es el `.vmt` que hay que crear.
+- Nuevo test `smd_test`.
+
+**Límites:** sin esqueleto, pesos ni animación (la Piel de Iron3D no se convierte todavía) y no escribe el `.qc` ni los `.vmt`.
+
+**Probado:** `smd_test` (nombres de material, 12 triángulos y 36 vértices de un Cubo, eje Z arriba y escala, escena vacía). **No probado:** compilar el SMD con `studiomdl` ni verlo en Source; las caras en sentido horario y la escala son lo que dice la documentación general del formato, sin comprobar contra el motor.
+
 ### 2026-11-20 (10): Alemán, francés e italiano: unas 260 cadenas propias más
 
 **Añadido**

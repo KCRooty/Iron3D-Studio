@@ -1135,3 +1135,7 @@ Mostrar Todo	Unhide All
 No se puede ocultar todo el objeto.	Cannot hide the whole object.
 Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio could not open its window.
 Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	It needs a graphics card with Vulkan 1.3 or OpenGL 3.3. Try updating your graphics drivers.
+Exportar a Source (SMD)	Export to Source (SMD)
+Escena.smd	Scene.smd
+Exportar SMD	Export SMD
+SMD: solo geometría, normales y UV; sin esqueleto ni animación. Cada material de Source necesita su .vmt.	SMD: geometry, normals and UVs only; no skeleton or animation. Each Source material needs its own .vmt.

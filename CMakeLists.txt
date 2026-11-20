@@ -104,6 +104,7 @@ add_executable(Iron3DStudio
     src/core/Symmetry.cpp
     src/core/NullShapes.cpp
     src/importers/obj/ObjIO.cpp
+    src/importers/smd/SmdIO.cpp
     src/importers/gltf/GltfIO.cpp
     src/gfx/VulkanContext.cpp
     src/gfx/SwapchainWindow.cpp
@@ -386,6 +387,24 @@ else()
     target_compile_options(obj_test PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME obj COMMAND obj_test)
+
+add_executable(smd_test
+    tests/smd_test.cpp
+    src/importers/smd/SmdIO.cpp
+    src/core/MeshData.cpp
+    src/core/SceneNode.cpp
+    src/core/Material.cpp
+    src/core/ShaderTree.cpp
+    src/core/MeshTopology.cpp)
+target_include_directories(smd_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+target_link_libraries(smd_test PRIVATE iron3d_lib4d)
+target_compile_definitions(smd_test PRIVATE GLM_FORCE_RADIANS)
+if(MSVC)
+    target_compile_options(smd_test PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(smd_test PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME smd COMMAND smd_test)
 
 add_executable(ik_test
     tests/ik_test.cpp

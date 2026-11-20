@@ -24,6 +24,7 @@
 #include "importers/cineware/CinewareImporter.h"
 #include "importers/lib4d/PresetLibrary.h"
 #include "importers/obj/ObjIO.h"
+#include "importers/smd/SmdIO.h"
 #include "importers/gltf/GltfIO.h"
 #include "core/IkSolver.h"
 #include "core/Skin.h"
@@ -1148,6 +1149,31 @@ void exportC4DDialog(const std::vector<const SceneNode*>& roots, const std::vect
     g.exportReport = rep;
     g.exportPath = pathUtf8(*path);
     g.showExport = true;
+}
+
+// Archivo > Exportar > Valve SMD (*.smd): toda la escena como malla de referencia de Source.
+void exportSceneSmd(SceneNode& root, const std::vector<Material>& materials) {
+    std::vector<const SceneNode*> roots;
+    for (const auto& c : root.children()) roots.push_back(c.get());
+    if (roots.empty()) return reportNamedError(tr("Exportar"), tr("La escena está vacía."));
+    if (!nativeFileDialogAvailable())
+        return reportNamedError(tr("Exportar"), tr("Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe."));
+    const auto path = saveFileDialog(tr("Exportar a Source (SMD)"), {{tr("Valve SMD"), "*.smd"}}, tr("Escena.smd"), "smd");
+    if (!path) return;
+    SmdReport srep;
+    std::string err;
+    if (!exportSmd(*path, roots, materials, srep, &err)) return reportFileError(*path, err);
+    g.importReport = C4DImportReport{};
+    g.importReport.fileName = pathUtf8(path->filename());
+    g.importReport.objects = srep.objects;
+    g.importReport.meshes = srep.objects;
+    g.importReport.polygons = srep.triangles;
+    g.importReport.materials = (int)srep.materials.size();
+    g.importReport.warnings = srep.warnings;
+    g.importReport.warnings.push_back(tr("SMD: solo geometría, normales y UV; sin esqueleto ni animación. Cada material de Source necesita su .vmt."));
+    g.importError.clear();
+    g.importTitle = tr("Exportar SMD");
+    g.showImport = true;
 }
 
 // Archivo > Exportar > Wavefront (*.obj): toda la escena.
@@ -2397,6 +2423,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
             if (!cinewareAvailable() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
                 ImGui::SetTooltip(tr("Esta compilación no lleva el Cineware SDK de MAXON"));
             if (ImGui::MenuItem(tr("Wavefront (*.obj)..."))) exportSceneObj(root, materials);
+            if (ImGui::MenuItem(tr("Valve SMD (Source) (*.smd)..."))) exportSceneSmd(root, materials);
             if (ImGui::MenuItem(tr("glTF binario (*.glb)..."))) exportSceneGlb(root, materials);
             disabledItems({{tr("FBX (*.fbx)"), ""}, {tr("Alembic (*.abc)"), ""},
                            {"STL (*.stl)", ""}, {tr("Collada 1.4 (*.dae)"), ""}});
