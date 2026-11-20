@@ -6,12 +6,22 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (7): Edición > Cortar, y Copiar/Pegar con selección múltiple
+
+**Nuevo**
+- **Cortar** (`Ctrl+X` y menú Edición): guarda una copia de la selección y la borra. Antes estaba desactivado.
+- **Copiar/Pegar** guardan ahora una copia propia, no una referencia al objeto: se puede copiar, borrar el original y pegar. Copian toda la selección (varios objetos), y Pegar los deja junto al objeto activo (mismo padre) o en la raíz y los deja seleccionados.
+- El primer Pegar tras Cortar conserva los nombres; los siguientes (y los de Copiar) añaden « copia».
+- `--ui-cmd=cut|copy|paste` para verificar sin input.
+
+**Verificado por captura:** `--select=Cubo --ui-cmd=cut --ui-cmd=paste --ui-cmd=paste` deja «Cubo» y «Cubo copia». **No probado:** `Ctrl+X`/`Ctrl+V` con teclado, selección múltiple y objetos con hijos.
+
 ### 2026-11-20 (6): Selección > Ocultar Selección, Ocultar No Seleccionados y Mostrar Todo
 
 **Nuevo**
 - **Ocultar Selección / Ocultar No Seleccionados / Mostrar Todo** (menú Selección, modos de componentes). Los polígonos ocultos dejan de dibujarse en el visor (el render usa una malla filtrada) y de tapar a los componentes de detrás; sus puntos y aristas dejan de mostrarse y de poder elegirse si solo los usan polígonos ocultos. En modo Puntos/Aristas se ocultan los polígonos cuyos puntos están todos elegidos. No deja ocultar el objeto entero.
 
-**Probado:** `iron3d_tests` (la cara oculta no se ve y deja de tapar a la de detrás); compila Debug/Release. **No probado:** el clic en los menús con la interfaz abierta ni el render del objeto con polígonos ocultos.
+**Probado:** `iron3d_tests` (la cara oculta no se ve y deja de tapar a la de detrás); compila Debug/Release. **Verificado por captura (sin input, `--ui-cmd=meshop=hideinv`):** el visor solo dibuja el polígono elegido. **No probado:** el clic en los menús con la interfaz abierta.
 **Límites:** el ocultado se pierde al editar la malla (cualquier edición crea otra malla) y no se guarda en el `.iron`. En C4D el ocultado es por componente (puntos y aristas sueltos); aquí es por polígono.
 
 ### 2026-11-20 (5): Selección > Contorno y Rellenar Selección

@@ -110,7 +110,7 @@ enum class AttrFocus { Object, Material, Tag, Project };
 // menu contextual del visor) y se ejecutan al principio del frame siguiente.
 enum class UiCmd { None, MakeEditable, FrameSelected, FrameAll, ResetView, Group, SelectChildren,
                    CurrentState, Connect, ConnectDelete, SelectAll, ViewPersp, ViewTop, ViewRight, ViewFront,
-                   ViewLeft, ViewBack, ViewBottom, ViewQuad, ClearAnimation, SymmetryObject };
+                   ViewLeft, ViewBack, ViewBottom, ViewQuad, ClearAnimation, SymmetryObject, Cut, Copy, Paste };
 
 struct UiState {
     UiCmd pendingCmd = UiCmd::None;
@@ -177,7 +177,9 @@ struct UiState {
     unsigned objMask[3] = {1u << 2, 1u << 2, 1u << 2}; // geometria, luz, nulo: "Objeto"/"General"
     unsigned matMask = 1u << 1;                          // material: "Color"
     unsigned tagMask = 1u << 1;                          // etiqueta: "Etiqueta"
-    int clipboardNodeId = -1;
+    // Portapapeles de objetos: copia propia (sobrevive a borrar el original).
+    std::unique_ptr<SceneNode> clip;
+    bool clipCut = false;  // viene de Cortar: el primer Pegar conserva los nombres
 
     // Proyecto / Linea de Tiempo (seccion 15 de la referencia: FPS 30, 0F-90F).
     int fps = 30;
@@ -1258,6 +1260,37 @@ void selectOnly(SceneNode*& selected, SceneNode* n) {
     selected = n;
 }
 
+// Copiar / Cortar (Ctrl+C / Ctrl+X): guarda una copia de toda la seleccion
+// (solo los de arriba; los hijos van dentro). Cortar ademas la borra.
+void copySelection(SceneNode& root, SceneNode*& selected, SceneHistory& history, bool cut) {
+    std::vector<SceneNode*> src = topLevelSelection(root, nullptr);
+    if (src.empty() && selected && selected->parent()) src.push_back(selected);
+    if (src.empty()) return;
+    g.clip = std::make_unique<SceneNode>("clip");
+    for (SceneNode* n : src)
+        if (SceneNode* c = duplicateSubtree(*g.clip, *n)) c->setName(n->name());
+    g.clipCut = cut;
+    if (cut) deleteSelected(root, selected, history);
+}
+
+// Pegar (Ctrl+V): junto al objeto activo (mismo padre) o en la raiz.
+void pasteClipboard(SceneNode& root, SceneNode*& selected, SceneHistory& history) {
+    if (!g.clip || g.clip->children().empty()) return;
+    SceneNode* parent = selected && selected->parent() ? selected->parent() : &root;
+    history.commitBefore(root);
+    std::vector<SceneNode*> made;
+    for (const auto& ch : g.clip->children()) {
+        SceneNode* c = duplicateSubtree(*parent, *ch);
+        if (!c) continue;
+        if (g.clipCut) c->setName(ch->name());
+        made.push_back(c);
+    }
+    g.clipCut = false;
+    if (made.empty()) return;
+    selectOnly(selected, made.front());
+    for (SceneNode* m : made) g.selIds.insert(m->id());
+}
+
 // Agrupar Objetos (Alt+G): un Nulo nuevo en el sitio del primero, con la
 // seleccion dentro y plegado, como en C4D.
 void groupObjects(SceneNode& root, SceneNode*& selected, SceneHistory& history, SceneNode* clicked) {
@@ -1995,16 +2028,11 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
         if (pressed(ImGuiKey_Y) || (pressed(ImGuiKey_Z) && shift)) {
             if (history.redo(root)) selected = nullptr;
         }
-        if (pressed(ImGuiKey_C) && selected) g.clipboardNodeId = selected->id();
+        if (pressed(ImGuiKey_C) && selected) copySelection(root, selected, history, false);
+        if (pressed(ImGuiKey_X) && selected) copySelection(root, selected, history, true);
         if (pressed(ImGuiKey_A)) g.pendingCmd = UiCmd::SelectAll;  // Seleccionar Todo (objetos)
         if (pressed(ImGuiKey_I)) g.focus = AttrFocus::Project;  // Informacion del Proyecto
-        if (pressed(ImGuiKey_V)) {
-            SceneNode* src = g.clipboardNodeId >= 0 ? findById(root, g.clipboardNodeId) : nullptr;
-            if (src && src->parent()) {
-                history.commitBefore(root);
-                selected = duplicateSubtree(*src->parent(), *src);
-            }
-        }
+        if (pressed(ImGuiKey_V)) pasteClipboard(root, selected, history);
         if (pressed(ImGuiKey_R)) vp.renderView = true;
         if (pressed(ImGuiKey_B)) g.showRenderSettings = true;  // Editar Configuracion de Render
         if (pressed(ImGuiKey_N)) newScene(root, selected, history, materials);
@@ -2103,6 +2131,9 @@ void runPendingCmd(SceneNode& root, SceneNode*& selected, SceneHistory& history,
             flashStatus(tr("Animación eliminada."));
             break;
         }
+        case UiCmd::Cut: copySelection(root, selected, history, true); break;
+        case UiCmd::Copy: copySelection(root, selected, history, false); break;
+        case UiCmd::Paste: pasteClipboard(root, selected, history); break;
         case UiCmd::CurrentState: {
             const int n = currentStateToObject(root, selected, history);
             flashStatus(n ? tr("Estado Actual a Objeto: ") + std::to_string(n) + (n == 1 ? tr(" copia poligonal creada.") : tr(" copias poligonales creadas."))
@@ -2383,15 +2414,11 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         if (iconMenuItem(Icon::Redo, tr("Rehacer"), tr("Ctrl+Y"), false, history.canRedo()))
             if (history.redo(root)) selected = nullptr;
         ImGui::Separator();
-        iconMenuItem(Icon::MnuCut, tr("Cortar"), tr("Ctrl+X"), false, false);
-        if (iconMenuItem(Icon::MnuCopy, tr("Copiar"), tr("Ctrl+C"), false, selected != nullptr)) g.clipboardNodeId = selected->id();
-        if (iconMenuItem(Icon::MnuPaste, tr("Pegar"), tr("Ctrl+V"), false, g.clipboardNodeId >= 0)) {
-            SceneNode* src = findById(root, g.clipboardNodeId);
-            if (src && src->parent()) {
-                history.commitBefore(root);
-                selected = duplicateSubtree(*src->parent(), *src);
-            }
-        }
+        if (iconMenuItem(Icon::MnuCut, tr("Cortar"), tr("Ctrl+X"), false, selected != nullptr && selected->parent()))
+            copySelection(root, selected, history, true);
+        if (iconMenuItem(Icon::MnuCopy, tr("Copiar"), tr("Ctrl+C"), false, selected != nullptr)) copySelection(root, selected, history, false);
+        if (iconMenuItem(Icon::MnuPaste, tr("Pegar"), tr("Ctrl+V"), false, g.clip && !g.clip->children().empty()))
+            pasteClipboard(root, selected, history);
         if (iconMenuItem(Icon::MnuDelete, tr("Eliminar"), tr("Supr"), false, selected != nullptr)) deleteSelected(root, selected, history);
         ImGui::Separator();
         if (iconMenuItem(Icon::MnuSelectAll, tr("Seleccionar Todo"), tr("Ctrl+A"))) g.pendingCmd = UiCmd::SelectAll;
@@ -7253,6 +7280,9 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "frame-selected") g.cmdQueue.push_back(UiCmd::FrameSelected);
     else if (cmd == "select-all") g.cmdQueue.push_back(UiCmd::SelectAll);
     else if (cmd == "sym-obj") g.symObjRequested = true;
+    else if (cmd == "cut") g.cmdQueue.push_back(UiCmd::Cut);
+    else if (cmd == "copy") g.cmdQueue.push_back(UiCmd::Copy);
+    else if (cmd == "paste") g.cmdQueue.push_back(UiCmd::Paste);
     else if (cmd == "current-state") g.cmdQueue.push_back(UiCmd::CurrentState);
     else if (cmd == "connect") g.cmdQueue.push_back(UiCmd::Connect);
     else if (cmd == "connect-delete") g.cmdQueue.push_back(UiCmd::ConnectDelete);
