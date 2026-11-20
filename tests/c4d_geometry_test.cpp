@@ -717,6 +717,23 @@ int main() {
         int downs = 0;
         for (const glm::vec3& n : ft.polyNormals) downs += n.y < -0.9f ? 1 : 0;
         check(down && downs == 2, "invertir normales: la de arriba mira ahora hacia abajo");
+
+        // Triangular: 6 cuadrilateros -> 12 triangulos, mismos 8 puntos, sigue cerrada.
+        const MeshEditResult tr = triangulatePolygons(cube, t, {});
+        const MeshTopology trt = buildMeshTopology(tr.mesh);
+        check(tr.changed == 6 && trt.points.size() == 8 && euler(trt) == 2, "triangular: 6 cuadrilateros pasan a triangulos, 8 puntos");
+        check(triangulatePolygons(tr.mesh, trt, {}).changed == 0, "triangular: lo ya triangulado no cambia");
+
+        // Alinear Normales: con una cara al reves se arregla; una malla ya coherente no cambia.
+        std::set<int> all;
+        for (int p = 0; p < (int)t.polys.size(); ++p) all.insert(p);
+        check(alignNormals(cube, t, all).changed == 0, "alinear normales: el cubo coherente no cambia");
+        const MeshData badMesh = flipPolygons(cube, t, {top}).mesh;
+        const MeshTopology badT = buildMeshTopology(badMesh);
+        const MeshEditResult al = alignNormals(badMesh, badT, all);
+        check(al.changed > 0, "alinear normales: detecta la cara invertida");
+        const MeshTopology alT = buildMeshTopology(al.mesh);
+        check(alignNormals(al.mesh, alT, all).changed == 0, "alinear normales: despues queda coherente");
     }
 
     // --- Ida y vuelta exacta por .iron (formato 7) --------------------------------

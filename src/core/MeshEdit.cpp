@@ -589,6 +589,65 @@ MeshEditResult flipPolygons(const MeshData& mesh, const MeshTopology& topo, cons
     return finish(std::move(verts), faces, changed);
 }
 
+
+MeshEditResult triangulatePolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys) {
+    std::vector<Vertex> verts = mesh.vertices;
+    const std::vector<Face> faces = polyFaces(mesh, topo);
+    std::vector<Face> out;
+    int changed = 0;
+    for (size_t p = 0; p < faces.size(); ++p) {
+        const Face& f = faces[p];
+        if (f.v.size() <= 3 || (!polys.empty() && !polys.count((int)p))) {
+            out.push_back(f);
+            continue;
+        }
+        // Abanico desde el primer punto: n-2 triangulos (bien para poligonos convexos, que son los de Iron3D).
+        for (size_t i = 1; i + 1 < f.v.size(); ++i) {
+            Face t;
+            t.v = {f.v[0], f.v[i], f.v[i + 1]};
+            t.sel = true;
+            out.push_back(std::move(t));
+        }
+        ++changed;
+    }
+    return finish(std::move(verts), out, changed);
+}
+
+MeshEditResult alignNormals(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys) {
+    // Arista dirigida (a,b) -> poligonos de `polys` que la recorren en ese sentido.
+    std::map<std::pair<int, int>, std::vector<int>> dirEdge;
+    for (int p : polys) {
+        if (p < 0 || p >= (int)topo.polys.size()) continue;
+        const auto& pl = topo.polys[(size_t)p];
+        for (size_t k = 0; k < pl.size(); ++k) dirEdge[{pl[k], pl[(k + 1) % pl.size()]}].push_back(p);
+    }
+    std::map<int, bool> flipped;  // poligono visitado -> hay que invertirlo
+    for (int start : polys) {
+        if (start < 0 || start >= (int)topo.polys.size() || flipped.count(start)) continue;
+        flipped[start] = false;
+        std::vector<int> stack{start};
+        while (!stack.empty()) {
+            const int p = stack.back();
+            stack.pop_back();
+            const bool pFlip = flipped[p];
+            const auto& pl = topo.polys[(size_t)p];
+            for (size_t k = 0; k < pl.size(); ++k) {
+                const int a = pl[k], b = pl[(k + 1) % pl.size()];
+                // Vecino coherente recorre (b,a); si recorre (a,b) como p, esta al reves.
+                for (int same : dirEdge[{a, b}])
+                    if (same != p && !flipped.count(same)) { flipped[same] = !pFlip; stack.push_back(same); }
+                for (int opp : dirEdge[{b, a}])
+                    if (opp != p && !flipped.count(opp)) { flipped[opp] = pFlip; stack.push_back(opp); }
+            }
+        }
+    }
+    std::set<int> toFlip;
+    for (const auto& [p, f] : flipped)
+        if (f) toFlip.insert(p);
+    if (toFlip.empty()) return {};
+    return flipPolygons(mesh, topo, toFlip);
+}
+
 MeshEditResult bridgePolygons(const MeshData& mesh, const MeshTopology& topo, int polyA, int polyB) {
     const int np = (int)topo.polys.size();
     if (polyA == polyB || polyA < 0 || polyB < 0 || polyA >= np || polyB >= np) return {};

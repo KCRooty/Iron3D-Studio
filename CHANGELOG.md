@@ -6,6 +6,15 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (2): Malla > Triangular y Alinear Normales
+
+**Nuevo**
+- **Triangular** (Malla): cada polígono de más de 3 lados pasa a triángulos (abanico). Con selección de polígonos actúa sobre ellos; sin selección, sobre toda la malla.
+- **Alinear Normales** (Malla, `U~A`): dentro de cada isla conectada, todos los polígonos quedan orientados igual (invierte los que están al revés). Si ya está todo coherente, lo avisa y no cambia nada.
+
+**Probado:** `iron3d_tests` (cubo: 6 cuadriláteros → triángulos con 8 puntos y malla cerrada; cara invertida detectada y corregida; malla coherente sin cambios). **No probado:** el clic en el menú con la interfaz abierta.
+**Nota:** la lista de «huecos de menú» del vault buscaba etiquetas en inglés y Iron3D está en español, así que muchas entradas que da por faltantes (p. ej. casi todo el menú Animación) sí existen. Es una guía aproximada, no un inventario.
+
 ### 2026-11-20: presets de interfaz por versión de Cinema 4D
 
 **Nuevo**

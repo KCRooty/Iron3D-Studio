@@ -74,6 +74,11 @@ MeshEditResult closeHoles(const MeshData& mesh, const MeshTopology& topo, const 
 MeshEditResult subdividePolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);
 // Invertir Normales de los poligonos indicados.
 MeshEditResult flipPolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);
+// Triangular: cada poligono de mas de 3 lados pasa a n-2 triangulos (abanico). La seleccion nueva son los triangulos.
+MeshEditResult triangulatePolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);
+// Alinear Normales: dentro de cada isla conectada de `polys`, todos los poligonos quedan orientados como el primero
+// (invierte los que recorren una arista compartida en el mismo sentido). changed = 0 si ya estaba todo alineado.
+MeshEditResult alignNormals(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);
 
 // Puente (M~B): une dos poligonos con el mismo numero de lados con un anillo de
 // cuadrilateros y quita los dos originales. Prueba las dos direcciones y todos los giros
