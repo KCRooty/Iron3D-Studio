@@ -6,6 +6,13 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (10): Alemán, francés e italiano: unas 260 cadenas propias más
+
+**Añadido**
+- Traducidas a de, fr e it las cadenas propias de Iron3D que antes caían al inglés: menús (Malla, Selección, Animación, Render), modos de componentes, luces, materiales, etiquetas, proyecto, línea de tiempo, Gestor de Materiales y las ayudas principales de las herramientas. Quedan unas 400 (sobre todo ayudas largas y mensajes de estado), que siguen saliendo en inglés. pl/cs/ru/ja/ko/zh siguen con las cadenas oficiales de C4D y el resto en inglés.
+
+**Probado:** captura 1280x720 con `--lang=de` (menús, Gestor de Materiales, Coordenadas, cabeceras y Línea de Tiempo en alemán; ayudas largas aún en inglés). **No probado:** revisión de las traducciones por un hablante nativo; fr e it por captura.
+
 ### 2026-11-20 (9): Cerrar Agujero Poligonal con agujeros cóncavos
 
 **Arreglado**

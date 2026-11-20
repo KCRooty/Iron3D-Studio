@@ -1,10 +1,14 @@
 # Iron3D Studio - fr (clave = texto en espanol; valor = traduccion)
+Importar Cinema 4D	Importer Cinema 4D
 Extrusión	Extrusion
+Extrusión Interna	Extrusion interne
 Bisel	Biseauter
+Cuchillo	Couteau
 Superior	Haut
 Derecha	Droite
 Frontal	Face
 Izquierda	Gauche
+Trasera	Retour
 Inferior	Bas
 Cubo	Cube
 Esfera	Sphère
@@ -13,17 +17,39 @@ Luz	Lumière
 Cámara	Caméra
 Polígono	Polygone
 Nulo	Neutre
+Abrir librería	Ouvrir la bibliothèque
+Abrir librería de preestablecidos	Ouvrir une bibliothèque de presets
+Librerías de preestablecidos de Cinema 4D	Bibliothèques de presets Cinema 4D
+Este preestablecido no es un modelo de Cinema 4D.	Ce preset n'est pas un modèle Cinema 4D.
+Importar OBJ	Importer OBJ
+Importar glTF	Importer glTF
 Abrir	Ouvrir
 Fusionar	Fusionner
 Exportar	Export
+La escena está vacía.	La scène est vide.
+Exportar a Wavefront	Exporter en Wavefront
+Exportar OBJ	Exporter OBJ
+Exportar a glTF	Exporter en glTF
+Exportar glTF	Exporter glTF
+Exportar a Cinema 4D	Exporter en Cinema 4D
+Guardar Objetos Seleccionados como	Enregistrer les objets sélectionnés sous
 Mat	Mat.
 Simetría	Symétrie
+Sistema de coordenadas: Mundo	Système de coordonnées : Monde
+Sistema de coordenadas: Objeto	Système de coordonnées : Objet
+Fotogramas Clave Automáticos: activados	Keyframing automatique : activé
+Fotogramas Clave Automáticos: desactivados	Keyframing automatique : désactivé
+Animación eliminada.	Animation supprimée.
 Supr	Del
+Buscar orden...	Rechercher des commandes...
+Ninguna orden coincide.	Aucune commande trouvée.
 Deshacer	Annuler
 Encuadrar Seleccionados	Cadrer sélectionné
 Encuadrar Geometría	Cadrer la géométrie
 Hacer Editable	Rendre modifiable
+Estado Actual a Objeto	État actuel en objet
 Conectar Objetos	Connecter les objets
+Conectar+Eliminar	Connecter les objets + Supprimer
 Agrupar Objetos	Grouper les objets
 Nueva Etiqueta	Nouvelle Propriété
 Restaurar Selección	Restaurer la sélection
@@ -34,7 +60,9 @@ Mostrar Movimientos...	Afficher les mouvements...
 Mover	Déplacement
 Escalar	Mise à l'échelle
 Rotar	Rotation
+Selección en Vivo	Sélection dynamique
 Selección Rectangular	Rectangle de sélection
+Selección con Lazo	Sélection lasso
 Archivo	Fichier
 Nuevo	Nouveau projet
 Abrir...	Ouvrir...
@@ -43,8 +71,11 @@ Volver a Archivo Guardado...	Version précédente du projet...
 Cerrar Todos	Fermer tous les projets
 Guardar	Enregistrer
 Guardar como...	Enregistrer le projet sous...
+Guardar incrementalmente...	Enregistrer de façon incrémentielle...
 Guardar Todo	Enregistrer tous les projets
 Guardar Objetos Seleccionados como...	Enregistrer les objets sous...
+glTF binario (*.glb)...	glTF binaire (*.glb)...
+Archivos recientes	Fichiers récents
 Salir	Quitter
 Edición	Édition
 Rehacer	Rétablir
@@ -63,6 +94,7 @@ Generadores	Générateurs
 Modelado	Modélisation
 Deformador	Déformateur
 Escena	Scène
+Física	Physique
 Materiales	Matériaux
 Nuevo Material	Nouveau matériau standard
 Nuevo Material PBR	Nouveau matériau PBR
@@ -71,16 +103,38 @@ Etiqueta	Propriété
 Sonido	Audio
 Selección	Sélection
 Filtro de Selección	Filtre de sélection
+Selección de Polígono	Sélection de polygones
+Selección de Bucle	Sélection de boucle
+Selección de Anillo	Sélection d'anneau
 Rellenar Selección	Sélection par remplissage
+Seleccionar Conectados	Sélectionner les connectés
+Reducir Selección	Réduire la sélection
 Herramientas	Outils
+Eje X / Encabezado	Axe X / Cap
+Eje Y / Inclinación	Axe Y / Tangage
+Eje Z / Alabeo	Axe Z / Roulis
+Sistema de Coordenadas de Mundo	Système de coordonnées global
+Medir y Construir	Mesure et construction
 Desplazamiento	Déplacement
+Organizar Objetos	Organiser les objets
 Centrar	Centre
 Malla	Maillage
 Conectar Objetos + Eliminar	Connecter les objets + supprimer
+Simetría de edición	Modifier la symétrie
+Apagada	Désactivé
+Plano X (izquierda/derecha)	Plan X (gauche/droite)
+Plano Y (arriba/abajo)	Plan Y (haut/bas)
+Plano Z (delante/detrás)	Plan Z (avant/arrière)
+Tolerancia (cm)	Tolérance (cm)
+Cerrar Agujero Poligonal	Fermer le trou de polygone
 Soldar	Soudure
+Subdividir	Subdiviser
 Puente	Ponter
+Comprobar Malla	Vérifier le maillage
 Pincel	Pinceau
 Planchar	Poncer le maillage
+Invertir Normales	Inverser les normales
+Alinear Normales	Aligner les normales
 Triangular	Convertir en triangles
 Fijación	Magnétisme
 Activar Fijación	Activer le Magnétisme
@@ -90,29 +144,49 @@ Plano de Trabajo	Grille
 Animación	Animation
 Grabar Objetos Activos	Enregistrer les objets actifs
 Fotogramas Clave Automáticos	Clés automatiques
+Ir a la Clave Anterior	Aller à la clé précédente
+Ir a la Clave Siguiente	Aller à la clé suivante
+Editor de Curvas...	Éditeur de courbes...
+Claves Seleccionadas	Clés sélectionnées
+Eliminar Animación del Objeto	Supprimer l'animation de l'objet
 Reproducir Hacia Delante	Lecture avant
 Reproducir Hacia Atrás	Lecture arrière
 Parar	Arrêter
 Ir al Inicio	Aller au début
 Ir al Final	Aller à la fin
+Fotograma Siguiente	Image suivante
+Fotograma Anterior	Image précédente
+Repetir (Loop)	Répéter (boucle)
 Personaje	Personnage
+Resolver IK (experimental)	Résoudre l'IK (expérimental)
+Articulación	Articulation
 Piel	Peau
+Pesos	Poids
 Restricción	Restriction
 Simulación	Simuler
 Partículas	Particules
 Dinámicas	Dynamiques
 Cloth	Tissu
 Render	Rendu
+Renderizar Vista Activa	Rendre la vue active
 Renderizar Región	Rendu d'une zone
+Renderizar Seleccionados en Visor de Imágenes	Rendre la sélection dans le visualiseur d'images
+Renderizar en Visor de Imágenes	Rendre dans le visualiseur d'images
 Región de Render Interactivo	Zone de Rendu Interactif
+Crear Previsualización...	Créer un aperçu...
+Añadir a la Cola de Render...	Ajouter à la file de rendu...
 Cola de Render...	File de rendu...
+Editar Configuración de Render...	Éditer les paramètres de rendu...
 Visor de Imágenes...	Visualiseur...
 Esculpir	Sculpture
 Reducir	Diminuer
+Tirar	Tirer
 Suavizar	Relâchement
 Aplanar	Aplatir
 Pellizcar	Pincement
+Amasar	Pétrir
 Motion Tracker	Traqueur de mouvement
+Rastreador de Objetos	Suivi d'objet
 Ocultar Seleccionado	Masquer la sélection
 Selección MoGraph	Sélection MoGraph
 Clonador	Cloneur
@@ -121,27 +195,57 @@ Fractura Voronoi	Fracture Voronoï
 Character	Personnage
 Junta	Articulation
 Herramienta de Junta	Outil Articulations
+Pintar Pesos	Peindre les poids
+Etiqueta IK	Tag IK
 Línea de Trabajo	Pipeline
 Plugins	Modules externes
+Ningún plugin cargado	Aucun plug-in chargé
+Buscar Plugins...	Rechercher des plug-ins...
 Gestor de Scripts...	Gestionnaire de script...
 Consola...	Console...
 Ventana	Fenêtre
 Editor de Material...	Éditeur de matériau...
+Navegador de Contenido	Navigateur de contenu
 Gestor de Capas	Gestionnaire de calques
 Ayuda	Aide
 Mostrar Ayuda...	Afficher l'aide...
+Acerca de Iron3D Studio...	À propos d'Iron3D Studio...
+Arranque	Démarrage
 Animar	Aperçu animé
+Visualizar	Visualiser
+Deshacer la última acción.	Annuler la dernière action.
+Rehacer la última acción deshecha.	Rétablir la dernière action annulée.
+Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.	Sélection dynamique : cliquez et faites glisser pour sélectionner des éléments. SHIFT ajoute à la sélection, CTRL en retire.
+Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.	Déplacer : cliquez et faites glisser pour déplacer des éléments. SHIFT quantifie le mouvement / ajoute à la sélection en mode points, CTRL en retire.
+Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.	Échelle : cliquez et faites glisser pour mettre à l'échelle des éléments. SHIFT quantifie l'échelle / ajoute à la sélection en mode points, CTRL en retire.
+Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.	Rotation : cliquez et faites glisser pour pivoter des éléments. SHIFT quantifie la rotation / ajoute à la sélection en mode points, CTRL en retire.
+Renderiza la vista activa en el propio visor.	Rend la vue active directement dans le viewport.
+Renderiza la cámara activa en el Visor de Imágenes.	Rend la caméra active dans le visualiseur d'images.
+Resolución, antialiasing y fondo del render.	Résolution de rendu, anticrénelage et arrière-plan.
+Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.	Rendre éditable : convertit les objets paramétriques sélectionnés en objets polygonaux.
+Modo Modelo: se editan objetos enteros.	Mode modèle : les objets sont édités en entier.
+Activar Eje [L]	Activer l'axe [L]
+Usar Modo Puntos	Utiliser le mode points
+Modo Puntos: elige y mueve puntos de un objeto editable (C para hacerlo editable).	Mode points : sélectionnez et déplacez les points d'un objet éditable (C le rend éditable).
+Usar Modo Aristas	Utiliser le mode arêtes
+Modo Aristas: elige y mueve aristas de un objeto editable.	Mode arêtes : sélectionnez et déplacez les arêtes d'un objet éditable.
+Usar Modo Polígonos	Utiliser le mode polygones
+Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.	Mode polygones : sélectionnez et déplacez des polygones (triangles).
 Vista	Vue
+Usar como Cámara de Render	Utiliser comme caméra de rendu
 Deshacer Vista	Annuler la vue
 Rehacer Vista	Rétablir la vue
 Encuadrar Todo	Tout cadrer
+Encuadrar Elementos Activos	Cadrer les éléments actifs
 Encuadre por Defecto	Cadrage par défaut
 Redibujar	Mise à jour de la vue
 Cámaras	Caméras
 Navegación	Navigation
 Usar Cámara	Caméras de la scène
+Cámara del Editor	Caméra de l'éditeur
 Perspectiva	Perspective
 Paralela	Parallèle
+Axonométrica	Axonométrique
 Mostrar	Affichage
 Sombreado Gouraud	Ombrage de Gouraud
 Sombreado Gouraud (Líneas)	Ombrage de Gouraud (lignes)
@@ -155,6 +259,8 @@ Opciones	Options
 Nivel de Detalle	Niveau De Détail
 Estereoscópico	Stéréoscopie
 Sombreado de Flujo de Trabajo Lineal	Ombrage Workflow Linéaire
+OpenGL Mejorado	OpenGL amélioré
+Ruidos	Bruits
 Post Efectos	Effets de post-production
 Transparencia	Transparence
 Reflexiones	Réflexions
@@ -175,27 +281,56 @@ Entorno	Environnement
 Partícula	Particules
 Otro	Autre
 Horizonte	Horizon
+Ejes Globales	Axes globaux
+Cajas Delimitadoras	Boîtes englobantes
 HUD	Affichage frontal
+Resaltar Componente	Mettre en surbrillance le composant
 Ejes	Axe
 Guías	Guides
+Resaltar Objeto	Mettre en surbrillance l'objet
+Cruz Navegación	Croix de navigation
 Paneles	Panneau
+Disposición	Disposition
+Vista Simple	Vue unique
+2 Vistas Apiladas	2 vues empilées
+2 Vistas Lado a Lado	2 vues côte à côte
 4 Vistas	4 vues
+Vista 1 (Perspectiva)	Vue 1 (Perspective)
+Vista 2 (Superior)	Vue 2 (Dessus)
+Vista 3 (Derecha)	Vue 3 (Droite)
+Vista 4 (Frontal)	Vue 4 (Face)
 Todas las Vistas	Toutes les vues
+Mover Cámara (arrastrar)	Déplacer la caméra (glisser)
+Zoom de Cámara (arrastrar)	Zoomer la caméra (glisser)
+Rotar Cámara (arrastrar)	Pivoter la caméra (glisser)
+Espaciado Cuadrícula : 100 cm	Espacement de la grille : 100 cm
 Fusionar Objetos...	Fusionner les objets...
 Guardar como Preestablecido...	Enregistrer préréglage...
 Editar	Édition
 Expandir Todo	Tout déplier
 Ver	Affichage
+Modo Árbol	Mode arborescence
+Modo Lista	Mode liste
 Mostrar Etiquetas	Montrer les propriétés
 Objetos	Objets
 Añadir	Ajouter
 Duplicar	Dupliquer
+Etiqueta de Textura	Tag de texture
 Favoritos	Signets
+Eliminar Etiqueta de Textura	Supprimer le tag de texture
+Fong	Phong
 Protección	Protection
+Character Etiquetas	Tags de personnage
+Cineman Etiquetas	Tags Cineman
+Etiqueta UVW	Tag UVW
 Hair Etiquetas	Propriétés Cheveux
 MoGraph Etiquetas	Propriétés MoGraph
 Motion Tracker Etiquetas	Propriétés Traqueur
 Scripting Etiquetas	Propriétés Programmation
+Simulación Etiquetas	Tags de simulation
+Sketch Etiquetas	Tags Sketch
+Videocámara Etiquetas	Tags de caméra de mouvement
+Cargar Etiqueta Preestablecida	Charger un preset de tag
 Añadir a una Capa Nueva	Ajouter à un nouveau calque
 Gestor de Capas...	Gestionnaire de calques...
 Eliminar de Todas las Tomas	Supprimer de toutes les Prises
@@ -208,61 +343,131 @@ Eliminar Sin Hijos	Supprimer sans les sous-objets
 Convertir Selección de Objetos a XRef	Convertir la sélection d'objet en XRef
 Información del Objeto...	Informations sur l'objet...
 Información del Proyecto	Informations sur la scène...
+Añadir Hijo	Ajouter un enfant
 Renombrar	Renommer
 Por Defecto	Par défaut
 Activado	Activé
+Apagado	Désactivé
 Editor	Menu principal
 Atrás	Précédent
+Adelante	Avant
 Subir	Charger
 Bloquear Elemento	Verrouiller l'élément
+Nuevo Gestor de Atributos	Nouveau gestionnaire d'attributs
 Proyecto	Projet
+Configuración del Proyecto	Paramètres du projet
 Información	Information
 Referenciar	XRefs
 A Realizar	À faire
 Interpolación de Claves	Animation
+Escala del Proyecto	Échelle du projet
 Centímetros	Centimètres
 FPS	IPS
+Tiempo del Proyecto	Durée du projet
+Tiempo Mínimo	Temps minimum
+Tiempo Máximo	Temps maximum
+Tiempo Mínimo de Previo	Temps min. de l'aperçu
+Tiempo Máximo de Previo	Temps max. de l'aperçu
+Nivel de Detalle del Render en el Editor	Niveau de détail du rendu de l'éditeur
 Usar Animación	Utiliser l'animation
 Usar Expresiones	Utiliser les expressions
 Usar Generadores	Utiliser les générateurs
 Usar Deformadores	Utiliser les déformateurs
 Usar Sistema de Movimiento	Utiliser système de mouvement
+Color Objetos por Defecto	Couleur d'objet par défaut
+Gris-Azul	Gris-bleu
+Recortar Vista	Couper la vue
 Medio	Moyenne
+Flujo de Trabajo Lineal	Workflow linéaire
+Introducir Perfil de Color	Profil colorimétrique d'entrée
 Cargar Preestablecido...	Charger préréglage...
 Guardar Preestablecido...	Enregistrer le préréglage...
+Página no disponible	Page non disponible
 Básico	Basique
 Phong	Lissage de Phong
 General	Généralités
 Detalles	Détails
 Visibilidad	Visibilité
 Sombra	Ombres
+Fotométrico	Photométrique
 Cáusticas	Caustiques
 Ruido	Bruit
+Lentes	Objectifs
 Propiedades Básicas	Propriétés de Base
 Nombre	Nom
 Capa	Calque
+Visible en Editor	Visible dans l'éditeur
+Visible en Render	Visible au rendu
+Usar Color	Utiliser la couleur
 Desactivado	Désactivé
 Coordenadas	Coordonnées
 Orden	Ordonner
+Congelar Transformación	Figer la transformation
 Color	Couleur
 Intensidad	Intensité
+Foco	Projecteur
+Foco Cuadrado	Projecteur carré
+Infinita	Infini
+Foco Paralelo	Projecteur parallèle
+Foco Paralelo Cuadrado	Projecteur parallèle carré
 Tubo	Tube
+Área	Zone
 Tipo	Type
 Ninguno	Aucun
+Mapeado (Suave)	Shadow maps (douces)
+Trazado (Duro)	Raytracées (dures)
+Luz Visible	Lumière visible
+No Ilumina	Pas d'éclairage
+Mostrar Iluminación	Afficher l'éclairage
 Difusión	Diffusion
+Mostrar Luz Visible	Afficher la lumière visible
 Especular	Spécularité
+Iluminación de IG	Éclairage GI
+Propiedades del Objeto	Propriétés de l'objet
+Plano de Simetría	Plan de symétrie
+ZY (refleja X)	ZY (reflète X)
+XZ (refleja Y)	XZ (reflète Y)
+XY (refleja Z)	XY (reflète Z)
 Tolerancia	Tolérance
 Punto	Point
 Radio	Rayon
+Relación de Aspecto	Rapport d'aspect
 Orientación	Orientation
+Tamaño . X	Taille . X
+Tamaño . Y	Taille . Y
+Tamaño . Z	Taille . Z
+Segmentos en X	Segments X
+Segmentos en Y	Segments Y
+Segmentos en Z	Segments Z
+Superficies Separadas	Surfaces séparées
+Canto	Arrondi
 Vértices	Points
 Triángulos	Triangles
+  Objeto Poligonal (importado o hecho editable con C).	  Objet polygonal (importé ou rendu éditable avec C).
+  Puntos, aristas y polígonos: botones de la barra izquierda (Supr borra).	  Points, arêtes et polygones : boutons de la barre de gauche (Suppr supprime).
 Segmentos	Segments
 Estándar	Standard
+Perfectos de Render	Rendu parfait
 Anchura	Largeur
+Altura	Hauteur
+Segmentos en la Anchura	Segments en largeur
+Segmentos en la Altura	Segments en hauteur
+  Para cambiar el tamaño use Escala (Coord.) o el Gestor de Coordenadas.	  Pour changer la taille, utilisez l'échelle (Coord.) ou le gestionnaire de coordonnées.
+Etiqueta Phong	Tag Phong
+Limitar Ángulo	Limite d'angle
+Ángulo de Phong	Angle Phong
+Usar Bordes	Utiliser les arêtes
+Ángulo Interior	Angle intérieur
+Ángulo Exterior	Angle extérieur
 Lineal	Linéaire
+Escalón	Pas
 Inverso	Inverse
 Decaimiento	Atténuation
+Radio Interior	Rayon intérieur
+Radio/Decaimiento	Rayon/Décroissance
+Tamaño Horizontal	Taille horizontale
+Tamaño Vertical	Taille verticale
+Tamaño en Profundidad	Taille en profondeur
 Normal	Normale
 Restar	Soustraction
 Multiplicar	Multiplier
@@ -277,13 +482,22 @@ Metal	Métal
 Dieléctrico	Diélectrique
 Conductor	Conducteur
 Textura	Texture
+Elegir imagen	Choisir une image
 Imágenes	Images
 Brillo	Luminosité
 Muestreo	Échantillonnage
 Desenfoque Desfase	Décalage du Flou
 Desenfoque Escala	Échelle du Flou
+Modo de Mezcla	Mode de mélange
+Fuerza de Mezcla	Intensité du mélange
 Fuerza	Intensité
 Invertir	Inverser
+Alfa Suave	Alpha doux
+Alfa de Imagen	Alpha de l'image
+Lambertiano	Lambertien
+Modelo	Modèle
+Caída Difusa	Atténuation diffuse
+Nivel Difuso	Niveau diffus
 Rugosidad	Rugosité
 Global	Monde
 Brillo Reflexión Global	Luminosité réflexion globale
@@ -294,36 +508,83 @@ Fuerza Reflexión	Intensité réflexion
 Fuerza Especular	Intensité spéculaire
 Fuerza Relieve	Intensité relief
 Color de Capa	Couleurs des calques
+(ninguna)	(aucun)
 Fresnel de Capa	Fresnel du Calque
 IOR	IDR
+Visor (PBR equivalente)	Viewport (équivalent PBR)
+Luminancia	Luminance
 Reflectancia	Réflexion
 Relieve	Relief
 Fosforescencia	Lueur
 Alfa	Alpha
 Iluminación	Illumination
 Asignar	Affecter
+Refracción	Réfraction
+Propiedades de Etiqueta	Propriétés du tag
 Material	Matériau
 Proyección	Projection
+Mapeado UVW	Mappage UVW
+Lado	Côté
 Ambos	Les deux
+Mezclar Texturas	Mélanger les textures
+Repetición	Tuiles
 Sin Costuras	Raccord
+Usar UVW para Relieve	Utiliser UVW pour le bump
 Desfase U	Décalage U
 Desfase V	Décalage V
+Longitud U	Longueur U
+Longitud V	Longueur V
+Repeticiones U	Tuiles U
+Repeticiones V	Tuiles V
 Modo	Mode
 Datos de Usuario	Données utilisateur
 Añadir Datos de Usuario...	Nouvelle donnée utilisateur...
 Gestionar Datos de Usuario...	Gérer Données Utilisateur...
+Interpolación Spline	Interpolation spline
+Interpolación Lineal	Interpolation linéaire
+Interpolación Escalón	Interpolation en escalier
+Eliminar Claves	Supprimer les clés
 Interpolación 	Interpolation 
+Esc. X	Éch. X
+Esc. Y	Éch. Y
+Esc. Z	Éch. Z
+Sin objeto activo	Aucun objet actif
+Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.	Timeline : cliquez et faites glisser pour changer l'image courante.
+Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.	Clé : cliquez pour sélectionner (Shift ajoute), faites glisser pour déplacer, clic droit pour l'interpolation.
+Ir al Inicio [Mayús+F]	Aller au début [Shift+F]
+Ir a la Clave Anterior [Ctrl+F]	Aller à la clé précédente [Ctrl+F]
+Ir al Fotograma Anterior [F]	Aller à l'image précédente [F]
+Reproducir Hacia Atrás [F6]	Lire en arrière [F6]
+Reproducir Hacia Delante [F8]	Lire en avant [F8]
+Ir al Fotograma Siguiente [G]	Aller à l'image suivante [G]
+Ir a la Clave Siguiente [Ctrl+G]	Aller à la clé suivante [Ctrl+G]
+Ir al Final [Mayús+G]	Aller à la fin [Shift+G]
+Grabar Objetos Activos [F9]	Enregistrer les objets actifs [F9]
+Fotogramas Clave Automáticos [Ctrl+F9]	Keyframing automatique [Ctrl+F9]
+Grabar Posición	Enregistrer la position
+Grabar Escala	Enregistrer l'échelle
+Grabar Rotación	Enregistrer la rotation
 Shader	Matière
 Guardar Materiales como...	Enregistrer les matériaux sous...
+Guardar Material Preestablecido...	Enregistrer le preset de matériau...
 Función	Fonction
 Editar...	Modifier...
 Aplicar	Appliquer
+Eliminar Materiales sin Usar	Supprimer les matériaux inutilisés
+Cargar Textura...	Charger une texture...
+Editar Textura...	Éditer la texture...
+Doble clic aquí para crear un material	Double-cliquez pour créer un matériau
 Posición	Position
 Tamaño	Taille
 Rotación	Rotation
 Escala	Échelle
 Objeto (Rel)	Objet (Rel)
 Objeto (Abs)	Objet (Abs)
+Mundo	Monde
+Selección Rectangular: arrastre para seleccionar los objetos que toque el rectángulo. MAYÚSCULAS añade, CTRL quita.	Sélection rectangle : faites glisser pour sélectionner les objets touchés par le rectangle. SHIFT ajoute, CTRL retire.
+Selección con Lazo: dibuje una zona para seleccionar los objetos que queden dentro. MAYÚSCULAS añade, CTRL quita.	Sélection lasso : dessinez une zone pour sélectionner les objets qu'elle contient. SHIFT ajoute, CTRL retire.
+Selección en Vivo: Haga clic para seleccionar elementos.	Sélection dynamique : cliquez pour sélectionner des éléments.
+Nombre de archivo:	Nom du fichier :
 Cancelar	Annuler
 Personalizar	Personnalisé
 Colores	Couleurs
@@ -372,6 +633,8 @@ Carpeta	Dossier
 Idioma	Langue
 Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	Langue enregistrée. Redémarrez Iron3D Studio pour l'appliquer.
 Se aplicará al reiniciar Iron3D Studio.	Prend effet au redémarrage d'Iron3D Studio.
+Editor de Curvas	Éditeur de courbes
+Guardar como	Enregistrer sous
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cono	Cône
