@@ -73,8 +73,17 @@ MeshData makeSphereMesh(int rings, int segments) {
             const uint32_t c = (uint32_t)((ring + 1) * stride + seg);
             const uint32_t d = (uint32_t)((ring + 1) * stride + seg + 1);
             // CCW visto desde fuera, igual que el cubo.
-            mesh.indices.insert(mesh.indices.end(), {a, c, b, b, c, d});
-            mesh.faceTris.push_back(2);
+            // En los polos dos esquinas coinciden: ahi la cara es un triangulo, no un cuadrilatero degenerado.
+            if (ring == 0) {
+                mesh.indices.insert(mesh.indices.end(), {b, c, d});
+                mesh.faceTris.push_back(1);
+            } else if (ring == rings - 1) {
+                mesh.indices.insert(mesh.indices.end(), {a, c, b});
+                mesh.faceTris.push_back(1);
+            } else {
+                mesh.indices.insert(mesh.indices.end(), {a, c, b, b, c, d});
+                mesh.faceTris.push_back(2);
+            }
         }
     }
     updateBounds(mesh);
