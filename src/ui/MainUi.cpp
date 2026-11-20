@@ -1109,6 +1109,35 @@ bool saveDocument(SceneNode& root, SceneHistory& history, std::vector<Material>&
     return true;
 }
 
+// Guardar incrementalmente: guarda con el siguiente numero libre junto al archivo actual (nombre_001.iron...) y
+// el documento pasa a ser ese. Sin ruta todavia no hace nada. true = guardado.
+bool saveIncremental(SceneNode& root, SceneHistory& history, std::vector<Material>& materials) {
+    if (g.docPath.empty()) return false;
+    std::string stem = g.docPath.stem().string();
+    // Si ya termina en _NNN se sigue la serie en vez de apilar sufijos.
+    const size_t us = stem.rfind('_');
+    if (us != std::string::npos && us + 1 < stem.size() && stem.find_first_not_of("0123456789", us + 1) == std::string::npos)
+        stem.resize(us);
+    std::filesystem::path path;
+    for (int i = 1; i < 10000; ++i) {
+        char suffix[16];
+        std::snprintf(suffix, sizeof(suffix), "_%03d", i);
+        path = g.docPath.parent_path() / (stem + suffix + ".iron");
+        std::error_code ec;
+        if (!std::filesystem::exists(path, ec)) break;
+    }
+    std::string err;
+    if (!saveScene(path, root, materials, &err)) {
+        reportFileError(path, err);
+        return false;
+    }
+    g.docPath = path;
+    g.cleanSnap = history.snapshot(root);
+    g.cleanInit = true;
+    flashStatus(std::string(tr("Guardado como ")) + path.filename().string());
+    return true;
+}
+
 bool hasUnsavedChanges(const SceneNode& root, const SceneHistory& history) {
     return g.cleanInit && history.snapshot(root) != g.cleanSnap;
 }
@@ -2808,12 +2837,34 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
             openSceneFile(root, selected, history, materials, camera);
         if (ImGui::MenuItemEx(tr("Fusionar..."), kIconGutterText, tr("Ctrl+Mayús+O")))
             mergeSceneFile(root, selected, history, materials);
-        disabledItems({{tr("Volver a Archivo Guardado..."), ""}, {nullptr, nullptr},
-                       {tr("Cerrar"), tr("Ctrl+F4")}, {tr("Cerrar Todos"), tr("Ctrl+Mayús+F4")}, {nullptr, nullptr}});
+        if (ImGui::MenuItemEx(tr("Volver a Archivo Guardado..."), kIconGutterText, "", false, !g.docPath.empty()) &&
+            confirmDiscardChanges(root, history, materials, tr("volver al archivo guardado"))) {
+            std::string err;
+            const std::filesystem::path path = g.docPath;
+            if (loadScene(path, root, materials, &err)) {
+                selected = nullptr;
+                history.reset();
+                g.selectedMat = -1;
+                g.cleanInit = false;
+            } else {
+                reportFileError(path, err);
+            }
+        }
+        ImGui::Separator();
+        // Iron3D trabaja con un solo proyecto a la vez: Cerrar y Cerrar Todos dejan un proyecto nuevo.
+        if (ImGui::MenuItemEx(tr("Cerrar"), kIconGutterText, tr("Ctrl+F4")) &&
+            confirmDiscardChanges(root, history, materials, tr("cerrar el proyecto")))
+            newScene(root, selected, history, materials);
+        if (ImGui::MenuItemEx(tr("Cerrar Todos"), kIconGutterText, tr("Ctrl+Mayús+F4")) &&
+            confirmDiscardChanges(root, history, materials, tr("cerrar el proyecto")))
+            newScene(root, selected, history, materials);
+        ImGui::Separator();
         if (iconMenuItem(Icon::MnuSave, tr("Guardar"), tr("Ctrl+S"))) saveDocument(root, history, materials, false);
         if (iconMenuItem(Icon::MnuSaveAs, tr("Guardar como..."), tr("Ctrl+Mayús+S"))) saveDocument(root, history, materials, true);
-        disabledItems({{tr("Guardar incrementalmente..."), ""}, {tr("Guardar Todo"), ""},
-                       {tr("Guardar Proyecto con su Contenido..."), ""}});
+        if (ImGui::MenuItemEx(tr("Guardar incrementalmente..."), kIconGutterText, "", false, !g.docPath.empty()))
+            saveIncremental(root, history, materials);
+        if (ImGui::MenuItemEx(tr("Guardar Todo"), kIconGutterText, "")) saveDocument(root, history, materials, false);
+        disabledItems({{tr("Guardar Proyecto con su Contenido..."), ""}});
         if (ImGui::MenuItemEx(tr("Guardar Objetos Seleccionados como..."), kIconGutterText, nullptr, false,
                               selected != nullptr && cinewareAvailable()))
             exportSelectedC4D(root, selected, materials);

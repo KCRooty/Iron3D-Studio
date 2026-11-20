@@ -6,6 +6,18 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (37): Menú Archivo: Volver al guardado, Cerrar, Guardar incrementalmente y Guardar Todo
+
+**Añadido**
+- **Volver a Archivo Guardado**: recarga el archivo actual descartando los cambios (pregunta antes si los hay).
+- **Cerrar** y **Cerrar Todos**: dejan un proyecto nuevo (Iron3D trabaja con un solo proyecto a la vez); preguntan si hay cambios sin guardar.
+- **Guardar incrementalmente**: guarda junto al archivo actual como nombre_001.iron, nombre_002.iron... (siguiente número libre) y el proyecto pasa a ser ese. Necesita que el proyecto ya tenga archivo.
+- **Guardar Todo**: igual que Guardar (solo hay un proyecto abierto).
+
+**Límites:** Guardar Proyecto con su Contenido sigue en gris.
+
+**Verificado:** compilación. **Sin probar:** en pantalla ni con archivos reales.
+
 ### 2026-11-20 (36): Deshacer Vista y Rehacer Vista
 
 **Añadido**

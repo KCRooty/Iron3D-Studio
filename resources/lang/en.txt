@@ -1289,3 +1289,6 @@ No hay ningún objeto seleccionado.	No object selected.
 Hijos	Children
 triángulos	triangles
 cuadriláteros	quads
+Guardado como 	Saved as 
+volver al archivo guardado	revert to the saved file
+cerrar el proyecto	close the project
