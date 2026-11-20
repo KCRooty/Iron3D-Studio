@@ -7,6 +7,7 @@
 #include "core/Boolean.h"
 #include "core/Clone.h"
 #include "core/Deform.h"
+#include "core/Symmetry.h"
 #include "core/MeshTopology.h"
 #include "core/SceneSerializer.h"
 #include "core/ThumbnailRenderer.h"
@@ -917,6 +918,35 @@ int main() {
             check(bc.present && bc.mode == 2 && bc.count == 5 && std::fabs(bc.radiusCm - 123.0f) < 1e-3f && std::fabs(bc.rotStepDeg - 7.0f) < 1e-3f &&
                       std::fabs(bc.scaleStepPct - 12.5f) < 1e-3f && std::fabs(bc.offset.z - 30.0f) < 1e-3f,
                   "clonador: ajustes conservados tras guardar");
+        }
+
+        // Los generadores aceptan hijos parametricos (Cubo, Esfera, Plano) sin Hacer Editable previo.
+        {
+            SceneNode rt("r");
+            SceneNode* sy = rt.addChild("sim", PrimitiveType::None);
+            sy->symmetry.present = true;
+            SceneNode* cb = sy->addChild("cubo", PrimitiveType::Cube);
+            cb->position = glm::vec3(2.0f, 0.0f, 0.0f);
+            evaluateSymmetry(rt);
+            check(cb->mesh && cb->primitive == PrimitiveType::Mesh, "simetria: el cubo hijo se convierte en malla");
+            check(sy->mesh && sy->mesh->vertices.size() == cb->mesh->vertices.size(), "simetria: con un cubo parametrico sale su reflejo");
+            if (sy->mesh) {
+                float xMin = 1e9f;
+                for (const Vertex& v : sy->mesh->vertices) xMin = std::min(xMin, v.position.x);
+                check(xMin < -1.4f, "simetria: el reflejo queda al otro lado del plano (x negativa)");
+            }
+            SceneNode* cl = rt.addChild("clon", PrimitiveType::None);
+            cl->clone.present = true;
+            cl->clone.count = 3;
+            cl->addChild("esfera", PrimitiveType::Sphere);
+            evaluateCloners(rt);
+            check(cl->mesh && cl->children()[0]->mesh, "clonador: una esfera parametrica hija tambien genera copias");
+            SceneNode* df = rt.addChild("doblar", PrimitiveType::None);
+            df->deform.present = true;
+            df->deform.kind = 0;
+            df->addChild("plano", PrimitiveType::Plane);
+            evaluateDeformers(rt);
+            check(df->mesh != nullptr, "deformador: un plano parametrico hijo se deforma");
         }
 
         // Mover nodos entre padres (arrastrar y soltar en el Gestor de Objetos).

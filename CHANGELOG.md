@@ -6,6 +6,20 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (26): Simetría, Clonador y Deformadores con Cubo, Esfera y Plano
+
+**Corregido**
+- La **Simetría no hacía nada con un Cubo, una Esfera o un Plano**: los generadores solo veían hijos con malla poligonal, y esos tres objetos son paramétricos sin malla propia. Seleccionar un Cubo y pulsar Simetría creaba un Nulo vacío, y arrastrar el Cubo dentro tampoco funcionaba. Lo mismo pasaba con el **Clonador** y los **Deformadores**.
+- Ahora, al evaluar un generador, sus hijos Cubo, Esfera o Plano se convierten en objetos poligonales con la misma malla (como Hacer Editable) y funciona tanto al crearlo con el objeto seleccionado como al arrastrar el objeto dentro de un generador ya creado. Si el generador creado con el menú tiene un paramétrico seleccionado, lo envuelve como ya hacía con los poligonales.
+- Tests: Simetría con un Cubo hijo (se convierte, sale el reflejo con el mismo número de vértices y queda en x negativa), Clonador con una Esfera hija y Deformador con un Plano hijo.
+
+**Límites**
+- El hijo **deja de ser paramétrico** al convertirse (no hay forma de volver; sí Deshacer). Para Cubo, Esfera y Plano no cambia nada visible: su tamaño sale de la escala del nodo.
+- Las primitivas nuevas (Cilindro, Cono, Toroide…) ya eran objetos con malla y no se veían afectadas.
+- Sigue sin haber **Simetría de Spline** ni «Soldar puntos» como en C4D.
+
+**Verificado:** tests y compilación. **Sin probar:** en el visor ni con clics reales.
+
 ### 2026-11-20 (25): Gestor de Objetos: arrastrar para hacer hijos y combinaciones de modificadores al crear
 
 **Añadido**

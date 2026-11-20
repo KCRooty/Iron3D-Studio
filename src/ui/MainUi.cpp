@@ -1833,7 +1833,7 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
     // Simetria (generador): un Nulo con SymmetryData; si hay un objeto con malla seleccionado se mete dentro.
     if (std::string(it.name.key) == "Simetría") {
         SceneNode* sel = selected;
-        const bool wrap = sel && sel->mesh && sel->parent();
+        const bool wrap = sel && (sel->mesh || isParametric(sel->primitive)) && sel->parent();
         if (wrap) groupObjects(root, selected, history, nullptr);
         else createObject(root, selected, history, PrimitiveType::None);
         if (selected) {
@@ -1858,7 +1858,7 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
     }
     if (std::string(it.name.key) == "Clonador") {
         SceneNode* sel = selected;
-        const bool wrap = sel && sel->mesh && sel->parent();
+        const bool wrap = sel && (sel->mesh || isParametric(sel->primitive)) && sel->parent();
         SceneNode* child = wrap ? sel : nullptr;
         if (wrap) groupObjects(root, selected, history, nullptr);
         else createObject(root, selected, history, PrimitiveType::None);
@@ -1877,7 +1877,7 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
             if (std::string(it.name.key) == defNames[i]) dk = i;
         if (dk >= 0) {
             SceneNode* sel = selected;
-            const bool wrap = sel && sel->mesh && sel->parent();
+            const bool wrap = sel && (sel->mesh || isParametric(sel->primitive)) && sel->parent();
             SceneNode* child = wrap ? sel : nullptr;
             if (wrap) groupObjects(root, selected, history, nullptr);
             else createObject(root, selected, history, PrimitiveType::None);

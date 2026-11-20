@@ -1,4 +1,5 @@
 #include "Clone.h"
+#include "Symmetry.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -133,6 +134,7 @@ void walk(SceneNode& node, int& count) {
     for (const auto& c : node.children()) walk(*c, count);  // primero los hijos: un clonador anidado ya esta al dia
     if (!node.clone.present) return;
     CloneData& d = node.clone;
+    bakeParametricChildren(node);
     if (SceneNode* child = firstMeshChild(node)) {
         const glm::mat4 cm = child->localMatrix();
         SceneNode* other = d.mode == 3 ? secondMeshChild(node, child) : nullptr;

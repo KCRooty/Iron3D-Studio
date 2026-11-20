@@ -38,6 +38,7 @@ SceneNode* firstMeshChild(SceneNode& node) {
 void walk(SceneNode& node, int& count) {
     if (node.symmetry.present) {
         SymmetryData& s = node.symmetry;
+        bakeParametricChildren(node);
         if (SceneNode* child = firstMeshChild(node)) {
             glm::mat4 cm = child->localMatrix();
             const bool same = s.lastSource == child->mesh && s.lastChildMatrix == cm && s.lastAxis == s.axis &&
@@ -64,6 +65,25 @@ void walk(SceneNode& node, int& count) {
     for (const auto& c : node.children()) walk(*c, count);
 }
 } // namespace
+
+int bakeParametricChildren(SceneNode& node) {
+    int n = 0;
+    for (const auto& c : node.children()) {
+        if (c->mesh) continue;
+        MeshData m;
+        switch (c->primitive) {
+            case PrimitiveType::Cube: m = makeCubeMesh(); break;
+            case PrimitiveType::Sphere: m = makeSphereMesh(); break;
+            case PrimitiveType::Plane: m = makePlaneMesh(); break;
+            default: continue;
+        }
+        updateBounds(m);
+        c->mesh = std::make_shared<const MeshData>(std::move(m));
+        c->primitive = PrimitiveType::Mesh;
+        ++n;
+    }
+    return n;
+}
 
 int evaluateSymmetry(SceneNode& root) {
     int n = 0;

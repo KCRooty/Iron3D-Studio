@@ -26,4 +26,11 @@ MeshData mirrorMeshData(const MeshData& src, int axis, const glm::mat4& toParent
 // hijo ni el nodo han cambiado). Devuelve cuantos nodos se recalcularon.
 int evaluateSymmetry(SceneNode& root);
 
+// Los generadores (Simetria, Clonador, Deformadores) trabajan con la malla de sus hijos, y los Cubo,
+// Esfera y Plano de Iron3D son parametricos sin malla propia. Esto convierte esos hijos en objetos
+// poligonales con la misma malla (como Hacer Editable) para que el generador los vea. Devuelve cuantos
+// ha convertido. Limite: el hijo deja de ser parametrico (para el Cubo/Esfera/Plano no cambia nada: su
+// tamano ya sale de la escala del nodo).
+int bakeParametricChildren(SceneNode& node);
+
 } // namespace iron3d

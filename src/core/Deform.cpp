@@ -1,4 +1,5 @@
 #include "Deform.h"
+#include "Symmetry.h"
 
 #include <algorithm>
 #include <cmath>
@@ -85,6 +86,7 @@ SceneNode* firstMeshChild(SceneNode& node) {
 void walk(SceneNode& node, int& count) {
     if (node.deform.present) {
         DeformData& d = node.deform;
+        bakeParametricChildren(node);
         if (SceneNode* child = firstMeshChild(node)) {
             const glm::mat4 cm = child->localMatrix();
             const bool same = d.lastSource == child->mesh && d.lastChildMatrix == cm && d.lastKind == d.kind &&
