@@ -995,6 +995,7 @@ Mostrar Todo	Mostra tutto
 No se puede ocultar todo el objeto.	Impossibile nascondere l'intero oggetto.
 Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio non è riuscito ad aprire la sua finestra.
 Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	Serve una scheda grafica con Vulkan 1.3 o OpenGL 3.3. Prova ad aggiornare i driver della scheda grafica.
+SMD: %d huesos y %d mallas con pesos; solo la pose actual, sin animación. Cada material de Source necesita su .vmt.	SMD: %d ossa e %d mesh con pesi; solo la posa attuale, senza animazione. Ogni materiale Source richiede il suo .vmt.
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula

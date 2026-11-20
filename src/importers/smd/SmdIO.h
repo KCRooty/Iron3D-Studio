@@ -13,8 +13,12 @@
 // extension, en minusculas) o, si no hay, el nombre del material; ese es el
 // nombre del .vmt que luego hay que crear.
 //
-// No exporta esqueleto ni pesos (la Piel de Iron3D no se convierte todavia)
-// ni animacion: solo geometria, normales y UV.
+// Esqueleto (2026-11-20): cada articulacion (Ojoint) pasa a un hueso con su padre y su pose actual
+// (posicion y Euler de studiomdl respecto al padre); el hueso 0 es "root". Los vertices de una malla
+// con Piel llevan sus pesos (hasta 3 huesos por vertice, que es lo que admite studiomdl; lo que no
+// suma 1 va a "root" o a la articulacion que contenga la malla). Una malla sin Piel va rigida al hueso
+// de la articulacion que la contiene (o a "root"). Sin animacion: una sola pose (la actual).
+// La pose de la escena en el momento de exportar es la pose de referencia.
 
 #include "core/Material.h"
 #include "core/SceneNode.h"
@@ -28,6 +32,8 @@ namespace iron3d {
 struct SmdReport {
     int objects = 0;
     long long triangles = 0;
+    int bones = 1;          // incluye "root"
+    int skinnedMeshes = 0;  // mallas con pesos de su Piel
     std::vector<std::string> materials;  // nombres usados en el archivo
     std::vector<std::string> warnings;
 };

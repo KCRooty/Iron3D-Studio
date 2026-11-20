@@ -1170,7 +1170,13 @@ void exportSceneSmd(SceneNode& root, const std::vector<Material>& materials) {
     g.importReport.polygons = srep.triangles;
     g.importReport.materials = (int)srep.materials.size();
     g.importReport.warnings = srep.warnings;
-    g.importReport.warnings.push_back(tr("SMD: solo geometría, normales y UV; sin esqueleto ni animación. Cada material de Source necesita su .vmt."));
+    if (srep.bones > 1) {
+        char msg[256];
+        std::snprintf(msg, sizeof(msg), tr("SMD: %d huesos y %d mallas con pesos; solo la pose actual, sin animación. Cada material de Source necesita su .vmt."), srep.bones, srep.skinnedMeshes);
+        g.importReport.warnings.push_back(msg);
+    } else {
+        g.importReport.warnings.push_back(tr("SMD: solo geometría, normales y UV; sin esqueleto ni animación. Cada material de Source necesita su .vmt."));
+    }
     g.importError.clear();
     g.importTitle = tr("Exportar SMD");
     g.showImport = true;

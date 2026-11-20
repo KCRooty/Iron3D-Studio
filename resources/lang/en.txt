@@ -1028,6 +1028,7 @@ Mostrar Todo	Unhide All
 No se puede ocultar todo el objeto.	Cannot hide the whole object.
 Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio could not open its window.
 Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	It needs a graphics card with Vulkan 1.3 or OpenGL 3.3. Try updating your graphics drivers.
+SMD: %d huesos y %d mallas con pesos; solo la pose actual, sin animación. Cada material de Source necesita su .vmt.	SMD: %d bones and %d meshes with weights; current pose only, no animation. Each Source material needs its .vmt.
 Polígono Vacío	Empty Polygon
 Guía	Guide
 Cono	Cone

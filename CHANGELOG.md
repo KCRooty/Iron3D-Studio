@@ -6,6 +6,18 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (13): Valve SMD con esqueleto y pesos
+
+**Añadido**
+- **Archivo › Exportar › Valve SMD (Source)** ahora escribe el esqueleto: cada articulación (Ojoint) pasa a un hueso con su padre y su pose actual (posición y ángulos Euler de `studiomdl` respecto al padre); el hueso 0 es `root`. Los ejes y la escala son los de la malla.
+- Las mallas con **Piel** exportan los pesos de cada vértice (hasta 3 huesos por vértice, el máximo de `studiomdl`; si hay más se conservan los 3 de mayor peso y se avisa). Lo que no suma 1 va a la articulación que contiene la malla o a `root`. Las mallas sin Piel van rígidas al hueso de la articulación que las contiene (o a `root`).
+- El informe dice cuántos huesos y mallas con pesos salieron.
+- `smd_test` comprueba nombres y padres de huesos, la posición (Y arriba a Z arriba) y el giro de la articulación en Z, y los enlaces de peso de tres vértices (uno a un hueso, uno repartido entre dos, uno sin pesos).
+
+**Límites:** una sola pose (la actual, que se toma como pose de referencia), sin animación; no escribe el `.qc` ni los `.vmt`.
+
+**No probado:** compilar el SMD con `studiomdl` ni verlo en Source. El convenio de ángulos (`R = Rz·Ry·Rx` en radianes) y el de pesos salen de la documentación general del formato, sin comprobar contra el motor. Tampoco he probado el menú con una escena rigada real (solo el test unitario).
+
 ### 2026-11-20 (12): Alemán, francés e italiano: el resto de la interfaz
 
 **Añadido**
