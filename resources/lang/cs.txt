@@ -372,12 +372,17 @@ Afilar	Zúžení
 Hinchar	Vydutí
 Sesgar	Zkosení
 Booleano	Boole
-Polígono Vacío	Prázdný polygon
-Guía	Vodítko
 Cono	Kužel
 Cilindro	Válec
 Disco	Kruh
 Toroide	Anuloid
+Arco	Oblouk
+Cicloide	Cykloida
+Superficie	Povrch
+Cielo	Obloha
+Vista 3D	3D pohled
+Polígono Vacío	Prázdný polygon
+Guía	Vodítko
 Cápsula	Kapsle
 Pirámide	Jehlan
 Platónico	N-stěn
@@ -385,7 +390,6 @@ Figura	Postava
 Lápiz	Pero křivky
 Dibujo	Kreslení
 Suavizado Spline	Vyhlazení křivky
-Arco	Oblouk
 Círculo	Kruh
 Hélice	Spirála
 n-Lados	N-stěn
@@ -394,7 +398,6 @@ Estrella	Hvězda
 4-Lados	Čtyřstěn
 Cisoide	Cisoida
 Rueda Dentada	Ozubené kolo
-Cicloide	Cykloida
 Fórmula	Vzorec
 Flor	Květina
 Perfil	Profil
@@ -424,7 +427,6 @@ Jiggle	Houpání
 Morph	Morf
 Cubrir	Obalení - deformátor
 Esferizar	Zakulacení
-Superficie	Povrch
 Rail de Splines	Deformace křivkami
 Envolver Spline	Křivka
 Colisión	Kolize
@@ -432,7 +434,6 @@ Desplazador	Deformace
 Viento	Vítr
 Suavizado	Vyhlazení
 Suelo	Podlaha
-Cielo	Obloha
 Primer Plano	Popředí
 Escenario	Klapka
 Cielo Físico	Fyzikální obloha
@@ -476,4 +477,3 @@ Estructura	Struktura
 Capas	Vrstvy
 Propiedades	Vlastnosti
 Transformar	Transformovat
-Vista 3D	3D pohled

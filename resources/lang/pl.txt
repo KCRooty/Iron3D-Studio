@@ -379,12 +379,17 @@ Afilar	Zbieżność
 Hinchar	Wybrzuszanie
 Sesgar	Pochylanie
 Booleano	Operacja Boole'a
-Polígono Vacío	Pusty wielobok
-Guía	Linia przewodnia
 Cono	Stożek
 Cilindro	Walec
 Disco	Dysk
 Toroide	Torus
+Arco	Łuk
+Cicloide	Cykloida
+Superficie	Powierzchnia
+Cielo	Niebo
+Vista 3D	Widok 3D
+Polígono Vacío	Pusty wielobok
+Guía	Linia przewodnia
 Cápsula	Kapsuła
 Pirámide	Ostrosłup
 Platónico	Obiekt platoniczny
@@ -392,7 +397,6 @@ Figura	Postać
 Lápiz	Pióro
 Dibujo	Szkic
 Suavizado Spline	Wygładzanie splajnów
-Arco	Łuk
 Círculo	Okrąg
 Hélice	Helisa
 n-Lados	Wielobok
@@ -401,7 +405,6 @@ Estrella	Gwiazda
 4-Lados	Czworobok
 Cisoide	Cissoida
 Rueda Dentada	Koło zębate
-Cicloide	Cykloida
 Fórmula	Funkcja
 Flor	Kwiat
 Perfil	Profil
@@ -428,7 +431,6 @@ Jiggle	Drżenie
 Morph	Morfing
 Cubrir	Skurczenie z zawijaniem
 Esferizar	Dopasowanie do sfery
-Superficie	Powierzchnia
 Rail de Splines	Splajn tworzący
 Envolver Spline	Zawijanie splajnu
 Colisión	Zderzenie
@@ -436,7 +438,6 @@ Desplazador	Przemieszczanie
 Viento	Wiatr
 Suavizado	Wygładzanie
 Suelo	Podstawa
-Cielo	Niebo
 Primer Plano	Pierwszy plan
 Escenario	Scena
 Cielo Físico	Niebo fizyczne
@@ -480,4 +481,3 @@ Estructura	Struktura
 Capas	Warstwy
 Propiedades	Właściwości
 Transformar	Transformacja
-Vista 3D	Widok 3D

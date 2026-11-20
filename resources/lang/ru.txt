@@ -382,12 +382,17 @@ Afilar	Сжать
 Hinchar	Вздуть
 Sesgar	Сдвинуть
 Booleano	Булев
-Polígono Vacío	Пустой полигон
-Guía	Направляющая
 Cono	Конус
 Cilindro	Цилиндр
 Disco	Диск
 Toroide	Тор
+Arco	Дуга
+Cicloide	Циклоида
+Superficie	Поверхность
+Cielo	Небо
+Vista 3D	3D вид
+Polígono Vacío	Пустой полигон
+Guía	Направляющая
 Cápsula	Капсула
 Pirámide	Пирамида
 Platónico	Платоново тело
@@ -395,7 +400,6 @@ Figura	Фигура
 Lápiz	Сплайн-ручка
 Dibujo	Скетч
 Suavizado Spline	Сгладить сплайн
-Arco	Дуга
 Círculo	Окружность
 Hélice	Спираль
 n-Lados	N-гон
@@ -404,7 +408,6 @@ Estrella	Звезда
 4-Lados	Четырёхугольник
 Cisoide	Циссоида
 Rueda Dentada	Шестерня
-Cicloide	Циклоида
 Fórmula	Формула
 Flor	Цветок
 Perfil	Профиль
@@ -437,7 +440,6 @@ Jiggle	Тряска
 Morph	Морф
 Cubrir	Обёртка
 Esferizar	Сфера
-Superficie	Поверхность
 Rail de Splines	Направляющий сплайн
 Envolver Spline	Обернуть сплайн
 Colisión	Пересечение
@@ -445,7 +447,6 @@ Desplazador	Смещение
 Viento	Ветер
 Suavizado	Сглаживание
 Suelo	Земля
-Cielo	Небо
 Primer Plano	Передний план
 Escenario	Режиссёр
 Cielo Físico	Физическое небо
@@ -489,4 +490,3 @@ Estructura	Структура
 Capas	Слои
 Propiedades	Свойства
 Transformar	Трансформация
-Vista 3D	3D вид

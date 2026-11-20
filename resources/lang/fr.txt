@@ -56,6 +56,8 @@ Guardar Objetos Seleccionados como	Enregistrer les objets sélectionnés sous
 Objetos.c4d	Objets.c4d
 Mat	Mat.
 Simetría	Symétrie
+%s\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)	%s\nAjouter l'objet %s  (Alt+clic : comme enfant de la sélection)
+%s\nTodavía no implementado en Iron3D	%s\nPas encore implémenté dans Iron3D
 Sistema de coordenadas: Mundo	Système de coordonnées : Monde
 Sistema de coordenadas: Objeto	Système de coordonnées : Objet
 Activar Eje: se mueve el eje, no el objeto	Activer l'axe : l'axe bouge, pas l'objet
@@ -74,7 +76,14 @@ Estado Actual a Objeto: la selección no tiene geometría.	État actuel vers obj
 Conectar Objetos: 	Connecter les objets : 
  mallas unidas en un Objeto Polígono.	 maillages réunis en un objet polygonal.
 Conectar Objetos: la selección no tiene geometría.	Connecter les objets : la sélection ne contient pas de géométrie.
+Mayús+H	Maj+H
+Mayús+R	Maj+R
 Supr	Del
+Ctrl+Mayús+O	Ctrl+Maj+O
+Mayús+F8	Maj+F8
+Mayús+F1	Maj+F1
+Mayús+F	Maj+F
+Mayús+G	Maj+G
 Buscar orden...	Rechercher des commandes...
 Ninguna orden coincide.	Aucune commande trouvée.
 Deshacer	Annuler
@@ -103,8 +112,10 @@ Abrir...	Ouvrir...
 Fusionar...	Fusionner un projet...
 Volver a Archivo Guardado...	Version précédente du projet...
 Cerrar Todos	Fermer tous les projets
+Ctrl+Mayús+F4	Ctrl+Maj+F4
 Guardar	Enregistrer
 Guardar como...	Enregistrer le projet sous...
+Ctrl+Mayús+S	Ctrl+Maj+S
 Guardar incrementalmente...	Enregistrer de façon incrémentielle...
 Guardar Todo	Enregistrer tous les projets
 Guardar Objetos Seleccionados como...	Enregistrer les objets sous...
@@ -173,6 +184,7 @@ Alinear Normales	Aligner les normales
 Triangular	Convertir en triangles
 Fijación	Magnétisme
 Activar Fijación	Activer le Magnétisme
+Mayús+S	Maj+S
 Fijación 2D	Magnétisme 2D
 Fijación 3D	Magnétisme 3D
 Plano de Trabajo	Grille
@@ -242,17 +254,25 @@ Ningún plugin cargado	Aucun plug-in chargé
 Buscar Plugins...	Rechercher des plug-ins...
 Gestor de Scripts...	Gestionnaire de script...
 Consola...	Console...
+Mayús+F10	Maj+F10
 Ventana	Fenêtre
+Mayús+F2	Maj+F2
+Mayús+F3	Maj+F3
+Mayús+F5	Maj+F5
+Mayús+F7	Maj+F7
 Editor de Material...	Éditeur de matériau...
 Navegador de Contenido	Navigateur de contenu
 Gestor de Capas	Gestionnaire de calques
+Mayús+F4	Maj+F4
 Ayuda	Aide
 Mostrar Ayuda...	Afficher l'aide...
 Acerca de Iron3D Studio...	À propos d'Iron3D Studio...
 Arranque	Démarrage
 Animar	Aperçu animé
 Visualizar	Visualiser
+Deshacer [Ctrl+Z]	Annuler [Ctrl+Z]
 Deshacer la última acción.	Annuler la dernière action.
+Rehacer [Ctrl+Y]	Rétablir [Ctrl+Y]
 Rehacer la última acción deshecha.	Rétablir la dernière action annulée.
 Selección en Vivo [Atajo de Teclado 9]	Sélection dynamique [Raccourci clavier 9]
 Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.	Sélection dynamique : cliquez et faites glisser pour sélectionner des éléments. SHIFT ajoute à la sélection, CTRL en retire.
@@ -262,11 +282,18 @@ Herramienta de Escalar [Atajo de Teclado T]	Outil Échelle [Raccourci clavier T]
 Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.	Échelle : cliquez et faites glisser pour mettre à l'échelle des éléments. SHIFT quantifie l'échelle / ajoute à la sélection en mode points, CTRL en retire.
 Herramienta de Rotar [Atajo de Teclado R]	Outil Rotation [Raccourci clavier R]
 Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.	Rotation : cliquez et faites glisser pour pivoter des éléments. SHIFT quantifie la rotation / ajoute à la sélection en mode points, CTRL en retire.
+Eje X / Encabezado [X]\n(todavía no implementado)	Axe X / Cap [X]\n(pas encore implémenté)
 Bloqueo de eje X: todavía no implementado.	Verrouillage de l'axe X : pas encore implémenté.
+Eje Y / Inclinación [Y]\n(todavía no implementado)	Axe Y / Inclinaison [Y]\n(pas encore implémenté)
 Bloqueo de eje Y: todavía no implementado.	Verrouillage de l'axe Y : pas encore implémenté.
+Eje Z / Alabeo [Z]\n(todavía no implementado)	Axe Z / Roulis [Z]\n(pas encore implémenté)
 Bloqueo de eje Z: todavía no implementado.	Verrouillage de l'axe Z : pas encore implémenté.
+Usar Sistema de Coordenadas de Objeto [W]\n(ahora: Mundo)	Utiliser le système de coordonnées objet [W]\n(actuellement : Monde)
+Usar Sistema de Coordenadas de Mundo [W]\n(ahora: Objeto)	Utiliser le système de coordonnées monde [W]\n(actuellement : Objet)
 Cambia los ejes del gizmo entre los del objeto y los del mundo.	Bascule les axes du manipulateur entre les axes de l'objet et du monde.
+Renderizar Vista Activa\nRenderiza la vista activa en el propio visor.\n[Atajo de Teclado Ctrl+R]	Rendre la vue active\nRend la vue active dans la vue elle-même.\n[Raccourci clavier Ctrl+R]
 Renderiza la vista activa en el propio visor.	Rend la vue active directement dans le viewport.
+Renderizar en Visor de Imágenes [Mayús+R]\nRenderiza la cámara activa con la Configuración de Render.	Rendre dans le visualiseur d'images [Maj+R]\nRend la caméra active avec les réglages de rendu.
 Renderiza la cámara activa en el Visor de Imágenes.	Rend la caméra active dans le visualiseur d'images.
 Editar Configuración de Render... [Ctrl+B]	Modifier les paramètres de rendu... [Ctrl+B]
 Resolución, antialiasing y fondo del render.	Résolution de rendu, anticrénelage et arrière-plan.
@@ -279,9 +306,11 @@ Suelo  (mantener pulsado: escena)	Sol  (maintenir : scène)
 Cámara  (mantener pulsado: más cámaras)	Caméra  (maintenir : plus de caméras)
 Luz  (mantener pulsado: más luces)	Lumière  (maintenir : plus de lumières)
 Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado.	Clic : créer l'objet. Maintenir ou clic droit : ouvrir la palette du groupe. Alt+clic : créer comme enfant de la sélection.
+Hacer Editable [C]\nConvierte Cubo, Esfera o Plano en un Objeto Poligonal.	Rendre éditable [C]\nConvertit un cube, une sphère ou un plan en objet polygonal.
 Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.	Rendre éditable : convertit les objets paramétriques sélectionnés en objets polygonaux.
 Usar Modo Modelo	Utiliser le mode Modèle
 Modo Modelo: se editan objetos enteros.	Mode modèle : les objets sont édités en entier.
+Usar Modo Textura\n(todavía no implementado)	Utiliser le mode texture\n(pas encore implémenté)
 Modo Textura: todavía no implementado.	Mode Texture : pas encore implémenté.
 Activar Eje [L]	Activer l'axe [L]
 Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.	Mode Axe : déplacer, faire pivoter ou mettre à l'échelle ne modifie que l'axe de l'objet ; la géométrie éditable et les enfants restent en place.
@@ -291,15 +320,22 @@ Usar Modo Aristas	Utiliser le mode arêtes
 Modo Aristas: elige y mueve aristas de un objeto editable.	Mode arêtes : sélectionnez et déplacez les arêtes d'un objet éditable.
 Usar Modo Polígonos	Utiliser le mode polygones
 Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.	Mode polygones : sélectionnez et déplacez des polygones (triangles).
+Modo Ajuste\n(todavía no implementado)	Mode magnétisme\n(pas encore implémenté)
 Modo Ajuste: todavía no implementado.	Mode Magnétisme : pas encore implémenté.
+Vista Solo\n(todavía no implementado)	Vue solo\n(pas encore implémenté)
 Vista Solo: todavía no implementado.	Vue Solo : pas encore implémentée.
+Activar Fijación [Mayús+S]\n(todavía no implementado)	Activer le magnétisme [Maj+S]\n(pas encore implémenté)
 Fijación: todavía no implementado.	Magnétisme : pas encore implémenté.
+Plano de Trabajo\n(todavía no implementado)	Plan de travail\n(pas encore implémenté)
 Plano de Trabajo: todavía no implementado.	Plan de travail : pas encore implémenté.
+Bloquear Plano de Trabajo\n(todavía no implementado)	Verrouiller le plan de travail\n(pas encore implémenté)
 Bloquear Plano de Trabajo: todavía no implementado.	Verrouiller le plan de travail : pas encore implémenté.
 Vista	Vue
 Usar como Cámara de Render	Utiliser comme caméra de rendu
 Deshacer Vista	Annuler la vue
+Ctrl+Mayús+Z	Ctrl+Maj+Z
 Rehacer Vista	Rétablir la vue
+Ctrl+Mayús+Y	Ctrl+Maj+Y
 Encuadrar Todo	Tout cadrer
 Encuadrar Elementos Activos	Cadrer les éléments actifs
 Encuadre por Defecto	Cadrage par défaut
@@ -338,6 +374,7 @@ Texturas	Textures
 Rayos X	Rayons X
 Luz por Defecto...	Lumière par défaut...
 Configurar...	Configurer...
+Mayús+V	Maj+V
 Filtrar	Filtre
 Cuadrícula	Grille
 Generador	Générateur
@@ -372,6 +409,7 @@ Cambiar Vista (todavía no implementado)	Changer de vue (pas encore implémenté
 Multi-vista: todavía no implementado.	Multi-vues : pas encore implémenté.
 Arrastre sobre el icono para navegar por la vista.	Faites glisser sur l'icône pour naviguer dans la vue.
 Espaciado Cuadrícula : 100 cm	Espacement de la grille : 100 cm
+\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.	\nL'objet sélectionné est hors de la vue. Clic : amener la caméra dessus.
 Fusionar Objetos...	Fusionner les objets...
 Guardar como Preestablecido...	Enregistrer préréglage...
 Editar	Édition
@@ -422,6 +460,7 @@ Renombrar	Renommer
 Por Defecto	Par défaut
 Activado	Activé
 Apagado	Désactivé
+Visible en %s: %s\n(clic para cambiar)	Visible dans %s : %s\n(clic pour changer)
 Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.	Point du haut : visible dans l'éditeur. Point du bas : visible au rendu. Gris = Par défaut (hérite du parent), vert = Activé, rouge = Désactivé.
 Editor	Menu principal
 Etiqueta de Textura [%s]	Tag de texture [%s]
@@ -684,6 +723,7 @@ Grabar Rotación	Enregistrer la rotation
 Grabar Parámetro (todavía no implementado)	Enregistrer le paramètre (pas encore implémenté)
 Grabar Nivel de Puntos (todavía no implementado)	Enregistrer l'animation au niveau des points (pas encore implémenté)
 Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D	Éditeur de courbes / Dope Sheet : pas encore implémenté dans Iron3D
+Ctrl+Mayús+N	Ctrl+Maj+N
 Shader	Matière
 Guardar Materiales como...	Enregistrer les matériaux sous...
 Guardar Material Preestablecido...	Enregistrer le preset de matériau...
@@ -716,6 +756,7 @@ Error al cargar: 	Erreur de chargement :
 Guardado: 	Enregistré : 
 Error al guardar: 	Erreur d'enregistrement : 
 Cancelar	Annuler
+%s\nDisposición: %s	%s\nDisposition : %s
 Colores y disposición de los paneles como en cada programa. Se aplica al momento.	Couleurs et disposition des panneaux comme dans chaque programme. Appliqué immédiatement.
 Mis presets	Mes préréglages
 Personalizar	Personnalisé
@@ -774,6 +815,7 @@ Cerrar	Fermer
 %d objetos: %d mallas, %d primitivas, %d luces	%d objets : %d maillages, %d primitives, %d lumières
 %d materiales, %lld puntos, %lld polígonos	%d matériaux, %lld points, %lld polygones
 Exportado sin avisos.	Exporté sans avertissements.
+Une los puntos que coinciden (misma posición,\nnormal y color) al conectar.	Joint les points qui coïncident (même position,\nnormale et couleur) à la connexion.
 Tolerante	Tolérant
 Se elige todo lo que toque la zona.	Tout ce que la zone touche est sélectionné.
 Solo se elige lo que queda dentro entero.	Seul ce qui se trouve entièrement à l'intérieur est sélectionné.
@@ -805,6 +847,7 @@ Mejor (4x4)	Meilleur (4x4)
 Fondo	Arrière-Plan
 Arriba	Haut
 Abajo	Bas
+Render por CPU con el sombreado de las miniaturas:\nsin sombras ni texturas todavía.	Rendu CPU avec l'ombrage des miniatures :\npas encore d'ombres ni de textures.
 Malla demasiado grande para dibujar sus componentes.	Maillage trop grand pour dessiner ses composants.
 Puntos	Points
 Aristas	Arêtes
@@ -841,6 +884,7 @@ Desplazamiento (cm)	Décalage (cm)
 Desplazamiento de Inserción (cm)	Décalage de l'extrusion interne (cm)
 Extrusión (cm)	Extrusion (cm)
 Solo Visibles	Visibles uniquement
+Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos.	Mode ligne : coupe ce que la ligne traverse.\nAvec des polygones sélectionnés, seulement ceux-ci.
 o arrastra en el visor	ou faites glisser dans la vue
 (objeto editable)	(objet éditable)
  vertices sin espejo.	 sommets sans miroir.
@@ -906,6 +950,7 @@ Red	Réseau
 Resultado de la Búsqueda	Résultats de la recherche
   (temporal)	  (temporaire)
 Temporal: solo en esta sesión	Temporaire : cette session uniquement
+Permanente (library/browser)	Permanent (library/browser)
    (ninguna librería)	   (aucune bibliothèque)
 No hay librerías. Abre un .lib4d (Archivo > Abrir) o cópialo a library/browser.	Il n'y a aucune bibliothèque. Ouvrez un .lib4d (Fichier > Ouvrir) ou copiez-le dans library/browser.
 Aún no has cargado ningún preestablecido en esta sesión.	Vous n'avez encore chargé aucun préréglage dans cette session.
@@ -916,10 +961,14 @@ Mover a...	Déplacer vers...
 Modelo / escena de Cinema 4D	Modèle / scène Cinema 4D
 Carpeta	Dossier
 Archivo (textura, imagen...)	Fichier (texture, image...)
+\nDoble clic o arrastrar al visor: cargar	\nDouble-clic ou glisser dans la vue : charger
+\nDoble clic: abrir	\nDouble-clic : ouvrir
+%s\n%d modelos  ·  %s	%s\n%d modèles  ·  %s
 temporal (solo esta sesión)	temporaire (cette session uniquement)
   ·  librería temporal (solo esta sesión)	  ·  bibliothèque temporaire (cette session uniquement)
   ·  librería permanente	  ·  bibliothèque permanente
 Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. Clic derecho > Corregir Url Interna.	Cette bibliothèque a été renommée en dehors de Cinema 4D : son URL interne ne correspond pas au fichier. Clic droit > Corriger l'URL interne.
+%s\n(clic para quitar el aviso)	%s\n(clic pour masquer l'avertissement)
 No hay ninguna librería de preestablecidos.	Il n'y a aucune bibliothèque de préréglages.
 Crear "Mis Preestablecidos"	Créer « Mes préréglages »
 Mis Preestablecidos	Mes préréglages
@@ -1080,12 +1129,117 @@ Seleccionar Patrón	Sélectionner un motif
 Patrón: 1 de cada 2	Motif : 1 sur 2
 Patrón: 1 de cada 2 (desfasado)	Motif : 1 sur 2 (décalé)
 Patrón: 1 de cada 3	Motif : 1 sur 3
-Polígono Vacío	Polygone vide
-Guía	Guide
+Sin  / \\ : * ? " < > 	Sans  / \\ : * ? " < > | 
 Cono	Cône
 Cilindro	Cylindre
 Disco	Disque
 Toroide	Tore
+Arco	Arc
+Cicloide	Cycloïde
+Superficie	Surface
+Cielo	Ciel
+Vista 3D	Vue 3D
+Exportar a Source (SMD)	Exporter vers Source (SMD)
+Escena.smd	Scene.smd
+Exportar SMD	Exporter en SMD
+SMD: solo geometría, normales y UV; sin esqueleto ni animación. Cada material de Source necesita su .vmt.	SMD : uniquement géométrie, normales et UV ; sans squelette ni animation. Chaque matériau Source a besoin de son .vmt.
+Crear Punto	Créer un point
+Cerrar Agujero de Polígonos	Fermer le trou de polygones
+Lápiz Polígonos	Crayon polygone
+Cortar Línea	Coupe en ligne
+Cortar Plano	Coupe par plan
+Cortar Cíclico/Trayectoria	Coupe en boucle/chemin
+Magnetismo	Aimant
+Reflejar	Miroir
+Puntada y Cosido	Couture
+Extruir	Extruder
+Extrusión Interior	Extrusion interne
+Extrusión Matriz	Extrusion matrice
+Suavizar Desplazamiento	Lisser le décalage
+Mover Normal	Déplacer la normale
+Escalar Normal	Mettre la normale à l'échelle
+Rotar Normal	Faire pivoter la normale
+Destriangular...	Détriangulariser...
+Retriangular N-gons	Retriangulariser les N-gons
+Eliminar N-gons	Supprimer les N-gons
+Clonar	Cloner
+Desconectar...	Déconnecter...
+Separar	Séparer
+Colapso	Réduire
+Conectar	Connecter
+Fundir	Fondre
+Disolver	Dissoudre
+Subdividir...	Subdiviser...
+Asignar Valor al Punto	Définir la valeur du point
+Voltear Arista	Retourner l'arête
+Aristas a Spline	Arêtes vers spline
+Cambiar Orden de Puntos	Changer l'ordre des points
+Optimizar...	Optimiser...
+Restaurar Escala...	Réinitialiser l'échelle...
+Configuración Modelado	Réglages de modélisation
+Deshacer (Acción)	Annuler (action)
+Mayús+Z	Maj+Z
+Encuadrar Elementos Seleccionados	Cadrer les éléments sélectionnés
+Invertir Órbita	Inverser l'orbite
+Velocidad Pan	Vitesse de panoramique
+Velocidad Muñeca/Zoom	Vitesse de dolly/zoom
+Velocidad Órbita	Vitesse d'orbite
+Se aplica al momento. Alt+clic orbita, panea y hace zoom; la rueda acerca y aleja.	S'applique immédiatement. Alt+clic orbite, panoramique et zoome ; la molette rapproche et éloigne.
+Dispositivos de Entrada	Périphériques d'entrée
+Comunicación	Communication
+Escultura	Sculpture
+Motor Houdini	Houdini Engine
+Motor Substance	Substance Engine
+Previo del Material	Aperçu du matériau
+Importación/Exportación	Import/Export
+Colores Esquema	Couleurs du schéma
+Conversión	Conversion
+Comandos	Commandes
+Herramientas Crear	Outils de création
+Herramientas Transformar	Outils de transformation
+Interpolación Dura	Interpolation dure
+Interpolación Suave	Interpolation douce
+Igualar Longitud de Tangentes	Égaliser la longueur des tangentes
+Igualar Dirección de Tangentes	Égaliser la direction des tangentes
+Unir Segmento	Joindre le segment
+Romper Segmento	Rompre le segment
+Explotar Segmentos	Exploser les segments
+Asignar Primer Punto	Définir le premier point
+Invertir Secuencia	Inverser la séquence
+Mover Secuencia Abajo	Descendre la séquence
+Mover Secuencia Arriba	Monter la séquence
+Contornear	Contour
+Sección Transversal	Section transversale
+Alinear	Aligner
+Proyectar	Projeter
+Redondear	Arrondir
+Unión Spline	Union de splines
+Intersección Spline	Intersection de splines
+Centrar Ejes	Centrer les axes
+Centrar Eje a Objeto	Centrer l'axe sur l'objet
+Centrar Eje a Selección	Centrer l'axe sur la sélection
+Abrir Carpeta de Preferencias...	Ouvrir le dossier des préférences...
+Disolver: selecciona aristas, o polígonos vecinos.	Dissoudre : sélectionnez des arêtes ou des polygones voisins.
+Disolver: el resultado no sería un polígono convexo.	Dissoudre : le résultat ne serait pas un polygone convexe.
+Planchar: no hay puntos que alisar.	Lisser : aucun point à lisser.
+Voltear Arista: selecciona aristas (modo Aristas).	Retourner l'arête : sélectionnez des arêtes (mode Arêtes).
+Voltear Arista: solo entre dos triángulos y sin cuadrilátero cóncavo.	Retourner l'arête : seulement entre deux triangles et sans quadrilatère concave.
+Clonar: selecciona polígonos (modo Polígonos).	Cloner : sélectionnez des polygones (mode Polygones).
+Conectar: selecciona 2 puntos no vecinos de un mismo polígono.	Connecter : sélectionnez 2 points non voisins d'un même polygone.
+Reflejar: no hay polígonos.	Miroir : aucun polygone.
+Restaurar Escala: el objeto tiene hijos; sus posiciones cambiarían.	Réinitialiser l'échelle : l'objet a des enfants ; leurs positions changeraient.
+Restaurar Escala: el objeto ya está a escala 1.	Réinitialiser l'échelle : l'objet est déjà à l'échelle 1.
+Restaurar Escala: hecho.	Réinitialiser l'échelle : terminé.
+Información del Objeto	Informations sur l'objet
+No hay ningún objeto seleccionado.	Aucun objet sélectionné.
+Hijos	Enfants
+triángulos	triangles
+cuadriláteros	quadrilatères
+Guardado como 	Enregistré sous 
+volver al archivo guardado	revenir au fichier enregistré
+cerrar el proyecto	fermer le projet
+Polígono Vacío	Polygone vide
+Guía	Guide
 Cápsula	Capsule
 Pirámide	Pyramide
 Platónico	Solide Platonicien
@@ -1093,7 +1247,6 @@ Figura	Pantin
 Lápiz	Plume
 Dibujo	Esquisser
 Suavizado Spline	Modeler la spline
-Arco	Arc
 Círculo	Cercle
 Hélice	Spirale
 n-Lados	n côtés
@@ -1102,7 +1255,6 @@ Estrella	Etoile
 4-Lados	4 côtés
 Cisoide	Cissoïde
 Rueda Dentada	Roue dentée
-Cicloide	Cycloïde
 Fórmula	Formule
 Flor	Fleur
 Perfil	Profil
@@ -1132,7 +1284,6 @@ Jiggle	Secousses
 Morph	Morphing
 Cubrir	Déformateur Enveloppe
 Esferizar	Sphérification
-Superficie	Surface
 Rail de Splines	Spline Rail
 Envolver Spline	Enveloppe spline
 Colisión	Collision
@@ -1140,7 +1291,6 @@ Desplazador	Déplaceur
 Viento	Vent
 Suavizado	Lissage
 Suelo	Sol
-Cielo	Ciel
 Primer Plano	Premier Plan
 Escenario	Mise en scène
 Cielo Físico	Ciel Physique
@@ -1184,4 +1334,3 @@ Estructura	Structure
 Capas	Calques
 Propiedades	Propriétés
 Transformar	Transformation
-Vista 3D	Vue 3D

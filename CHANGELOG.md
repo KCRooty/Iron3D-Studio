@@ -6,6 +6,15 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (40): Traducciones al alemán, francés e italiano
+
+**Añadido**
+- Alemán, francés e italiano tienen ahora traducidas todas las cadenas nuevas de las últimas sesiones: menús de Malla, mensajes de las herramientas, Información del Objeto, atajos de teclado (Strg/Umschalt, Maj, Maiusc), Preferencias, tooltips y exportación SMD.
+
+**Límites:** polaco, checo, ruso, japonés, coreano y chino tienen solo las traducciones oficiales de los nombres de Cinema 4D (unas 480 cadenas); el resto de la interfaz sale en inglés en esos idiomas.
+
+**Verificado por captura:** menú Malla > Comandos en alemán (`--lang=de`).
+
 ### 2026-11-20 (39): Malla: Mover/Escalar/Rotar Normal, Matriz y Configuración Modelado
 
 **Añadido**

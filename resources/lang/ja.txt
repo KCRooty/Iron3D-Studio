@@ -379,12 +379,17 @@ Afilar	テーパー
 Hinchar	膨張
 Sesgar	シアー
 Booleano	ブール
-Polígono Vacío	空のポリゴン
-Guía	ガイド
 Cono	円錐
 Cilindro	円柱
 Disco	ディスク
 Toroide	トーラス
+Arco	弧
+Cicloide	サイクロイド
+Superficie	サーフェイス
+Cielo	空
+Vista 3D	3D表示
+Polígono Vacío	空のポリゴン
+Guía	ガイド
 Cápsula	カプセル
 Pirámide	ピラミッド
 Platónico	正多面体
@@ -392,7 +397,6 @@ Figura	フィギュア
 Lápiz	スプラインペン
 Dibujo	スケッチ
 Suavizado Spline	スプラインスムーズ
-Arco	弧
 Círculo	円形
 Hélice	らせん
 n-Lados	多角形
@@ -401,7 +405,6 @@ Estrella	星形
 4-Lados	四辺形
 Cisoide	疾走線
 Rueda Dentada	歯車
-Cicloide	サイクロイド
 Fórmula	数式
 Flor	花形
 Perfil	断面形
@@ -430,7 +433,6 @@ Jiggle	ジグル
 Morph	モーフ
 Cubrir	シュリンクラップ
 Esferizar	球状化
-Superficie	サーフェイス
 Rail de Splines	スプラインレール
 Envolver Spline	スプラインラップ
 Colisión	衝突判定
@@ -438,7 +440,6 @@ Desplazador	変位
 Viento	風
 Suavizado	スムージング
 Suelo	床
-Cielo	空
 Primer Plano	前景
 Escenario	ステージ
 Cielo Físico	フィジカルスカイ
@@ -482,4 +483,3 @@ Estructura	構造
 Capas	レイヤー
 Propiedades	属性
 Transformar	トランスフォーム
-Vista 3D	3D表示

@@ -386,12 +386,17 @@ Afilar	테이퍼
 Hinchar	팽창
 Sesgar	기울기
 Booleano	부울
-Polígono Vacío	빈 폴리곤
-Guía	가이드
 Cono	원뿔
 Cilindro	원기둥
 Disco	디스크
 Toroide	도넛
+Arco	호
+Cicloide	싸이클로이드
+Superficie	서페이스
+Cielo	스카이
+Vista 3D	3D 뷰
+Polígono Vacío	빈 폴리곤
+Guía	가이드
 Cápsula	캡슐
 Pirámide	피라미드
 Platónico	정다면체
@@ -399,7 +404,6 @@ Figura	피규어
 Lápiz	스플라인 펜
 Dibujo	스케치
 Suavizado Spline	스플라인 다듬기
-Arco	호
 Círculo	원
 Hélice	스프링
 n-Lados	n-면
@@ -408,7 +412,6 @@ Estrella	별
 4-Lados	마름모
 Cisoide	시소이드
 Rueda Dentada	기어
-Cicloide	싸이클로이드
 Fórmula	수식
 Flor	꽃모양
 Perfil	형상
@@ -440,7 +443,6 @@ Jiggle	지글 디포머
 Morph	몰프
 Cubrir	수축 디포머
 Esferizar	구
-Superficie	서페이스
 Rail de Splines	스플라인 레일
 Envolver Spline	스플라인 랩
 Colisión	충돌
@@ -448,7 +450,6 @@ Desplazador	디스플레이서
 Viento	바람
 Suavizado	스무싱
 Suelo	바닥
-Cielo	스카이
 Primer Plano	전경
 Escenario	스테이지
 Cielo Físico	피지컬 스카이
@@ -492,4 +493,3 @@ Estructura	구조
 Capas	레이어
 Propiedades	속성
 Transformar	트랜스폼
-Vista 3D	3D 뷰

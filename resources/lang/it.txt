@@ -54,6 +54,8 @@ Guardar Objetos Seleccionados como	Salva oggetti selezionati come
 Objetos.c4d	Oggetti.c4d
 Mat	Nuovo
 Simetría	Simmetria
+%s\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)	%s\nAggiungi oggetto %s  (Alt+clic: come figlio della selezione)
+%s\nTodavía no implementado en Iron3D	%s\nNon ancora implementato in Iron3D
 Sistema de coordenadas: Mundo	Sistema di coordinate: Mondo
 Sistema de coordenadas: Objeto	Sistema di coordinate: Oggetto
 Activar Eje: se mueve el eje, no el objeto	Abilita asse: si muove l'asse, non l'oggetto
@@ -72,7 +74,14 @@ Estado Actual a Objeto: la selección no tiene geometría.	Stato corrente in ogg
 Conectar Objetos: 	Collega oggetti: 
  mallas unidas en un Objeto Polígono.	 mesh uniti in un unico oggetto poligonale.
 Conectar Objetos: la selección no tiene geometría.	Collega oggetti: la selezione non ha geometria.
+Mayús+H	Maiusc+H
+Mayús+R	Maiusc+R
 Supr	Canc
+Ctrl+Mayús+O	Ctrl+Maiusc+O
+Mayús+F8	Maiusc+F8
+Mayús+F1	Maiusc+F1
+Mayús+F	Maiusc+F
+Mayús+G	Maiusc+G
 Buscar orden...	Cerca comandi...
 Ninguna orden coincide.	Nessun comando trovato.
 Deshacer	Annulla
@@ -101,8 +110,10 @@ Abrir...	Apri...
 Fusionar...	Inserisci Progetto...
 Volver a Archivo Guardado...	Versione Precedente...
 Cerrar Todos	Chiudi Tutti i Progetti
+Ctrl+Mayús+F4	Ctrl+Maiusc+F4
 Guardar	Salva
 Guardar como...	Salva Progetto come...
+Ctrl+Mayús+S	Ctrl+Maiusc+S
 Guardar incrementalmente...	Salva in modo incrementale...
 Guardar Todo	Salva Tutti i Progetti
 Guardar Objetos Seleccionados como...	Salva Oggetti Selezionati come...
@@ -170,6 +181,7 @@ Alinear Normales	Allinea normali
 Triangular	Triangola
 Fijación	Snap
 Activar Fijación	Abilita Snap
+Mayús+S	Maiusc+S
 Fijación 2D	Snap 2D
 Fijación 3D	Snap 3D
 Plano de Trabajo	Piano di Lavoro
@@ -238,17 +250,25 @@ Ningún plugin cargado	Nessun plug-in caricato
 Buscar Plugins...	Trova plug-in...
 Gestor de Scripts...	Gestione Script...
 Consola...	Console...
+Mayús+F10	Maiusc+F10
 Ventana	Finestre
+Mayús+F2	Maiusc+F2
+Mayús+F3	Maiusc+F3
+Mayús+F5	Maiusc+F5
+Mayús+F7	Maiusc+F7
 Editor de Material...	Editor Materiale...
 Navegador de Contenido	Content Browser
 Gestor de Capas	Gestione Livelli
+Mayús+F4	Maiusc+F4
 Ayuda	Aiuto
 Mostrar Ayuda...	Mostra Aiuto...
 Acerca de Iron3D Studio...	Informazioni su Iron3D Studio...
 Arranque	Avvio
 Animar	Animazione
 Visualizar	Visualizza
+Deshacer [Ctrl+Z]	Annulla [Ctrl+Z]
 Deshacer la última acción.	Annulla l'ultima azione.
+Rehacer [Ctrl+Y]	Ripeti [Ctrl+Y]
 Rehacer la última acción deshecha.	Ripeti l'ultima azione annullata.
 Selección en Vivo [Atajo de Teclado 9]	Selezione dinamica [Scorciatoia da tastiera 9]
 Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.	Selezione dinamica: fai clic e trascina per selezionare elementi. SHIFT aggiunge alla selezione, CTRL rimuove.
@@ -258,11 +278,18 @@ Herramienta de Escalar [Atajo de Teclado T]	Strumento Scala [Scorciatoia da tast
 Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.	Scala: fai clic e trascina per scalare elementi. SHIFT quantizza la scala / aggiunge alla selezione in modalità punti, CTRL rimuove.
 Herramienta de Rotar [Atajo de Teclado R]	Strumento Ruota [Scorciatoia da tastiera R]
 Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.	Ruota: fai clic e trascina per ruotare elementi. SHIFT quantizza la rotazione / aggiunge alla selezione in modalità punti, CTRL rimuove.
+Eje X / Encabezado [X]\n(todavía no implementado)	Asse X / Direzione [X]\n(non ancora implementato)
 Bloqueo de eje X: todavía no implementado.	Blocco asse X: non ancora implementato.
+Eje Y / Inclinación [Y]\n(todavía no implementado)	Asse Y / Inclinazione [Y]\n(non ancora implementato)
 Bloqueo de eje Y: todavía no implementado.	Blocco asse Y: non ancora implementato.
+Eje Z / Alabeo [Z]\n(todavía no implementado)	Asse Z / Rollio [Z]\n(non ancora implementato)
 Bloqueo de eje Z: todavía no implementado.	Blocco asse Z: non ancora implementato.
+Usar Sistema de Coordenadas de Objeto [W]\n(ahora: Mundo)	Usa il sistema di coordinate oggetto [W]\n(ora: Mondo)
+Usar Sistema de Coordenadas de Mundo [W]\n(ahora: Objeto)	Usa il sistema di coordinate mondo [W]\n(ora: Oggetto)
 Cambia los ejes del gizmo entre los del objeto y los del mundo.	Alterna gli assi del gizmo tra quelli dell'oggetto e quelli del mondo.
+Renderizar Vista Activa\nRenderiza la vista activa en el propio visor.\n[Atajo de Teclado Ctrl+R]	Renderizza la vista attiva\nRenderizza la vista attiva nella vista stessa.\n[Scorciatoia da tastiera Ctrl+R]
 Renderiza la vista activa en el propio visor.	Renderizza la vista attiva direttamente nel viewport.
+Renderizar en Visor de Imágenes [Mayús+R]\nRenderiza la cámara activa con la Configuración de Render.	Renderizza nel visualizzatore immagini [Maiusc+R]\nRenderizza la camera attiva con le impostazioni di render.
 Renderiza la cámara activa en el Visor de Imágenes.	Renderizza la camera attiva nel Visualizzatore immagini.
 Editar Configuración de Render... [Ctrl+B]	Modifica impostazioni di rendering... [Ctrl+B]
 Resolución, antialiasing y fondo del render.	Risoluzione di render, antialiasing e sfondo.
@@ -275,9 +302,11 @@ Suelo  (mantener pulsado: escena)	Pavimento  (tieni premuto: scena)
 Cámara  (mantener pulsado: más cámaras)	Camera  (tieni premuto: altre camere)
 Luz  (mantener pulsado: más luces)	Luce  (tieni premuto: altre luci)
 Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado.	Clic: crea l'oggetto. Tieni premuto o clic destro: apri la palette del gruppo. Alt+clic: crea come figlio della selezione.
+Hacer Editable [C]\nConvierte Cubo, Esfera o Plano en un Objeto Poligonal.	Rendi modificabile [C]\nConverte cubo, sfera o piano in un oggetto poligonale.
 Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.	Rendi modificabile: converte gli oggetti parametrici selezionati in oggetti poligonali.
 Usar Modo Modelo	Usa modalità Modello
 Modo Modelo: se editan objetos enteros.	Modalità modello: vengono modificati oggetti interi.
+Usar Modo Textura\n(todavía no implementado)	Usa la modalità texture\n(non ancora implementato)
 Modo Textura: todavía no implementado.	Modalità Texture: non ancora implementata.
 Activar Eje [L]	Attiva asse [L]
 Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.	Modalità Asse: spostando, ruotando o scalando cambia solo l'asse dell'oggetto; la geometria modificabile e i figli restano al loro posto.
@@ -287,14 +316,21 @@ Usar Modo Aristas	Usa modalità spigoli
 Modo Aristas: elige y mueve aristas de un objeto editable.	Modalità spigoli: seleziona e sposta gli spigoli di un oggetto modificabile.
 Usar Modo Polígonos	Usa modalità poligoni
 Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.	Modalità poligoni: seleziona e sposta poligoni (triangoli).
+Modo Ajuste\n(todavía no implementado)	Modalità snap\n(non ancora implementato)
 Modo Ajuste: todavía no implementado.	Modalità Snap: non ancora implementata.
+Vista Solo\n(todavía no implementado)	Vista solo\n(non ancora implementato)
 Vista Solo: todavía no implementado.	Vista Solo: non ancora implementata.
+Activar Fijación [Mayús+S]\n(todavía no implementado)	Attiva lo snap [Maiusc+S]\n(non ancora implementato)
 Fijación: todavía no implementado.	Snap: non ancora implementato.
+Plano de Trabajo\n(todavía no implementado)	Piano di lavoro\n(non ancora implementato)
 Plano de Trabajo: todavía no implementado.	Piano di lavoro: non ancora implementato.
+Bloquear Plano de Trabajo\n(todavía no implementado)	Blocca il piano di lavoro\n(non ancora implementato)
 Bloquear Plano de Trabajo: todavía no implementado.	Blocca piano di lavoro: non ancora implementato.
 Usar como Cámara de Render	Usa come camera di render
 Deshacer Vista	Annulla Vista
+Ctrl+Mayús+Z	Ctrl+Maiusc+Z
 Rehacer Vista	Ripeti Vista
+Ctrl+Mayús+Y	Ctrl+Maiusc+Y
 Encuadrar Todo	Mostra Tutto
 Encuadrar Elementos Activos	Inquadra elementi attivi
 Encuadre por Defecto	Mostra come Predefinito
@@ -333,6 +369,7 @@ Texturas	Texture
 Rayos X	Usa Raggi X
 Luz por Defecto...	Luce di Default...
 Configurar...	Configura...
+Mayús+V	Maiusc+V
 Filtrar	Filtro
 Cuadrícula	Griglia
 Generador	Generatore
@@ -366,6 +403,7 @@ Cambiar Vista (todavía no implementado)	Cambia vista (non ancora implementato)
 Multi-vista: todavía no implementado.	Viste multiple: non ancora implementate.
 Arrastre sobre el icono para navegar por la vista.	Trascina sull'icona per navigare nella vista.
 Espaciado Cuadrícula : 100 cm	Spaziatura griglia : 100 cm
+\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.	\nL'oggetto selezionato è fuori vista. Clic: porta la camera su di esso.
 Fusionar Objetos...	Inserisci Oggetti...
 Guardar como Preestablecido...	Salva Presettaggi...
 Editar	Modifica
@@ -416,6 +454,7 @@ Renombrar	Rinomina
 Por Defecto	Predefinito
 Activado	Abilitato
 Apagado	Disattivo
+Visible en %s: %s\n(clic para cambiar)	Visibile in %s: %s\n(clic per cambiare)
 Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.	Punto in alto: visibile nell'editor. Punto in basso: visibile nel render. Grigio = Predefinito (eredita dal genitore), verde = Attivo, rosso = Disattivato.
 Etiqueta de Textura [%s]	Tag Texture [%s]
 %s (todavía no implementado)	%s (non ancora implementato)
@@ -666,6 +705,7 @@ Grabar Rotación	Registra rotazione
 Grabar Parámetro (todavía no implementado)	Registra parametro (non ancora implementato)
 Grabar Nivel de Puntos (todavía no implementado)	Registra animazione a livello di punti (non ancora implementato)
 Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D	Editor grafico / Dope Sheet: non ancora implementato in Iron3D
+Ctrl+Mayús+N	Ctrl+Maiusc+N
 Guardar Materiales como...	Salva Materiali come...
 Guardar Material Preestablecido...	Salva preset materiale...
 Función	Funzione
@@ -697,6 +737,7 @@ Error al cargar: 	Errore di caricamento:
 Guardado: 	Salvato: 
 Error al guardar: 	Errore di salvataggio: 
 Cancelar	Annulla
+%s\nDisposición: %s	%s\nDisposizione: %s
 Colores y disposición de los paneles como en cada programa. Se aplica al momento.	Colori e layout dei pannelli come in ogni programma. Applicato immediatamente.
 Mis presets	I miei preset
 Personalizar	Personalizza
@@ -755,6 +796,7 @@ Cerrar	Chiudi
 %d objetos: %d mallas, %d primitivas, %d luces	%d oggetti: %d mesh, %d primitive, %d luci
 %d materiales, %lld puntos, %lld polígonos	%d materiali, %lld punti, %lld poligoni
 Exportado sin avisos.	Esportato senza avvisi.
+Une los puntos que coinciden (misma posición,\nnormal y color) al conectar.	Unisce i punti coincidenti (stessa posizione,\nnormale e colore) al collegamento.
 Tolerante	Tollerante
 Se elige todo lo que toque la zona.	Viene selezionato tutto ciò che l'area tocca.
 Solo se elige lo que queda dentro entero.	Viene selezionato solo ciò che sta interamente all'interno.
@@ -786,6 +828,7 @@ Mejor (4x4)	Migliore (4x4)
 Fondo	Sfondo
 Arriba	Su
 Abajo	Giù
+Render por CPU con el sombreado de las miniaturas:\nsin sombras ni texturas todavía.	Render CPU con l'ombreggiatura delle miniature:\nancora senza ombre né texture.
 Malla demasiado grande para dibujar sus componentes.	Mesh troppo grande per disegnarne i componenti.
 Puntos	Punti
 Aristas	Lati
@@ -821,6 +864,7 @@ Desplazamiento (cm)	Offset (cm)
 Desplazamiento de Inserción (cm)	Offset inset (cm)
 Extrusión (cm)	Estrusione (cm)
 Solo Visibles	Solo visibili
+Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos.	Modalità linea: taglia ciò che la linea attraversa.\nCon poligoni selezionati, solo quelli.
 o arrastra en el visor	oppure trascina nella vista
 (objeto editable)	(oggetto modificabile)
  vertices sin espejo.	 vertici senza specchio.
@@ -896,10 +940,14 @@ Mover a...	Sposta in...
 Modelo / escena de Cinema 4D	Modello / scena Cinema 4D
 Carpeta	Cartella
 Archivo (textura, imagen...)	File (texture, immagine...)
+\nDoble clic o arrastrar al visor: cargar	\nDoppio clic o trascina nella vista: carica
+\nDoble clic: abrir	\nDoppio clic: apri
+%s\n%d modelos  ·  %s	%s\n%d modelli  ·  %s
 temporal (solo esta sesión)	temporanea (solo questa sessione)
   ·  librería temporal (solo esta sesión)	  ·  libreria temporanea (solo questa sessione)
   ·  librería permanente	  ·  libreria permanente
 Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. Clic derecho > Corregir Url Interna.	Questa libreria è stata rinominata fuori da Cinema 4D: il suo URL interno non corrisponde al file. Clic destro > Correggi URL interno.
+%s\n(clic para quitar el aviso)	%s\n(clic per nascondere l'avviso)
 No hay ninguna librería de preestablecidos.	Non ci sono librerie di preset.
 Crear "Mis Preestablecidos"	Crea "I miei preset"
 Mis Preestablecidos	I miei preset
@@ -1056,6 +1104,107 @@ Seleccionar Patrón	Seleziona schema
 Patrón: 1 de cada 2	Schema: 1 ogni 2
 Patrón: 1 de cada 2 (desfasado)	Schema: 1 ogni 2 (sfalsato)
 Patrón: 1 de cada 3	Schema: 1 ogni 3
+Sin  / \\ : * ? " < > 	Senza  / \\ : * ? " < > | 
+Toroide	Toro
+Exportar a Source (SMD)	Esporta in Source (SMD)
+Escena.smd	Scena.smd
+Exportar SMD	Esporta SMD
+SMD: solo geometría, normales y UV; sin esqueleto ni animación. Cada material de Source necesita su .vmt.	SMD: solo geometria, normali e UV; senza scheletro né animazione. Ogni materiale Source richiede il proprio .vmt.
+Crear Punto	Crea punto
+Cerrar Agujero de Polígonos	Chiudi buco di poligoni
+Lápiz Polígonos	Penna poligoni
+Cortar Línea	Taglio linea
+Cortar Plano	Taglio piano
+Cortar Cíclico/Trayectoria	Taglio loop/percorso
+Magnetismo	Magnete
+Reflejar	Specchia
+Puntada y Cosido	Cucitura
+Extruir	Estrudi
+Extrusión Interior	Estrusione interna
+Extrusión Matriz	Estrusione matrice
+Suavizar Desplazamiento	Smussa spostamento
+Mover Normal	Sposta normale
+Escalar Normal	Scala normale
+Rotar Normal	Ruota normale
+Destriangular...	Distriangola...
+Retriangular N-gons	Ritriangola N-gon
+Eliminar N-gons	Rimuovi N-gon
+Clonar	Clona
+Desconectar...	Disconnetti...
+Separar	Dividi
+Colapso	Collassa
+Conectar	Collega
+Fundir	Fondi
+Disolver	Dissolvi
+Subdividir...	Suddividi...
+Asignar Valor al Punto	Assegna valore al punto
+Voltear Arista	Ruota spigolo
+Aristas a Spline	Spigoli in spline
+Cambiar Orden de Puntos	Cambia ordine dei punti
+Optimizar...	Ottimizza...
+Restaurar Escala...	Reimposta scala...
+Configuración Modelado	Impostazioni di modellazione
+Deshacer (Acción)	Annulla (azione)
+Mayús+Z	Maiusc+Z
+Encuadrar Elementos Seleccionados	Inquadra gli elementi selezionati
+Invertir Órbita	Inverti orbita
+Velocidad Pan	Velocità pan
+Velocidad Muñeca/Zoom	Velocità dolly/zoom
+Velocidad Órbita	Velocità orbita
+Se aplica al momento. Alt+clic orbita, panea y hace zoom; la rueda acerca y aleja.	Applicato subito. Alt+clic orbita, sposta e zooma; la rotella avvicina e allontana.
+Dispositivos de Entrada	Periferiche di input
+Comunicación	Comunicazione
+Escultura	Scultura
+Motor Houdini	Houdini Engine
+Motor Substance	Substance Engine
+Previo del Material	Anteprima materiale
+Importación/Exportación	Importazione/Esportazione
+Colores Esquema	Colori schema
+Conversión	Conversione
+Comandos	Comandi
+Herramientas Crear	Strumenti crea
+Herramientas Transformar	Strumenti trasforma
+Interpolación Dura	Interpolazione dura
+Interpolación Suave	Interpolazione morbida
+Igualar Longitud de Tangentes	Uguaglia lunghezza tangenti
+Igualar Dirección de Tangentes	Uguaglia direzione tangenti
+Unir Segmento	Unisci segmento
+Romper Segmento	Spezza segmento
+Explotar Segmentos	Esplodi segmenti
+Asignar Primer Punto	Imposta primo punto
+Invertir Secuencia	Inverti sequenza
+Mover Secuencia Abajo	Sposta sequenza in basso
+Mover Secuencia Arriba	Sposta sequenza in alto
+Contornear	Contorno
+Sección Transversal	Sezione trasversale
+Alinear	Allinea
+Proyectar	Proietta
+Redondear	Arrotonda
+Unión Spline	Unione spline
+Intersección Spline	Intersezione spline
+Centrar Ejes	Centra assi
+Centrar Eje a Objeto	Centra asse sull'oggetto
+Centrar Eje a Selección	Centra asse sulla selezione
+Abrir Carpeta de Preferencias...	Apri cartella preferenze...
+Disolver: selecciona aristas, o polígonos vecinos.	Dissolvi: seleziona spigoli o poligoni adiacenti.
+Disolver: el resultado no sería un polígono convexo.	Dissolvi: il risultato non sarebbe un poligono convesso.
+Planchar: no hay puntos que alisar.	Appiana: nessun punto da appianare.
+Voltear Arista: selecciona aristas (modo Aristas).	Ruota spigolo: seleziona spigoli (modalità Spigoli).
+Voltear Arista: solo entre dos triángulos y sin cuadrilátero cóncavo.	Ruota spigolo: solo tra due triangoli e senza quadrilatero concavo.
+Clonar: selecciona polígonos (modo Polígonos).	Clona: seleziona poligoni (modalità Poligoni).
+Conectar: selecciona 2 puntos no vecinos de un mismo polígono.	Collega: seleziona 2 punti non adiacenti dello stesso poligono.
+Reflejar: no hay polígonos.	Specchia: nessun poligono.
+Restaurar Escala: el objeto tiene hijos; sus posiciones cambiarían.	Reimposta scala: l'oggetto ha figli; le loro posizioni cambierebbero.
+Restaurar Escala: el objeto ya está a escala 1.	Reimposta scala: l'oggetto è già in scala 1.
+Restaurar Escala: hecho.	Reimposta scala: fatto.
+Información del Objeto	Informazioni sull'oggetto
+No hay ningún objeto seleccionado.	Nessun oggetto selezionato.
+Hijos	Figli
+triángulos	triangoli
+cuadriláteros	quadrilateri
+Guardado como 	Salvato come 
+volver al archivo guardado	tornare al file salvato
+cerrar el proyecto	chiudere il progetto
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula

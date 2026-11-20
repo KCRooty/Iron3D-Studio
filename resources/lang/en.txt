@@ -1092,107 +1092,15 @@ Seleccionar Patrón	Select Pattern
 Patrón: 1 de cada 2	Pattern: every 2nd
 Patrón: 1 de cada 2 (desfasado)	Pattern: every 2nd (offset)
 Patrón: 1 de cada 3	Pattern: every 3rd
-Polígono Vacío	Empty Polygon
-Guía	Guide
 Cono	Cone
 Cilindro	Cylinder
 Disco	Disc
 Toroide	Torus
-Cápsula	Capsule
-Pirámide	Pyramid
-Platónico	Platonic
-Figura	Figure
-Lápiz	Pen
-Dibujo	Sketch
-Suavizado Spline	Spline Smooth
 Arco	Arc
-Círculo	Circle
-Hélice	Helix
-n-Lados	n-Side
-Rectángulo	Rectangle
-Estrella	Star
-4-Lados	4-Side
-Cisoide	Cissoid
-Rueda Dentada	Cogwheel
 Cicloide	Cycloid
-Fórmula	Formula
-Flor	Flower
-Perfil	Profile
-Sustraer Spline	Spline Subtract
-Spline Y	Spline And
-Spline O	Spline Or
-Torno	Lathe
-Forro	Loft
-Recorrido	Sweep
-Formación de Átomos	Atom Array
-Máscara de Spline	Spline Mask
-Conector	Connector
-Generador Python	Python Generator
-Reducción de Polígonos	Polygon Reduction
-Instancia	Instance
-Fractura	Fracture
-Trazador	Tracer
-Aplastar y Estirar	Squash  Stretch
-Explosión	Explosion
-FX Explosión	Explosion FX
-Romper	Shatter
-Corrección	Correction
-Cubrir	Shrink Wrap
-Esferizar	Spherify
 Superficie	Surface
-Rail de Splines	Spline Rail
-Envolver Spline	Spline Wrap
-Colisión	Collision
-Desplazador	Displacer
-Viento	Wind
-Suavizado	Smoothing
-Suelo	Floor
 Cielo	Sky
-Primer Plano	Foreground
-Escenario	Stage
-Cielo Físico	Physical Sky
-Unir Nubes	Connect Clouds
-Césped	Grass
-Cámara Estéreo	Stereo Camera
-Morph de Cámara	Camera Morph
-Grúa	Crane
-Luz Infinita	Infinite Light
-Luz de Área	Area Light
-Luz Solar	Sun Light
-Luz PBR	PBR Light
-Activar Eje	Enable Axis
-Nuevo Proyecto	New Project
-Gestor de Objetos	Object Manager
-Detener	Stop
-Guardar Proyecto con su Contenido...	Save Project with Assets...
-Inflar	Inflate
-Pincel Pesos MoGraph	MoGraph Weight Paintbrush
-Ejecutar Script...	Run Script...
-Sombreado Rápido (Líneas)	Quick Shading (Lines)
-Sombreado Constante (Líneas)	Constant Shading (Lines)
-Esqueleto	Skeleton
-Sombras	Shadows
-Teselación	Tessellation
-Ocultar Caras Posteriores	Backface Culling
-Configurar Todo...	Configure All...
-Objetivo	Target
-Niebla	Fog
-Mostrar Subcanales	Show Sub-channels
-Guardar Todos los Materiales como...	Save All Materials as...
-Todos los archivos	All files
-Nueva Librería	New Library
-Nueva Carpeta	New Folder
-Atributos	Attributes
-Línea de Tiempo	Timeline
-Gestor de Materiales	Material Manager
-Entorno:	Layout:
-Tomas	Takes
-Estructura	Structure
-Capas	Layers
-Propiedades	Properties
-Transformar	Transform
 Vista 3D	3D View
-Editor de Material  [%s]	Material Editor  [%s]
 Exportar a Source (SMD)	Export to Source (SMD)
 Escena.smd	Scene.smd
 Exportar SMD	Export SMD
@@ -1292,3 +1200,95 @@ cuadriláteros	quads
 Guardado como 	Saved as 
 volver al archivo guardado	revert to the saved file
 cerrar el proyecto	close the project
+Polígono Vacío	Empty Polygon
+Guía	Guide
+Cápsula	Capsule
+Pirámide	Pyramid
+Platónico	Platonic
+Figura	Figure
+Lápiz	Pen
+Dibujo	Sketch
+Suavizado Spline	Spline Smooth
+Círculo	Circle
+Hélice	Helix
+n-Lados	n-Side
+Rectángulo	Rectangle
+Estrella	Star
+4-Lados	4-Side
+Cisoide	Cissoid
+Rueda Dentada	Cogwheel
+Fórmula	Formula
+Flor	Flower
+Perfil	Profile
+Sustraer Spline	Spline Subtract
+Spline Y	Spline And
+Spline O	Spline Or
+Torno	Lathe
+Forro	Loft
+Recorrido	Sweep
+Formación de Átomos	Atom Array
+Máscara de Spline	Spline Mask
+Conector	Connector
+Generador Python	Python Generator
+Reducción de Polígonos	Polygon Reduction
+Instancia	Instance
+Fractura	Fracture
+Trazador	Tracer
+Aplastar y Estirar	Squash  Stretch
+Explosión	Explosion
+FX Explosión	Explosion FX
+Romper	Shatter
+Corrección	Correction
+Cubrir	Shrink Wrap
+Esferizar	Spherify
+Rail de Splines	Spline Rail
+Envolver Spline	Spline Wrap
+Colisión	Collision
+Desplazador	Displacer
+Viento	Wind
+Suavizado	Smoothing
+Suelo	Floor
+Primer Plano	Foreground
+Escenario	Stage
+Cielo Físico	Physical Sky
+Unir Nubes	Connect Clouds
+Césped	Grass
+Cámara Estéreo	Stereo Camera
+Morph de Cámara	Camera Morph
+Grúa	Crane
+Luz Infinita	Infinite Light
+Luz de Área	Area Light
+Luz Solar	Sun Light
+Luz PBR	PBR Light
+Activar Eje	Enable Axis
+Nuevo Proyecto	New Project
+Gestor de Objetos	Object Manager
+Detener	Stop
+Guardar Proyecto con su Contenido...	Save Project with Assets...
+Inflar	Inflate
+Pincel Pesos MoGraph	MoGraph Weight Paintbrush
+Ejecutar Script...	Run Script...
+Sombreado Rápido (Líneas)	Quick Shading (Lines)
+Sombreado Constante (Líneas)	Constant Shading (Lines)
+Esqueleto	Skeleton
+Sombras	Shadows
+Teselación	Tessellation
+Ocultar Caras Posteriores	Backface Culling
+Configurar Todo...	Configure All...
+Objetivo	Target
+Niebla	Fog
+Mostrar Subcanales	Show Sub-channels
+Guardar Todos los Materiales como...	Save All Materials as...
+Todos los archivos	All files
+Nueva Librería	New Library
+Nueva Carpeta	New Folder
+Atributos	Attributes
+Línea de Tiempo	Timeline
+Gestor de Materiales	Material Manager
+Entorno:	Layout:
+Tomas	Takes
+Estructura	Structure
+Capas	Layers
+Propiedades	Properties
+Transformar	Transform
+Editor de Material  [%s]	Material Editor  [%s]
