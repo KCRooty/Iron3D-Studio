@@ -11,6 +11,8 @@
 #if defined(_WIN32)
 extern "C" __declspec(dllimport) int __stdcall MessageBoxW(void* hWnd, const wchar_t* text, const wchar_t* caption,
                                                          unsigned int type);
+extern "C" __declspec(dllimport) int __stdcall MultiByteToWideChar(unsigned int cp, unsigned long flags, const char* src,
+                                                                 int srcLen, wchar_t* dst, int dstLen);
 #endif
 #include <GLFW/glfw3.h>
 #include "core/WindowSize.h"
@@ -596,11 +598,11 @@ int main(int argc, char** argv) {
     if (!window) {
         std::fprintf(stderr, "[Iron3D] glfwCreateWindow fallo.\n");
 #if defined(_WIN32)
-        MessageBoxW(nullptr,
-                    L"Iron3D Studio no ha podido abrir su ventana.\n\n"
-                    L"Necesita una tarjeta gr\u00e1fica con Vulkan 1.3 u OpenGL 3.3. "
-                    L"Prueba a actualizar los drivers de la tarjeta gr\u00e1fica.",
-                    L"Iron3D Studio", 0x10 /* MB_ICONERROR */);
+        const std::string msg = std::string(tr("Iron3D Studio no ha podido abrir su ventana.")) + "\n\n" +
+                                tr("Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.");
+        std::wstring wide((size_t)MultiByteToWideChar(65001, 0, msg.c_str(), -1, nullptr, 0), L'\0');
+        MultiByteToWideChar(65001, 0, msg.c_str(), -1, wide.data(), (int)wide.size());
+        MessageBoxW(nullptr, wide.c_str(), L"Iron3D Studio", 0x10 /* MB_ICONERROR */);
 #endif
         return 1;
     }
