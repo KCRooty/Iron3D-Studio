@@ -196,6 +196,7 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         src/core/MeshData.cpp
         src/core/MeshTopology.cpp
         src/core/SceneNode.cpp
+        src/core/Skin.cpp
         src/core/SceneSerializer.cpp
         src/core/Material.cpp
         src/core/ShaderTree.cpp

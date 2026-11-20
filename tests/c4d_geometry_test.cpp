@@ -456,6 +456,20 @@ int main() {
         check(deserializeScene(text, back, mats, &err), "FACES: el .iron se vuelve a leer");
         const SceneNode* bn = back.children().empty() ? nullptr : back.children().front().get();
         check(bn && bn->mesh && bn->mesh->faceTris == std::vector<uint32_t>{3}, "FACES: poligonos guardados y leidos");
+
+        // Simetria y poligonos ocultos tambien ida y vuelta.
+        node->symmetry.present = true;
+        node->symmetry.axis = 1;
+        node->hiddenPolys = std::make_shared<const std::vector<char>>(std::vector<char>{0, 1, 1});
+        node->hiddenFor = node->mesh.get();
+        const std::string text2 = serializeScene(root, mats);
+        SceneNode back2("x");
+        check(deserializeScene(text2, back2, mats, &err), "SYM/HIDDEN: el .iron se vuelve a leer");
+        const SceneNode* b2 = back2.children().empty() ? nullptr : back2.children().front().get();
+        check(b2 && b2->symmetry.present && b2->symmetry.axis == 1, "SYM: simetria guardada y leida");
+        check(b2 && b2->hasHidden() && b2->hiddenPolys->size() == 3 && !(*b2->hiddenPolys)[0] && (*b2->hiddenPolys)[1] &&
+                  (*b2->hiddenPolys)[2],
+              "HIDDEN: poligonos ocultos guardados y leidos");
     }
 
     // --- Visibilidad de componentes (Solo Seleccionar Visibles) ---------------

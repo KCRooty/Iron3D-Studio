@@ -20,7 +20,8 @@ namespace {
 // escapados, UV en MESH, LIGHT / CAMERA / TEXTAG en los nodos y canales,
 // texturas y capas de Reflectancia en los materiales.
 // 8 (2026-11-11): ajustes completos del material (CHANNEL, arbol de shaders).
-constexpr int kFormatVersion = 8;
+// 9 (2026-11-20): poligonos ocultos del editor (HIDDEN).
+constexpr int kFormatVersion = 9;
 
 // Texto entre comillas: '%', '"' y saltos de linea van como %25, %22, %0A.
 std::string quoted(const std::string& text) {
@@ -143,6 +144,12 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             << " tip=" << quoted(node.ik.tip) << " target=" << quoted(node.ik.target) << " pole=" << quoted(node.ik.pole) << "\n";
     if (node.symmetry.present)
         out << indent << "  SYM axis=" << node.symmetry.axis << " tol=" << node.symmetry.tolCm << "\n";
+    if (node.hasHidden()) {
+        std::string list;
+        for (size_t i = 0; i < node.hiddenPolys->size(); ++i)
+            if ((*node.hiddenPolys)[i]) list += (list.empty() ? "" : ",") + std::to_string(i);
+        if (!list.empty()) out << indent << "  HIDDEN polys=" << list << "\n";
+    }
     if (node.materialIndex >= 0 && !(node.texTag == TextureTagData{})) {
         const TextureTagData& t = node.texTag;
         out << indent << "  TEXTAG proj=" << t.projection << " ou=" << t.offset.x << " ov=" << t.offset.y
@@ -366,6 +373,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     VisMode editorVis = VisMode::Default, renderVis = VisMode::Default;
     int materialIndex = -1;
     std::shared_ptr<const MeshData> mesh;
+    std::vector<char> hiddenList;
 
     while (!p.atEnd() && p.peek() != "{") {
         const std::string tok = p.next();
@@ -406,7 +414,8 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras los atributos de NODE"; return false; }
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
     while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG" ||
-                            p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "IK" || p.peek() == "NULLSHAPE")) {
+                            p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "IK" || p.peek() == "NULLSHAPE" ||
+                            p.peek() == "SYM" || p.peek() == "HIDDEN")) {
         const std::string kind = p.next();
         bool ok = true;
         if (kind == "LIGHT") {
@@ -463,6 +472,20 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
                 } else if (k == "min") vec3(v, l.minDeg);
                 else if (k == "max") vec3(v, l.maxDeg);
                 else if (k == "strength") l.strength = std::stof(v);
+            });
+        } else if (kind == "HIDDEN") {
+            ok = readAttrs(p, "HIDDEN", err, [&](const std::string& k, const std::string& v) {
+                if (k != "polys") return;
+                size_t pos = 0;
+                while (pos < v.size()) {
+                    size_t e = v.find(',', pos);
+                    if (e == std::string::npos) e = v.size();
+                    const size_t idx = (size_t)std::stoul(v.substr(pos, e - pos));
+                    if (idx > 50000000) throw std::out_of_range("HIDDEN");
+                    if (hiddenList.size() <= idx) hiddenList.resize(idx + 1, 0);
+                    hiddenList[idx] = 1;
+                    pos = e + 1;
+                }
             });
         } else if (kind == "SYM") {
             node.symmetry.present = true;
@@ -560,6 +583,10 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     node.renderVis = renderVis;
     node.materialIndex = materialIndex;
     node.mesh = std::move(mesh);
+    if (!hiddenList.empty() && node.mesh) {
+        node.hiddenPolys = std::make_shared<const std::vector<char>>(std::move(hiddenList));
+        node.hiddenFor = node.mesh.get();
+    }
     if (node.primitive == PrimitiveType::Mesh && !node.mesh) node.primitive = PrimitiveType::None;
 
     while (!p.atEnd() && p.peek() != "}") {

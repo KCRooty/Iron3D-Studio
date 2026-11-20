@@ -6,6 +6,17 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (8): .iron guarda los polígonos ocultos; arreglos de carga y de compilación
+
+**Nuevo**
+- Los **polígonos ocultos** (Selección > Ocultar) se guardan y se leen en el `.iron` (bloque `HIDDEN`, formato 9).
+
+**Arreglado**
+- La **etiqueta de Simetría** se escribía en el `.iron` pero el lector no reconocía el bloque `SYM` (no estaba en la lista de bloques del nodo): una escena guardada con simetría podía fallar al abrirse con «token inesperado». Ahora se lee, con prueba de ida y vuelta. (Deducido leyendo el código; no reproduje el fallo antes de arreglarlo.)
+- `c4d_probe` (herramienta de consola) no enlazaba por falta de `Skin.cpp` en su lista de fuentes.
+
+**Probado:** los 8 ejecutables de prueba pasan (`iron3d_tests` con ida y vuelta de SYM y HIDDEN); compila todo en Release.
+
 ### 2026-11-20 (7): Edición > Cortar, y Copiar/Pegar con selección múltiple
 
 **Nuevo**
