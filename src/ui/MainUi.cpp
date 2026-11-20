@@ -143,6 +143,8 @@ struct UiState {
     bool showMatEditor = false;
     bool showAbout = false;
     bool showObjInfo = false;   // Información del Objeto
+    std::set<std::string> dbgMenus;  // --ui-cmd=menu=A,B: menus que se abren solos (verificacion)
+    int prefsPageReq = -1;           // --ui-cmd=prefs-page=N
     // El hueco del Gestor de Objetos muestra el Navegador de Contenido
     // (pestana vertical "Navegador de Contenido", Ventana o Mayus+F8).
     bool browserOpen = false;
@@ -2826,11 +2828,18 @@ void disabledItems(std::initializer_list<std::pair<const char*, const char*>> it
     }
 }
 
+// BeginMenu que, con --ui-cmd=menu=Malla,Comandos, abre ese menu y sus submenus (verificacion sin clics).
+// Los nombres son los que se ven en pantalla (en el idioma activo).
+bool beginMenuDbg(const char* label, bool enabled = true) {
+    if (!g.dbgMenus.empty() && g.dbgMenus.count(label) && !ImGui::IsPopupOpen(label)) ImGui::OpenPopup(label);
+    return ImGui::BeginMenu(label, enabled);
+}
+
 void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneHistory& history,
                   std::vector<Material>& materials, OrbitalCamera& camera, ViewportState& vp) {
     if (!ImGui::BeginMainMenuBar()) return;
 
-    if (ImGui::BeginMenu(tr("Archivo"))) {
+    if (beginMenuDbg(tr("Archivo"))) {
         if (iconMenuItem(Icon::MnuNew, tr("Nuevo"), tr("Ctrl+N")) && confirmDiscardChanges(root, history, materials, tr("crear un proyecto nuevo")))
             newScene(root, selected, history, materials);
         if (iconMenuItem(Icon::MnuOpen, tr("Abrir..."), tr("Ctrl+O")) && confirmDiscardChanges(root, history, materials, tr("abrir otro proyecto")))
@@ -2887,7 +2896,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         ImGui::EndMenu();
     }
 
-    if (ImGui::BeginMenu(tr("Edición"))) {
+    if (beginMenuDbg(tr("Edición"))) {
         if (iconMenuItem(Icon::Undo, tr("Deshacer"), tr("Ctrl+Z"), false, history.canUndo()))
             if (history.undo(root)) selected = nullptr;
         if (iconMenuItem(Icon::Redo, tr("Rehacer"), tr("Ctrl+Y"), false, history.canRedo()))
@@ -2909,7 +2918,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         ImGui::EndMenu();
     }
 
-    if (ImGui::BeginMenu(tr("Crear"))) {
+    if (beginMenuDbg(tr("Crear"))) {
         if (iconBeginMenu(Icon::Cube, tr("Objeto"))) {
             for (const auto& it : kPrimitives)
                 if (iconMenuItem(it.icon, it.name, nullptr, false, it.functional)) createPaletteItem(root, selected, history, it);
@@ -2947,7 +2956,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         ImGui::EndMenu();
     }
 
-    if (ImGui::BeginMenu(tr("Selección"))) {
+    if (beginMenuDbg(tr("Selección"))) {
         ImGui::BeginMenuEx(tr("Filtro de Selección"), kIconGutterText, false);
         if (iconMenuItem(Icon::LiveSelect, tr("Selección en Vivo"), "9", vp.selectTool && vp.selectShape == 0)) { vp.selectTool = true; vp.selectShape = 0; }
         {
@@ -2982,7 +2991,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         ImGui::EndMenu();
     }
 
-    if (ImGui::BeginMenu(tr("Herramientas"))) {
+    if (beginMenuDbg(tr("Herramientas"))) {
         if (iconMenuItem(Icon::Move, tr("Mover"), "E", !vp.selectTool && mode == GizmoMode::Translate)) { mode = GizmoMode::Translate; vp.selectTool = false; }
         if (iconMenuItem(Icon::Scale, tr("Escalar"), "T", !vp.selectTool && mode == GizmoMode::Scale)) { mode = GizmoMode::Scale; vp.selectTool = false; }
         if (iconMenuItem(Icon::Rotate, tr("Rotar"), "R", !vp.selectTool && mode == GizmoMode::Rotate)) { mode = GizmoMode::Rotate; vp.selectTool = false; }
@@ -3006,9 +3015,9 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
             ImGui::EndMenu();
         }
     };
-    if (ImGui::BeginMenu(tr("Malla"))) {
+    if (beginMenuDbg(tr("Malla"))) {
         const SceneNode* ms = selected;
-        if (ImGui::BeginMenu(tr("Conversión"))) {
+        if (beginMenuDbg(tr("Conversión"))) {
             if (iconMenuItem(Icon::MakeEditable, tr("Hacer Editable"), "C", false, canMakeEditable(root, selected)))
                 g.pendingCmd = UiCmd::MakeEditable;
             if (ImGui::MenuItem(tr("Estado Actual a Objeto"), nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::CurrentState;
@@ -3021,21 +3030,21 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
             if (ImGui::MenuItem(tr("Conectar Objetos + Eliminar"), nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::ConnectDelete;
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu(tr("Comandos"))) {
+        if (beginMenuDbg(tr("Comandos"))) {
             meshCommandsMenu(ms);
             ImGui::EndMenu();
         }
         ImGui::Separator();
-        if (ImGui::BeginMenu(tr("Herramientas Crear"))) {
+        if (beginMenuDbg(tr("Herramientas Crear"))) {
             meshCreateTools(ms);
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu(tr("Herramientas Transformar"))) {
+        if (beginMenuDbg(tr("Herramientas Transformar"))) {
             meshTransformTools(ms);
             ImGui::EndMenu();
         }
         ImGui::Separator();
-        if (ImGui::BeginMenu(tr("Spline"))) {
+        if (beginMenuDbg(tr("Spline"))) {
             disabledItems({{tr("Interpolación Dura"), ""}, {tr("Interpolación Suave"), ""}, {nullptr, nullptr},
                            {tr("Igualar Longitud de Tangentes"), ""}, {tr("Igualar Dirección de Tangentes"), ""}, {nullptr, nullptr},
                            {tr("Unir Segmento"), ""}, {tr("Romper Segmento"), ""}, {tr("Explotar Segmentos"), ""}, {nullptr, nullptr},
@@ -3047,11 +3056,11 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
                            {tr("Intersección Spline"), ""}});
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu(tr("N-Gons"))) {
+        if (beginMenuDbg(tr("N-Gons"))) {
             meshNgonItems(ms);
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu(tr("Normales"))) {
+        if (beginMenuDbg(tr("Normales"))) {
             meshNormalsItems(ms);
             ImGui::Separator();
             meshItem(tr("Mover Normal"), "M~Z", "", ms);
@@ -3059,12 +3068,12 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
             meshItem(tr("Rotar Normal"), "M~,", "", ms);
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu(tr("Centrar Ejes"))) {
+        if (beginMenuDbg(tr("Centrar Ejes"))) {
             disabledItems({{tr("Centrar Eje a Objeto"), ""}, {tr("Centrar Eje a Selección"), ""}});
             ImGui::EndMenu();
         }
         ImGui::Separator();
-        if (ImGui::BeginMenu(tr("Simetría de edición"), editableMesh(selected) != nullptr)) {
+        if (beginMenuDbg(tr("Simetría de edición"), editableMesh(selected) != nullptr)) {
             if (ImGui::MenuItem(tr("Apagada"), nullptr, g.symAxis < 0)) g.symAxis = -1;
             if (ImGui::MenuItem(tr("Plano X (izquierda/derecha)"), nullptr, g.symAxis == 0)) g.symAxis = 0;
             if (ImGui::MenuItem(tr("Plano Y (arriba/abajo)"), nullptr, g.symAxis == 1)) g.symAxis = 1;
@@ -3078,13 +3087,13 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
     stubTop(tr("Fijación"), {{tr("Activar Fijación"), tr("Mayús+S")}, {nullptr, nullptr}, {tr("Fijación 2D"), ""},
                          {tr("Fijación 2.5D"), ""}, {tr("Fijación 3D"), ""}, {nullptr, nullptr}, {tr("Plano de Trabajo"), ""}});
 
-    if (ImGui::BeginMenu(tr("Animación"))) {
+    if (beginMenuDbg(tr("Animación"))) {
         if (iconMenuItem(Icon::Record, tr("Grabar Objetos Activos"), "F9")) g.recordRequested = true;
         iconMenuItem(Icon::AutoKey, tr("Fotogramas Clave Automáticos"), tr("Ctrl+F9"), &g.autoKey);
         if (iconMenuItem(Icon::PrevKey, tr("Ir a la Clave Anterior"), tr("Ctrl+F"), false, !g.selKeys.empty())) jumpToKey(-1);
         if (iconMenuItem(Icon::NextKey, tr("Ir a la Clave Siguiente"), tr("Ctrl+G"), false, !g.selKeys.empty())) jumpToKey(1);
         if (ImGui::MenuItemEx(tr("Editor de Curvas..."), kIconGutterText, nullptr, g.showCurves)) g.showCurves = !g.showCurves;
-        if (ImGui::BeginMenu(tr("Claves Seleccionadas"), !g.keySel.empty())) {
+        if (beginMenuDbg(tr("Claves Seleccionadas"), !g.keySel.empty())) {
             drawKeyMenuItems();
             ImGui::EndMenu();
         }
@@ -3103,7 +3112,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         iconMenuItem(Icon::MnuLoop, tr("Repetir (Loop)"), nullptr, &g.loop);
         ImGui::EndMenu();
     }
-    if (ImGui::BeginMenu(tr("Personaje"))) {
+    if (beginMenuDbg(tr("Personaje"))) {
         if (ImGui::MenuItem(tr("Resolver IK (experimental)"))) {
             history.commitBefore(root);
             const int n = solveAllIk(root);
@@ -3117,7 +3126,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
     }
     stubTop(tr("Simulación"), {{tr("Partículas"), ""}, {tr("Thinking Particles"), ""}, {tr("Dinámicas"), ""}, {tr("Cloth"), ""},
                            {tr("Hair"), ""}});
-    if (ImGui::BeginMenu(tr("Render"))) {
+    if (beginMenuDbg(tr("Render"))) {
         {
             bool g1 = false;
             const Icon iv = Icon::RenderView;
@@ -3142,10 +3151,10 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         if (iconMenuItem(Icon::MnuPictureViewer, tr("Visor de Imágenes..."), "")) g.showPictureViewer = true;
         ImGui::EndMenu();
     }
-    if (ImGui::BeginMenu(tr("Esculpir"))) {
+    if (beginMenuDbg(tr("Esculpir"))) {
         meshItem(tr("Subdividir"), "", "", selected);
         disabledItems({{tr("Reducir"), ""}, {tr("Incrementar"), ""}, {nullptr, nullptr}});
-        if (ImGui::BeginMenu(tr("Pinceles"))) {
+        if (beginMenuDbg(tr("Pinceles"))) {
             disabledItems({{tr("Estirar"), ""}, {tr("Agarrar"), ""}, {tr("Suavizar"), ""}, {tr("Encerar"), ""}, {tr("Cortar"), ""},
                            {tr("Pellizcar"), ""}, {tr("Achatar"), ""}, {tr("Inflar"), ""}, {tr("Amplificar"), ""},
                            {tr("Rellenar"), ""}, {tr("Repetir"), ""}, {tr("Raspar"), ""}, {nullptr, nullptr},
@@ -3169,7 +3178,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
     stubTop(tr("Script"), {{tr("Gestor de Scripts..."), ""}, {tr("Consola..."), tr("Mayús+F10")}, {nullptr, nullptr},
                        {tr("Ejecutar Script..."), ""}});
 
-    if (ImGui::BeginMenu(tr("Ventana"))) {
+    if (beginMenuDbg(tr("Ventana"))) {
         // Los nombres siguen al preset (Esquema / Outliner / Scene Explorer...).
         const PanelNames& n = names();
         if (iconMenuItem(Icon::MnuObjManager, n.objects, tr("Mayús+F1"), !g.browserOpen)) g.browserOpen = false;
@@ -3184,7 +3193,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         iconMenuItem(Icon::MnuLayers, tr("Gestor de Capas"), tr("Mayús+F4"), false, false);
         ImGui::EndMenu();
     }
-    if (ImGui::BeginMenu(tr("Ayuda"))) {
+    if (beginMenuDbg(tr("Ayuda"))) {
         if (iconMenuItem(Icon::MnuHelp, tr("Mostrar Ayuda..."), "F1")) openUrl("https://staticforge.me");
         if (ImGui::MenuItemEx(tr("Mostrar Tutoriales..."), kIconGutterText, "", false, true)) openUrl("https://staticforge.me");
         if (ImGui::MenuItemEx(tr("Soporte de Static Forge..."), kIconGutterText, "", false, true)) openUrl("https://staticforge.me");
@@ -3421,7 +3430,7 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
     ViewHistory& viewHist = trackView(camera);
     beginPanel("##vpheader", pos, size, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar);
     if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu(tr("Vista"))) {
+        if (beginMenuDbg(tr("Vista"))) {
             ImGui::MenuItem(tr("Usar como Cámara de Render"), nullptr, false, false);
             ImGui::Separator();
             if (ImGui::MenuItem(tr("Deshacer Vista"), tr("Ctrl+Mayús+Z"), false, !viewHist.undo.empty())) {
@@ -3446,9 +3455,9 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
             ImGui::MenuItem(tr("Redibujar"), "A", false, false);
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu(tr("Cámaras"))) {
-            ImGui::BeginMenu(tr("Navegación"), false);
-            if (ImGui::BeginMenu(tr("Usar Cámara"))) {
+        if (beginMenuDbg(tr("Cámaras"))) {
+            beginMenuDbg(tr("Navegación"), false);
+            if (beginMenuDbg(tr("Usar Cámara"))) {
                 ImGui::MenuItem(tr("Cámara del Editor"), nullptr, true);
                 ImGui::EndMenu();
             }
@@ -3466,7 +3475,7 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
             disabledItems({{nullptr, nullptr}, {tr("Axonométrica"), ""}});
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu(tr("Mostrar"))) {
+        if (beginMenuDbg(tr("Mostrar"))) {
             ImGui::MenuItem(tr("Sombreado Gouraud"), "N~A", true);
             disabledItems({{tr("Sombreado Gouraud (Líneas)"), "N~B"}, {tr("Sombreado Rápido"), "N~C"},
                            {tr("Sombreado Rápido (Líneas)"), "N~D"}, {tr("Sombreado Constante"), "N~E"},
@@ -3475,8 +3484,8 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
                            {tr("Esqueleto"), "N~L"}});
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu(tr("Opciones"))) {
-            ImGui::BeginMenu(tr("Nivel de Detalle"), false);
+        if (beginMenuDbg(tr("Opciones"))) {
+            beginMenuDbg(tr("Nivel de Detalle"), false);
             disabledItems({{nullptr, nullptr}, {tr("Estereoscópico"), ""}, {tr("Sombreado de Flujo de Trabajo Lineal"), ""},
                            {nullptr, nullptr}, {tr("OpenGL Mejorado"), ""}, {tr("Ruidos"), ""}, {tr("Post Efectos"), ""},
                            {tr("Sombras"), ""}, {tr("Transparencia"), ""}, {tr("Reflexiones"), ""}, {tr("SSAO"), ""},
@@ -3488,7 +3497,7 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
                            {tr("Configurar Todo..."), tr("Alt+V")}});
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu(tr("Filtrar"))) {
+        if (beginMenuDbg(tr("Filtrar"))) {
             ImGui::MenuItem(tr("Cuadrícula"), nullptr, &vp.showGrid);
             ImGui::Separator();
             // El resto de filtros todavia no tienen efecto: se ven activos
@@ -6381,6 +6390,8 @@ void drawPreferencesDialog(RendererBackend activeBackend, Preferences& prefs, co
             {tr("Projection Man"), false},  {tr("Sketch and Toon"), false},         {tr("Tomas"), false},
             {tr("Importación/Exportación"), false}, {tr("Colores Esquema"), false}};
         static int page = 0;
+        if (g.prefsPageReq >= 0 && g.prefsPageReq < IM_ARRAYSIZE(pages)) page = g.prefsPageReq;
+        g.prefsPageReq = -1;
         const float footerH = ImGui::GetFrameHeight() + 10.0f;
         ImGui::BeginChild("##pages", ImVec2(210, -footerH), ImGuiChildFlags_Border);
         for (int i = 0; i < IM_ARRAYSIZE(pages); ++i) {
@@ -8515,6 +8526,17 @@ bool queueUiCommand(const std::string& cmd) {
         } catch (...) { return false; }
     }
     else if (cmd == "comp-del") g.compDeleteRequested = true;
+    else if (cmd == "obj-info") g.showObjInfo = true;
+    else if (cmd == "about") g.showAbout = true;
+    else if (cmd.rfind("prefs-page=", 0) == 0) {
+        try { g.prefsPageReq = std::stoi(cmd.substr(11)); } catch (...) { return false; }
+        g.showPrefs = true;
+    }
+    else if (cmd.rfind("menu=", 0) == 0) {  // menu=Malla,Comandos: nombres tal como se ven
+        std::stringstream ss(cmd.substr(5));
+        std::string part;
+        while (std::getline(ss, part, ',')) g.dbgMenus.insert(part);
+    }
     else if (cmd.rfind("sym=", 0) == 0) {  // sym=off|x|y|z
         const std::string v = cmd.substr(4);
         g.symAxis = v == "x" ? 0 : v == "y" ? 1 : v == "z" ? 2 : -1;

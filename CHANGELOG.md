@@ -6,6 +6,14 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (38): Opciones de verificación para abrir menús y diálogos sin clics
+
+**Añadido** (solo para probar la interfaz, no cambian nada al usarla)
+- `--ui-cmd=menu=Malla,Comandos`: abre esos menús y submenús tal como se ven en pantalla (uno de nivel superior a la vez).
+- `--ui-cmd=obj-info`, `--ui-cmd=about` y `--ui-cmd=prefs-page=N`: abren Información del Objeto, Acerca de y una página de Preferencias.
+
+**Verificado por captura de pantalla (2026-11-20, PC en reposo):** menú Malla > Comandos (Fundir, Disolver, Clonar, Conectar, Voltear Arista y Restaurar Escala activos), Esculpir > Pinceles (todo en gris: el escultor no está hecho), Ayuda, Información del Objeto, página Navegación de Preferencias, Archivo (Cerrar y Guardar Todo activos; Volver al guardado y Guardar incrementalmente en gris mientras no haya archivo) y Vista (Deshacer/Rehacer Vista en gris sin historial).
+
 ### 2026-11-20 (37): Menú Archivo: Volver al guardado, Cerrar, Guardar incrementalmente y Guardar Todo
 
 **Añadido**
