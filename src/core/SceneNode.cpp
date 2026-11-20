@@ -160,6 +160,10 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
     copy->nullDisplay = src.nullDisplay;
     copy->ik = src.ik;
     copy->param = src.param;
+    copy->deform.present = src.deform.present;
+    copy->deform.kind = src.deform.kind;
+    copy->deform.axis = src.deform.axis;
+    copy->deform.amount = src.deform.amount;
     copy->symmetry.present = src.symmetry.present;  // la cache se rehace sola
     copy->symmetry.axis = src.symmetry.axis;
     copy->symmetry.tolCm = src.symmetry.tolCm;

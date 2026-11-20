@@ -1015,6 +1015,13 @@ Segmentos de la Tapa	Segmenti del cappuccio
 Profundidad	Profondità
 Octaedro	Ottaedro
   Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  Primitiva parametrica: modificare la mesh (punti, spigoli...) elimina i parametri.
+Doblar	Piega
+Enroscar	Torci
+Afilar	Rastrema
+Hinchar	Rigonfia
+Sesgar	Distorci
+Ángulo	Angolo
+  Deforma al primer hijo con malla; el hijo se edita aparte.	  Deforma il primo figlio con mesh; il figlio si modifica a parte.
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula
@@ -1051,11 +1058,6 @@ Instancia	Istanza
 Fractura	Frattura
 MoInstance	MoIstanza
 Trazador	Tracciatore
-Doblar	Piegare
-Hinchar	Gonfiare
-Sesgar	Inclinare
-Afilar	Assottigliare
-Enroscar	Torcere
 Aplastar y Estirar	Schiaccia e Stira
 Explosión	Esplosione
 FX Explosión	Esplosione FX

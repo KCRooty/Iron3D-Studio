@@ -1051,6 +1051,13 @@ Octaedro	Octahedron
 Icosaedro	Icosahedron
 Dodecaedro	Dodecahedron
   Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  Parametric primitive: editing the mesh (points, edges...) drops the parameters.
+Doblar	Bend
+Enroscar	Twist
+Afilar	Taper
+Hinchar	Bulge
+Sesgar	Shear
+Ángulo	Angle
+  Deforma al primer hijo con malla; el hijo se edita aparte.	  Deforms the first child with a mesh; the child is edited separately.
 Polígono Vacío	Empty Polygon
 Guía	Guide
 Cono	Cone
@@ -1092,11 +1099,6 @@ Reducción de Polígonos	Polygon Reduction
 Instancia	Instance
 Fractura	Fracture
 Trazador	Tracer
-Doblar	Bend
-Hinchar	Bulge
-Sesgar	Shear
-Afilar	Taper
-Enroscar	Twist
 Aplastar y Estirar	Squash  Stretch
 Explosión	Explosion
 FX Explosión	Explosion FX

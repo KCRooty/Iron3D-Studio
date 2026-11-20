@@ -144,6 +144,8 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             << " tip=" << quoted(node.ik.tip) << " target=" << quoted(node.ik.target) << " pole=" << quoted(node.ik.pole) << "\n";
     if (node.symmetry.present)
         out << indent << "  SYM axis=" << node.symmetry.axis << " tol=" << node.symmetry.tolCm << "\n";
+    if (node.deform.present)
+        out << indent << "  DEF kind=" << node.deform.kind << " axis=" << node.deform.axis << " amount=" << node.deform.amount << "\n";
     if (node.hasHidden()) {
         std::string list;
         for (size_t i = 0; i < node.hiddenPolys->size(); ++i)
@@ -415,7 +417,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
     while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG" ||
                             p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "IK" || p.peek() == "NULLSHAPE" ||
-                            p.peek() == "SYM" || p.peek() == "HIDDEN")) {
+                            p.peek() == "SYM" || p.peek() == "DEF" || p.peek() == "HIDDEN")) {
         const std::string kind = p.next();
         bool ok = true;
         if (kind == "LIGHT") {
@@ -492,6 +494,13 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
             ok = readAttrs(p, "SYM", err, [&](const std::string& k, const std::string& v) {
                 if (k == "axis") node.symmetry.axis = std::clamp(std::stoi(v), 0, 2);
                 else if (k == "tol") node.symmetry.tolCm = std::stof(v);
+            });
+        } else if (kind == "DEF") {
+            node.deform.present = true;
+            ok = readAttrs(p, "DEF", err, [&](const std::string& k, const std::string& v) {
+                if (k == "kind") node.deform.kind = std::clamp(std::stoi(v), 0, 4);
+                else if (k == "axis") node.deform.axis = std::clamp(std::stoi(v), 0, 2);
+                else if (k == "amount") node.deform.amount = std::stof(v);
             });
         } else if (kind == "IK") {
             IkTagData& t = node.ik;
@@ -786,6 +795,10 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.isJoint = temp.isJoint;
     root.jointLimits = temp.jointLimits;
     root.ik = temp.ik;
+    root.deform.present = temp.deform.present;
+    root.deform.kind = temp.deform.kind;
+    root.deform.axis = temp.deform.axis;
+    root.deform.amount = temp.deform.amount;
     root.symmetry.present = temp.symmetry.present;
     root.symmetry.axis = temp.symmetry.axis;
     root.symmetry.tolCm = temp.symmetry.tolCm;

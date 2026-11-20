@@ -132,6 +132,18 @@ struct SymmetryData {
     float lastTolCm = -1.0f;
 };
 
+// Deformador (generador de Deformadores, ver Deform.h): Doblar, Enroscar, Afilar, Hinchar o Sesgar.
+struct DeformData {
+    bool present = false;
+    int kind = 0;       // 0 Doblar, 1 Enroscar, 2 Afilar, 3 Hinchar, 4 Sesgar
+    int axis = 1;       // eje del nodo a lo largo del cual actua (0 X, 1 Y, 2 Z)
+    float amount = 45;  // grados (Doblar, Enroscar) o % (Afilar, Hinchar, Sesgar)
+    std::shared_ptr<const MeshData> output, lastSource;
+    glm::mat4 lastChildMatrix{1.0f};
+    int lastKind = -1, lastAxis = -1;
+    float lastAmount = 1e9f;
+};
+
 // Limites de rotacion de una articulacion (Ojoint, pestana IK > Limites de C4D, ids 3009..3015
 // de ocajoint.h). Orden H, P, B en grados, como en C4D. Solo se usan los ejes con use = true.
 struct JointLimits {
@@ -251,6 +263,7 @@ public:
     NullDisplay nullDisplay;
     IkTagData ik;
     SymmetryData symmetry;
+    DeformData deform;
     ParamShape param;  // primitiva poligonal con parametros editables (ver MeshData.h)
     // Solo con primitive == Mesh: partes con su propio material, ordenadas por
     // firstIndex y sin solaparse (ver MaterialPart).

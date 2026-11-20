@@ -590,7 +590,7 @@ Desenfoque Desfase	Décalage du Flou
 Desenfoque Escala	Échelle du Flou
 Modo de Mezcla	Mode de mélange
 Fuerza de Mezcla	Intensité du mélange
-Fuerza	Intensité
+Fuerza	Force
 Invertir	Inverser
 Alfa Suave	Alpha doux
 Alfa de Imagen	Alpha de l'image
@@ -1039,6 +1039,13 @@ Octaedro	Octaèdre
 Icosaedro	Icosaèdre
 Dodecaedro	Dodécaèdre
   Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  Primitive paramétrique : modifier le maillage (points, arêtes...) perd les paramètres.
+Doblar	Courber
+Enroscar	Torsion
+Afilar	Effiler
+Hinchar	Gonfler
+Sesgar	Cisailler
+Ángulo	Angle
+  Deforma al primer hijo con malla; el hijo se edita aparte.	  Déforme le premier enfant avec maillage ; l'enfant se modifie à part.
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cono	Cône
@@ -1082,11 +1089,6 @@ Reducción de Polígonos	Réduction de polygones
 Instancia	Instance
 Fractura	Fracture
 Trazador	Traceur
-Doblar	Incurvation
-Hinchar	Dilation/Contraction
-Sesgar	Inclinaison
-Afilar	Effilage
-Enroscar	Torsion
 FFD	Déformation libre
 Aplastar y Estirar	Écraser  Étirer
 Explosión	Explosion

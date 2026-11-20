@@ -1034,6 +1034,13 @@ Octaedro	Oktaeder
 Icosaedro	Ikosaeder
 Dodecaedro	Dodekaeder
   Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  Parametrische Primitive: Das Bearbeiten des Netzes (Punkte, Kanten...) verwirft die Parameter.
+Doblar	Biegen
+Enroscar	Verdrehen
+Afilar	Verjüngen
+Hinchar	Ausbeulen
+Sesgar	Scheren
+Ángulo	Winkel
+  Deforma al primer hijo con malla; el hijo se edita aparte.	  Verformt das erste Kind mit Netz; das Kind wird separat bearbeitet.
 Polígono Vacío	Leeres Polygon
 Guía	Hilfslinie
 Cono	Kegel
@@ -1078,11 +1085,6 @@ Fractura	Bruch
 MoInstance	MoInstanz
 Trazador	Tracer
 MoExtrude	MoExtrudieren
-Doblar	Biegen
-Hinchar	Bulge
-Sesgar	Scheren
-Afilar	Stauchen
-Enroscar	Verdrehen
 Aplastar y Estirar	Stauchen und Dehnen
 Explosión	Explosion
 FX Explosión	Explosion FX

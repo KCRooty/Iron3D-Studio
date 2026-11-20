@@ -28,6 +28,7 @@
 #include "importers/gltf/GltfIO.h"
 #include "core/IkSolver.h"
 #include "core/Skin.h"
+#include "core/Deform.h"
 #include "core/Symmetry.h"
 #include "importers/lib4d/PresetTextures.h"
 #include "core/ChannelBake.h"
@@ -1774,6 +1775,28 @@ void createPaletteItem(SceneNode& root, SceneNode*& selected, SceneHistory& hist
             return;
         }
     }
+    {
+        static const char* defNames[] = {"Doblar", "Enroscar", "Afilar", "Hinchar", "Sesgar"};
+        int dk = -1;
+        for (int i = 0; i < 5; ++i)
+            if (std::string(it.name.key) == defNames[i]) dk = i;
+        if (dk >= 0) {
+            SceneNode* sel = selected;
+            const bool wrap = sel && sel->mesh && sel->parent();
+            SceneNode* child = wrap ? sel : nullptr;
+            if (wrap) groupObjects(root, selected, history, nullptr);
+            else createObject(root, selected, history, PrimitiveType::None);
+            if (selected) {
+                selected->setName(tr(it.name.key));
+                selected->deform.present = true;
+                selected->deform.kind = dk;
+                selected->deform.amount = dk <= 1 ? 45.0f : 50.0f;
+                g.collapsed.erase(selected->id());
+                if (child) child->editorVis = VisMode::Off;  // la copia deformada la dibuja el nodo
+            }
+            return;
+        }
+    }
     SceneNode* n = createObject(root, selected, history, it.type);
     if (n && it.type == PrimitiveType::Light && it.lightKind >= 0) {
         n->light.kind = (LightKind)it.lightKind;
@@ -1920,11 +1943,11 @@ const PaletteItem kMoGraph[] = {
 };
 
 const PaletteItem kDeformers[] = {
-    {"Doblar", Icon::DefBend, kNone, false},
-    {"Hinchar", Icon::DefBulge, kNone, false},
-    {"Sesgar", Icon::DefShear, kNone, false},
-    {"Afilar", Icon::DefTaper, kNone, false},
-    {"Enroscar", Icon::DefTwist, kNone, false},
+    {"Doblar", Icon::DefBend, kNone, true},
+    {"Hinchar", Icon::DefBulge, kNone, true},
+    {"Sesgar", Icon::DefShear, kNone, true},
+    {"Afilar", Icon::DefTaper, kNone, true},
+    {"Enroscar", Icon::DefTwist, kNone, true},
     {"FFD", Icon::DefFfd, kNone, false},
     {"Malla", Icon::DefMesh, kNone, false},
     {"Aplastar y Estirar", Icon::DefSquash, kNone, false},
@@ -2493,9 +2516,11 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
                 if (iconMenuItem(it.icon, it.name, nullptr, false, it.functional)) createPaletteItem(root, selected, history, it);
             ImGui::EndMenu();
         }
-        auto stubMenu = [](Icon icon, const char* name, const PaletteItem* items, int n) {
+        auto stubMenu = [&](Icon icon, const char* name, const PaletteItem* items, int n) {
             if (iconBeginMenu(icon, name)) {
-                for (int i = 0; i < n; ++i) iconMenuItem(items[i].icon, items[i].name, nullptr, false, false);
+                for (int i = 0; i < n; ++i)
+                    if (iconMenuItem(items[i].icon, items[i].name, nullptr, false, items[i].functional))
+                        createPaletteItem(root, selected, history, items[i]);
                 ImGui::EndMenu();
             }
         };
@@ -3990,6 +4015,32 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
             roCheck(tr("Mostrar Luz Visible"), false, false);
             check(tr("Especular"), "##lspec", l.specular);
             roCheck(tr("Iluminación de IG"), true);
+        } else if (node.deform.present) {
+            sectionHeader(tr("Propiedades del Objeto"));
+            propLabel(tr("Tipo"));
+            const char* kinds[] = {tr("Doblar"), tr("Enroscar"), tr("Afilar"), tr("Hinchar"), tr("Sesgar")};
+            ImGui::SetNextItemWidth(-1);
+            int kd = node.deform.kind;
+            if (ImGui::Combo("##defkind", &kd, kinds, 5)) {
+                history.commitBefore(root);
+                node.deform.kind = kd;
+            }
+            propLabel(tr("Eje"));
+            const char* axes[] = {"X", "Y", "Z"};
+            int dax = node.deform.axis;
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::Combo("##defaxis", &dax, axes, 3)) {
+                history.commitBefore(root);
+                node.deform.axis = dax;
+            }
+            propLabel(node.deform.kind <= 1 ? tr("Ángulo") : tr("Fuerza"));
+            float am = node.deform.amount;
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::DragFloat("##defamt", &am, 0.5f, -360.0f, 360.0f, node.deform.kind <= 1 ? "%.1f °" : "%.1f %%")) {
+                if (ImGui::IsItemActivated()) history.commitBefore(root);
+                node.deform.amount = am;
+            }
+            ImGui::TextDisabled(tr("  Deforma al primer hijo con malla; el hijo se edita aparte."));
         } else if (node.symmetry.present) {
             sectionHeader(tr("Propiedades del Objeto"));
             propLabel(tr("Plano de Simetría"));
@@ -7220,8 +7271,15 @@ void runPendingToolCmd(SceneNode& root, SceneNode*& selected, const OrbitalCamer
                        SceneHistory& history) {
     const std::string cmd = g.pendingTool;
     if (cmd.rfind("create=", 0) == 0) {  // create=<nombre de la paleta de Objetos>
-        for (const PaletteItem& it : kPrimitives)
-            if (it.functional && cmd.substr(7) == it.name.key) createPaletteItem(root, selected, history, it);
+        // varios seguidos con "+": create=Cápsula+Doblar crea la capsula y le pone un deformador
+        std::stringstream names(cmd.substr(7));
+        std::string one;
+        while (std::getline(names, one, '+')) {
+            for (const PaletteItem& it : kPrimitives)
+                if (it.functional && one == it.name.key) createPaletteItem(root, selected, history, it);
+            for (const PaletteItem& it : kDeformers)
+                if (it.functional && one == it.name.key) createPaletteItem(root, selected, history, it);
+        }
         return;
     }
     std::vector<float> nums;
@@ -7319,6 +7377,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     evaluateSkins(root);
     // Objetos Simetria: reflejan a su hijo (despues de la Piel y la animacion, que son las que lo mueven).
     evaluateSymmetry(root);
+    evaluateDeformers(root);
     if (g.recordRequested) {
         g.recordRequested = false;
         recordActiveObjects(root, selected, &history);

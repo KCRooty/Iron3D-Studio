@@ -3,6 +3,7 @@
 
 #include "core/SceneNode.h"
 #include "core/MeshEdit.h"
+#include "core/Deform.h"
 #include "core/MeshTopology.h"
 #include "core/SceneSerializer.h"
 #include "core/ThumbnailRenderer.h"
@@ -770,6 +771,56 @@ int main() {
                 check(bm.boundsMax != pm.boundsMax || bm.indices.size() != pm.indices.size(), (nm + ": los parametros cambian la malla").c_str());
             }
             check(buildParamShape(defaultParamShape(0)).indices.empty(), "parametrica 0: sin malla");
+        }
+
+        // Deformadores: el cubo unidad (de -0.5 a 0.5) deformado a lo largo de Y.
+        {
+            const MeshData cb = makeCubeMesh();
+            const glm::mat4 id(1.0f);
+            auto maxAbsAtTop = [](const MeshData& m) {
+                float mx = 0.0f;
+                for (const Vertex& v : m.vertices)
+                    if (v.position.y > 0.499f) mx = std::max(mx, std::max(std::fabs(v.position.x), std::fabs(v.position.z)));
+                return mx;
+            };
+            check(maxAbsAtTop(deformMeshData(cb, 2, 1, 100.0f, id)) < 1e-4f, "afilar 100 %: la cara de arriba es un punto");
+            check(maxAbsAtTop(deformMeshData(cb, 2, 1, 0.0f, id)) > 0.49f, "afilar 0 %: no cambia");
+            const MeshData tw = deformMeshData(cb, 1, 1, 90.0f, id);
+            float topR = 0.0f;
+            bool finite = true;
+            for (const Vertex& v : tw.vertices) {
+                if (v.position.y > 0.499f) topR = std::max(topR, std::hypot(v.position.x, v.position.z));
+                finite = finite && std::isfinite(v.position.x + v.position.y + v.position.z + v.normal.x + v.normal.y + v.normal.z);
+            }
+            check(finite && std::fabs(topR - 0.7071f) < 1e-3f, "enroscar: conserva el radio y gira la cara de arriba");
+            const MeshData bd = deformMeshData(cb, 0, 1, 90.0f, id);
+            bool bfinite = bd.vertices.size() == cb.vertices.size() && bd.indices == cb.indices;
+            for (const Vertex& v : bd.vertices) bfinite = bfinite && std::isfinite(v.position.x + v.position.y + v.position.z);
+            check(bfinite && std::fabs(bd.boundsMax.z - 0.5403f) < 2e-3f && std::fabs(bd.boundsMax.y - 0.8037f) < 2e-3f, "doblar 90: malla finita y curvada hacia +Z (esquinas segun la formula del arco)");
+            const MeshData bg = deformMeshData(makeSphereMesh(), 3, 1, 50.0f, id);
+            check(bg.boundsMax.x > 0.7f && std::fabs(bg.boundsMax.y - 0.5f) < 1e-4f, "hinchar: ensancha el medio sin mover los extremos");
+            const MeshData sh = deformMeshData(cb, 4, 1, 100.0f, id);
+            check(std::fabs(sh.boundsMax.z - 1.0f) < 1e-4f && std::fabs(sh.boundsMin.z + 1.0f) < 1e-4f, "sesgar 100 %: desplaza los extremos +-0.5 en el eje b");
+
+            SceneNode root("r");
+            SceneNode* dn = root.addChild("Doblar", PrimitiveType::None);
+            dn->deform.present = true;
+            dn->deform.kind = 2;
+            dn->deform.amount = 100.0f;
+            check(evaluateDeformers(root) == 0 && !dn->mesh, "deformador sin hijo: no hace nada");
+            SceneNode* ch = dn->addChild("Cubo", PrimitiveType::Mesh);
+            ch->mesh = std::make_shared<const MeshData>(cb);
+            check(evaluateDeformers(root) == 1 && dn->mesh && maxAbsAtTop(*dn->mesh) < 1e-4f, "deformador con hijo: el nodo recibe la malla deformada");
+            check(evaluateDeformers(root) == 0, "deformador: sin cambios no recalcula");
+            dn->deform.amount = 0.0f;
+            check(evaluateDeformers(root) == 1, "deformador: al cambiar el parametro se recalcula");
+            std::vector<Material> mats;
+            const std::string txt = serializeScene(root, mats);
+            SceneNode back("x");
+            std::string err;
+            check(deserializeScene(txt, back, mats, &err), "DEF: el .iron se vuelve a leer");
+            const SceneNode* bn = back.children().empty() ? nullptr : back.children().front().get();
+            check(bn && bn->deform.present && bn->deform.kind == 2 && bn->deform.axis == 1 && bn->deform.amount == 0.0f, "DEF: deformador guardado y leido");
         }
 
         // Aumentar / Reducir / Conectados con la cara de arriba.

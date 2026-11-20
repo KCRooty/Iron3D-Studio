@@ -6,6 +6,23 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (18): Deformadores Doblar, Enroscar, Afilar, Hinchar y Sesgar
+
+**Añadido**
+- Cinco deformadores no destructivos en Crear > Deformador y en la paleta de Deformadores (antes todos deshabilitados): **Doblar, Enroscar, Afilar, Hinchar y Sesgar**. Funcionan como el objeto Simetría: con un objeto con malla seleccionado se mete dentro de un nodo deformador; el nodo dibuja la copia deformada y el original queda oculto en el Gestor de Objetos (se sigue editando ahí y el resultado se actualiza al instante). Borrar el nodo y mostrar el hijo devuelve el objeto intacto.
+- Atributos > Objeto del deformador: **Tipo** (cambiable después), **Eje** (X/Y/Z, a lo largo del cual actúa) y **Ángulo** (Doblar, Enroscar, en grados) o **Fuerza** (Afilar, Hinchar, Sesgar, en %).
+- Se guardan y se leen en `.iron` (bloque `DEF`) y se conservan al copiar/duplicar. Textos traducidos a inglés, alemán, francés e italiano (la traducción italiana de los nombres de los deformadores no está contrastada con C4D).
+- Orden `--ui-cmd=create=Cápsula+Doblar` (varias seguidas con `+`, también primitivas y deformadores).
+- Tests: Afilar al 100 % lleva la cara de arriba a un punto; Enroscar conserva el radio (cara de arriba a 45°); Doblar cumple la fórmula del arco; Hinchar ensancha el medio sin mover los extremos; Sesgar; deformador sin hijo / con hijo / sin cambios / con parámetro nuevo; guardado y lectura.
+
+**Límites**
+- El deformador actúa sobre el **primer hijo con malla** (no sobre varios, ni sobre hijos de hijos, ni sobre jerarquías); no es todavía «hijo del objeto» como en C4D.
+- No hay objeto Límite/Caja de deformación (el efecto cubre todo el objeto), ni Falloff, ni «Mantener longitud» en Doblar.
+- Las normales se corrigen aproximadamente (Afilar y Hinchar las dejan sin tocar), así que el sombreado puede no ser exacto con deformaciones fuertes.
+- El hijo queda con visibilidad del editor en «Apagado» y no se puede pinchar en el visor, solo en el Gestor de Objetos.
+
+**Verificado:** tests de geometría y guardado. **Sin probar:** aspecto en el visor (la captura se pospuso porque había actividad en el PC), mallas con pocos polígonos (un cubo sin subdividir no se curva visiblemente con Doblar: hace falta geometría).
+
 ### 2026-11-20 (17): Primitivas poligonales con parámetros editables
 
 **Añadido**
