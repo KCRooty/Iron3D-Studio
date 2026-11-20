@@ -2631,7 +2631,7 @@ void meshCommandsMenu(const SceneNode* s) {
     meshItem(tr("Colapso"), "U~C", "collapse", s);
     meshItem(tr("Conectar"), "M~M", "", s);
     meshItem(tr("Fundir"), "U~Z", "", s);
-    meshItem(tr("Disolver"), "M~N", "", s);
+    meshItem(tr("Disolver"), "M~N", "dissolve", s);
     ImGui::Separator();
     meshItem(tr("Subdividir..."), "U~S, U~Mayús+S", "subdiv", s);
     meshItem(tr("Triangular"), "", "triang", s);
@@ -2666,7 +2666,7 @@ void drawComponentContextMenu(SceneNode& root, SceneNode*& selected, SceneHistor
     meshItem(tr("Pincel"), "M~C", "", s);
     meshItem(tr("Cerrar Agujero de Polígonos"), "M~D", "close", s);
     meshItem(tr("Lápiz Polígonos"), "M~E", "", s);
-    meshItem(tr("Disolver"), "M~N", "", s);
+    meshItem(tr("Disolver"), "M~N", "dissolve", s);
     meshItem(tr("Planchar"), "M~G", "", s);
     meshItem(tr("Cortar Línea"), "K~K, M~K", "tool:knife", s);
     meshItem(tr("Cortar Plano"), "K~J, M~J", "", s);
@@ -7410,6 +7410,27 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
             r = weldPoints(*c.mesh, t, selectedPoints());
             if (!r.changed) { flashStatus(tr("Colapso: selecciona al menos 2 puntos.")); return false; }
         }
+    } else if (op == "dissolve") {
+        name = tr("Disolver");
+        std::set<std::pair<int, int>> ed;
+        if (mode == 2) {
+            for (int i : c.sel) if (i >= 0 && (size_t)i < t.edges.size()) ed.insert(t.edges[(size_t)i]);
+        } else if (mode == 3) {
+            // Aristas compartidas por dos poligonos seleccionados.
+            std::map<std::pair<int, int>, int> cnt;
+            for (int p : c.sel) {
+                if (p < 0 || (size_t)p >= t.polys.size()) continue;
+                const auto& pl = t.polys[(size_t)p];
+                for (size_t k = 0; k < pl.size(); ++k) {
+                    const int a = pl[k], b = pl[(k + 1) % pl.size()];
+                    ++cnt[{std::min(a, b), std::max(a, b)}];
+                }
+            }
+            for (const auto& [e, n] : cnt) if (n >= 2) ed.insert(e);
+        }
+        if (ed.empty()) { flashStatus(tr("Disolver: selecciona aristas, o polígonos vecinos.")); return false; }
+        r = dissolveEdges(*c.mesh, t, ed);
+        if (!r.changed) { flashStatus(tr("Disolver: el resultado no sería un polígono convexo.")); return false; }
     } else if (op == "rmngons" || op == "retringons") {
         std::set<int> ng;
         for (int p = 0; p < (int)t.polys.size(); ++p)

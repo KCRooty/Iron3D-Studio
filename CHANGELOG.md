@@ -6,6 +6,19 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (32): Disolver y polos de la esfera
+
+**Añadido**
+- **Disolver** (menú Malla y clic derecho, modo Aristas o Polígonos): une en un solo polígono los que comparten las aristas seleccionadas (en modo Polígonos, las aristas que comparten los seleccionados). Deja la malla como estaba y avisa si el resultado no sería un polígono plano, convexo y de un solo contorno.
+
+**Corregido**
+- La esfera de Iron3D ya no usa cuadriláteros degenerados en los polos: ahí las caras son triángulos.
+
+**Límites**
+- Disolver con puntos seleccionados sigue sin existir.
+
+**Verificado:** compilación y tests (cubo: la arista entre caras no coplanares se deja; en la tapa subdividida dos cuadriláteros pasan a uno). **Sin probar:** el comando en pantalla.
+
 ### 2026-11-20 (31): Los modelos .c4d importan con sus polígonos reales (cuadriláteros y N-gons)
 
 **Corregido**

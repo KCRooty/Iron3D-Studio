@@ -1172,6 +1172,34 @@ int main() {
         const MeshTopology colt = buildMeshTopology(col.mesh);
         check(col.changed == 1 && colt.points.size() == 5 && colt.polys.size() == 5, "colapso: la cara de arriba pasa a un punto");
 
+        // Disolver: una arista entre dos caras del cubo (no coplanares) no se disuelve; en la tapa subdividida, dos
+        // cuadrilateros vecinos pasan a ser un solo poligono.
+        {
+            const auto& tp = t.polys[(size_t)top];
+            const std::pair<int, int> rim{std::min(tp[0], tp[1]), std::max(tp[0], tp[1])};
+            check(dissolveEdges(cube, t, {rim}).changed == 0, "disolver: aristas no coplanares se dejan");
+            const MeshEditResult sub = subdividePolygons(cube, t, {top});
+            const MeshTopology st = buildMeshTopology(sub.mesh);
+            std::pair<int, int> inner{-1, -1};
+            for (const auto& e : st.edges) {
+                int shared = 0;
+                for (const auto& pl : st.polys) {
+                    bool a = false, b = false;
+                    for (int q : pl) { a |= q == e.first; b |= q == e.second; }
+                    shared += a && b;
+                }
+                if (shared == 2 && st.points[(size_t)e.first].y > 0.49f && st.points[(size_t)e.second].y > 0.49f &&
+                    ((std::fabs(st.points[(size_t)e.first].x) < 0.01f && std::fabs(st.points[(size_t)e.first].z) < 0.01f) ||
+                     (std::fabs(st.points[(size_t)e.second].x) < 0.01f && std::fabs(st.points[(size_t)e.second].z) < 0.01f))) {
+                    inner = e;
+                    break;
+                }
+            }
+            const MeshEditResult dis = dissolveEdges(sub.mesh, st, {inner});
+            const MeshTopology dst = buildMeshTopology(dis.mesh);
+            check(dis.changed == 1 && dst.polys.size() == st.polys.size() - 1, "disolver: dos cuadrilateros vecinos pasan a uno");
+        }
+
         // Cerrar Agujero: el cubo sin la cara de arriba vuelve a cerrarse.
         std::vector<char> keep(t.polys.size(), 1);
         keep[(size_t)top] = 0;

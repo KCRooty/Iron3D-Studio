@@ -1080,4 +1080,94 @@ MeshEditResult collapsePolygons(const MeshData& mesh, const MeshTopology& topo, 
     return r;
 }
 
+
+MeshEditResult dissolveEdges(const MeshData& mesh, const MeshTopology& topo, const std::set<std::pair<int, int>>& edges) {
+    const std::vector<Face> faces = polyFaces(mesh, topo);
+    const int np = (int)topo.polys.size();
+    // Arista dirigida -> poligono que la recorre.
+    std::map<std::pair<int, int>, int> owner;
+    for (int p = 0; p < np; ++p) {
+        const auto& pl = topo.polys[(size_t)p];
+        for (size_t k = 0; k < pl.size(); ++k) owner[{pl[k], pl[(k + 1) % pl.size()]}] = p;
+    }
+    std::vector<int> parent((size_t)np);
+    for (int i = 0; i < np; ++i) parent[(size_t)i] = i;
+    auto find = [&](int x) {
+        while (parent[(size_t)x] != x) x = parent[(size_t)x] = parent[(size_t)parent[(size_t)x]];
+        return x;
+    };
+    for (const auto& e : edges) {
+        const auto a = owner.find({e.first, e.second}), b = owner.find({e.second, e.first});
+        if (a == owner.end() || b == owner.end() || a->second == b->second) continue;
+        parent[(size_t)find(a->second)] = find(b->second);
+    }
+    std::map<int, std::vector<int>> groups;
+    for (int p = 0; p < np; ++p) groups[find(p)].push_back(p);
+
+    std::vector<Vertex> verts = mesh.vertices;
+    std::vector<Face> out;
+    int changed = 0;
+    for (const auto& [root, members] : groups) {
+        (void)root;
+        bool merged = false;
+        if (members.size() > 1) {
+            // Contorno del grupo: aristas cuya contraria no es de un poligono del grupo.
+            std::set<int> in(members.begin(), members.end());
+            std::map<int, std::pair<int, uint32_t>> next;  // punto -> (punto siguiente, vertice de render de este punto)
+            bool ok = true;
+            glm::vec3 nsum(0.0f);
+            for (int p : members) {
+                nsum += topo.polyNormals[(size_t)p];
+                const auto& pl = topo.polys[(size_t)p];
+                for (size_t k = 0; k < pl.size(); ++k) {
+                    const int a = pl[k], b = pl[(k + 1) % pl.size()];
+                    const auto opp = owner.find({b, a});
+                    if (opp != owner.end() && in.count(opp->second)) continue;
+                    if (!next.emplace(a, std::make_pair(b, faces[(size_t)p].v[k])).second) ok = false;
+                }
+            }
+            std::vector<uint32_t> loop;
+            std::vector<int> pts;
+            if (ok && !next.empty()) {
+                const int start = next.begin()->first;
+                int cur = start;
+                do {
+                    const auto it = next.find(cur);
+                    if (it == next.end() || pts.size() > next.size()) { ok = false; break; }
+                    pts.push_back(cur);
+                    loop.push_back(it->second.second);
+                    cur = it->second.first;
+                } while (cur != start);
+                if (ok && pts.size() != next.size()) ok = false;  // varios lazos (agujero o grupo partido)
+            } else {
+                ok = false;
+            }
+            // Solo si el poligono resultante es convexo (los de Iron3D lo son).
+            if (ok && glm::length(nsum) > 1e-9f) {
+                const glm::vec3 n = glm::normalize(nsum);
+                for (size_t i = 0; i < pts.size() && ok; ++i) {
+                    const glm::vec3 e1 = topo.points[(size_t)pts[(i + 1) % pts.size()]] - topo.points[(size_t)pts[i]];
+                    const glm::vec3 e2 = topo.points[(size_t)pts[(i + 2) % pts.size()]] - topo.points[(size_t)pts[(i + 1) % pts.size()]];
+                    if (glm::dot(glm::cross(e1, e2), n) < -1e-9f) ok = false;
+                    // Plano: ningun punto se aleja del plano del primero (un N-gon es plano).
+                    if (std::fabs(glm::dot(topo.points[(size_t)pts[i]] - topo.points[(size_t)pts[0]], n)) > 1e-4f) ok = false;
+                }
+            } else {
+                ok = false;
+            }
+            if (ok) {
+                Face f;
+                f.v = std::move(loop);
+                f.sel = true;
+                out.push_back(std::move(f));
+                changed += (int)members.size() - 1;
+                merged = true;
+            }
+        }
+        if (!merged)
+            for (int p : members) out.push_back(faces[(size_t)p]);
+    }
+    return finish(std::move(verts), out, changed);
+}
+
 } // namespace iron3d

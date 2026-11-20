@@ -1273,3 +1273,5 @@ Centrar Ejes	Center Axis
 Centrar Eje a Objeto	Center Axis to Object
 Centrar Eje a Selección	Center Axis to Selection
 Abrir Carpeta de Preferencias...	Open Preferences Folder...
+Disolver: selecciona aristas, o polígonos vecinos.	Dissolve: select edges, or neighboring polygons.
+Disolver: el resultado no sería un polígono convexo.	Dissolve: the result would not be a convex planar polygon.

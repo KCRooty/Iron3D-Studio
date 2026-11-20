@@ -112,6 +112,10 @@ MeshEditResult optimizeMesh(const MeshData& mesh, const MeshTopology& topo, floa
 // Colapso (U~C): cada grupo de poligonos seleccionados conectados (comparten algun punto) se reduce a un solo punto en
 // su centro; los poligonos del grupo desaparecen y los vecinos se cierran sobre ese punto. changed = grupos colapsados.
 MeshEditResult collapsePolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);
+// Disolver (M~N): une los poligonos que comparten alguna de las aristas dadas (pares de puntos, menor/mayor) en un solo
+// poligono. Solo si el resultado es un lazo cerrado y convexo; si no, esos poligonos se quedan como estaban.
+// changed = poligonos que han desaparecido al unirse (0 = nada que unir).
+MeshEditResult dissolveEdges(const MeshData& mesh, const MeshTopology& topo, const std::set<std::pair<int, int>>& edges);
 
 // Comprobar Malla: problemas de la topologia (indices de MeshTopology).
 struct MeshCheck {
