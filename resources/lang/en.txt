@@ -770,7 +770,7 @@ Restablecer	Reset
 Vuelve al preset integrado «%s».	Returns to the built-in preset "%s".
 Guardar	Save
 Guardado. Se usará al abrir Iron3D.	Saved. It will be used when Iron3D starts.
-Error al guardar las preferencias.	Error saving the preferences.
+Error al guardar las preferencias.	Error saving preferences.
 Preset activo: %s	Active preset: %s
 Preferencias	Preferences
 Interfaz	Interface
@@ -1272,3 +1272,4 @@ Intersección Spline	Spline Intersection
 Centrar Ejes	Center Axis
 Centrar Eje a Objeto	Center Axis to Object
 Centrar Eje a Selección	Center Axis to Selection
+Abrir Carpeta de Preferencias...	Open Preferences Folder...
