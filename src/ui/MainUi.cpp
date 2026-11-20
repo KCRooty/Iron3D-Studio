@@ -3200,8 +3200,11 @@ bool nodeEditorVisible(const SceneNode* n) {
     return vis;
 }
 
+
 void drawSelectionOutline(ImDrawList* dl, const SceneNode* sel, const OrbitalCamera& camera, const ViewportState& vp) {
     if (!sel || vp.w < 2.0f || vp.h < 2.0f || !nodeEditorVisible(sel)) return;
+    // En Puntos/Aristas/Poligonos C4D no pinta la silueta naranja del objeto: se ven sus aristas.
+    if (componentModeFor(sel) != 0) return;
     std::vector<glm::vec3> local;
     switch (sel->primitive) {
         case PrimitiveType::Cube:
@@ -3223,6 +3226,12 @@ void drawSelectionOutline(ImDrawList* dl, const SceneNode* sel, const OrbitalCam
             break;
         case PrimitiveType::Mesh: {
             if (!sel->mesh) return;
+            // Envolvente de los vertices reales (rodea la figura, no su caja); con mallas enormes, la caja.
+            if (sel->mesh->vertices.size() <= 60000) {
+                local.reserve(sel->mesh->vertices.size());
+                for (const Vertex& v : sel->mesh->vertices) local.push_back(v.position);
+                break;
+            }
             const glm::vec3 lo = sel->mesh->boundsMin, hi = sel->mesh->boundsMax;
             for (int i = 0; i < 8; ++i)
                 local.emplace_back(i & 1 ? hi.x : lo.x, i & 2 ? hi.y : lo.y, i & 4 ? hi.z : lo.z);

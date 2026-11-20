@@ -36,7 +36,9 @@ MeshData makeCubeMesh() {
             base + 0, base + 1, base + 2,
             base + 2, base + 3, base + 0,
         });
+        mesh.faceTris.push_back(2);  // un cuadrilatero, no dos triangulos sueltos
     }
+    updateBounds(mesh);
     return mesh;
 }
 
@@ -72,8 +74,10 @@ MeshData makeSphereMesh(int rings, int segments) {
             const uint32_t d = (uint32_t)((ring + 1) * stride + seg + 1);
             // CCW visto desde fuera, igual que el cubo.
             mesh.indices.insert(mesh.indices.end(), {a, c, b, b, c, d});
+            mesh.faceTris.push_back(2);
         }
     }
+    updateBounds(mesh);
     return mesh;
 }
 
@@ -92,6 +96,8 @@ MeshData makePlaneMesh() {
         {{-0.5f, 0.0f,  0.5f}, {0.3f, 0.55f, 0.35f}, up},
     };
     mesh.indices = {0, 2, 1, 2, 0, 3};
+    mesh.faceTris = {2};
+    updateBounds(mesh);
     return mesh;
 }
 

@@ -6,6 +6,21 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (27): Cubo, Esfera y Plano sin caras partidas; contorno de selección que rodea la figura
+
+**Corregido**
+- Al **Hacer Editable** un Cubo, cada cara se veía partida en dos triángulos (con la diagonal marcada y la cara seleccionándose a mitades). Las primitivas Cubo, Esfera y Plano no declaraban sus cuadriláteros (`faceTris` vacío), así que el modelado los trataba como triángulos sueltos. Ahora nacen con sus polígonos: el Cubo tiene 6 caras, el Plano 1 y la Esfera un cuadrilátero por celda. Vale también para los hijos de Simetría/Clonador/Deformadores, que usan las mismas mallas.
+- El **contorno naranja** del objeto seleccionado ya no es la caja envolvente (se quedaba como un cubo que no seguía la figura al mover puntos o caras): ahora es la silueta de los vértices reales. Con mallas de más de 60 000 vértices se mantiene la caja por rendimiento.
+- En los modos **Puntos, Aristas y Polígonos** ya no se dibuja ese contorno naranja, como en C4D, donde solo se ven las aristas del objeto.
+- Tests: las tres primitivas cubren todos sus triángulos con `faceTris` y el Cubo/Plano tienen 6/1 polígonos.
+
+**Límites**
+- Escenas guardadas antes de este cambio con un Cubo ya editable mantienen su malla con triángulos sueltos; hay que rehacer el objeto.
+- Los polos de la Esfera siguen teniendo cuadriláteros degenerados (dos puntos coincidentes), como en la malla anterior.
+- El contorno usa la envolvente convexa: una figura con huecos o cóncava queda rodeada por fuera, no pegada a su silueta real.
+
+**Verificado:** tests y compilación. **Sin probar:** el aspecto en el visor.
+
 ### 2026-11-20 (26): Simetría, Clonador y Deformadores con Cubo, Esfera y Plano
 
 **Corregido**

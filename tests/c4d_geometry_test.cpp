@@ -949,6 +949,16 @@ int main() {
             check(df->mesh != nullptr, "deformador: un plano parametrico hijo se deforma");
         }
 
+        // Cubo, Esfera y Plano nacen con sus cuadrilateros declarados (al hacerlos editables no se parten en dos).
+        {
+            for (const MeshData& m : {makeCubeMesh(), makeSphereMesh(), makePlaneMesh()}) {
+                size_t sum = 0;
+                for (uint32_t f : m.faceTris) sum += f;
+                check(!m.faceTris.empty() && sum * 3 == m.indices.size(), "primitivas: faceTris cubre todos los triangulos");
+            }
+            check(makeCubeMesh().faceTris.size() == 6 && makePlaneMesh().faceTris.size() == 1, "cubo = 6 poligonos, plano = 1");
+        }
+
         // Mover nodos entre padres (arrastrar y soltar en el Gestor de Objetos).
         {
             SceneNode rt("r");
