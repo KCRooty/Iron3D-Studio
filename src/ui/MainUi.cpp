@@ -28,6 +28,7 @@
 #include "importers/gltf/GltfIO.h"
 #include "core/IkSolver.h"
 #include "core/Skin.h"
+#include "core/Boolean.h"
 #include "core/Deform.h"
 #include "core/Symmetry.h"
 #include "importers/lib4d/PresetTextures.h"
@@ -111,7 +112,7 @@ enum class AttrFocus { Object, Material, Tag, Project };
 // Ordenes que se piden desde sitios sin acceso a la escena (barra izquierda,
 // menu contextual del visor) y se ejecutan al principio del frame siguiente.
 enum class UiCmd { None, MakeEditable, FrameSelected, FrameAll, ResetView, Group, SelectChildren,
-                   CurrentState, Connect, ConnectDelete, SelectAll, ViewPersp, ViewTop, ViewRight, ViewFront,
+                   CurrentState, Connect, ConnectDelete, BoolUnion, BoolSubtract, BoolIntersect, SelectAll, ViewPersp, ViewTop, ViewRight, ViewFront,
                    ViewLeft, ViewBack, ViewBottom, ViewQuad, ClearAnimation, SymmetryObject, Cut, Copy, Paste };
 
 struct UiState {
@@ -1594,6 +1595,54 @@ int connectObjects(SceneNode& root, SceneNode*& selected, SceneHistory& history,
     return (int)parts.size();
 }
 
+// Booleano entre los dos primeros objetos seleccionados (A = el primero de la lista, B = el segundo): crea un
+// Objeto poligonal nuevo con A op B y deja A y B ocultos (se pueden volver a mostrar). Devuelve false con el motivo en `err`.
+bool booleanObjects(SceneNode& root, SceneNode*& selected, SceneHistory& history, BoolOp op, std::string& err) {
+    const std::vector<SceneNode*> nodes = topLevelSelection(root, selected);
+    if (nodes.size() < 2) {
+        err = tr("Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.");
+        return false;
+    }
+    SceneNode* an = nodes[0];
+    SceneNode* bn = nodes[1];
+    if (!an->parent()) return false;
+    const glm::mat4 toA = glm::inverse(an->worldMatrix());
+    auto bring = [&](SceneNode* n, MeshData& out) {
+        if (!hasGeometry(n->primitive) || !nodeMeshData(*n, out)) return false;
+        const glm::mat4 xf = toA * n->worldMatrix();
+        const glm::mat3 nxf = glm::transpose(glm::inverse(glm::mat3(xf)));
+        for (Vertex& v : out.vertices) {
+            v.position = glm::vec3(xf * glm::vec4(v.position, 1.0f));
+            const glm::vec3 nn = nxf * v.normal;
+            v.normal = glm::length(nn) > 1e-8f ? glm::normalize(nn) : v.normal;
+        }
+        return true;
+    };
+    MeshData ma, mb, res;
+    if (!bring(an, ma) || !bring(bn, mb)) {
+        err = tr("Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).");
+        return false;
+    }
+    std::string why;
+    if (!booleanMeshes(ma, mb, op, res, &why)) {
+        err = tr("Booleano: ") + why;
+        return false;
+    }
+    weldMesh(res, 1e-4f);
+    updateBounds(res);
+    history.commitBefore(root);
+    auto made = std::make_unique<SceneNode>(an->name() + " " + tr("Booleano"), PrimitiveType::Mesh);
+    made->mesh = std::make_shared<const MeshData>(std::move(res));
+    made->materialIndex = an->materialIndex;
+    SceneNode* parent = an->parent();
+    SceneNode* result = parent->insertChild(std::move(made), parent->indexOf(an) + 1);
+    result->setLocalMatrix(glm::inverse(parent->worldMatrix()) * an->worldMatrix());
+    an->editorVis = VisMode::Off;
+    bn->editorVis = VisMode::Off;
+    selectOnly(selected, result);
+    return true;
+}
+
 // Seleccion Rectangular (0) y Lazo (8): arrastrar en el visor dibuja la zona;
 // al soltar se eligen los objetos que la toquen (rectangulo) o que tengan
 // algun punto dentro (lazo). Mayus anade, Ctrl quita, sin nada sustituye.
@@ -2226,6 +2275,15 @@ void runPendingCmd(SceneNode& root, SceneNode*& selected, SceneHistory& history,
                           : std::string(tr("Conectar Objetos: la selección no tiene geometría.")));
             break;
         }
+        case UiCmd::BoolUnion:
+        case UiCmd::BoolSubtract:
+        case UiCmd::BoolIntersect: {
+            std::string err;
+            const BoolOp op = cmd == UiCmd::BoolUnion ? BoolOp::Union : cmd == UiCmd::BoolSubtract ? BoolOp::Subtract : BoolOp::Intersect;
+            if (booleanObjects(root, selected, history, op, err)) flashStatus(tr("Booleano: objeto creado; A y B quedan ocultos."));
+            else flashStatus(err);
+            break;
+        }
         case UiCmd::None: break;
     }
 }
@@ -2408,6 +2466,12 @@ void drawViewportContextMenu(SceneNode& root, SceneNode*& selected, GizmoMode& m
         if (gc) openToolOptions((int)UiState::OptWin::Connect);
     }
     if (ImGui::MenuItem(tr("Conectar+Eliminar"), nullptr, false, hasSel)) g.pendingCmd = UiCmd::ConnectDelete;
+    {
+        const bool two = g.selIds.size() >= 2;
+        if (ImGui::MenuItem(tr("Booleano: Unión (A + B)"), nullptr, false, two)) g.pendingCmd = UiCmd::BoolUnion;
+        if (ImGui::MenuItem(tr("Booleano: Sustracción (A - B)"), nullptr, false, two)) g.pendingCmd = UiCmd::BoolSubtract;
+        if (ImGui::MenuItem(tr("Booleano: Intersección (A y B)"), nullptr, false, two)) g.pendingCmd = UiCmd::BoolIntersect;
+    }
     if (iconMenuItem(Icon::Null, tr("Agrupar Objetos"), tr("Alt+G"), false, hasSel)) g.pendingCmd = UiCmd::Group;
     ImGui::Separator();
     if (ImGui::BeginMenu(tr("Nueva Etiqueta"), false)) ImGui::EndMenu();
@@ -7596,6 +7660,9 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "paste") g.cmdQueue.push_back(UiCmd::Paste);
     else if (cmd == "current-state") g.cmdQueue.push_back(UiCmd::CurrentState);
     else if (cmd == "connect") g.cmdQueue.push_back(UiCmd::Connect);
+    else if (cmd == "bool-union") g.cmdQueue.push_back(UiCmd::BoolUnion);
+    else if (cmd == "bool-sub") g.cmdQueue.push_back(UiCmd::BoolSubtract);
+    else if (cmd == "bool-int") g.cmdQueue.push_back(UiCmd::BoolIntersect);
     else if (cmd == "connect-delete") g.cmdQueue.push_back(UiCmd::ConnectDelete);
     else if (cmd == "view-persp") g.cmdQueue.push_back(UiCmd::ViewPersp);
     else if (cmd == "view-top") g.cmdQueue.push_back(UiCmd::ViewTop);

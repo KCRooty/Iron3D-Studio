@@ -1046,6 +1046,14 @@ Hinchar	Gonfler
 Sesgar	Cisailler
 Ángulo	Angle
   Deforma al primer hijo con malla; el hijo se edita aparte.	  Déforme le premier enfant avec maillage ; l'enfant se modifie à part.
+Booleano	Booléen
+Booleano: Unión (A + B)	Booléen : Union (A + B)
+Booleano: Sustracción (A - B)	Booléen : Soustraction (A - B)
+Booleano: Intersección (A y B)	Booléen : Intersection (A et B)
+Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.	Booléen : sélectionnez deux objets (A et B) avec Ctrl+clic dans le Gestionnaire d'objets.
+Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).	Booléen : les deux objets doivent avoir une géométrie (Cube, Sphère, polygone...).
+Booleano: 	Booléen : 
+Booleano: objeto creado; A y B quedan ocultos.	Booléen : objet créé ; A et B sont masqués.
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cono	Cône
@@ -1080,7 +1088,6 @@ Forro	Peau
 Recorrido	Extrusion contrôlée
 Bezier	Bézier
 Formación de Átomos	Réseau d'atomes
-Booleano	Booléen
 Máscara de Spline	Masque Spline
 Conector	Connecteur
 Generador Python	Générateur Python

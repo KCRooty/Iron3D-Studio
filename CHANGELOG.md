@@ -6,6 +6,25 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (19): Booleanos (Unión, Sustracción, Intersección)
+
+**Añadido**
+- Tres comandos en el menú de objetos, junto a Conectar Objetos: **Booleano: Unión (A + B)**, **Sustracción (A - B)** e **Intersección (A y B)**. Con dos objetos seleccionados (Ctrl+clic en el Gestor de Objetos; A = el primero de la lista, B = el segundo) crean un Objeto poligonal nuevo con el resultado y dejan A y B ocultos (se pueden volver a mostrar). Funcionan con primitivas, objetos poligonales, paramétricos y deformados; si A o B están movidos/escalados/rotados se respeta su posición en el mundo.
+- Algoritmo: CSG por árboles BSP (`src/core/Boolean.cpp`). Los triángulos que atraviesa el otro objeto se parten; el resultado son polígonos convexos (con `faceTris`) y los vértices coincidentes se sueldan.
+- Órdenes `--ui-cmd=bool-union`, `bool-sub` y `bool-int` (sobre la selección actual).
+- Test de volumen: dos cubos solapados dan unión 1.5, A − B 0.5 e intersección 0.5; con cubo y esfera se cumplen V(A∪B)+V(A∩B)=V(A)+V(B) y V(A−B)=V(A)−V(A∩B). Un solape vacío o una malla vacía devuelven error.
+
+**Límites**
+- **No es paramétrico**: genera una malla fija (no hay objeto Boole con A/B como hijos que se actualice al mover). Si mueves A o B después, hay que rehacer la operación.
+- Cada malla se parte por el plano de cada uno de sus triángulos: con mallas de miles de polígonos el resultado puede tener muchos polígonos y tardar; se rechaza con más de 6000 triángulos entre las dos.
+- Hace falta que A y B sean **cerrados**. Con mallas abiertas el resultado no es fiable; de momento no se avisa.
+- No hay «Crear Cantos Vivos», selección de intersección ni mantener UV/material de B.
+- Los mensajes de error que vienen del núcleo no están traducidos (solo el prefijo).
+
+**Hallazgo:** el sentido de giro de los triángulos del Cubo base es mixto (solo +Z mira hacia fuera con la regla de la mano derecha; el visor no descarta caras traseras). El Booleano orienta cada triángulo por la normal de sus vértices; otras herramientas que dependan del sentido de giro deberían hacer lo mismo.
+
+**Verificado:** tests de volumen y casos límite; compila y se enlaza en la aplicación. **Sin probar:** el flujo con clics reales y el aspecto en el visor (el PC estaba en uso y no se lanzó la captura).
+
 ### 2026-11-20 (18): Deformadores Doblar, Enroscar, Afilar, Hinchar y Sesgar
 
 **Añadido**

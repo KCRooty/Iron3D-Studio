@@ -1041,6 +1041,14 @@ Hinchar	Ausbeulen
 Sesgar	Scheren
 Ángulo	Winkel
   Deforma al primer hijo con malla; el hijo se edita aparte.	  Verformt das erste Kind mit Netz; das Kind wird separat bearbeitet.
+Booleano	Boolesch
+Booleano: Unión (A + B)	Boolesch: Vereinigung (A + B)
+Booleano: Sustracción (A - B)	Boolesch: Subtraktion (A - B)
+Booleano: Intersección (A y B)	Boolesch: Schnittmenge (A und B)
+Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.	Boolesch: Wähle zwei Objekte (A und B) mit Strg+Klick im Objekt-Manager.
+Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).	Boolesch: Beide Objekte brauchen Geometrie (Würfel, Kugel, Polygon...).
+Booleano: 	Boolesch: 
+Booleano: objeto creado; A y B quedan ocultos.	Boolesch: Objekt erstellt; A und B sind ausgeblendet.
 Polígono Vacío	Leeres Polygon
 Guía	Hilfslinie
 Cono	Kegel
@@ -1075,7 +1083,6 @@ Forro	Loft
 Recorrido	Sweep
 Bezier	Bézier
 Formación de Átomos	Atom Array
-Booleano	Boole
 Máscara de Spline	Splinemaske
 Conector	Konnektor
 Generador Python	Python-Generator

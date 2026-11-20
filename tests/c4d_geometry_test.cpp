@@ -3,6 +3,7 @@
 
 #include "core/SceneNode.h"
 #include "core/MeshEdit.h"
+#include "core/Boolean.h"
 #include "core/Deform.h"
 #include "core/MeshTopology.h"
 #include "core/SceneSerializer.h"
@@ -821,6 +822,48 @@ int main() {
             check(deserializeScene(txt, back, mats, &err), "DEF: el .iron se vuelve a leer");
             const SceneNode* bn = back.children().empty() ? nullptr : back.children().front().get();
             check(bn && bn->deform.present && bn->deform.kind == 2 && bn->deform.axis == 1 && bn->deform.amount == 0.0f, "DEF: deformador guardado y leido");
+        }
+
+        // Booleanos: volumen con signo de la malla resultante.
+        {
+            auto vol = [](const MeshData& m) {
+                double v = 0.0;
+                for (size_t i = 0; i + 2 < m.indices.size(); i += 3) {
+                    const glm::vec3 p0 = m.vertices[m.indices[i]].position, p1 = m.vertices[m.indices[i + 1]].position,
+                                    p2 = m.vertices[m.indices[i + 2]].position;
+                    const glm::vec3 cr = glm::cross(p1 - p0, p2 - p0);
+                    const glm::vec3 nn = m.vertices[m.indices[i]].normal + m.vertices[m.indices[i + 1]].normal + m.vertices[m.indices[i + 2]].normal;
+                    const double sgn = glm::dot(cr, nn) < 0.0f ? -1.0 : 1.0;  // orientacion segun las normales, como el booleano
+                    v += sgn * (double)glm::dot(p0, cr) / 6.0;
+                }
+                return v;
+            };
+            MeshData ca = makeCubeMesh(), cb2 = makeCubeMesh();
+            for (Vertex& v : cb2.vertices) v.position.x += 0.5f;
+            MeshData u, s, in;
+            std::string e;
+            check(booleanMeshes(ca, cb2, BoolOp::Union, u, &e), "booleano: union de dos cubos");
+            check(booleanMeshes(ca, cb2, BoolOp::Subtract, s, &e), "booleano: sustraccion de dos cubos");
+            check(booleanMeshes(ca, cb2, BoolOp::Intersect, in, &e), "booleano: interseccion de dos cubos");
+            check(std::fabs(vol(ca) - 1.0) < 1e-4, "booleano: el cubo unidad vale 1");
+            check(std::fabs(vol(u) - 1.5) < 1e-3, "booleano: volumen de la union = 1.5");
+            check(std::fabs(vol(s) - 0.5) < 1e-3, "booleano: volumen de A - B = 0.5");
+            check(std::fabs(vol(in) - 0.5) < 1e-3, "booleano: volumen de la interseccion = 0.5");
+            check(!u.faceTris.empty() && u.faceTris.size() < u.indices.size() / 3, "booleano: poligonos con varios triangulos");
+            // Cubo y esfera: V(A u B) + V(A n B) = V(A) + V(B) y V(A - B) = V(A) - V(A n B).
+            MeshData sp = makeSphereMesh();
+            for (Vertex& v : sp.vertices) v.position += glm::vec3(0.3f, 0.2f, 0.1f);
+            MeshData su, ss, si;
+            check(booleanMeshes(ca, sp, BoolOp::Union, su, &e) && booleanMeshes(ca, sp, BoolOp::Subtract, ss, &e) &&
+                      booleanMeshes(ca, sp, BoolOp::Intersect, si, &e),
+                  "booleano: cubo y esfera");
+            check(std::fabs(vol(su) + vol(si) - vol(ca) - vol(sp)) < 5e-3, "booleano: cubo/esfera cumple V(union)+V(inter)=V(A)+V(B)");
+            check(std::fabs(vol(ss) - (vol(ca) - vol(si))) < 5e-3, "booleano: cubo/esfera cumple V(A-B)=V(A)-V(inter)");
+            MeshData far = makeCubeMesh();
+            for (Vertex& v : far.vertices) v.position.x += 5.0f;
+            MeshData none;
+            check(!booleanMeshes(ca, far, BoolOp::Intersect, none, &e) && !e.empty(), "booleano: interseccion vacia da error");
+            check(!booleanMeshes(MeshData{}, ca, BoolOp::Union, none, &e), "booleano: malla vacia da error");
         }
 
         // Aumentar / Reducir / Conectados con la cara de arriba.

@@ -1058,6 +1058,14 @@ Hinchar	Bulge
 Sesgar	Shear
 Ángulo	Angle
   Deforma al primer hijo con malla; el hijo se edita aparte.	  Deforms the first child with a mesh; the child is edited separately.
+Booleano	Boole
+Booleano: Unión (A + B)	Boolean: Union (A + B)
+Booleano: Sustracción (A - B)	Boolean: Subtract (A - B)
+Booleano: Intersección (A y B)	Boolean: Intersect (A and B)
+Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.	Boolean: select two objects (A and B) with Ctrl+click in the Object Manager.
+Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).	Boolean: both objects need geometry (Cube, Sphere, polygon...).
+Booleano: 	Boolean: 
+Booleano: objeto creado; A y B quedan ocultos.	Boolean: object created; A and B are hidden.
 Polígono Vacío	Empty Polygon
 Guía	Guide
 Cono	Cone
@@ -1091,7 +1099,6 @@ Torno	Lathe
 Forro	Loft
 Recorrido	Sweep
 Formación de Átomos	Atom Array
-Booleano	Boole
 Máscara de Spline	Spline Mask
 Conector	Connector
 Generador Python	Python Generator

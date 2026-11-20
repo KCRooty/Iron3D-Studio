@@ -103,6 +103,7 @@ add_executable(Iron3DStudio
     src/core/Skin.cpp
     src/core/Symmetry.cpp
     src/core/Deform.cpp
+    src/core/Boolean.cpp
     src/core/NullShapes.cpp
     src/importers/obj/ObjIO.cpp
     src/importers/smd/SmdIO.cpp
@@ -346,6 +347,7 @@ add_executable(iron3d_tests
     src/core/MeshData.cpp
     src/core/PrimitiveShapes.cpp
     src/core/Deform.cpp
+    src/core/Boolean.cpp
     src/core/MeshTopology.cpp
     src/core/MeshEdit.cpp
     src/core/SceneNode.cpp
