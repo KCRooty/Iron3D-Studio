@@ -6,6 +6,15 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (36): Deshacer Vista y Rehacer Vista
+
+**Añadido**
+- **Vista > Deshacer Vista / Rehacer Vista** (antes en gris): cada visor guarda hasta 50 puntos de vista (tipo de vista, objetivo, distancia y ángulos). Un movimiento de cámara cuenta como uno cuando la cámara se queda quieta unos instantes.
+
+**Límites:** los atajos Ctrl+Mayús+Z/Y de la etiqueta del menú aún no están enlazados al teclado; solo funciona desde el menú.
+
+**Verificado:** compilación y tests. **Sin probar:** en pantalla.
+
 ### 2026-11-20 (35): Menú Ayuda activo e Información del Objeto
 
 **Añadido**
