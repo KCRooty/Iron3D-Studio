@@ -6,6 +6,15 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (5): Selección > Contorno y Rellenar Selección
+
+**Nuevo**
+- **Selección Contorno** (`U~Q`, cualquier modo de componente): de lo seleccionado se queda solo con el borde, los elementos que tocan algo sin seleccionar.
+- **Rellenar Selección** (`U~F`, modo Polígonos): selecciona los huecos de polígonos sin seleccionar rodeados por la selección. Cada grupo de polígonos sin seleccionar unidos forma un hueco; el mayor se toma como «el exterior» y no se rellena.
+
+**Probado:** `iron3d_tests` (cubo con la tapa subdividida: rellena el hueco pequeño y no la tapa de 4; contorno deja fuera la base interior). **No probado:** el clic en los menús con la interfaz abierta.
+**Ojo:** la semántica exacta de C4D para estas dos órdenes no está documentada en el material que tengo (solo los ids 1011179 y 1011178); esta es una interpretación por nombre y comportamiento conocido, sin comparar con R19.
+
 ### 2026-11-20 (4): Malla > Destriangular
 
 **Nuevo**

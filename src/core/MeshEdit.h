@@ -57,6 +57,11 @@ std::set<int> edgeRing(const MeshTopology& topo, int edge);
 // aristas y poligonos por punto comun.
 std::set<int> growSelection(const MeshTopology& topo, int mode, const std::set<int>& sel);
 std::set<int> shrinkSelection(const MeshTopology& topo, int mode, const std::set<int>& sel);
+// Contorno: de la seleccion, solo los elementos del borde (los que tocan algo sin seleccionar).
+std::set<int> outlineSelection(const MeshTopology& topo, int mode, const std::set<int>& sel);
+// Rellenar (modo Poligonos): los huecos de poligonos sin seleccionar rodeados por la seleccion se seleccionan.
+// Un hueco es cada grupo de poligonos sin seleccionar unidos por aristas; el mayor se considera el "fuera" y no se rellena.
+std::set<int> fillSelection(const MeshTopology& topo, const std::set<int>& sel);
 std::set<int> connectedSelection(const MeshTopology& topo, int mode, const std::set<int>& sel);
 
 // --- Operaciones de malla

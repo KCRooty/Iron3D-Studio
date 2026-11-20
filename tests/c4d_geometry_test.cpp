@@ -658,6 +658,26 @@ int main() {
         const std::set<int> grown = growSelection(t, 3, {top});
         check(grown.size() == 5, "aumentar: arriba + 4 lados");
         check(shrinkSelection(t, 3, grown) == std::set<int>{top}, "reducir: vuelve a la de arriba");
+        // Contorno y Rellenar. Cubo con la tapa subdividida: 9 poligonos (4 de arriba, 4 lados, 1 abajo).
+        {
+            const MeshEditResult sub = subdividePolygons(cube, t, {top});
+            const MeshTopology st = buildMeshTopology(sub.mesh);
+            const std::set<int> topFour = polysFromTris(st, sub.selectTris);
+            int bottom = -1;
+            for (int p = 0; p < (int)st.polys.size(); ++p)
+                if (st.polyNormals[(size_t)p].y < -0.9f) bottom = p;
+            std::set<int> ring;  // los 4 lados
+            for (int p = 0; p < (int)st.polys.size(); ++p)
+                if (!topFour.count(p) && p != bottom) ring.insert(p);
+            check(ring.size() == 4 && bottom >= 0, "contorno/rellenar: preparacion del cubo con la tapa subdividida");
+            check(fillSelection(st, ring).size() == 5, "rellenar: el hueco pequeño (abajo) se rellena y la tapa de 4 no");
+            check(outlineSelection(st, 3, ring).size() == 4, "contorno: los 4 lados tocan algo sin seleccionar");
+            std::set<int> big = ring;
+            big.insert(bottom);
+            check(outlineSelection(st, 3, big).size() == 4 && !outlineSelection(st, 3, big).count(bottom),
+                  "contorno: con la base tambien, la base queda dentro y sale solo el borde");
+            check(outlineSelection(st, 3, {bottom}).size() == 1, "contorno: un poligono es todo borde");
+        }
         check(connectedSelection(t, 3, {top}).size() == 6, "conectados: el cubo entero");
         check(growSelection(t, 1, {0}).size() == 4, "aumentar puntos: el punto y sus 3 vecinos");
 

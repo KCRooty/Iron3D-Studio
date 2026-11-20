@@ -2454,9 +2454,8 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         const int cm = componentModeFor(selected);
         if (iconMenuItem(Icon::MnuLoop, tr("Selección de Bucle"), "U~L", false, cm == 2)) g.compOp = "loop";
         if (ImGui::MenuItemEx(tr("Selección de Anillo"), kIconGutterText, "U~B", false, cm == 2)) g.compOp = "ring";
-        for (const auto& it : std::initializer_list<std::pair<const char*, const char*>>{
-                 {tr("Selección Contorno"), "U~Q"}, {tr("Rellenar Selección"), "U~F"}})
-            ImGui::MenuItemEx(it.first, kIconGutterText, it.second, false, false);
+        if (ImGui::MenuItemEx(tr("Selección Contorno"), kIconGutterText, "U~Q", false, cm != 0)) g.compOp = "outline";
+        if (ImGui::MenuItemEx(tr("Rellenar Selección"), kIconGutterText, "U~F", false, cm == 3)) g.compOp = "fill";
         ImGui::Separator();
         if (iconMenuItem(Icon::MnuSelectAll, tr("Seleccionar Todo"), tr("Ctrl+A"))) g.pendingCmd = UiCmd::SelectAll;
         if (iconMenuItem(Icon::MnuDeselect, tr("Deseleccionar Todo"), tr("Esc"), false, selected != nullptr)) selected = nullptr;
@@ -6511,6 +6510,8 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
     }
     if (op == "grow") { c.sel = growSelection(t, mode, c.sel); return done(tr("Aumentar Selección")); }
     if (op == "shrink") { c.sel = shrinkSelection(t, mode, c.sel); return done(tr("Reducir Selección")); }
+    if (op == "outline") { c.sel = outlineSelection(t, mode, c.sel); return done(tr("Selección Contorno")); }
+    if (op == "fill") { c.sel = fillSelection(t, c.sel); return done(tr("Rellenar Selección")); }
     if (op == "connected") { c.sel = connectedSelection(t, mode, c.sel); return done(tr("Seleccionar Conectados")); }
     if (op == "invert") {
         std::set<int> out;

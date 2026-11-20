@@ -401,6 +401,42 @@ std::set<int> shrinkSelection(const MeshTopology& topo, int mode, const std::set
     return out;
 }
 
+std::set<int> outlineSelection(const MeshTopology& topo, int mode, const std::set<int>& sel) {
+    std::set<int> inner = shrinkSelection(topo, mode, sel);
+    std::set<int> out;
+    for (int i : sel)
+        if (!inner.count(i)) out.insert(i);
+    return out;
+}
+
+std::set<int> fillSelection(const MeshTopology& topo, const std::set<int>& sel) {
+    const auto nb = neighbours(topo, 3);
+    const int n = (int)nb.size();
+    std::vector<int> comp((size_t)n, -1);
+    std::vector<std::vector<int>> groups;
+    for (int s = 0; s < n; ++s) {
+        if (sel.count(s) || comp[(size_t)s] >= 0) continue;
+        groups.emplace_back();
+        std::vector<int> stack{s};
+        comp[(size_t)s] = (int)groups.size() - 1;
+        while (!stack.empty()) {
+            const int i = stack.back();
+            stack.pop_back();
+            groups.back().push_back(i);
+            for (int o : nb[(size_t)i])
+                if (!sel.count(o) && comp[(size_t)o] < 0) { comp[(size_t)o] = comp[(size_t)i]; stack.push_back(o); }
+        }
+    }
+    std::set<int> out = sel;
+    if (groups.size() < 2) return out;
+    size_t big = 0;
+    for (size_t g = 1; g < groups.size(); ++g)
+        if (groups[g].size() > groups[big].size()) big = g;
+    for (size_t g = 0; g < groups.size(); ++g)
+        if (g != big) out.insert(groups[g].begin(), groups[g].end());
+    return out;
+}
+
 std::set<int> connectedSelection(const MeshTopology& topo, int mode, const std::set<int>& sel) {
     const auto nb = neighbours(topo, mode);
     std::set<int> out;
