@@ -226,7 +226,7 @@ Rastreador de Objetos	Objekt-Tracker
 Ocultar Seleccionado	Selektierte verbergen
 Intercambiar Clonador-Matriz	Cloner-Matrix tauschen
 Selección MoGraph	MoGraph-Selektion
-Clonador	Klon
+Clonador	Cloner
 Matriz	Matrix
 Fractura Voronoi	Voronoi-Bruch
 Character	Charakter
@@ -338,7 +338,7 @@ Rayos X	X-Ray
 Luz por Defecto...	Standardlicht...
 Configurar...	Ansichts-Voreinstellungen...
 Filtrar	Filter
-Cuadrícula	Gitter
+Cuadrícula	Raster
 Generador	Generator
 Subdivisión Superficie	Subdivision Surface
 Entorno	Umgebung
@@ -1049,6 +1049,20 @@ Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.	
 Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).	Boolesch: Beide Objekte brauchen Geometrie (Würfel, Kugel, Polygon...).
 Booleano: 	Boolesch: 
 Booleano: objeto creado; A y B quedan ocultos.	Boolesch: Objekt erstellt; A und B sind ausgeblendet.
+Cantidad	Anzahl
+Cantidad X	Anzahl X
+Cantidad Y	Anzahl Y
+Cantidad Z	Anzahl Z
+Separación X	Abstand X
+Separación Y	Abstand Y
+Separación Z	Abstand Z
+Paso X	Schritt X
+Paso Y	Schritt Y
+Paso Z	Schritt Z
+Escala por copia	Skalierung pro Klon
+Giro por copia	Drehung pro Klon
+  Clona el primer hijo con malla; el hijo se edita aparte.	  Klont das erste Kindobjekt mit Netz; das Kind wird separat bearbeitet.
+copias	Klone
 Polígono Vacío	Leeres Polygon
 Guía	Hilfslinie
 Cono	Kegel

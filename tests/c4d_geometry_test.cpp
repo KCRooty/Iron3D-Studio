@@ -4,6 +4,7 @@
 #include "core/SceneNode.h"
 #include "core/MeshEdit.h"
 #include "core/Boolean.h"
+#include "core/Clone.h"
 #include "core/Deform.h"
 #include "core/MeshTopology.h"
 #include "core/SceneSerializer.h"
@@ -822,6 +823,53 @@ int main() {
             check(deserializeScene(txt, back, mats, &err), "DEF: el .iron se vuelve a leer");
             const SceneNode* bn = back.children().empty() ? nullptr : back.children().front().get();
             check(bn && bn->deform.present && bn->deform.kind == 2 && bn->deform.axis == 1 && bn->deform.amount == 0.0f, "DEF: deformador guardado y leido");
+        }
+
+        // Clonador: cantidades, posiciones, escala y serializacion.
+        {
+            MeshData cube = makeCubeMesh();
+            CloneData cl;
+            cl.present = true;
+            cl.mode = 0; cl.count = 4; cl.offset = glm::vec3(200.0f, 0.0f, 0.0f);  // 1 unidad por copia
+            MeshData o = cloneMeshData(cube, cl, glm::mat4(1.0f));
+            check(o.vertices.size() == cube.vertices.size() * 4 && o.indices.size() == cube.indices.size() * 4, "clonador: 4 copias lineales");
+            check(o.faceTris.size() == cube.faceTris.size() * 4, "clonador: conserva los poligonos");
+            check(std::fabs(o.boundsMax.x - 3.5f) < 1e-4f && std::fabs(o.boundsMin.x + 0.5f) < 1e-4f, "clonador: la lineal llega a x=3.5");
+            cl.mode = 1; cl.count = 3; cl.countY = 2; cl.countZ = 2; cl.offset = glm::vec3(200.0f, 200.0f, 200.0f);
+            check(cloneCount(cl) == 12, "clonador: cuadricula 3x2x2 = 12");
+            o = cloneMeshData(cube, cl, glm::mat4(1.0f));
+            check(std::fabs(o.boundsMax.x - 1.5f) < 1e-4f && std::fabs(o.boundsMin.x + 1.5f) < 1e-4f, "clonador: la cuadricula esta centrada");
+            cl.mode = 2; cl.count = 6; cl.radiusCm = 400.0f; cl.axis = 1;
+            o = cloneMeshData(cube, cl, glm::mat4(1.0f));
+            check(o.vertices.size() == cube.vertices.size() * 6, "clonador: 6 copias radiales");
+            check(std::fabs(o.boundsMax.y - 0.5f) < 1e-4f && std::fabs(o.boundsMin.y + 0.5f) < 1e-4f, "clonador: el circulo radial (eje Y) es plano en Y");
+            check(o.boundsMax.x > 2.0f && o.boundsMax.z > 1.5f, "clonador: radio de 2 unidades");
+            cl.mode = 0; cl.count = 3; cl.offset = glm::vec3(0.0f); cl.scaleStepPct = 100.0f;
+            o = cloneMeshData(cube, cl, glm::mat4(1.0f));
+            check(std::fabs(o.boundsMax.x - 1.5f) < 1e-4f, "clonador: la escala por copia crece (copia 3 = x3)");
+            cl.count = 5000;
+            check(cloneCount(cl) == kMaxClones, "clonador: limite de copias");
+            SceneNode root("r");
+            SceneNode* holder = root.addChild("Clonador", PrimitiveType::None);
+            holder->clone.present = true;
+            holder->clone.count = 3;
+            SceneNode* kid = holder->addChild("Cubo", PrimitiveType::Mesh);
+            kid->mesh = std::make_shared<const MeshData>(makeCubeMesh());
+            check(evaluateCloners(root) == 1 && holder->mesh && holder->mesh->vertices.size() == cube.vertices.size() * 3, "clonador: el nodo genera la malla");
+            check(evaluateCloners(root) == 0, "clonador: sin cambios no recalcula");
+            holder->clone.count = 5;
+            check(evaluateCloners(root) == 1 && holder->mesh->vertices.size() == cube.vertices.size() * 5, "clonador: recalcula al cambiar la cantidad");
+            holder->clone.mode = 2; holder->clone.radiusCm = 123.0f; holder->clone.rotStepDeg = 7.0f; holder->clone.scaleStepPct = 12.5f;
+            holder->clone.offset = glm::vec3(10.0f, 20.0f, 30.0f);
+            std::vector<Material> cmats;
+            const std::string text = serializeScene(root, cmats);
+            SceneNode back("x");
+            std::string perr;
+            check(deserializeScene(text, back, cmats, &perr) && back.children().size() == 1, "clonador: serializa y lee");
+            const CloneData& bc = back.children()[0]->clone;
+            check(bc.present && bc.mode == 2 && bc.count == 5 && std::fabs(bc.radiusCm - 123.0f) < 1e-3f && std::fabs(bc.rotStepDeg - 7.0f) < 1e-3f &&
+                      std::fabs(bc.scaleStepPct - 12.5f) < 1e-3f && std::fabs(bc.offset.z - 30.0f) < 1e-3f,
+                  "clonador: ajustes conservados tras guardar");
         }
 
         // Booleanos: volumen con signo de la malla resultante.

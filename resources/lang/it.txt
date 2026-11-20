@@ -224,7 +224,7 @@ Rastreador de Objetos	Tracker oggetto
 Ocultar Seleccionado	Nascondi Selezionati
 Intercambiar Clonador-Matriz	Scambia matrice del Cloner
 Selección MoGraph	Selezione MoGraph
-Clonador	Clona
+Clonador	Clonatore
 Matriz	Matrice
 Fractura Voronoi	Frattura Voronoi
 Character	Personaggio
@@ -623,6 +623,7 @@ Longitud U	Lunghezza U
 Longitud V	Lunghezza V
 Repeticiones U	Ripetizioni U
 Repeticiones V	Ripetizioni V
+Modo	Modalità
 Datos de Usuario	Dati Utente
 Añadir Datos de Usuario...	Aggiungi Dati Utente...
 Gestionar Datos de Usuario...	Gestisci Dati Utente...
@@ -1028,6 +1029,21 @@ Booleano: Intersección (A y B)	Booleano: Intersezione (A e B)
 Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.	Booleano: seleziona due oggetti (A e B) con Ctrl+clic nel Gestore oggetti.
 Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).	Booleano: entrambi gli oggetti devono avere geometria (Cubo, Sfera, poligono...).
 Booleano: objeto creado; A y B quedan ocultos.	Booleano: oggetto creato; A e B sono nascosti.
+Radial	Radiale
+Cantidad	Quantità
+Cantidad X	Quantità X
+Cantidad Y	Quantità Y
+Cantidad Z	Quantità Z
+Separación X	Spaziatura X
+Separación Y	Spaziatura Y
+Separación Z	Spaziatura Z
+Paso X	Passo X
+Paso Y	Passo Y
+Paso Z	Passo Z
+Escala por copia	Scala per clone
+Giro por copia	Rotazione per clone
+  Clona el primer hijo con malla; el hijo se edita aparte.	  Clona il primo figlio con mesh; il figlio si modifica a parte.
+copias	cloni
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula

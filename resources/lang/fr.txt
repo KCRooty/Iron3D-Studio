@@ -1054,6 +1054,20 @@ Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.	
 Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).	Booléen : les deux objets doivent avoir une géométrie (Cube, Sphère, polygone...).
 Booleano: 	Booléen : 
 Booleano: objeto creado; A y B quedan ocultos.	Booléen : objet créé ; A et B sont masqués.
+Cantidad	Nombre
+Cantidad X	Nombre X
+Cantidad Y	Nombre Y
+Cantidad Z	Nombre Z
+Separación X	Espacement X
+Separación Y	Espacement Y
+Separación Z	Espacement Z
+Paso X	Pas X
+Paso Y	Pas Y
+Paso Z	Pas Z
+Escala por copia	Échelle par clone
+Giro por copia	Rotation par clone
+  Clona el primer hijo con malla; el hijo se edita aparte.	  Clone le premier enfant avec un maillage ; l'enfant se modifie à part.
+copias	clones
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cono	Cône

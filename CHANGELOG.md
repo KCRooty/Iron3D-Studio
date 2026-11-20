@@ -6,6 +6,22 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (20): Clonador (Lineal, Cuadrícula, Radial)
+
+**Añadido**
+- **Clonador** funcional en la paleta MoGraph (antes decorativo). Con una malla seleccionada la envuelve; sin selección crea un nodo vacío al que se le arrastra un objeto como hijo. Genera copias del primer hijo con malla y lo oculta (el hijo se sigue editando aparte; borrar el Clonador deja el hijo intacto). No destructivo y en vivo, como los Deformadores y la Simetría.
+- Modos: **Lineal** (paso X/Y/Z en cm por copia), **Cuadrícula** (cantidad X/Y/Z y separación, centrada en el nodo) y **Radial** (radio y eje; las copias miran hacia fuera). Extras: **Escala por copia** (%) y **Giro por copia** (°). Máximo 1000 copias y 2 millones de vértices.
+- Guardado en `.iron` (bloque `CLN`), copia/pegado y deshacer; `--ui-cmd=create=Cubo+Clonador`.
+- Tests: conteos (lineal 4, cuadrícula 3×2×2 = 12, radial 6), límites geométricos (lineal hasta x=3.5, cuadrícula centrada, radial plano en el eje), escala por copia, tope de 1000, el nodo genera/no recalcula sin cambios/recalcula al cambiar la cantidad y viaje de ida y vuelta por el `.iron`.
+
+**Límites**
+- Las copias son **una sola malla fusionada**, no instancias: con clones muy pesados no ahorra memoria.
+- Todavía **no hay** efectores (Aleatorio, Plano, Paso), Modo Objeto (clonar sobre los puntos de otro objeto), Modo Rejilla de tipo Hex ni color/peso por copia.
+- Cada copia hereda el material del hijo; no se puede dar un material distinto por copia.
+- Traducciones de las etiquetas nuevas a de/fr/it sin revisar por un hablante nativo.
+
+**Verificado:** tests y compilación completa. **Sin probar:** el aspecto en el visor y el uso con clics reales (el PC estaba en uso y las capturas se descartan).
+
 ### 2026-11-20 (19): Booleanos (Unión, Sustracción, Intersección)
 
 **Añadido**

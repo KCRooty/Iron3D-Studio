@@ -144,6 +144,12 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             << " tip=" << quoted(node.ik.tip) << " target=" << quoted(node.ik.target) << " pole=" << quoted(node.ik.pole) << "\n";
     if (node.symmetry.present)
         out << indent << "  SYM axis=" << node.symmetry.axis << " tol=" << node.symmetry.tolCm << "\n";
+    if (node.clone.present) {
+        const CloneData& c = node.clone;
+        out << indent << "  CLN mode=" << c.mode << " count=" << c.count << " cy=" << c.countY << " cz=" << c.countZ
+            << " ox=" << c.offset.x << " oy=" << c.offset.y << " oz=" << c.offset.z << " radius=" << c.radiusCm
+            << " axis=" << c.axis << " scale=" << c.scaleStepPct << " rot=" << c.rotStepDeg << "\n";
+    }
     if (node.deform.present)
         out << indent << "  DEF kind=" << node.deform.kind << " axis=" << node.deform.axis << " amount=" << node.deform.amount << "\n";
     if (node.hasHidden()) {
@@ -417,7 +423,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
     while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG" ||
                             p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "IK" || p.peek() == "NULLSHAPE" ||
-                            p.peek() == "SYM" || p.peek() == "DEF" || p.peek() == "HIDDEN")) {
+                            p.peek() == "SYM" || p.peek() == "DEF" || p.peek() == "CLN" || p.peek() == "HIDDEN")) {
         const std::string kind = p.next();
         bool ok = true;
         if (kind == "LIGHT") {
@@ -494,6 +500,22 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
             ok = readAttrs(p, "SYM", err, [&](const std::string& k, const std::string& v) {
                 if (k == "axis") node.symmetry.axis = std::clamp(std::stoi(v), 0, 2);
                 else if (k == "tol") node.symmetry.tolCm = std::stof(v);
+            });
+        } else if (kind == "CLN") {
+            CloneData& c = node.clone;
+            c.present = true;
+            ok = readAttrs(p, "CLN", err, [&](const std::string& k, const std::string& v) {
+                if (k == "mode") c.mode = std::clamp(std::stoi(v), 0, 2);
+                else if (k == "count") c.count = std::clamp(std::stoi(v), 1, 1000);
+                else if (k == "cy") c.countY = std::clamp(std::stoi(v), 1, 1000);
+                else if (k == "cz") c.countZ = std::clamp(std::stoi(v), 1, 1000);
+                else if (k == "ox") c.offset.x = std::stof(v);
+                else if (k == "oy") c.offset.y = std::stof(v);
+                else if (k == "oz") c.offset.z = std::stof(v);
+                else if (k == "radius") c.radiusCm = std::stof(v);
+                else if (k == "axis") c.axis = std::clamp(std::stoi(v), 0, 2);
+                else if (k == "scale") c.scaleStepPct = std::stof(v);
+                else if (k == "rot") c.rotStepDeg = std::stof(v);
             });
         } else if (kind == "DEF") {
             node.deform.present = true;
@@ -799,6 +821,12 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.deform.kind = temp.deform.kind;
     root.deform.axis = temp.deform.axis;
     root.deform.amount = temp.deform.amount;
+    {
+        const CloneData& s = temp.clone;
+        CloneData& d = root.clone;
+        d.present = s.present; d.mode = s.mode; d.count = s.count; d.countY = s.countY; d.countZ = s.countZ;
+        d.offset = s.offset; d.radiusCm = s.radiusCm; d.axis = s.axis; d.scaleStepPct = s.scaleStepPct; d.rotStepDeg = s.rotStepDeg;
+    }
     root.symmetry.present = temp.symmetry.present;
     root.symmetry.axis = temp.symmetry.axis;
     root.symmetry.tolCm = temp.symmetry.tolCm;

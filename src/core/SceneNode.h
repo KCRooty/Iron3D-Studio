@@ -144,6 +144,24 @@ struct DeformData {
     float lastAmount = 1e9f;
 };
 
+// Clonador (ver Clone.h): copias del primer hijo con malla en modo Lineal, Cuadricula o Radial.
+struct CloneData {
+    bool present = false;
+    int mode = 0;               // 0 Lineal, 1 Cuadricula, 2 Radial
+    int count = 3;              // copias (Lineal, Radial) o en X (Cuadricula)
+    int countY = 1, countZ = 1; // solo Cuadricula
+    glm::vec3 offset{100.0f, 0.0f, 0.0f};  // cm: paso (Lineal) o separacion en X/Y/Z (Cuadricula)
+    float radiusCm = 200.0f;    // solo Radial
+    int axis = 1;               // Radial: eje normal al circulo (0 X, 1 Y, 2 Z)
+    float scaleStepPct = 0.0f;  // % de escala que se suma por copia
+    float rotStepDeg = 0.0f;    // grados que se suman por copia
+    std::shared_ptr<const MeshData> output, lastSource;
+    glm::mat4 lastChildMatrix{1.0f};
+    int lastMode = -1, lastCount = -1, lastCountY = -1, lastCountZ = -1, lastAxis = -1;
+    glm::vec3 lastOffset{1e9f};
+    float lastRadius = -1.0f, lastScaleStep = 1e9f, lastRotStep = 1e9f;
+};
+
 // Limites de rotacion de una articulacion (Ojoint, pestana IK > Limites de C4D, ids 3009..3015
 // de ocajoint.h). Orden H, P, B en grados, como en C4D. Solo se usan los ejes con use = true.
 struct JointLimits {
@@ -264,6 +282,7 @@ public:
     IkTagData ik;
     SymmetryData symmetry;
     DeformData deform;
+    CloneData clone;
     ParamShape param;  // primitiva poligonal con parametros editables (ver MeshData.h)
     // Solo con primitive == Mesh: partes con su propio material, ordenadas por
     // firstIndex y sin solaparse (ver MaterialPart).

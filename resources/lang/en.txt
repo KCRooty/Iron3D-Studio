@@ -1066,6 +1066,20 @@ Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.	
 Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).	Boolean: both objects need geometry (Cube, Sphere, polygon...).
 Booleano: 	Boolean: 
 Booleano: objeto creado; A y B quedan ocultos.	Boolean: object created; A and B are hidden.
+Cantidad	Count
+Cantidad X	Count X
+Cantidad Y	Count Y
+Cantidad Z	Count Z
+Separación X	Spacing X
+Separación Y	Spacing Y
+Separación Z	Spacing Z
+Paso X	Step X
+Paso Y	Step Y
+Paso Z	Step Z
+Escala por copia	Scale per clone
+Giro por copia	Rotation per clone
+  Clona el primer hijo con malla; el hijo se edita aparte.	  Clones the first child with a mesh; the child is edited separately.
+copias	clones
 Polígono Vacío	Empty Polygon
 Guía	Guide
 Cono	Cone

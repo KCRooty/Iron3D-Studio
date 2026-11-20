@@ -164,6 +164,12 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
     copy->deform.kind = src.deform.kind;
     copy->deform.axis = src.deform.axis;
     copy->deform.amount = src.deform.amount;
+    {
+        const CloneData& s = src.clone;
+        CloneData& d = copy->clone;
+        d.present = s.present; d.mode = s.mode; d.count = s.count; d.countY = s.countY; d.countZ = s.countZ;
+        d.offset = s.offset; d.radiusCm = s.radiusCm; d.axis = s.axis; d.scaleStepPct = s.scaleStepPct; d.rotStepDeg = s.rotStepDeg;
+    }
     copy->symmetry.present = src.symmetry.present;  // la cache se rehace sola
     copy->symmetry.axis = src.symmetry.axis;
     copy->symmetry.tolCm = src.symmetry.tolCm;

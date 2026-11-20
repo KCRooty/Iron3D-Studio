@@ -29,6 +29,7 @@
 #include "core/IkSolver.h"
 #include "core/Skin.h"
 #include "core/Boolean.h"
+#include "core/Clone.h"
 #include "core/Deform.h"
 #include "core/Symmetry.h"
 #include "importers/lib4d/PresetTextures.h"
@@ -1824,6 +1825,20 @@ void createPaletteItem(SceneNode& root, SceneNode*& selected, SceneHistory& hist
             return;
         }
     }
+    if (std::string(it.name.key) == "Clonador") {
+        SceneNode* sel = selected;
+        const bool wrap = sel && sel->mesh && sel->parent();
+        SceneNode* child = wrap ? sel : nullptr;
+        if (wrap) groupObjects(root, selected, history, nullptr);
+        else createObject(root, selected, history, PrimitiveType::None);
+        if (selected) {
+            selected->setName(tr("Clonador"));
+            selected->clone.present = true;
+            g.collapsed.erase(selected->id());
+            if (child) child->editorVis = VisMode::Off;  // las copias las dibuja el nodo
+        }
+        return;
+    }
     {
         static const char* defNames[] = {"Doblar", "Enroscar", "Afilar", "Hinchar", "Sesgar"};
         int dk = -1;
@@ -1979,7 +1994,7 @@ const PaletteItem kModeling[] = {
 };
 
 const PaletteItem kMoGraph[] = {
-    {"Clonador", Icon::MoCloner, kNone, false},
+    {"Clonador", Icon::MoCloner, kNone, true},
     {"Matriz", Icon::MoMatrix, kNone, false},
     {"Fractura", Icon::MoFracture, kNone, false},
     {"Fractura Voronoi", Icon::MoVoronoi, kNone, false},
@@ -4105,6 +4120,59 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                 node.deform.amount = am;
             }
             ImGui::TextDisabled(tr("  Deforma al primer hijo con malla; el hijo se edita aparte."));
+        } else if (node.clone.present) {
+            sectionHeader(tr("Propiedades del Objeto"));
+            CloneData& cl = node.clone;
+            propLabel(tr("Modo"));
+            const char* modes[] = {tr("Lineal"), tr("Cuadrícula"), tr("Radial")};
+            ImGui::SetNextItemWidth(-1);
+            int cmode = cl.mode;
+            if (ImGui::Combo("##clmode", &cmode, modes, 3)) {
+                history.commitBefore(root);
+                cl.mode = cmode;
+            }
+            auto intRow = [&](const char* label, const char* id, int& val, int lo, int hi) {
+                propLabel(label);
+                ImGui::SetNextItemWidth(-1);
+                int v = val;
+                if (ImGui::DragInt(id, &v, 0.2f, lo, hi)) {
+                    if (ImGui::IsItemActivated()) history.commitBefore(root);
+                    val = std::clamp(v, lo, hi);
+                }
+            };
+            auto fRow = [&](const char* label, const char* id, float& val, float speed, const char* fmt) {
+                propLabel(label);
+                ImGui::SetNextItemWidth(-1);
+                float v = val;
+                if (ImGui::DragFloat(id, &v, speed, -100000.0f, 100000.0f, fmt)) {
+                    if (ImGui::IsItemActivated()) history.commitBefore(root);
+                    val = v;
+                }
+            };
+            intRow(cl.mode == 1 ? tr("Cantidad X") : tr("Cantidad"), "##clcount", cl.count, 1, 1000);
+            if (cl.mode == 1) {
+                intRow(tr("Cantidad Y"), "##clcy", cl.countY, 1, 1000);
+                intRow(tr("Cantidad Z"), "##clcz", cl.countZ, 1, 1000);
+            }
+            if (cl.mode == 2) {
+                fRow(tr("Radio"), "##clr", cl.radiusCm, 1.0f, "%.1f cm");
+                propLabel(tr("Eje"));
+                const char* axes[] = {"X", "Y", "Z"};
+                ImGui::SetNextItemWidth(-1);
+                int cax = cl.axis;
+                if (ImGui::Combo("##claxis", &cax, axes, 3)) {
+                    history.commitBefore(root);
+                    cl.axis = cax;
+                }
+            } else {
+                fRow(cl.mode == 1 ? tr("Separación X") : tr("Paso X"), "##clox", cl.offset.x, 1.0f, "%.1f cm");
+                fRow(cl.mode == 1 ? tr("Separación Y") : tr("Paso Y"), "##cloy", cl.offset.y, 1.0f, "%.1f cm");
+                fRow(cl.mode == 1 ? tr("Separación Z") : tr("Paso Z"), "##cloz", cl.offset.z, 1.0f, "%.1f cm");
+            }
+            fRow(tr("Escala por copia"), "##clsc", cl.scaleStepPct, 0.5f, "%.1f %%");
+            fRow(tr("Giro por copia"), "##clrot", cl.rotStepDeg, 0.5f, "%.1f °");
+            ImGui::TextDisabled(tr("  Clona el primer hijo con malla; el hijo se edita aparte."));
+            ImGui::TextDisabled((std::to_string(cloneCount(cl)) + " " + std::string(tr("copias"))).c_str());
         } else if (node.symmetry.present) {
             sectionHeader(tr("Propiedades del Objeto"));
             propLabel(tr("Plano de Simetría"));
@@ -7343,6 +7411,8 @@ void runPendingToolCmd(SceneNode& root, SceneNode*& selected, const OrbitalCamer
                 if (it.functional && one == it.name.key) createPaletteItem(root, selected, history, it);
             for (const PaletteItem& it : kDeformers)
                 if (it.functional && one == it.name.key) createPaletteItem(root, selected, history, it);
+            for (const PaletteItem& it : kMoGraph)
+                if (it.functional && one == it.name.key) createPaletteItem(root, selected, history, it);
         }
         return;
     }
@@ -7442,6 +7512,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     // Objetos Simetria: reflejan a su hijo (despues de la Piel y la animacion, que son las que lo mueven).
     evaluateSymmetry(root);
     evaluateDeformers(root);
+    evaluateCloners(root);
     if (g.recordRequested) {
         g.recordRequested = false;
         recordActiveObjects(root, selected, &history);

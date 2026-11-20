@@ -103,6 +103,7 @@ add_executable(Iron3DStudio
     src/core/Skin.cpp
     src/core/Symmetry.cpp
     src/core/Deform.cpp
+    src/core/Clone.cpp
     src/core/Boolean.cpp
     src/core/NullShapes.cpp
     src/importers/obj/ObjIO.cpp
@@ -222,6 +223,7 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         src/core/Skin.cpp
         src/core/Symmetry.cpp
         src/core/Deform.cpp
+        src/core/Clone.cpp
         src/importers/cineware/CinewareExporter.cpp
         src/importers/c4d_compat/C4DGeometry.cpp
         src/core/MeshData.cpp
@@ -347,6 +349,7 @@ add_executable(iron3d_tests
     src/core/MeshData.cpp
     src/core/PrimitiveShapes.cpp
     src/core/Deform.cpp
+    src/core/Clone.cpp
     src/core/Boolean.cpp
     src/core/MeshTopology.cpp
     src/core/MeshEdit.cpp
@@ -444,6 +447,7 @@ add_executable(skin_test
     src/core/Skin.cpp
     src/core/Symmetry.cpp
     src/core/Deform.cpp
+    src/core/Clone.cpp
     src/core/NullShapes.cpp
     src/core/MeshData.cpp
     src/core/PrimitiveShapes.cpp
