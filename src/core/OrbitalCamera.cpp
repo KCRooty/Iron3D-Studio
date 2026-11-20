@@ -37,7 +37,7 @@ void OrbitalCamera::handleInput(GLFWwindow* window, double mouseX, double mouseY
         // Proporcional a la distancia (2026-11-10): un paso de rueda acerca un
         // 12 %, igual de util con un modelo de 2 unidades que con uno de 400.
         // A la distancia por defecto (4) da casi el paso fijo de antes (0.5).
-        distance_ = std::clamp(distance_ * std::pow(0.88f, (float)scrollY), kMinDistance, kMaxDistance);
+        distance_ = std::clamp(distance_ * std::pow(0.88f, (float)scrollY * nav.zoom), kMinDistance, kMaxDistance);
     }
 }
 
@@ -60,8 +60,9 @@ void OrbitalCamera::orbit(float dxPixels, float dyPixels) {
     // a la derecha gira el objeto hacia la derecha, es decir, la camara se
     // va hacia la izquierda; arrastrar hacia abajo la sube. Antes era al
     // reves (la camara seguia al raton) y Core lo noto invertido (29 oct).
-    yaw_ -= dxPixels * kOrbitSpeed;
-    pitch_ = std::clamp(pitch_ + dyPixels * kOrbitSpeed, -kMaxPitch, kMaxPitch);
+    const float k = kOrbitSpeed * nav.orbit * (nav.invertOrbit ? -1.0f : 1.0f);
+    yaw_ -= dxPixels * k;
+    pitch_ = std::clamp(pitch_ + dyPixels * k, -kMaxPitch, kMaxPitch);
 }
 
 void OrbitalCamera::pan(float dxPixels, float dyPixels) {
@@ -70,14 +71,14 @@ void OrbitalCamera::pan(float dxPixels, float dyPixels) {
     const glm::mat4 v = viewMatrix();
     const glm::vec3 right(v[0][0], v[1][0], v[2][0]);
     const glm::vec3 up(v[0][1], v[1][1], v[2][1]);
-    const float scale = distance_ * kPanSpeed;
+    const float scale = distance_ * kPanSpeed * nav.pan;
     target_ -= right * dxPixels * scale;
     target_ += up * dyPixels * scale;
 }
 
 void OrbitalCamera::dolly(float dyPixels) {
     // Proporcional tambien (a distancia 4, el mismo 0.025 por pixel de antes).
-    distance_ = std::clamp(distance_ * std::exp(dyPixels * 0.00625f), kMinDistance, kMaxDistance);
+    distance_ = std::clamp(distance_ * std::exp(dyPixels * 0.00625f * nav.zoom), kMinDistance, kMaxDistance);
 }
 
 void OrbitalCamera::resetView() {

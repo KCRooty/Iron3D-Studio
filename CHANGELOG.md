@@ -6,6 +6,21 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (30): Menú contextual de modelado como el de C4D, menú Malla completo y Preferencias con árbol
+
+**Añadido**
+- **Clic derecho en el visor con un objeto editable en modo Puntos/Aristas/Polígonos**: ahora sale el menú de modelado de Cinema 4D (Deshacer Acción, Encuadrar Elementos, Crear Punto, Puente, Cerrar Agujero, Cortar Línea, Soldar, Bisel, Extruir, Extrusión Interior, Normales, Colapso, Optimizar, Separar, Subdividir, N-gons…). En modo Objeto sigue el menú de siempre.
+- **Menú Malla** reconstruido con sus submenús (Conversión, Comandos, Herramientas Crear, Herramientas Transformar, Spline, N-Gons, Normales, Centrar Ejes, Simetría de edición), **Esculpir** (con Pinceles) y **Ayuda**.
+- Operaciones nuevas que funcionan: **Optimizar** (une puntos a menos de una tolerancia en cm, quita puntos sueltos y polígonos sin área; rueda dentada con la tolerancia), **Colapso** (cada grupo de polígonos seleccionados pasa a un punto; con puntos, los suelda), **Separar** (los polígonos seleccionados pasan a un objeto nuevo), **Eliminar N-gons** y **Retriangular N-gons**.
+- **Preferencias** con el árbol de páginas de C4D (Interfaz, Navegación, OpenGL, Renderizador…); solo están activas las páginas que cambian algo. Nueva página **Navegación**: velocidad de Pan, Zoom y Órbita (10–500 %) y Órbita invertida, aplicadas al momento y guardadas. Botón para abrir la carpeta de preferencias.
+
+**Límites**
+- Las entradas que aún no existen (Crear Punto, Magnetismo, Reflejar, Conectar, Disolver, Fundir, Desconectar, herramientas de Spline, Pinceles de Esculpir, Ayuda…) salen en gris, como en C4D sin función. «Desconectar» no se puede representar porque los puntos se unifican por posición.
+- Las demás páginas de Preferencias están desactivadas hasta que tengan ajustes reales.
+- Idiomas ru/pl/cs/zh/ja/ko: lo nuevo sale en inglés.
+
+**Verificado:** compilación, 9 suites de tests (incluye Optimizar y Colapso sobre el cubo). **Sin probar:** los menús y las Preferencias en pantalla (Iron3D seguía abierto y no se ha relanzado el exe nuevo).
+
 ### 2026-11-20 (29): El idioma se cambia al momento, sin reiniciar
 
 **Corregido**

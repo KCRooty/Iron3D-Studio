@@ -34,4 +34,7 @@ std::vector<std::filesystem::path> openFilesDialog(const std::string& title,
 enum class SaveChoice { Yes, No, Cancel };
 SaveChoice askSaveChanges(const std::string& title, const std::string& text);
 
+// Abre una carpeta en el explorador de archivos del sistema (Windows; en el resto no hace nada). true = lanzado.
+bool openFolderInExplorer(const std::filesystem::path& dir);
+
 } // namespace iron3d

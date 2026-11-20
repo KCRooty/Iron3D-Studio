@@ -1,5 +1,7 @@
 #include "Preferences.h"
 
+#include <algorithm>
+#include <cstdlib>
 #include <fstream>
 
 namespace iron3d {
@@ -35,6 +37,10 @@ Preferences loadPreferences(const std::filesystem::path& path) {
         const std::string val = line.substr(eq + 1);
         if (key == "renderBackend") prefs.renderBackend = backendFromCode(val);
         else if (key == "language") prefs.language = val;
+        else if (key == "nav.pan") prefs.navPan = std::clamp(std::atoi(val.c_str()), 10, 500);
+        else if (key == "nav.zoom") prefs.navZoom = std::clamp(std::atoi(val.c_str()), 10, 500);
+        else if (key == "nav.orbit") prefs.navOrbit = std::clamp(std::atoi(val.c_str()), 10, 500);
+        else if (key == "nav.invertOrbit") prefs.navInvertOrbit = val == "1";
         else readPresetKey(prefs.uiPreset, key, val);
     }
     return prefs;
@@ -46,6 +52,8 @@ bool savePreferences(const std::filesystem::path& path, const Preferences& prefs
     file << "IRON3D_PREFS " << kFormatVersion << "\n";
     file << "renderBackend=" << backendCode(prefs.renderBackend) << "\n";
     if (!prefs.language.empty()) file << "language=" << prefs.language << "\n";
+    file << "nav.pan=" << prefs.navPan << "\nnav.zoom=" << prefs.navZoom << "\nnav.orbit=" << prefs.navOrbit
+         << "\nnav.invertOrbit=" << (prefs.navInvertOrbit ? 1 : 0) << "\n";
     writePresetKeys(file, prefs.uiPreset);
     return (bool)file;
 }

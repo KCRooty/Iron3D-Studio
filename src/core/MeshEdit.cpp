@@ -969,4 +969,115 @@ MeshCheck checkMesh(const MeshTopology& topo) {
     return r;
 }
 
+namespace {
+
+// Une los puntos segun `rep` (punto -> grupo, o -1 = se queda) y coloca cada grupo en repPos. Las caras que se quedan con
+// menos de 3 puntos distintos desaparecen. changed lo pone quien llama.
+MeshEditResult mergePointGroups(const MeshData& mesh, const MeshTopology& topo, const std::vector<int>& rep,
+                                const std::vector<glm::vec3>& repPos) {
+    std::vector<Vertex> verts = mesh.vertices;
+    const std::vector<Face> faces = polyFaces(mesh, topo);
+    const int np = (int)topo.points.size();
+    auto key = [&](uint32_t v) {
+        const int q = topo.vertexPoint[v];
+        return rep[(size_t)q] >= 0 ? np + rep[(size_t)q] : q;
+    };
+    for (size_t v = 0; v < verts.size(); ++v) {
+        const int q = topo.vertexPoint[v];
+        if (rep[(size_t)q] >= 0) verts[v].position = repPos[(size_t)rep[(size_t)q]];
+    }
+    std::vector<Face> out;
+    for (const Face& f : faces) {
+        Face g;
+        for (uint32_t v : f.v) {
+            if (!g.v.empty() && key(g.v.back()) == key(v)) continue;
+            g.v.push_back(v);
+        }
+        while (g.v.size() > 1 && key(g.v.front()) == key(g.v.back())) g.v.pop_back();
+        std::set<int> distinct;
+        for (uint32_t v : g.v) distinct.insert(key(v));
+        if (g.v.size() >= 3 && distinct.size() >= 3) out.push_back(std::move(g));
+    }
+    return finish(std::move(verts), out, 1);
+}
+
+}  // namespace
+
+MeshEditResult optimizeMesh(const MeshData& mesh, const MeshTopology& topo, float tolerance) {
+    const int np = (int)topo.points.size();
+    std::vector<int> parent((size_t)np);
+    for (int i = 0; i < np; ++i) parent[(size_t)i] = i;
+    auto find = [&](int a) { while (parent[(size_t)a] != a) { parent[(size_t)a] = parent[(size_t)parent[(size_t)a]]; a = parent[(size_t)a]; } return a; };
+    const float tol = std::max(tolerance, 1e-7f);
+    std::map<std::array<long long, 3>, std::vector<int>> grid;
+    auto cell = [&](const glm::vec3& p) {
+        return std::array<long long, 3>{(long long)std::floor(p.x / tol), (long long)std::floor(p.y / tol), (long long)std::floor(p.z / tol)};
+    };
+    for (int i = 0; i < np; ++i) {
+        const auto c = cell(topo.points[(size_t)i]);
+        for (long long dx = -1; dx <= 1; ++dx)
+            for (long long dy = -1; dy <= 1; ++dy)
+                for (long long dz = -1; dz <= 1; ++dz) {
+                    const auto it = grid.find({c[0] + dx, c[1] + dy, c[2] + dz});
+                    if (it == grid.end()) continue;
+                    for (int j : it->second)
+                        if (glm::distance(topo.points[(size_t)i], topo.points[(size_t)j]) <= tol) parent[(size_t)find(i)] = find(j);
+                }
+        grid[c].push_back(i);
+    }
+    std::map<int, std::vector<int>> groups;
+    for (int i = 0; i < np; ++i) groups[find(i)].push_back(i);
+    std::vector<int> rep((size_t)np, -1);
+    std::vector<glm::vec3> repPos;
+    int merged = 0;
+    for (const auto& [root, members] : groups) {
+        if (members.size() < 2) continue;
+        glm::vec3 c(0.0f);
+        for (int q : members) c += topo.points[(size_t)q];
+        c /= (float)members.size();
+        for (int q : members) rep[(size_t)q] = (int)repPos.size();
+        repPos.push_back(c);
+        merged += (int)members.size() - 1;
+    }
+    std::vector<char> used((size_t)np, 0);
+    for (const auto& pl : topo.polys) for (int q : pl) used[(size_t)q] = 1;
+    int loose = 0;
+    for (int i = 0; i < np; ++i) loose += used[(size_t)i] ? 0 : 1;
+    const size_t polysBefore = topo.polys.size();
+    MeshEditResult r = mergePointGroups(mesh, topo, rep, repPos);
+    const MeshTopology after = buildMeshTopology(r.mesh);
+    const int dropped = (int)polysBefore - (int)after.polys.size();
+    r.changed = merged + loose + std::max(0, dropped);
+    if (r.changed == 0) r.mesh = mesh;
+    return r;
+}
+
+MeshEditResult collapsePolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys) {
+    const int np = (int)topo.points.size();
+    std::vector<int> parent((size_t)np);
+    for (int i = 0; i < np; ++i) parent[(size_t)i] = i;
+    auto find = [&](int a) { while (parent[(size_t)a] != a) { parent[(size_t)a] = parent[(size_t)parent[(size_t)a]]; a = parent[(size_t)a]; } return a; };
+    std::vector<char> inSel((size_t)np, 0);
+    for (int p : polys) {
+        if (p < 0 || p >= (int)topo.polys.size()) continue;
+        const auto& pl = topo.polys[(size_t)p];
+        for (int q : pl) { inSel[(size_t)q] = 1; parent[(size_t)find(q)] = find(pl[0]); }
+    }
+    std::map<int, std::vector<int>> groups;
+    for (int i = 0; i < np; ++i) if (inSel[(size_t)i]) groups[find(i)].push_back(i);
+    std::vector<int> rep((size_t)np, -1);
+    std::vector<glm::vec3> repPos;
+    for (const auto& [root, members] : groups) {
+        glm::vec3 c(0.0f);
+        for (int q : members) c += topo.points[(size_t)q];
+        c /= (float)members.size();
+        for (int q : members) rep[(size_t)q] = (int)repPos.size();
+        repPos.push_back(c);
+    }
+    if (repPos.empty()) { MeshEditResult none; none.mesh = mesh; return none; }
+    MeshEditResult r = mergePointGroups(mesh, topo, rep, repPos);
+    r.changed = (int)repPos.size();
+    return r;
+}
+
 } // namespace iron3d

@@ -55,6 +55,12 @@ public:
     View view() const { return view_; }
     bool isOrtho() const { return view_ != View::Perspective; }
 
+    // Preferencias > Navegacion: multiplicadores de velocidad (1 = 100 %) e inversion de la orbita.
+    struct NavSettings {
+        float orbit = 1.0f, pan = 1.0f, zoom = 1.0f;
+        bool invertOrbit = false;
+    } nav;
+
 private:
     View view_ = View::Perspective;
     glm::vec3 target_{0.0f, 0.0f, 0.0f};

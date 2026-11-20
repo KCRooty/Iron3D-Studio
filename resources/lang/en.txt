@@ -1197,3 +1197,78 @@ Exportar a Source (SMD)	Export to Source (SMD)
 Escena.smd	Scene.smd
 Exportar SMD	Export SMD
 SMD: solo geometría, normales y UV; sin esqueleto ni animación. Cada material de Source necesita su .vmt.	SMD: geometry, normals and UVs only; no skeleton or animation. Each Source material needs its own .vmt.
+Crear Punto	Create Point
+Cerrar Agujero de Polígonos	Close Polygon Hole
+Lápiz Polígonos	Polygon Pen
+Cortar Línea	Line Cut
+Cortar Plano	Plane Cut
+Cortar Cíclico/Trayectoria	Loop/Path Cut
+Magnetismo	Magnet
+Reflejar	Mirror
+Puntada y Cosido	Stitch and Sew
+Extruir	Extrude
+Extrusión Interior	Extrude Inner
+Extrusión Matriz	Matrix Extrude
+Suavizar Desplazamiento	Smooth Shift
+Mover Normal	Normal Move
+Escalar Normal	Normal Scale
+Rotar Normal	Normal Rotate
+Destriangular...	Untriangulate...
+Retriangular N-gons	Retriangulate N-gons
+Eliminar N-gons	Remove N-gons
+Clonar	Clone
+Desconectar...	Disconnect...
+Separar	Split
+Colapso	Collapse
+Conectar	Connect
+Fundir	Melt
+Disolver	Dissolve
+Subdividir...	Subdivide...
+Asignar Valor al Punto	Set Point Value
+Voltear Arista	Turn Edge
+Aristas a Spline	Edge to Spline
+Cambiar Orden de Puntos	Change Point Order
+Optimizar...	Optimize...
+Restaurar Escala...	Reset Scale...
+Configuración Modelado	Modeling Settings
+Deshacer (Acción)	Undo (Action)
+Mayús+Z	Shift+Z
+Encuadrar Elementos Seleccionados	Frame Selected Elements
+Invertir Órbita	Invert Orbit
+Velocidad Pan	Pan Speed
+Velocidad Muñeca/Zoom	Dolly/Zoom Speed
+Velocidad Órbita	Orbit Speed
+Se aplica al momento. Alt+clic orbita, panea y hace zoom; la rueda acerca y aleja.	Applied instantly. Alt+click orbits, pans and zooms; the wheel moves closer and farther.
+Dispositivos de Entrada	Input Devices
+Comunicación	Communication
+Escultura	Sculpting
+Motor Houdini	Houdini Engine
+Motor Substance	Substance Engine
+Previo del Material	Material Preview
+Importación/Exportación	Import/Export
+Colores Esquema	Scheme Colors
+Conversión	Conversion
+Comandos	Commands
+Herramientas Crear	Create Tools
+Herramientas Transformar	Transform Tools
+Interpolación Dura	Hard Interpolation
+Interpolación Suave	Soft Interpolation
+Igualar Longitud de Tangentes	Equal Tangent Length
+Igualar Dirección de Tangentes	Equal Tangent Direction
+Unir Segmento	Join Segment
+Romper Segmento	Break Segment
+Explotar Segmentos	Explode Segments
+Asignar Primer Punto	Set First Point
+Invertir Secuencia	Reverse Sequence
+Mover Secuencia Abajo	Move Sequence Down
+Mover Secuencia Arriba	Move Sequence Up
+Contornear	Outline
+Sección Transversal	Cross Section
+Alinear	Align
+Proyectar	Project
+Redondear	Round
+Unión Spline	Spline Union
+Intersección Spline	Spline Intersection
+Centrar Ejes	Center Axis
+Centrar Eje a Objeto	Center Axis to Object
+Centrar Eje a Selección	Center Axis to Selection

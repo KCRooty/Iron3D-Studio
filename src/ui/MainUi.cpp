@@ -249,12 +249,13 @@ struct UiState {
     bool toolApplyRequested = false;  // boton Aplicar de la ventana de la herramienta
 
     // Opciones de herramienta (la rueda dentada de los menus, como en C4D).
-    enum class OptWin { None, RectSel, LassoSel, Connect };
+    enum class OptWin { None, RectSel, LassoSel, Connect, Optimize };
     OptWin optWin = OptWin::None;
     ImVec2 optPos{0.0f, 0.0f};
     bool selTolerant = true;       // Seleccion Rectangular/Lazo: tocar basta
     bool selVisibleOnly = true;    // Solo Seleccionar Visibles (componentes tapados no cuentan)
     bool connectWeld = true;       // Conectar Objetos: soldar puntos coincidentes
+    float optimizeTolCm = 0.01f;   // tolerancia de Optimizar, en cm
     float connectWeldCm = 0.01f;   // tolerancia de la soldadura, en cm
 
     // Animacion (F9): canales que se graban, claves automaticas y ultimo
@@ -2554,6 +2555,152 @@ void drawCommander(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scene
     if (!open) g.showCommander = false;
 }
 
+// --- Herramientas de modelado en los menus (Malla, menu contextual de componentes) ---------------
+// op: "tool:knife|extrude|inner|bevel" (herramienta interactiva), una operacion de runCompOp, o "" = aun no
+// existe (sale en gris). need = 3: solo en modo Poligonos.
+void meshItem(const char* label, const char* key, const char* op, const SceneNode* selected, int need = 0) {
+    using MT = UiState::ModelTool;
+    const int cm = componentModeFor(selected);
+    bool enabled = op[0] != '\0';
+    bool checked = false;
+    MT tool = MT::None;
+    if (std::strncmp(op, "tool:", 5) == 0) {
+        const char* n = op + 5;
+        tool = !std::strcmp(n, "knife") ? MT::Knife : !std::strcmp(n, "extrude") ? MT::Extrude
+               : !std::strcmp(n, "inner") ? MT::InnerExtrude : MT::Bevel;
+        enabled = editableMesh(selected) != nullptr;
+        checked = g.modelTool == tool;
+    } else if (enabled) {
+        enabled = need == 3 ? cm == 3 : cm != 0;
+    }
+    if (ImGui::MenuItemEx(label, kIconGutterText, key && key[0] ? key : nullptr, checked, enabled)) {
+        if (tool != MT::None) setModelTool(tool);
+        else g.compOp = op;
+    }
+}
+
+void meshCreateTools(const SceneNode* s) {
+    meshItem(tr("Crear Punto"), "M~A", "", s);
+    meshItem(tr("Puente"), "M~B, B", "bridge", s, 3);
+    meshItem(tr("Pincel"), "M~C", "", s);
+    meshItem(tr("Cerrar Agujero de Polígonos"), "M~D", "close", s);
+    meshItem(tr("Lápiz Polígonos"), "M~E", "", s);
+    ImGui::Separator();
+    meshItem(tr("Cortar Línea"), "K~K, M~K", "tool:knife", s);
+    meshItem(tr("Cortar Plano"), "K~J, M~J", "", s);
+    meshItem(tr("Cortar Cíclico/Trayectoria"), "K~L, M~L", "", s);
+}
+
+void meshTransformTools(const SceneNode* s) {
+    meshItem(tr("Planchar"), "M~G", "", s);
+    meshItem(tr("Magnetismo"), "M~I", "", s);
+    meshItem(tr("Reflejar"), "M~H", "", s);
+    meshItem(tr("Puntada y Cosido"), "M~P", "", s);
+    meshItem(tr("Soldar"), "M~Q", "weld", s);
+    ImGui::Separator();
+    meshItem(tr("Bisel"), "M~S", "tool:bevel", s);
+    meshItem(tr("Extruir"), "M~T, D", "tool:extrude", s);
+    meshItem(tr("Extrusión Interior"), "M~W, I", "tool:inner", s);
+    meshItem(tr("Extrusión Matriz"), "M~X", "", s);
+    meshItem(tr("Suavizar Desplazamiento"), "M~Y", "", s);
+    ImGui::Separator();
+    meshItem(tr("Mover Normal"), "M~Z", "", s);
+    meshItem(tr("Escalar Normal"), "M~#", "", s);
+    meshItem(tr("Rotar Normal"), "M~,", "", s);
+}
+
+void meshNormalsItems(const SceneNode* s) {
+    meshItem(tr("Alinear Normales"), "U~A", "align", s);
+    meshItem(tr("Invertir Normales"), "U~R", "flip", s);
+}
+
+void meshNgonItems(const SceneNode* s) {
+    meshItem(tr("Triangular"), "", "triang", s);
+    meshItem(tr("Destriangular..."), "U~U, U~Mayús+U", "untriang", s);
+    meshItem(tr("Retriangular N-gons"), "U~G", "retringons", s);
+    meshItem(tr("Eliminar N-gons"), "U~E", "rmngons", s);
+}
+
+void meshCommandsMenu(const SceneNode* s) {
+    meshItem(tr("Matriz"), "", "", s);
+    meshItem(tr("Clonar"), "", "", s);
+    ImGui::Separator();
+    meshItem(tr("Desconectar..."), "U~D, U~Mayús+D", "", s);
+    meshItem(tr("Separar"), "U~P", "split", s, 3);
+    ImGui::Separator();
+    meshItem(tr("Colapso"), "U~C", "collapse", s);
+    meshItem(tr("Conectar"), "M~M", "", s);
+    meshItem(tr("Fundir"), "U~Z", "", s);
+    meshItem(tr("Disolver"), "M~N", "", s);
+    ImGui::Separator();
+    meshItem(tr("Subdividir..."), "U~S, U~Mayús+S", "subdiv", s);
+    meshItem(tr("Triangular"), "", "triang", s);
+    meshItem(tr("Destriangular..."), "U~U, U~Mayús+U", "untriang", s);
+    ImGui::Separator();
+    meshItem(tr("Asignar Valor al Punto"), "M~U", "", s);
+    meshItem(tr("Voltear Arista"), "M~V", "", s);
+    meshItem(tr("Aristas a Spline"), "", "", s);
+    meshItem(tr("Cambiar Orden de Puntos"), "", "", s);
+    ImGui::Separator();
+    {
+        bool gear = false;
+        const int cm = componentModeFor(s);
+        if (gearMenuItem(nullptr, tr("Optimizar..."), "U~O, U~Mayús+O", false, cm != 0, &gear)) g.compOp = "optimize";
+        if (gear) openToolOptions((int)UiState::OptWin::Optimize);
+    }
+    meshItem(tr("Restaurar Escala..."), "", "", s);
+    meshItem(tr("Configuración Modelado"), "Mayús+M", "", s);
+    ImGui::Separator();
+    meshItem(tr("Comprobar Malla"), "", "check", s);
+}
+
+// Clic derecho en el visor con un objeto editable en modo Puntos/Aristas/Polígonos: el menu de modelado de C4D.
+void drawComponentContextMenu(SceneNode& root, SceneNode*& selected, SceneHistory& history) {
+    const SceneNode* s = selected;
+    if (iconMenuItem(Icon::Undo, tr("Deshacer (Acción)"), tr("Mayús+Z"), false, history.canUndo()))
+        if (history.undo(root)) selected = nullptr;
+    if (ImGui::MenuItem(tr("Encuadrar Elementos Seleccionados"), "Alt+S, S")) g.pendingCmd = UiCmd::FrameSelected;
+    ImGui::Separator();
+    meshItem(tr("Crear Punto"), "M~A", "", s);
+    meshItem(tr("Puente"), "M~B, B", "bridge", s, 3);
+    meshItem(tr("Pincel"), "M~C", "", s);
+    meshItem(tr("Cerrar Agujero de Polígonos"), "M~D", "close", s);
+    meshItem(tr("Lápiz Polígonos"), "M~E", "", s);
+    meshItem(tr("Disolver"), "M~N", "", s);
+    meshItem(tr("Planchar"), "M~G", "", s);
+    meshItem(tr("Cortar Línea"), "K~K, M~K", "tool:knife", s);
+    meshItem(tr("Cortar Plano"), "K~J, M~J", "", s);
+    meshItem(tr("Cortar Cíclico/Trayectoria"), "K~L, M~L", "", s);
+    meshItem(tr("Magnetismo"), "M~I", "", s);
+    meshItem(tr("Reflejar"), "M~H", "", s);
+    meshItem(tr("Asignar Valor al Punto"), "M~U", "", s);
+    meshItem(tr("Puntada y Cosido"), "M~P", "", s);
+    meshItem(tr("Soldar"), "M~Q", "weld", s);
+    ImGui::Separator();
+    meshItem(tr("Bisel"), "M~S", "tool:bevel", s);
+    meshItem(tr("Extruir"), "M~T, D", "tool:extrude", s);
+    meshItem(tr("Extrusión Interior"), "M~W, I", "tool:inner", s);
+    meshItem(tr("Extrusión Matriz"), "M~X", "", s);
+    meshItem(tr("Suavizar Desplazamiento"), "M~Y", "", s);
+    ImGui::Separator();
+    meshItem(tr("Mover Normal"), "M~Z", "", s);
+    meshItem(tr("Escalar Normal"), "M~#", "", s);
+    meshItem(tr("Rotar Normal"), "M~,", "", s);
+    ImGui::Separator();
+    meshNormalsItems(s);
+    ImGui::Separator();
+    meshItem(tr("Matriz"), "", "", s);
+    meshItem(tr("Clonar"), "", "", s);
+    meshItem(tr("Colapso"), "U~C", "collapse", s);
+    meshItem(tr("Desconectar..."), "U~D, U~Mayús+D", "", s);
+    meshItem(tr("Fundir"), "U~Z", "", s);
+    meshItem(tr("Optimizar..."), "U~O, U~Mayús+O", "optimize", s);
+    meshItem(tr("Separar"), "U~P", "split", s, 3);
+    meshItem(tr("Subdividir..."), "U~S, U~Mayús+S", "subdiv", s);
+    ImGui::Separator();
+    meshNgonItems(s);
+}
+
 // Clic derecho en el visor (sin Alt y sin arrastrar): menu contextual del
 // Modo Modelo de C4D R19, con lo que Iron3D ya sabe hacer activo.
 void drawViewportContextMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneHistory& history,
@@ -2572,6 +2719,11 @@ void drawViewportContextMenu(SceneNode& root, SceneNode*& selected, GizmoMode& m
         ImGui::OpenPopup("##vpctx");
     }
     if (!ImGui::BeginPopup("##vpctx")) return;
+    if (componentModeFor(selected) != 0) {
+        drawComponentContextMenu(root, selected, history);
+        ImGui::EndPopup();
+        return;
+    }
     const bool hasSel = selected != nullptr;
     if (iconMenuItem(Icon::Undo, tr("Deshacer"), tr("Ctrl+Z"), false, history.canUndo()))
         if (history.undo(root)) selected = nullptr;
@@ -2796,16 +2948,62 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         }
     };
     if (ImGui::BeginMenu(tr("Malla"))) {
-        if (iconMenuItem(Icon::MakeEditable, tr("Hacer Editable"), "C", false, canMakeEditable(root, selected)))
-            g.pendingCmd = UiCmd::MakeEditable;
-        if (ImGui::MenuItem(tr("Estado Actual a Objeto"), nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::CurrentState;
-        {
-            bool gc = false;
-            const Icon ic = Icon::ModConnect;
-            if (gearMenuItem(&ic, tr("Conectar Objetos"), nullptr, false, selected != nullptr, &gc)) g.pendingCmd = UiCmd::Connect;
-            if (gc) openToolOptions((int)UiState::OptWin::Connect);
+        const SceneNode* ms = selected;
+        if (ImGui::BeginMenu(tr("Conversión"))) {
+            if (iconMenuItem(Icon::MakeEditable, tr("Hacer Editable"), "C", false, canMakeEditable(root, selected)))
+                g.pendingCmd = UiCmd::MakeEditable;
+            if (ImGui::MenuItem(tr("Estado Actual a Objeto"), nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::CurrentState;
+            {
+                bool gc = false;
+                const Icon ic = Icon::ModConnect;
+                if (gearMenuItem(&ic, tr("Conectar Objetos"), nullptr, false, selected != nullptr, &gc)) g.pendingCmd = UiCmd::Connect;
+                if (gc) openToolOptions((int)UiState::OptWin::Connect);
+            }
+            if (ImGui::MenuItem(tr("Conectar Objetos + Eliminar"), nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::ConnectDelete;
+            ImGui::EndMenu();
         }
-        if (ImGui::MenuItem(tr("Conectar Objetos + Eliminar"), nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::ConnectDelete;
+        if (ImGui::BeginMenu(tr("Comandos"))) {
+            meshCommandsMenu(ms);
+            ImGui::EndMenu();
+        }
+        ImGui::Separator();
+        if (ImGui::BeginMenu(tr("Herramientas Crear"))) {
+            meshCreateTools(ms);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu(tr("Herramientas Transformar"))) {
+            meshTransformTools(ms);
+            ImGui::EndMenu();
+        }
+        ImGui::Separator();
+        if (ImGui::BeginMenu(tr("Spline"))) {
+            disabledItems({{tr("Interpolación Dura"), ""}, {tr("Interpolación Suave"), ""}, {nullptr, nullptr},
+                           {tr("Igualar Longitud de Tangentes"), ""}, {tr("Igualar Dirección de Tangentes"), ""}, {nullptr, nullptr},
+                           {tr("Unir Segmento"), ""}, {tr("Romper Segmento"), ""}, {tr("Explotar Segmentos"), ""}, {nullptr, nullptr},
+                           {tr("Asignar Primer Punto"), ""}, {tr("Invertir Secuencia"), ""}, {tr("Mover Secuencia Abajo"), ""},
+                           {tr("Mover Secuencia Arriba"), ""}, {nullptr, nullptr},
+                           {tr("Suavizado Spline"), ""}, {tr("Bisel"), ""}, {tr("Contornear"), ""}, {tr("Sección Transversal"), ""},
+                           {tr("Alinear"), ""}, {tr("Proyectar"), ""}, {tr("Redondear"), ""}, {nullptr, nullptr},
+                           {tr("Sustraer Spline"), ""}, {tr("Unión Spline"), ""}, {tr("Spline Y"), ""}, {tr("Spline O"), ""},
+                           {tr("Intersección Spline"), ""}});
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu(tr("N-Gons"))) {
+            meshNgonItems(ms);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu(tr("Normales"))) {
+            meshNormalsItems(ms);
+            ImGui::Separator();
+            meshItem(tr("Mover Normal"), "M~Z", "", ms);
+            meshItem(tr("Escalar Normal"), "M~#", "", ms);
+            meshItem(tr("Rotar Normal"), "M~,", "", ms);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu(tr("Centrar Ejes"))) {
+            disabledItems({{tr("Centrar Eje a Objeto"), ""}, {tr("Centrar Eje a Selección"), ""}});
+            ImGui::EndMenu();
+        }
         ImGui::Separator();
         if (ImGui::BeginMenu(tr("Simetría de edición"), editableMesh(selected) != nullptr)) {
             if (ImGui::MenuItem(tr("Apagada"), nullptr, g.symAxis < 0)) g.symAxis = -1;
@@ -2815,28 +3013,6 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
             ImGui::SetNextItemWidth(110.0f);
             ImGui::DragFloat(tr("Tolerancia (cm)"), &g.symTolCm, 0.05f, 0.01f, 20.0f, "%.2f");
             ImGui::EndMenu();
-        }
-        {
-            using MT = UiState::ModelTool;
-            const bool editable = editableMesh(selected) != nullptr;
-            if (ImGui::MenuItemEx(tr("Cuchillo"), kIconGutterText, "K", g.modelTool == MT::Knife, editable)) setModelTool(MT::Knife);
-            if (ImGui::MenuItemEx(tr("Extrusión"), kIconGutterText, "D", g.modelTool == MT::Extrude, editable)) setModelTool(MT::Extrude);
-            if (ImGui::MenuItemEx(tr("Extrusión Interna"), kIconGutterText, "I", g.modelTool == MT::InnerExtrude, editable))
-                setModelTool(MT::InnerExtrude);
-            if (ImGui::MenuItemEx(tr("Bisel"), kIconGutterText, "M~S", g.modelTool == MT::Bevel, editable)) setModelTool(MT::Bevel);
-        }
-        {
-            const int cm = componentModeFor(selected);
-            if (ImGui::MenuItemEx(tr("Cerrar Agujero Poligonal"), kIconGutterText, "M~D", false, cm != 0)) g.compOp = "close";
-            if (ImGui::MenuItemEx(tr("Soldar"), kIconGutterText, "M~Q", false, cm != 0)) g.compOp = "weld";
-            if (ImGui::MenuItemEx(tr("Subdividir"), kIconGutterText, "U~S", false, cm != 0)) g.compOp = "subdiv";
-            if (ImGui::MenuItemEx(tr("Puente"), kIconGutterText, "M~B", false, cm == 3)) g.compOp = "bridge";
-            if (ImGui::MenuItemEx(tr("Comprobar Malla"), kIconGutterText, nullptr, false, cm != 0)) g.compOp = "check";
-            disabledItems({{tr("Pincel"), "M~C"}, {tr("Planchar"), "M~G"}, {nullptr, nullptr}});
-            if (ImGui::MenuItemEx(tr("Invertir Normales"), kIconGutterText, "U~R", false, cm != 0)) g.compOp = "flip";
-            if (ImGui::MenuItemEx(tr("Alinear Normales"), kIconGutterText, "U~A", false, cm != 0)) g.compOp = "align";
-            if (ImGui::MenuItemEx(tr("Triangular"), kIconGutterText, nullptr, false, cm != 0)) g.compOp = "triang";
-            if (ImGui::MenuItemEx(tr("Destriangular"), kIconGutterText, nullptr, false, cm != 0)) g.compOp = "untriang";
         }
         ImGui::EndMenu();
     }
@@ -2907,8 +3083,22 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         if (iconMenuItem(Icon::MnuPictureViewer, tr("Visor de Imágenes..."), "")) g.showPictureViewer = true;
         ImGui::EndMenu();
     }
-    stubTop(tr("Esculpir"), {{tr("Subdividir"), ""}, {tr("Reducir"), ""}, {nullptr, nullptr}, {tr("Tirar"), ""}, {tr("Suavizar"), ""},
-                         {tr("Inflar"), ""}, {tr("Aplanar"), ""}, {tr("Pellizcar"), ""}, {tr("Amasar"), ""}});
+    if (ImGui::BeginMenu(tr("Esculpir"))) {
+        meshItem(tr("Subdividir"), "", "", selected);
+        disabledItems({{tr("Reducir"), ""}, {tr("Incrementar"), ""}, {nullptr, nullptr}});
+        if (ImGui::BeginMenu(tr("Pinceles"))) {
+            disabledItems({{tr("Estirar"), ""}, {tr("Agarrar"), ""}, {tr("Suavizar"), ""}, {tr("Encerar"), ""}, {tr("Cortar"), ""},
+                           {tr("Pellizcar"), ""}, {tr("Achatar"), ""}, {tr("Inflar"), ""}, {tr("Amplificar"), ""},
+                           {tr("Rellenar"), ""}, {tr("Repetir"), ""}, {tr("Raspar"), ""}, {nullptr, nullptr},
+                           {tr("Borrar"), ""}, {tr("Seleccionar"), ""}});
+            ImGui::EndMenu();
+        }
+        ImGui::BeginMenuEx(tr("Máscara"), kIconGutterText, false);
+        ImGui::Separator();
+        disabledItems({{tr("Bakear Objeto Esculpido"), ""}, {tr("Simetría Esculpir"), ""}, {tr("Proyectar Malla"), ""},
+                       {tr("Des-Subdividir"), ""}, {tr("Esculpir a Pose Morph"), ""}});
+        ImGui::EndMenu();
+    }
     stubTop(tr("Motion Tracker"), {{tr("Motion Tracker"), ""}, {tr("Rastreador de Objetos"), ""}});
     stubTop(tr("MoGraph"), {{tr("Ocultar Seleccionado"), ""}, {tr("Intercambiar Clonador-Matriz"), ""}, {tr("Selección MoGraph"), ""},
                         {tr("Pincel Pesos MoGraph"), ""}, {nullptr, nullptr}, {tr("Clonador"), ""}, {tr("Matriz"), ""},
@@ -2937,8 +3127,10 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
     }
     if (ImGui::BeginMenu(tr("Ayuda"))) {
         iconMenuItem(Icon::MnuHelp, tr("Mostrar Ayuda..."), "F1", false, false);
-        ImGui::Separator();
-        if (iconMenuItem(Icon::MnuAbout, tr("Acerca de Iron3D Studio..."))) g.showAbout = true;
+        disabledItems({{tr("Mostrar Tutoriales..."), ""}, {tr("Soporte de Static Forge..."), ""}, {tr("Aprendizaje Online..."), ""},
+                       {nullptr, nullptr}, {tr("Comprobar Actualizaciones..."), ""}, {tr("Instalación Manual..."), ""},
+                       {nullptr, nullptr}, {tr("Registro Online..."), ""}, {tr("Personalizar..."), ""}});
+        if (iconMenuItem(Icon::MnuAbout, tr("Información..."))) g.showAbout = true;
         ImGui::EndMenu();
     }
 
@@ -6035,28 +6227,68 @@ void drawInterfacePage(Preferences& prefs, const std::filesystem::path& prefsPat
     if (!statusMsg.empty()) ImGui::TextUnformatted(statusMsg.c_str());
 }
 
+// Preferencias > Navegacion: lo que de verdad cambia el visor (velocidades y orbita invertida).
+void drawNavigationPage(Preferences& prefs, const std::filesystem::path& prefsPath, std::string& statusMsg) {
+    bool changed = false;
+    auto row = [&](const char* label) {
+        ImGui::TextUnformatted(label);
+        ImGui::SameLine(260.0f);
+        ImGui::SetNextItemWidth(120.0f);
+    };
+    row(tr("Invertir Órbita"));
+    changed |= ImGui::Checkbox("##invorb", &prefs.navInvertOrbit);
+    ImGui::Separator();
+    row(tr("Velocidad Pan"));
+    ImGui::DragInt("##navpan", &prefs.navPan, 1.0f, 10, 500, "%d %%");
+    changed |= ImGui::IsItemDeactivatedAfterEdit();
+    row(tr("Velocidad Muñeca/Zoom"));
+    ImGui::DragInt("##navzoom", &prefs.navZoom, 1.0f, 10, 500, "%d %%");
+    changed |= ImGui::IsItemDeactivatedAfterEdit();
+    row(tr("Velocidad Órbita"));
+    ImGui::DragInt("##navorbit", &prefs.navOrbit, 1.0f, 10, 500, "%d %%");
+    changed |= ImGui::IsItemDeactivatedAfterEdit();
+    prefs.navPan = std::clamp(prefs.navPan, 10, 500);
+    prefs.navZoom = std::clamp(prefs.navZoom, 10, 500);
+    prefs.navOrbit = std::clamp(prefs.navOrbit, 10, 500);
+    if (changed) statusMsg = savePreferences(prefsPath, prefs) ? std::string() : std::string(tr("Error al guardar las preferencias."));
+    ImGui::Dummy(ImVec2(0, 6));
+    ImGui::TextDisabled(tr("Se aplica al momento. Alt+clic orbita, panea y hace zoom; la rueda acerca y aleja."));
+}
+
 void drawPreferencesDialog(RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath) {
     if (!g.showPrefs) return;
     static std::string statusMsg;
     ImGui::SetNextWindowSize(ImVec2(900, 640), ImGuiCond_Appearing);
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if (ImGui::Begin(tr("Preferencias"), &g.showPrefs, ImGuiWindowFlags_NoCollapse)) {
+        // Las paginas de Cinema 4D R19; solo salen activas las que cambian algo en Iron3D.
+        struct Page { const char* name; bool usable; };
+        static const Page pages[] = {
+            {tr("Interfaz"), true},         {tr("Dispositivos de Entrada"), false}, {tr("Navegación"), true},
+            {tr("OpenGL"), true},           {tr("Vista"), false},                   {tr("Archivos"), false},
+            {tr("Unidades"), false},        {tr("Memoria"), false},                 {tr("Comunicación"), false},
+            {tr("Renderizador"), true},     {tr("BodyPaint 3D"), false},            {tr("Escultura"), false},
+            {tr("Hair"), false},            {tr("Línea de Tiempo"), false},         {tr("Motor Houdini"), false},
+            {tr("Motor Substance"), false}, {tr("Navegador de Contenido"), false},  {tr("Previo del Material"), false},
+            {tr("Projection Man"), false},  {tr("Sketch and Toon"), false},         {tr("Tomas"), false},
+            {tr("Importación/Exportación"), false}, {tr("Colores Esquema"), false}};
         static int page = 0;
-        const char* pages[] = {tr("Interfaz"), tr("Visor"), tr("Archivos"), tr("Unidades"), tr("Memoria"), tr("Renderizador")};
-        ImGui::BeginChild("##pages", ImVec2(150, 0), ImGuiChildFlags_Border);
+        const float footerH = ImGui::GetFrameHeight() + 10.0f;
+        ImGui::BeginChild("##pages", ImVec2(210, -footerH), ImGuiChildFlags_Border);
         for (int i = 0; i < IM_ARRAYSIZE(pages); ++i) {
-            if (i != 0 && i != 1 && i != 5) ImGui::BeginDisabled();
-            if (ImGui::Selectable(pages[i], page == i)) page = i;
-            if (i != 0 && i != 1 && i != 5) ImGui::EndDisabled();
+            ImGui::BeginDisabled(!pages[i].usable);
+            if (ImGui::Selectable(pages[i].name, page == i)) page = i;
+            ImGui::EndDisabled();
         }
         ImGui::EndChild();
         ImGui::SameLine();
-        ImGui::BeginChild("##page");
-        sectionHeader(pages[page]);
+        ImGui::BeginChild("##page", ImVec2(0, -footerH));
+        sectionHeader(pages[page].name);
         if (page == 0) {
             drawInterfacePage(prefs, prefsPath, statusMsg);
-        } else if (page == 1 || page == 5) {
-
+        } else if (page == 2) {
+            drawNavigationPage(prefs, prefsPath, statusMsg);
+        } else if (page == 3 || page == 9) {
             ImGui::Text(tr("Backend activo en esta sesión: %s"), activeBackend == RendererBackend::Vulkan ? tr("Vulkan") : tr("OpenGL"));
             ImGui::TextUnformatted(tr("Backend de render (se aplica al reiniciar):"));
             int idx = prefs.renderBackend == RendererBackend::Vulkan ? 0 : 1;
@@ -6067,9 +6299,12 @@ void drawPreferencesDialog(RendererBackend activeBackend, Preferences& prefs, co
                 statusMsg = savePreferences(prefsPath, prefs) ? tr("Guardado. Reinicie Iron3D Studio para aplicarlo.")
                                                               : tr("Error al guardar las preferencias.");
             }
-            if (!statusMsg.empty()) ImGui::TextUnformatted(statusMsg.c_str());
         }
+        if (!statusMsg.empty()) ImGui::TextUnformatted(statusMsg.c_str());
         ImGui::EndChild();
+        if (ImGui::Button(tr("Abrir Carpeta de Preferencias..."))) openFolderInExplorer(prefsPath.parent_path());
+        ImGui::SameLine();
+        ImGui::TextDisabled("%s", prefsPath.parent_path().string().c_str());
     }
     ImGui::End();
 }
@@ -6553,11 +6788,17 @@ void drawToolOptions() {
     if (g.optWin == UiState::OptWin::None) return;
     const char* title = g.optWin == UiState::OptWin::RectSel   ? tr("Selección Rectangular###toolopts")
                         : g.optWin == UiState::OptWin::LassoSel ? tr("Selección con Lazo###toolopts")
+                        : g.optWin == UiState::OptWin::Optimize ? tr("Optimizar###toolopts")
                                                                 : tr("Conectar Objetos###toolopts");
     ImGui::SetNextWindowPos(g.optPos, ImGuiCond_Appearing);
     bool open = true;
     if (ImGui::Begin(title, &open, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
-        if (g.optWin == UiState::OptWin::Connect) {
+        if (g.optWin == UiState::OptWin::Optimize) {
+            ImGui::SetNextItemWidth(120.0f);
+            ImGui::InputFloat(tr("Tolerancia (cm)"), &g.optimizeTolCm, 0.01f, 0.1f, "%.3f");
+            g.optimizeTolCm = std::clamp(g.optimizeTolCm, 0.0f, 1000.0f);
+            ImGui::TextDisabled(tr("Une los puntos más cercanos que la tolerancia y quita\nlos puntos sueltos y los polígonos sin área."));
+        } else if (g.optWin == UiState::OptWin::Connect) {
             ImGui::Checkbox(tr("Soldar"), &g.connectWeld);
             ImGui::BeginDisabled(!g.connectWeld);
             ImGui::SetNextItemWidth(120.0f);
@@ -7124,6 +7365,7 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
 
     MeshEditResult r;
     const char* name = "";
+    std::unique_ptr<MeshData> splitPart;
     if (op == "bridge") {
         name = tr("Puente");
         if (mode != 3 || c.sel.size() != 2) { flashStatus(tr("Puente: selecciona exactamente 2 polígonos (modo Polígonos).")); return false; }
@@ -7155,12 +7397,61 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
             r = triangulatePolygons(*c.mesh, t, polys);
             if (!r.changed) { flashStatus(tr("Triangular: no hay polígonos de más de 3 lados.")); return false; }
         }
+    } else if (op == "optimize") {
+        name = tr("Optimizar");
+        r = optimizeMesh(*c.mesh, t, g.optimizeTolCm / kCmPerUnit);
+        if (!r.changed) { flashStatus(tr("Optimizar: la malla ya está limpia.")); return false; }
+    } else if (op == "collapse") {
+        name = tr("Colapso");
+        if (mode == 3) {
+            if (c.sel.empty()) { flashStatus(tr("Colapso: selecciona polígonos.")); return false; }
+            r = collapsePolygons(*c.mesh, t, c.sel);
+        } else {
+            r = weldPoints(*c.mesh, t, selectedPoints());
+            if (!r.changed) { flashStatus(tr("Colapso: selecciona al menos 2 puntos.")); return false; }
+        }
+    } else if (op == "rmngons" || op == "retringons") {
+        std::set<int> ng;
+        for (int p = 0; p < (int)t.polys.size(); ++p)
+            if (t.polys[(size_t)p].size() > 4) ng.insert(p);
+        if (ng.empty()) { flashStatus(tr("No hay N-gons (polígonos de más de 4 lados).")); return false; }
+        if (op == "retringons") {
+            name = tr("Retriangular N-gons");
+            r = triangulatePolygons(*c.mesh, t, ng);
+        } else {
+            name = tr("Eliminar N-gons");
+            std::vector<char> keep(t.polys.size(), 1);
+            for (int p : ng) keep[(size_t)p] = 0;
+            r.mesh = keepPolygons(*c.mesh, t, keep);
+            r.changed = (int)ng.size();
+            if (r.mesh.indices.empty()) { flashStatus(tr("Eliminar N-gons: no quedaría nada de la malla.")); return false; }
+        }
+    } else if (op == "split") {
+        name = tr("Separar");
+        if (mode != 3 || c.sel.empty()) { flashStatus(tr("Separar: selecciona polígonos (modo Polígonos).")); return false; }
+        if (c.sel.size() >= t.polys.size()) { flashStatus(tr("Separar: queda toda la malla seleccionada.")); return false; }
+        std::vector<char> inPart(t.polys.size(), 0), inRest(t.polys.size(), 1);
+        for (int p : c.sel) if (p >= 0 && (size_t)p < inPart.size()) { inPart[(size_t)p] = 1; inRest[(size_t)p] = 0; }
+        splitPart = std::make_unique<MeshData>(keepPolygons(*c.mesh, t, inPart));
+        r.mesh = keepPolygons(*c.mesh, t, inRest);
+        r.changed = (int)c.sel.size();
     } else {
         flashStatus(tr("Operación desconocida: ") + op);
         return false;
     }
     if (!r.changed) return false;
     history.commitBefore(root);
+    if (splitPart && selected->parent()) {
+        // El trozo separado es un objeto nuevo, hermano del original y con su misma transformacion y material.
+        auto made = std::make_unique<SceneNode>(selected->name() + tr(" (separado)"), PrimitiveType::Mesh);
+        made->mesh = std::make_shared<const MeshData>(std::move(*splitPart));
+        made->materialIndex = selected->materialIndex;
+        made->position = selected->position;
+        made->rotationDeg = selected->rotationDeg;
+        made->scale = selected->scale;
+        SceneNode* parentNode = selected->parent();
+        parentNode->insertChild(std::move(made), parentNode->indexOf(selected) + 1);
+    }
     const std::vector<int> selTris = r.selectTris;
     selected->mesh = std::make_shared<const MeshData>(std::move(r.mesh));
     if (!selTris.empty() && g_vp) g_vp->compMode = 3;
@@ -7710,6 +8001,10 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
                  RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath,
                  std::vector<Material>& materials, OrbitalCamera& camera, ViewportState& viewport) {
     g_vp = &viewport;
+    camera.nav.pan = (float)prefs.navPan / 100.0f;
+    camera.nav.zoom = (float)prefs.navZoom / 100.0f;
+    camera.nav.orbit = (float)prefs.navOrbit / 100.0f;
+    camera.nav.invertOrbit = prefs.navInvertOrbit;
     if (!g.cleanInit) {  // primer fotograma / tras Nuevo o Abrir: la escena actual es el punto guardado
         g.cleanSnap = history.snapshot(root);
         g.cleanInit = true;

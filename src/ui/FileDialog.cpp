@@ -9,6 +9,7 @@
 #endif
 #include <windows.h>
 #include <commdlg.h>
+#include <shellapi.h>
 #pragma comment(lib, "comdlg32.lib")
 #endif
 
@@ -124,6 +125,11 @@ std::optional<std::filesystem::path> saveFileDialog(const std::string& title,
     return std::filesystem::path(buffer.data());
 }
 
+bool openFolderInExplorer(const std::filesystem::path& dir) {
+    const HINSTANCE h = ShellExecuteW(nullptr, L"open", dir.wstring().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    return (INT_PTR)h > 32;
+}
+
 SaveChoice askSaveChanges(const std::string& title, const std::string& text) {
     const int r = MessageBoxW(GetActiveWindow(), widen(text).c_str(), widen(title).c_str(),
                               MB_YESNOCANCEL | MB_ICONQUESTION | MB_SETFOREGROUND);
@@ -135,6 +141,8 @@ SaveChoice askSaveChanges(const std::string& title, const std::string& text) {
 bool nativeFileDialogAvailable() { return false; }
 
 SaveChoice askSaveChanges(const std::string&, const std::string&) { return SaveChoice::No; }
+
+bool openFolderInExplorer(const std::filesystem::path&) { return false; }
 
 std::optional<std::filesystem::path> saveFileDialog(const std::string&,
                                                     const std::vector<std::pair<std::string, std::string>>&,

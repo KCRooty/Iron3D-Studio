@@ -23,6 +23,9 @@ struct Preferences {
     // Idioma de la interfaz (codigo de i18n::languages()). Vacio = sin elegir: lo decide
     // language.cfg (lo escribe el instalador) y, si no existe, el ingles. Se aplica al reiniciar.
     std::string language;
+    // Navegacion del visor (Preferencias > Navegacion): velocidades en % y orbita invertida.
+    int navPan = 100, navZoom = 100, navOrbit = 100;
+    bool navInvertOrbit = false;
 };
 
 // Si el archivo no existe o no parsea, devuelve Preferences{} (default

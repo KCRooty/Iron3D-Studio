@@ -105,6 +105,14 @@ MeshEditResult alignNormals(const MeshData& mesh, const MeshTopology& topo, cons
 // (mismo poligono, distinto numero de lados, indices fuera de rango).
 MeshEditResult bridgePolygons(const MeshData& mesh, const MeshTopology& topo, int polyA, int polyB);
 
+// Optimizar (U~O): une los puntos que quedan a menos de `tolerance` (unidades) uno de otro, quita los poligonos que se
+// quedan con menos de 3 puntos distintos y los puntos que no usa nadie. changed = puntos unidos + puntos sueltos
+// quitados + poligonos degenerados quitados (0 = la malla ya estaba limpia).
+MeshEditResult optimizeMesh(const MeshData& mesh, const MeshTopology& topo, float tolerance);
+// Colapso (U~C): cada grupo de poligonos seleccionados conectados (comparten algun punto) se reduce a un solo punto en
+// su centro; los poligonos del grupo desaparecen y los vecinos se cierran sobre ese punto. changed = grupos colapsados.
+MeshEditResult collapsePolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);
+
 // Comprobar Malla: problemas de la topologia (indices de MeshTopology).
 struct MeshCheck {
     int openEdges = 0;          // aristas con un solo poligono (borde abierto)

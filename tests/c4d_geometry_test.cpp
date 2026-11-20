@@ -1136,6 +1136,24 @@ int main() {
         const MeshTopology wt = buildMeshTopology(weldPoints(cube, t, topPts).mesh);
         check(wt.points.size() == 5 && wt.polys.size() == 5 && euler(wt) == 2, "soldar: piramide 5/8/5");
 
+        // Optimizar: un cubo ya limpio no cambia; con un punto duplicado a 0,0005 de otro se une; Colapso: la cara de arriba
+        // se reduce a un punto (piramide de 5 puntos y 5 poligonos).
+        check(optimizeMesh(cube, t, 0.0001f).changed == 0, "optimizar: el cubo limpio no cambia");
+        {
+            MeshData dup = cube;
+            dup.vertices.push_back(dup.vertices[0]);
+            dup.vertices.back().position += glm::vec3(0.0005f, 0.0f, 0.0f);
+            dup.indices.push_back((uint32_t)dup.vertices.size() - 1);
+            dup.indices.push_back(dup.indices[1]);
+            dup.indices.push_back(dup.indices[2]);
+            dup.faceTris.clear();
+            const MeshTopology dt = buildMeshTopology(dup);
+            check(optimizeMesh(dup, dt, 0.001f).changed >= 1, "optimizar: puntos casi iguales se unen");
+        }
+        const MeshEditResult col = collapsePolygons(cube, t, {top});
+        const MeshTopology colt = buildMeshTopology(col.mesh);
+        check(col.changed == 1 && colt.points.size() == 5 && colt.polys.size() == 5, "colapso: la cara de arriba pasa a un punto");
+
         // Cerrar Agujero: el cubo sin la cara de arriba vuelve a cerrarse.
         std::vector<char> keep(t.polys.size(), 1);
         keep[(size_t)top] = 0;
