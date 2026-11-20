@@ -6,6 +6,16 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (34): Fundir, Reflejar, Restaurar Escala y cortes Plano/Cíclico en el menú
+
+**Añadido**
+- **Fundir** (puntos, aristas o polígonos): como Disolver; con puntos une todo lo que rodea al punto.
+- **Reflejar**: copia reflejada de los polígonos seleccionados (o de toda la malla) respecto al plano X, Y o Z del objeto (el que esté activo en Simetría de edición; X por defecto). La copia queda seleccionada.
+- **Restaurar Escala**: la escala del objeto pasa a los puntos y el objeto queda a escala 1, con la misma forma en pantalla. No se aplica si el objeto tiene hijos.
+- **Cortar Plano** y **Cortar Cíclico/Trayectoria** del menú Malla activan el Cuchillo en su modo Plano y Bucle (antes salían en gris).
+
+**Verificado:** compilación y tests (Reflejar sobre el cubo). **Sin probar:** los comandos en pantalla.
+
 ### 2026-11-20 (33): Planchar, Voltear Arista, Clonar y Conectar
 
 **Añadido**

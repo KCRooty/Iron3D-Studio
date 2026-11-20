@@ -2566,14 +2566,21 @@ void meshItem(const char* label, const char* key, const char* op, const SceneNod
     MT tool = MT::None;
     if (std::strncmp(op, "tool:", 5) == 0) {
         const char* n = op + 5;
-        tool = !std::strcmp(n, "knife") ? MT::Knife : !std::strcmp(n, "extrude") ? MT::Extrude
+        const bool kPlane = !std::strcmp(n, "knifeplane"), kLoop = !std::strcmp(n, "knifeloop");
+        tool = !std::strcmp(n, "knife") || kPlane || kLoop ? MT::Knife : !std::strcmp(n, "extrude") ? MT::Extrude
                : !std::strcmp(n, "inner") ? MT::InnerExtrude : MT::Bevel;
         enabled = editableMesh(selected) != nullptr;
         checked = g.modelTool == tool;
+        if (tool == MT::Knife)  // los tres modos del cuchillo: solo el suyo sale marcado
+            checked = checked && (kPlane ? g.knifePlane : kLoop ? g.knifeLoop : !g.knifePlane && !g.knifeLoop);
     } else if (enabled) {
         enabled = need == 3 ? cm == 3 : cm != 0;
     }
     if (ImGui::MenuItemEx(label, kIconGutterText, key && key[0] ? key : nullptr, checked, enabled)) {
+        if (tool == MT::Knife) {
+            g.knifePlane = std::strcmp(op, "tool:knifeplane") == 0;
+            g.knifeLoop = std::strcmp(op, "tool:knifeloop") == 0;
+        }
         if (tool != MT::None) setModelTool(tool);
         else g.compOp = op;
     }
@@ -2587,14 +2594,14 @@ void meshCreateTools(const SceneNode* s) {
     meshItem(tr("Lápiz Polígonos"), "M~E", "", s);
     ImGui::Separator();
     meshItem(tr("Cortar Línea"), "K~K, M~K", "tool:knife", s);
-    meshItem(tr("Cortar Plano"), "K~J, M~J", "", s);
-    meshItem(tr("Cortar Cíclico/Trayectoria"), "K~L, M~L", "", s);
+    meshItem(tr("Cortar Plano"), "K~J, M~J", "tool:knifeplane", s);
+    meshItem(tr("Cortar Cíclico/Trayectoria"), "K~L, M~L", "tool:knifeloop", s);
 }
 
 void meshTransformTools(const SceneNode* s) {
     meshItem(tr("Planchar"), "M~G", "relax", s);
     meshItem(tr("Magnetismo"), "M~I", "", s);
-    meshItem(tr("Reflejar"), "M~H", "", s);
+    meshItem(tr("Reflejar"), "M~H", "mirror", s);
     meshItem(tr("Puntada y Cosido"), "M~P", "", s);
     meshItem(tr("Soldar"), "M~Q", "weld", s);
     ImGui::Separator();
@@ -2630,7 +2637,7 @@ void meshCommandsMenu(const SceneNode* s) {
     ImGui::Separator();
     meshItem(tr("Colapso"), "U~C", "collapse", s);
     meshItem(tr("Conectar"), "M~M", "connect", s);
-    meshItem(tr("Fundir"), "U~Z", "", s);
+    meshItem(tr("Fundir"), "U~Z", "melt", s);
     meshItem(tr("Disolver"), "M~N", "dissolve", s);
     ImGui::Separator();
     meshItem(tr("Subdividir..."), "U~S, U~Mayús+S", "subdiv", s);
@@ -2648,7 +2655,7 @@ void meshCommandsMenu(const SceneNode* s) {
         if (gearMenuItem(nullptr, tr("Optimizar..."), "U~O, U~Mayús+O", false, cm != 0, &gear)) g.compOp = "optimize";
         if (gear) openToolOptions((int)UiState::OptWin::Optimize);
     }
-    meshItem(tr("Restaurar Escala..."), "", "", s);
+    meshItem(tr("Restaurar Escala..."), "", "resetscale", s);
     meshItem(tr("Configuración Modelado"), "Mayús+M", "", s);
     ImGui::Separator();
     meshItem(tr("Comprobar Malla"), "", "check", s);
@@ -2669,10 +2676,10 @@ void drawComponentContextMenu(SceneNode& root, SceneNode*& selected, SceneHistor
     meshItem(tr("Disolver"), "M~N", "dissolve", s);
     meshItem(tr("Planchar"), "M~G", "relax", s);
     meshItem(tr("Cortar Línea"), "K~K, M~K", "tool:knife", s);
-    meshItem(tr("Cortar Plano"), "K~J, M~J", "", s);
-    meshItem(tr("Cortar Cíclico/Trayectoria"), "K~L, M~L", "", s);
+    meshItem(tr("Cortar Plano"), "K~J, M~J", "tool:knifeplane", s);
+    meshItem(tr("Cortar Cíclico/Trayectoria"), "K~L, M~L", "tool:knifeloop", s);
     meshItem(tr("Magnetismo"), "M~I", "", s);
-    meshItem(tr("Reflejar"), "M~H", "", s);
+    meshItem(tr("Reflejar"), "M~H", "mirror", s);
     meshItem(tr("Asignar Valor al Punto"), "M~U", "", s);
     meshItem(tr("Puntada y Cosido"), "M~P", "", s);
     meshItem(tr("Soldar"), "M~Q", "weld", s);
@@ -2693,7 +2700,7 @@ void drawComponentContextMenu(SceneNode& root, SceneNode*& selected, SceneHistor
     meshItem(tr("Clonar"), "", "clone", s, 3);
     meshItem(tr("Colapso"), "U~C", "collapse", s);
     meshItem(tr("Desconectar..."), "U~D, U~Mayús+D", "", s);
-    meshItem(tr("Fundir"), "U~Z", "", s);
+    meshItem(tr("Fundir"), "U~Z", "melt", s);
     meshItem(tr("Optimizar..."), "U~O, U~Mayús+O", "optimize", s);
     meshItem(tr("Separar"), "U~P", "split", s, 3);
     meshItem(tr("Subdividir..."), "U~S, U~Mayús+S", "subdiv", s);
@@ -7350,6 +7357,26 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
         return done(tr("Invertir Selección"));
     }
 
+    if (op == "resetscale") {
+        // Restaurar Escala: la escala del objeto pasa a los puntos y el objeto queda a escala 1 (misma forma en pantalla).
+        if (!selected || !selected->mesh) return false;
+        if (!selected->children().empty()) { flashStatus(tr("Restaurar Escala: el objeto tiene hijos; sus posiciones cambiarían.")); return false; }
+        if (selected->scale == glm::vec3(1.0f)) { flashStatus(tr("Restaurar Escala: el objeto ya está a escala 1.")); return false; }
+        history.commitBefore(root);
+        MeshData m = *selected->mesh;
+        const glm::vec3 sc = selected->scale;
+        for (Vertex& v : m.vertices) {
+            v.position *= sc;
+            const glm::vec3 nn = v.normal / sc;  // normal bajo escala no uniforme: inversa traspuesta
+            if (glm::length(nn) > 1e-12f) v.normal = glm::normalize(nn);
+        }
+        updateBounds(m);
+        selected->mesh = std::make_shared<const MeshData>(std::move(m));
+        selected->scale = glm::vec3(1.0f);
+        syncComponents(selected);
+        flashStatus(tr("Restaurar Escala: hecho."));
+        return true;
+    }
     if (op == "check") {
         const MeshCheck chk = checkMesh(t);
         if (chk.clean()) { flashStatus(tr("Comprobar Malla: sin problemas.")); return true; }
@@ -7421,6 +7448,10 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
         if (ed.empty()) { flashStatus(tr("Voltear Arista: selecciona aristas (modo Aristas).")); return false; }
         r = turnEdges(*c.mesh, t, ed);
         if (!r.changed) { flashStatus(tr("Voltear Arista: solo entre dos triángulos y sin cuadrilátero cóncavo.")); return false; }
+    } else if (op == "mirror") {
+        name = tr("Reflejar");
+        r = mirrorPolygons(*c.mesh, t, mode == 3 ? c.sel : std::set<int>{}, g.symAxis >= 0 ? g.symAxis : 0);
+        if (!r.changed) { flashStatus(tr("Reflejar: no hay polígonos.")); return false; }
     } else if (op == "clone") {
         name = tr("Clonar");
         if (mode != 3 || c.sel.empty()) { flashStatus(tr("Clonar: selecciona polígonos (modo Polígonos).")); return false; }
@@ -7429,10 +7460,14 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
         name = tr("Conectar");
         r = connectPoints(*c.mesh, t, selectedPoints());
         if (!r.changed) { flashStatus(tr("Conectar: selecciona 2 puntos no vecinos de un mismo polígono.")); return false; }
-    } else if (op == "dissolve") {
-        name = tr("Disolver");
+    } else if (op == "dissolve" || op == "melt") {
+        name = op == "melt" ? tr("Fundir") : tr("Disolver");
         std::set<std::pair<int, int>> ed;
-        if (mode == 2) {
+        if (mode == 1) {
+            // Fundir/Disolver puntos: se une todo lo que rodea al punto (todas sus aristas).
+            const std::set<int> pts = selectedPoints();
+            for (const auto& e : t.edges) if (pts.count(e.first) || pts.count(e.second)) ed.insert(e);
+        } else if (mode == 2) {
             for (int i : c.sel) if (i >= 0 && (size_t)i < t.edges.size()) ed.insert(t.edges[(size_t)i]);
         } else if (mode == 3) {
             // Aristas compartidas por dos poligonos seleccionados.

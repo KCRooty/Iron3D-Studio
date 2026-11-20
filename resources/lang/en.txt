@@ -1280,3 +1280,7 @@ Voltear Arista: selecciona aristas (modo Aristas).	Turn Edge: select edges (Edge
 Voltear Arista: solo entre dos triángulos y sin cuadrilátero cóncavo.	Turn Edge: only between two triangles and without a concave quad.
 Clonar: selecciona polígonos (modo Polígonos).	Clone: select polygons (Polygons mode).
 Conectar: selecciona 2 puntos no vecinos de un mismo polígono.	Connect: select 2 non-adjacent points of the same polygon.
+Reflejar: no hay polígonos.	Mirror: no polygons.
+Restaurar Escala: el objeto tiene hijos; sus posiciones cambiarían.	Reset Scale: the object has children; their positions would change.
+Restaurar Escala: el objeto ya está a escala 1.	Reset Scale: the object is already at scale 1.
+Restaurar Escala: hecho.	Reset Scale: done.

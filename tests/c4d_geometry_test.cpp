@@ -1212,6 +1212,10 @@ int main() {
             const MeshTopology tt = buildMeshTopology(tri.mesh);
             const MeshEditResult turned = turnEdges(tri.mesh, tt, {{std::min(tp[0], tp[2]), std::max(tp[0], tp[2])}, {std::min(tp[1], tp[3]), std::max(tp[1], tp[3])}});
             check(turned.changed == 1 && buildMeshTopology(turned.mesh).polys.size() == tt.polys.size(), "voltear arista: gira la diagonal");
+            const MeshEditResult mi = mirrorPolygons(cube, t, {top}, 0);
+            check(mi.changed == 1 && buildMeshTopology(mi.mesh).polys.size() == t.polys.size() + 1, "reflejar: copia la tapa");
+            const MeshEditResult mf = dissolveEdges(cube, t, {});
+            check(mf.changed == 0, "disolver sin aristas no hace nada");
             const MeshEditResult rl = relaxPoints(cube, t, {}, 0.5f, 1);
             check(rl.changed > 0 && rl.mesh.vertices.size() == cube.vertices.size(), "planchar: mueve puntos");
         }

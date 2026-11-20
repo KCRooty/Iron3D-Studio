@@ -124,6 +124,9 @@ MeshEditResult relaxPoints(const MeshData& mesh, const MeshTopology& topo, const
 MeshEditResult turnEdges(const MeshData& mesh, const MeshTopology& topo, const std::set<std::pair<int, int>>& edges);
 // Clonar: copia los poligonos dados encima de los originales (la copia queda seleccionada). changed = poligonos.
 MeshEditResult clonePolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);
+// Reflejar (M~H): copia reflejada de los poligonos dados (todos si estan vacios) respecto al plano X/Y/Z (axis 0/1/2)
+// que pasa por el origen del objeto; la copia queda seleccionada. changed = poligonos copiados.
+MeshEditResult mirrorPolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys, int axis);
 // Conectar (M~M): parte cada poligono que tiene dos puntos seleccionados no vecinos con una arista entre ellos.
 MeshEditResult connectPoints(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& points);
 

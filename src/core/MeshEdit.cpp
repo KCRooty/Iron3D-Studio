@@ -1350,4 +1350,29 @@ MeshEditResult connectPoints(const MeshData& mesh, const MeshTopology& topo, con
     return finish(std::move(verts), out, changed);
 }
 
+
+MeshEditResult mirrorPolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys, int axis) {
+    axis = std::clamp(axis, 0, 2);
+    std::vector<Vertex> verts = mesh.vertices;
+    std::vector<Face> faces = polyFaces(mesh, topo);
+    const size_t n = faces.size();
+    int changed = 0;
+    for (size_t p = 0; p < n; ++p) {
+        if (!polys.empty() && !polys.count((int)p)) continue;
+        Face c;
+        // Copia reflejada respecto al plano del eje (por el origen del objeto), con el orden de giro invertido.
+        for (size_t k = faces[p].v.size(); k-- > 0;) {
+            Vertex v = verts[faces[p].v[k]];
+            v.position[axis] = -v.position[axis];
+            v.normal[axis] = -v.normal[axis];
+            c.v.push_back((uint32_t)verts.size());
+            verts.push_back(v);
+        }
+        c.sel = true;
+        faces.push_back(std::move(c));
+        ++changed;
+    }
+    return finish(std::move(verts), faces, changed);
+}
+
 } // namespace iron3d
