@@ -1,9 +1,16 @@
 # Iron3D Studio - fr (clave = texto en espanol; valor = traduccion)
 Importar Cinema 4D	Importer Cinema 4D
+Grabar Objetos Activos: no hay ningún objeto seleccionado.	Enregistrer les objets actifs : aucun objet n'est sélectionné.
+Grabar Objetos Activos: Posición, Escala y Rotación están desactivadas.	Enregistrer les objets actifs : Position, Échelle et Rotation sont désactivées.
+Clave grabada en el fotograma 	Clé enregistrée à l'image 
+ objeto).	 objet).
+ objetos).	 objets).
 Extrusión	Extrusion
 Extrusión Interna	Extrusion interne
 Bisel	Biseauter
 Cuchillo	Couteau
+: arrastra en el visor para dibujar la línea de corte.	: faites glisser dans la vue pour tracer la ligne de coupe.
+: arrastra en horizontal en el visor (o usa Aplicar).	: faites glisser horizontalement dans la vue (ou utilisez Appliquer).
 Superior	Haut
 Derecha	Droite
 Frontal	Face
@@ -17,29 +24,56 @@ Luz	Lumière
 Cámara	Caméra
 Polígono	Polygone
 Nulo	Neutre
+Parámetro todavía no implementado en Iron3D	Paramètre pas encore implémenté dans Iron3D
+Clic: mostrar esta página. Mayús+Clic: mostrar varias a la vez.	Clic : afficher cette page. Maj+clic : en afficher plusieurs à la fois.
 Abrir librería	Ouvrir la bibliothèque
+Abrir una librería necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe. Cópiala a library/browser.	Ouvrir une bibliothèque nécessite la boîte de dialogue de fichiers du système, qui n'existe pas encore sur cette plateforme. Copiez-la dans library/browser.
 Abrir librería de preestablecidos	Ouvrir une bibliothèque de presets
 Librerías de preestablecidos de Cinema 4D	Bibliothèques de presets Cinema 4D
 Este preestablecido no es un modelo de Cinema 4D.	Ce preset n'est pas un modèle Cinema 4D.
+No se pudo escribir el archivo temporal en 	Impossible d'écrire le fichier temporaire dans 
+Textura que no está en ninguna librería montada: 	Texture absente de toutes les bibliothèques montées : 
 Importar OBJ	Importer OBJ
 Importar glTF	Importer glTF
 Abrir	Ouvrir
+Escenas y librerías (iron, c4d, obj, glb, lib4d)	Scènes et bibliothèques (iron, c4d, obj, glb, lib4d)
 Fusionar	Fusionner
+Fusionar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	La fusion nécessite la boîte de dialogue de fichiers du système, qui n'existe pas encore sur cette plateforme.
+Escenas de Cinema 4D, OBJ, glTF e Iron3D	Scènes Cinema 4D, OBJ, glTF et Iron3D
+Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	L'exportation nécessite la boîte de dialogue de fichiers du système, qui n'existe pas encore sur cette plateforme.
 Exportar	Export
 La escena está vacía.	La scène est vide.
 Exportar a Wavefront	Exporter en Wavefront
+Escena.obj	Scene.obj
 Exportar OBJ	Exporter OBJ
 Exportar a glTF	Exporter en glTF
+glTF binario	glTF binaire
+Escena.glb	Scene.glb
 Exportar glTF	Exporter glTF
 Exportar a Cinema 4D	Exporter en Cinema 4D
+Escena.c4d	Scene.c4d
 Guardar Objetos Seleccionados como	Enregistrer les objets sélectionnés sous
+Objetos.c4d	Objets.c4d
 Mat	Mat.
 Simetría	Symétrie
 Sistema de coordenadas: Mundo	Système de coordonnées : Monde
 Sistema de coordenadas: Objeto	Système de coordonnées : Objet
+Activar Eje: se mueve el eje, no el objeto	Activer l'axe : l'axe bouge, pas l'objet
+Activar Eje: desactivado	Activer l'axe : désactivé
 Fotogramas Clave Automáticos: activados	Keyframing automatique : activé
 Fotogramas Clave Automáticos: desactivados	Keyframing automatique : désactivé
+Hacer Editable: selecciona un Cubo, Esfera o Plano (los demás ya son editables o no tienen malla).	Rendre éditable : sélectionnez un cube, une sphère ou un plan (les autres sont déjà éditables ou n'ont pas de maillage).
+Hacer Editable: 1 objeto convertido a Objeto Poligonal.	Rendre éditable : 1 objet converti en objet polygonal.
+Hacer Editable: 	Rendre éditable : 
+ objetos convertidos a Objeto Poligonal.	 objets convertis en objets polygonaux.
 Animación eliminada.	Animation supprimée.
+Estado Actual a Objeto: 	État actuel vers objet : 
+ copia poligonal creada.	 copie polygonale créée.
+ copias poligonales creadas.	 copies polygonales créées.
+Estado Actual a Objeto: la selección no tiene geometría.	État actuel vers objet : la sélection ne contient pas de géométrie.
+Conectar Objetos: 	Connecter les objets : 
+ mallas unidas en un Objeto Polígono.	 maillages réunis en un objet polygonal.
+Conectar Objetos: la selección no tiene geometría.	Connecter les objets : la sélection ne contient pas de géométrie.
 Supr	Del
 Buscar orden...	Rechercher des commandes...
 Ninguna orden coincide.	Aucune commande trouvée.
@@ -74,6 +108,7 @@ Guardar como...	Enregistrer le projet sous...
 Guardar incrementalmente...	Enregistrer de façon incrémentielle...
 Guardar Todo	Enregistrer tous les projets
 Guardar Objetos Seleccionados como...	Enregistrer les objets sous...
+Esta compilación no lleva el Cineware SDK de MAXON	Cette version n'inclut pas le SDK Cineware de MAXON
 glTF binario (*.glb)...	glTF binaire (*.glb)...
 Archivos recientes	Fichiers récents
 Salir	Quitter
@@ -159,6 +194,9 @@ Fotograma Anterior	Image précédente
 Repetir (Loop)	Répéter (boucle)
 Personaje	Personnage
 Resolver IK (experimental)	Résoudre l'IK (expérimental)
+ cadenas resueltas.	 chaînes résolues.
+IK: ninguna etiqueta IK activa con Punta y Objetivo alcanzables.	IK : aucun tag IK actif avec pointe et cible atteignables.
+Mueve las articulaciones de cada etiqueta IK para que la punta llegue a su objetivo	Déplace les articulations de chaque tag IK pour que la pointe atteigne sa cible
 Articulación	Articulation
 Piel	Peau
 Pesos	Poids
@@ -188,6 +226,7 @@ Amasar	Pétrir
 Motion Tracker	Traqueur de mouvement
 Rastreador de Objetos	Suivi d'objet
 Ocultar Seleccionado	Masquer la sélection
+Intercambiar Clonador-Matriz	Échanger la matrice du cloneur
 Selección MoGraph	Sélection MoGraph
 Clonador	Cloneur
 Matriz	Matrice
@@ -215,22 +254,48 @@ Animar	Aperçu animé
 Visualizar	Visualiser
 Deshacer la última acción.	Annuler la dernière action.
 Rehacer la última acción deshecha.	Rétablir la dernière action annulée.
+Selección en Vivo [Atajo de Teclado 9]	Sélection dynamique [Raccourci clavier 9]
 Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.	Sélection dynamique : cliquez et faites glisser pour sélectionner des éléments. SHIFT ajoute à la sélection, CTRL en retire.
+Herramienta de Mover [Atajo de Teclado E]	Outil Déplacer [Raccourci clavier E]
 Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.	Déplacer : cliquez et faites glisser pour déplacer des éléments. SHIFT quantifie le mouvement / ajoute à la sélection en mode points, CTRL en retire.
+Herramienta de Escalar [Atajo de Teclado T]	Outil Échelle [Raccourci clavier T]
 Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.	Échelle : cliquez et faites glisser pour mettre à l'échelle des éléments. SHIFT quantifie l'échelle / ajoute à la sélection en mode points, CTRL en retire.
+Herramienta de Rotar [Atajo de Teclado R]	Outil Rotation [Raccourci clavier R]
 Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.	Rotation : cliquez et faites glisser pour pivoter des éléments. SHIFT quantifie la rotation / ajoute à la sélection en mode points, CTRL en retire.
+Bloqueo de eje X: todavía no implementado.	Verrouillage de l'axe X : pas encore implémenté.
+Bloqueo de eje Y: todavía no implementado.	Verrouillage de l'axe Y : pas encore implémenté.
+Bloqueo de eje Z: todavía no implementado.	Verrouillage de l'axe Z : pas encore implémenté.
+Cambia los ejes del gizmo entre los del objeto y los del mundo.	Bascule les axes du manipulateur entre les axes de l'objet et du monde.
 Renderiza la vista activa en el propio visor.	Rend la vue active directement dans le viewport.
 Renderiza la cámara activa en el Visor de Imágenes.	Rend la caméra active dans le visualiseur d'images.
+Editar Configuración de Render... [Ctrl+B]	Modifier les paramètres de rendu... [Ctrl+B]
 Resolución, antialiasing y fondo del render.	Résolution de rendu, anticrénelage et arrière-plan.
+Cubo  (mantener pulsado: más objetos)	Cube  (maintenir : plus d'objets)
+Lápiz  (mantener pulsado: más splines)	Plume  (maintenir : plus de splines)
+Subdivisión Superficie  (mantener pulsado: generadores)	Surface de subdivision  (maintenir : générateurs)
+Matriz  (mantener pulsado: modelado)	Réseau  (maintenir : modélisation)
+Doblar  (mantener pulsado: deformadores)	Courbure  (maintenir : déformateurs)
+Suelo  (mantener pulsado: escena)	Sol  (maintenir : scène)
+Cámara  (mantener pulsado: más cámaras)	Caméra  (maintenir : plus de caméras)
+Luz  (mantener pulsado: más luces)	Lumière  (maintenir : plus de lumières)
+Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado.	Clic : créer l'objet. Maintenir ou clic droit : ouvrir la palette du groupe. Alt+clic : créer comme enfant de la sélection.
 Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.	Rendre éditable : convertit les objets paramétriques sélectionnés en objets polygonaux.
+Usar Modo Modelo	Utiliser le mode Modèle
 Modo Modelo: se editan objetos enteros.	Mode modèle : les objets sont édités en entier.
+Modo Textura: todavía no implementado.	Mode Texture : pas encore implémenté.
 Activar Eje [L]	Activer l'axe [L]
+Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.	Mode Axe : déplacer, faire pivoter ou mettre à l'échelle ne modifie que l'axe de l'objet ; la géométrie éditable et les enfants restent en place.
 Usar Modo Puntos	Utiliser le mode points
 Modo Puntos: elige y mueve puntos de un objeto editable (C para hacerlo editable).	Mode points : sélectionnez et déplacez les points d'un objet éditable (C le rend éditable).
 Usar Modo Aristas	Utiliser le mode arêtes
 Modo Aristas: elige y mueve aristas de un objeto editable.	Mode arêtes : sélectionnez et déplacez les arêtes d'un objet éditable.
 Usar Modo Polígonos	Utiliser le mode polygones
 Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.	Mode polygones : sélectionnez et déplacez des polygones (triangles).
+Modo Ajuste: todavía no implementado.	Mode Magnétisme : pas encore implémenté.
+Vista Solo: todavía no implementado.	Vue Solo : pas encore implémentée.
+Fijación: todavía no implementado.	Magnétisme : pas encore implémenté.
+Plano de Trabajo: todavía no implementado.	Plan de travail : pas encore implémenté.
+Bloquear Plano de Trabajo: todavía no implementado.	Verrouiller le plan de travail : pas encore implémenté.
 Vista	Vue
 Usar como Cámara de Render	Utiliser comme caméra de rendu
 Deshacer Vista	Annuler la vue
@@ -303,6 +368,9 @@ Todas las Vistas	Toutes les vues
 Mover Cámara (arrastrar)	Déplacer la caméra (glisser)
 Zoom de Cámara (arrastrar)	Zoomer la caméra (glisser)
 Rotar Cámara (arrastrar)	Pivoter la caméra (glisser)
+Cambiar Vista (todavía no implementado)	Changer de vue (pas encore implémenté)
+Multi-vista: todavía no implementado.	Multi-vues : pas encore implémenté.
+Arrastre sobre el icono para navegar por la vista.	Faites glisser sur l'icône pour naviguer dans la vue.
 Espaciado Cuadrícula : 100 cm	Espacement de la grille : 100 cm
 Fusionar Objetos...	Fusionner les objets...
 Guardar como Preestablecido...	Enregistrer préréglage...
@@ -317,6 +385,10 @@ Añadir	Ajouter
 Duplicar	Dupliquer
 Etiqueta de Textura	Tag de texture
 Favoritos	Signets
+Buscar (todavía no implementado)	Rechercher (pas encore implémenté)
+Filtrar (todavía no implementado)	Filtre (pas encore implémenté)
+Clic: seleccionar. Ctrl+Clic: anadir o quitar de la seleccion. Doble clic: renombrar. Clic derecho: menú contextual. Arrastre un material aquí para asignarlo.	Clic : sélectionner. Ctrl+clic : ajouter à la sélection ou en retirer. Double-clic : renommer. Clic droit : menu contextuel. Faites glisser un matériau ici pour l'assigner.
+CINEMA 4D Etiquetas	Tags CINEMA 4D
 Eliminar Etiqueta de Textura	Supprimer le tag de texture
 Fong	Phong
 Protección	Protection
@@ -337,6 +409,8 @@ Eliminar de Todas las Tomas	Supprimer de toutes les Prises
 Gestor de Tomas...	Gestionnaire de Prises...
 Establecer como Raíz	Définir comme racine
 Contraer Todo	Tout replier
+ objeto convertido.	 objet converti.
+ objetos convertidos.	 objets convertis.
 Estado Actual del Objeto	Convertir en Objet
 Expandir Grupo de Objetos	Dégrouper les objets
 Eliminar Sin Hijos	Supprimer sans les sous-objets
@@ -348,7 +422,10 @@ Renombrar	Renommer
 Por Defecto	Par défaut
 Activado	Activé
 Apagado	Désactivé
+Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.	Point du haut : visible dans l'éditeur. Point du bas : visible au rendu. Gris = Par défaut (hérite du parent), vert = Activé, rouge = Désactivé.
 Editor	Menu principal
+Etiqueta de Textura [%s]	Tag de texture [%s]
+%s (todavía no implementado)	%s (pas encore implémenté)
 Atrás	Précédent
 Adelante	Avant
 Subir	Charger
@@ -362,7 +439,9 @@ A Realizar	À faire
 Interpolación de Claves	Animation
 Escala del Proyecto	Échelle du projet
 Centímetros	Centimètres
+Escalar Proyecto: todavía no implementado en Iron3D.	Mettre le projet à l'échelle : pas encore implémenté dans Iron3D.
 FPS	IPS
+Fotogramas por segundo: velocidad de reproducción de la Línea de Tiempo.	Images par seconde : vitesse de lecture de la timeline.
 Tiempo del Proyecto	Durée du projet
 Tiempo Mínimo	Temps minimum
 Tiempo Máximo	Temps maximum
@@ -382,7 +461,9 @@ Flujo de Trabajo Lineal	Workflow linéaire
 Introducir Perfil de Color	Profil colorimétrique d'entrée
 Cargar Preestablecido...	Charger préréglage...
 Guardar Preestablecido...	Enregistrer le préréglage...
+Preestablecidos de proyecto: todavía no implementados en Iron3D.	Préréglages du projet : pas encore implémentés dans Iron3D.
 Página no disponible	Page non disponible
+  Todavía no implementado en Iron3D.	  Pas encore implémenté dans Iron3D.
 Básico	Basique
 Phong	Lissage de Phong
 General	Généralités
@@ -397,7 +478,9 @@ Propiedades Básicas	Propriétés de Base
 Nombre	Nom
 Capa	Calque
 Visible en Editor	Visible dans l'éditeur
+Visible en Editor (punto superior): Por Defecto hereda del padre, Activado lo muestra siempre, Apagado lo oculta en el visor.	Visible dans l'éditeur (point du haut) : Par défaut hérite du parent, Activé l'affiche toujours, Désactivé le masque dans la vue.
 Visible en Render	Visible au rendu
+Visible en Render (punto inferior): Iron3D todavía no tiene render final; el valor se guarda en la escena.	Visible au rendu (point du bas) : Iron3D n'a pas encore de rendu final ; la valeur est enregistrée dans la scène.
 Usar Color	Utiliser la couleur
 Desactivado	Désactivé
 Coordenadas	Coordonnées
@@ -413,9 +496,11 @@ Foco Paralelo Cuadrado	Projecteur parallèle carré
 Tubo	Tube
 Área	Zone
 Tipo	Type
+Tipo de luz. En el visor, Tubo, Área e IES iluminan como una Omni; Paralela y Foco Paralelo como una Infinita.	Type de lumière. Dans la vue, Tube, Zone et IES éclairent comme une Omni ; Parallèle et Spot parallèle comme une Infinie.
 Ninguno	Aucun
 Mapeado (Suave)	Shadow maps (douces)
 Trazado (Duro)	Raytracées (dures)
+Con sombra activada, la primera luz de la escena que la tenga proyecta sombras en el visor.	Avec les ombres activées, la première lumière de la scène qui en a projette des ombres dans la vue.
 Luz Visible	Lumière visible
 No Ilumina	Pas d'éclairage
 Mostrar Iluminación	Afficher l'éclairage
@@ -429,6 +514,7 @@ ZY (refleja X)	ZY (reflète X)
 XZ (refleja Y)	XZ (reflète Y)
 XY (refleja Z)	XY (reflète Z)
 Tolerancia	Tolérance
+  Refleja al primer hijo con malla; el hijo se edita aparte.	  Reflète le premier enfant ayant un maillage ; l'enfant se modifie séparément.
 Punto	Point
 Radio	Rayon
 Relación de Aspecto	Rapport d'aspect
@@ -459,31 +545,45 @@ Limitar Ángulo	Limite d'angle
 Usar Bordes	Utiliser les arêtes
 Ángulo Interior	Angle intérieur
 Ángulo Exterior	Angle extérieur
+Inverso Cuadrado (Físicamente Exacto)	Carré inverse (physiquement exact)
 Lineal	Linéaire
 Escalón	Pas
+Inverso Cuadrado Limitado	Carré inverse limité
+Inverso Limitado	Inverse limité
 Inverso	Inverse
 Decaimiento	Atténuation
+Cómo pierde fuerza la luz con la distancia. En las inversas, el Radio es la distancia a la que da el 100 %.	Façon dont la lumière s'atténue avec la distance. Pour les atténuations inverses, le rayon est la distance à laquelle elle donne 100 %.
 Radio Interior	Rayon intérieur
 Radio/Decaimiento	Rayon/Décroissance
 Tamaño Horizontal	Taille horizontale
 Tamaño Vertical	Taille verticale
 Tamaño en Profundidad	Taille en profondeur
+  En el visor, las sombras son siempre mapeadas y de una sola luz.	  Dans la vue, les ombres sont toujours mappées et issues d'une seule lumière.
 Normal	Normale
 Restar	Soustraction
 Multiplicar	Multiplier
 Circular	Cercle
 Cuadrado	Carré
+Especular - Blinn (Heredado)	Spéculaire - Blinn (Hérité)
+Especular - Phong (Heredado)	Spéculaire - Phong (Hérité)
 Lambertiano (Difuso)	Lambertien (Diffusion)
 Oren-Nayar (Difuso)	Oren-Nayar (Diffusion)
+Irawan (Tejido)	Irawan (tissu tissé)
 Promedio	Médiane
 Mínimo	Minimum
 Máximo	Maximum
 Metal	Métal
 Dieléctrico	Diélectrique
 Conductor	Conducteur
+ nudos	 nœuds
+ capas	 couches
+no se evalúa en el visor	non évalué dans la vue
 Textura	Texture
 Elegir imagen	Choisir une image
 Imágenes	Images
+Elegir la imagen del canal (sustituye al shader importado).	Choisir l'image du canal (remplace le shader importé).
+Quitar la textura del canal.	Supprimer la texture du canal.
+  Hay shaders que el visor todavía no evalúa.	  Certains shaders ne sont pas encore évalués dans la vue.
 Brillo	Luminosité
 Muestreo	Échantillonnage
 Desenfoque Desfase	Décalage du Flou
@@ -511,7 +611,10 @@ Color de Capa	Couleurs des calques
 (ninguna)	(aucun)
 Fresnel de Capa	Fresnel du Calque
 IOR	IDR
+  Sin capas importadas: el visor usa Metálico/Rugosidad.	  Aucune couche importée : la vue utilise Métallique/Rugosité.
 Visor (PBR equivalente)	Viewport (équivalent PBR)
+Metálico	Métallique
+  El visor todavía no pinta cada capa por separado (brillos de color, Atenuación).	  La vue ne dessine pas encore chaque couche séparément (reflets colorés, atténuation).
 Luminancia	Luminance
 Reflectancia	Réflexion
 Relieve	Relief
@@ -520,6 +623,8 @@ Alfa	Alpha
 Iluminación	Illumination
 Asignar	Affecter
 Refracción	Réfraction
+  Ningún objeto usa este material. Arrástrelo al Gestor de Objetos.	  Aucun objet n'utilise ce matériau. Faites-le glisser dans le Gestionnaire d'objets.
+Etiqueta de Textura [Textura]	Tag de texture [Texture]
 Propiedades de Etiqueta	Propriétés du tag
 Material	Matériau
 Proyección	Projection
@@ -540,17 +645,28 @@ Modo	Mode
 Datos de Usuario	Données utilisateur
 Añadir Datos de Usuario...	Nouvelle donnée utilisateur...
 Gestionar Datos de Usuario...	Gérer Données Utilisateur...
+%zu clave%s seleccionada%s	%zu clé%s sélectionnée%s
 Interpolación Spline	Interpolation spline
 Interpolación Lineal	Interpolation linéaire
 Interpolación Escalón	Interpolation en escalier
 Eliminar Claves	Supprimer les clés
+Claves movidas 	Clés déplacées 
+Eliminadas 	Supprimé 
+ clave.	 clé.
+ claves.	 clés.
 Interpolación 	Interpolation 
+ en 	 à 
 Esc. X	Éch. X
 Esc. Y	Éch. Y
 Esc. Z	Éch. Z
+%s: sin claves (F9 graba)	%s : aucune clé (F9 enregistre)
 Sin objeto activo	Aucun objet actif
 Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.	Timeline : cliquez et faites glisser pour changer l'image courante.
 Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.	Clé : cliquez pour sélectionner (Shift ajoute), faites glisser pour déplacer, clic droit pour l'interpolation.
+Tiempo Mínimo del proyecto.	Temps minimum du projet.
+Rango de previo (Tiempo Mínimo/Máximo de Previo).	Plage de prévisualisation (temps min/max de prévisualisation).
+Tiempo Máximo del proyecto (editable, la regla se reescala).	Temps maximum du projet (modifiable, la règle se remet à l'échelle).
+Tiempo Máximo de Previo.	Temps maximum de prévisualisation.
 Ir al Inicio [Mayús+F]	Aller au début [Shift+F]
 Ir a la Clave Anterior [Ctrl+F]	Aller à la clé précédente [Ctrl+F]
 Ir al Fotograma Anterior [F]	Aller à l'image précédente [F]
@@ -561,9 +677,13 @@ Ir a la Clave Siguiente [Ctrl+G]	Aller à la clé suivante [Ctrl+G]
 Ir al Final [Mayús+G]	Aller à la fin [Shift+G]
 Grabar Objetos Activos [F9]	Enregistrer les objets actifs [F9]
 Fotogramas Clave Automáticos [Ctrl+F9]	Keyframing automatique [Ctrl+F9]
+Selección de Claves (todavía no implementado)	Sélection de clés (pas encore implémenté)
 Grabar Posición	Enregistrer la position
 Grabar Escala	Enregistrer l'échelle
 Grabar Rotación	Enregistrer la rotation
+Grabar Parámetro (todavía no implementado)	Enregistrer le paramètre (pas encore implémenté)
+Grabar Nivel de Puntos (todavía no implementado)	Enregistrer l'animation au niveau des points (pas encore implémenté)
+Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D	Éditeur de courbes / Dope Sheet : pas encore implémenté dans Iron3D
 Shader	Matière
 Guardar Materiales como...	Enregistrer les matériaux sous...
 Guardar Material Preestablecido...	Enregistrer le preset de matériau...
@@ -573,6 +693,8 @@ Aplicar	Appliquer
 Eliminar Materiales sin Usar	Supprimer les matériaux inutilisés
 Cargar Textura...	Charger une texture...
 Editar Textura...	Éditer la texture...
+Clic: seleccionar material. Doble clic: Editor de Material (en el nombre: renombrar). Arrastre a un objeto para asignarlo.	Clic : sélectionner le matériau. Double-clic : Éditeur de matériaux (sur le nom : renommer). Faites-le glisser sur un objet pour l'assigner.
+Doble clic en un espacio vacío del Gestor de Materiales para crear un material nuevo.	Double-cliquez sur un espace vide du Gestionnaire de matériaux pour créer un nouveau matériau.
 Doble clic aquí para crear un material	Double-cliquez pour créer un matériau
 Posición	Position
 Tamaño	Taille
@@ -581,14 +703,48 @@ Escala	Échelle
 Objeto (Rel)	Objet (Rel)
 Objeto (Abs)	Objet (Abs)
 Mundo	Monde
+Sistema de coordenadas de los campos (solo Objeto (Rel) disponible por ahora).	Système de coordonnées des champs (seul Objet (Rel) est disponible pour l'instant).
+Tamaño: medidas en cm. Escala: multiplicador del objeto.	Taille : mesures en cm. Échelle : multiplicateur de l'objet.
+Aplicar los valores de los campos al objeto seleccionado.	Applique les valeurs des champs à l'objet sélectionné.
 Selección Rectangular: arrastre para seleccionar los objetos que toque el rectángulo. MAYÚSCULAS añade, CTRL quita.	Sélection rectangle : faites glisser pour sélectionner les objets touchés par le rectangle. SHIFT ajoute, CTRL retire.
 Selección con Lazo: dibuje una zona para seleccionar los objetos que queden dentro. MAYÚSCULAS añade, CTRL quita.	Sélection lasso : dessinez une zone pour sélectionner les objets qu'elle contient. SHIFT ajoute, CTRL retire.
 Selección en Vivo: Haga clic para seleccionar elementos.	Sélection dynamique : cliquez pour sélectionner des éléments.
 Nombre de archivo:	Nom du fichier :
+Carpeta: %s	Dossier : %s
+Cargado: 	Chargé : 
+Error al cargar: 	Erreur de chargement : 
+Guardado: 	Enregistré : 
+Error al guardar: 	Erreur d'enregistrement : 
 Cancelar	Annuler
+Colores y disposición de los paneles como en cada programa. Se aplica al momento.	Couleurs et disposition des panneaux comme dans chaque programme. Appliqué immédiatement.
+Mis presets	Mes préréglages
 Personalizar	Personnalisé
 Colores	Couleurs
+Fondo de paneles	Arrière-plan des panneaux
+Fondo de campos	Arrière-plan des champs
+Acento	Accent
+Azul de herramientas	Bleu des outils
 Texto	Texte
+Fondo del visor	Arrière-plan de la vue
+Barra superior	Barre supérieure
+Columna lateral	Colonne latérale
+Columna de objetos	Colonne des objets
+Objetos / Atributos	Objets / Attributs
+Fila inferior	Rangée inférieure
+Línea de tiempo	Timeline
+Pestañas verticales	Onglets verticaux
+Redondeo	Arrondi
+Personalizado (sin guardar)	Personnalisé (non enregistré)
+Nombre del preset	Nom du préréglage
+Guardar como preset	Enregistrer comme préréglage
+Preset guardado en presets/.	Préréglage enregistré dans presets/.
+Escriba un nombre válido (letras, números, espacios, - o _).	Saisissez un nom valide (lettres, chiffres, espaces, - ou _).
+Preset eliminado.	Préréglage supprimé.
+Restablecer	Réinitialiser
+Vuelve al preset integrado «%s».	Revient au préréglage intégré « %s ».
+Guardado. Se usará al abrir Iron3D.	Enregistré. Sera utilisé au démarrage d'Iron3D.
+Error al guardar las preferencias.	Erreur lors de l'enregistrement des préférences.
+Preset activo: %s	Préréglage actif : %s
 Preferencias	Préférences
 Interfaz	Interface
 Visor	Vue
@@ -596,45 +752,270 @@ Archivos	Fichiers
 Unidades	Unités
 Memoria	Mémoire
 Renderizador	Moteur de rendu
+Backend activo en esta sesión: %s	Moteur actif dans cette session : %s
 OpenGL	Matériel pour la vue
+Backend de render (se aplica al reiniciar):	Moteur de rendu (appliqué au redémarrage) :
+Guardado. Reinicie Iron3D Studio para aplicarlo.	Enregistré. Redémarrez Iron3D Studio pour l'appliquer.
+Asignación	Assignation
+  Ningún objeto usa este material.	  Aucun objet n'utilise ce matériau.
+Acerca de Iron3D Studio	À propos d'Iron3D Studio
+Interfaz inspirada en el flujo de trabajo de Cinema 4D R19.	Interface inspirée du flux de travail de Cinema 4D R19.
+Cinema 4D es una marca de Maxon; Iron3D no está afiliado a Maxon.	Cinema 4D est une marque de Maxon ; Iron3D n'est pas affilié à Maxon.
+La importación de archivos .c4d usa el Cineware SDK	L'importation de fichiers .c4d utilise le SDK Cineware
+de MAXON Computer GmbH, integrado según su licencia.	de MAXON Computer GmbH, intégré sous sa licence.
+No se pudo abrir	Impossible d'ouvrir
+%d objetos, %d con malla, %d materiales, %d luces	%d objets, %d avec maillage, %d matériaux, %d lumières
+%lld puntos, %lld polígonos	%lld points, %lld polygones
+%d generadores con la geometría guardada por Cinema 4D	%d générateurs avec la géométrie enregistrée par Cinema 4D
+%d primitivas reconstruidas desde sus parámetros	%d primitives reconstruites à partir de leurs paramètres
+Importado sin avisos.	Importé sans avertissements.
+Revisa:	Vérifier :
 Cerrar	Fermer
+%d objetos: %d mallas, %d primitivas, %d luces	%d objets : %d maillages, %d primitives, %d lumières
+%d materiales, %lld puntos, %lld polígonos	%d matériaux, %lld points, %lld polygones
+Exportado sin avisos.	Exporté sans avertissements.
+Tolerante	Tolérant
+Se elige todo lo que toque la zona.	Tout ce que la zone touche est sélectionné.
+Solo se elige lo que queda dentro entero.	Seul ce qui se trouve entièrement à l'intérieur est sélectionné.
+Solo Seleccionar Visibles	Sélectionner uniquement les éléments visibles
+Puntos, aristas y polígonos tapados por la malla no se eligen.	Les points, arêtes et polygones masqués par le maillage ne sont pas sélectionnés.
+También se eligen los tapados (a través de la malla).	Les éléments masqués sont aussi sélectionnés (à travers le maillage).
 Visor de Imágenes	Visualiseur
+Guardar render	Enregistrer le rendu
+Imagen PNG	Image PNG
+Render guardado: 	Rendu enregistré : 
+No se pudo guardar el render.	Impossible d'enregistrer le rendu.
+Ajustar a la Ventana	Ajuster à la fenêtre
+Renderizar	Rendu
 Configuración...	Paramètres...
+Todavía no hay ningún render (Mayús+R).	Il n'y a pas encore de rendu (Maj+R).
+%s · %d x %d · antialiasing %dx%d · %.2f s · %d triángulos	%s · %d x %d · anticrénelage %dx%d · %.2f s · %d triangles
 Configuración de Render	Préférences de rendu
 Salida	Sortie
+1080 x 1080 (cuadrado)	1080 x 1080 (carré)
 Preestablecido	Préréglage
+Elegir...	Choisir...
+Usar el tamaño del visor	Utiliser la taille de la vue
+Anchura (px)	Largeur (px)
+Altura (px)	Hauteur (px)
 Antialiasing	Anti-aliasing
+Ninguno (1x1)	Aucun (1x1)
+Geometría (2x2)	Géométrie (2x2)
+Mejor (4x4)	Meilleur (4x4)
 Fondo	Arrière-Plan
 Arriba	Haut
 Abajo	Bas
+Malla demasiado grande para dibujar sus componentes.	Maillage trop grand pour dessiner ses composants.
 Puntos	Points
 Aristas	Arêtes
 Polígonos	Polygones
+Selecciona un objeto editable y entra en modo Puntos, Aristas o Polígonos.	Sélectionnez un objet éditable et passez en mode Points, Arêtes ou Polygones.
+ seleccionados.	 sélectionné(s).
+Bucle y Anillo funcionan en modo Aristas.	Boucle et Anneau fonctionnent en mode Arêtes.
 Invertir Selección	Inverser la sélection
+Comprobar Malla: sin problemas.	Vérifier le maillage : aucun problème.
+Comprobar Malla: 	Vérifier le maillage : 
+ aristas abiertas, 	 arêtes ouvertes, 
+ no manifold, 	 non-manifold, 
+ puntos sueltos, 	 points isolés, 
+ polígonos sin área.	 polygones d'aire nulle.
+Puente: selecciona exactamente 2 polígonos (modo Polígonos).	Pont : sélectionnez exactement 2 polygones (mode Polygones).
+Puente: los dos polígonos deben tener el mismo número de lados.	Pont : les deux polygones doivent avoir le même nombre de côtés.
+Soldar: selecciona al menos 2 puntos.	Souder : sélectionnez au moins 2 points.
+Cerrar Agujero: no hay bordes abiertos que toquen la selección.	Boucher le trou : aucune bordure ouverte ne touche la sélection.
+Alinear Normales: ya están todas alineadas.	Aligner les normales : elles sont déjà toutes alignées.
+Triangular: no hay polígonos de más de 3 lados.	Trianguler : il n'y a aucun polygone de plus de 3 côtés.
+Operación desconocida: 	Opération inconnue : 
+ elemento.	 élément.
+ elementos.	 éléments.
+Eliminados 	Supprimé 
+ polígono.	 polygone.
+ polígonos.	 polygones.
+: selecciona polígonos de un objeto editable.	: sélectionnez des polygones d'un objet éditable.
+Cuchillo: selecciona un objeto editable (C).	Couteau : sélectionnez un objet éditable (C).
+Cuchillo: la línea no corta ningún polígono.	Couteau : la ligne ne coupe aucun polygone.
+Cuchillo: 	Couteau : 
+ polígono cortado.	 polygone coupé.
+ polígonos cortados.	 polygones coupés.
+Desplazamiento (cm)	Décalage (cm)
+Desplazamiento de Inserción (cm)	Décalage de l'extrusion interne (cm)
+Extrusión (cm)	Extrusion (cm)
+Solo Visibles	Visibles uniquement
+o arrastra en el visor	ou faites glisser dans la vue
+(objeto editable)	(objet éditable)
+ vertices sin espejo.	 sommets sans miroir.
+Iron3D Studio - hoja de iconos (%d)	Iron3D Studio - planche d'icônes (%d)
 Preestablecidos	Préréglages
 Elementos Recientes	Eléments récents
+Resultado de la Búsqueda: "	Résultat de recherche : "
+Preestablecidos > 	Préréglages > 
+Ya hay una librería con ese nombre en library/browser.	Une bibliothèque portant ce nom existe déjà dans library/browser.
+No se pudo copiar la librería a library/browser: 	Impossible de copier la bibliothèque dans library/browser : 
+" es ahora permanente (	" est maintenant permanente (
+Librería "	Bibliothèque "
+" creada en library/browser.	" créée dans library/browser.
+Carpeta "	Dossier "
+" creada.	" créé.
+No se puede leer 	Lecture impossible : 
+ modelos y 	 modèles et 
+ archivos añadidos a "	 fichiers ajoutés à "
+Añadir a la librería	Ajouter à la bibliothèque
+Modelos y texturas	Modèles et textures
+" eliminado de "	" retiré de "
 Ya existe 	existe déjà. 
+; muévela antes de corregir.	; déplacez-la avant de la corriger.
+No se pudo renombrar la librería: 	Impossible de renommer la bibliothèque : 
+Url interna corregida (copia de seguridad en 	URL interne corrigée (sauvegarde dans 
+¿Eliminar "%s"%s?	Supprimer « %s »%s ?
+ y todo su contenido	 et tout son contenu
+Se borra de la librería (%s).	Il est supprimé de la bibliothèque (%s).
+Carpeta de destino (vacío = raíz, "a/b" = subcarpetas):	Dossier de destination (vide = racine, « a/b » = sous-dossiers) :
 Nombre:	Nom :
+Ruta no válida (o dentro de sí misma).	Chemin invalide (ou à l'intérieur de lui-même).
+Se guarda en library/browser: sale siempre.	Elle est enregistrée dans library/browser : elle se charge toujours.
+Todavía no implementado	Pas encore implémenté
+Nuevo Navegador	Nouveau navigateur
 Nueva Carpeta...	Nouveau dossier...
+Abre antes una librería (o una carpeta suya)	Ouvrez d'abord une bibliothèque (ou l'un de ses dossiers)
 Nuevo Catálogo...	Nouveau catalogue...
 Nueva Librería de Preestablecidos...	Nouvelle bibliothèque de préréglages...
+Añadir Archivos a la Librería...	Ajouter des fichiers à la bibliothèque...
+Abrir Librería de Preestablecidos...	Ouvrir une bibliothèque de préréglages...
+Hacer Permanente (copiar a library/browser)	Rendre permanente (copier dans library/browser)
+Quitar Librería del Navegador	Retirer la bibliothèque du navigateur
+Cargar en la Escena	Charger dans la scène
+Intro	Entrée
 Borrar	Supprimer
 Renombrar...	Renommer...
 Iconos Pequeños	Petites icônes
 Iconos Medianos	Moyennes icônes
 Iconos Grandes	Grandes icônes
+Mostrar Texturas y Archivos	Afficher les textures et les fichiers
+Ir a	Aller à
 Buscar...	Rechercher...
+Busca por nombre en todas las librerías (Intro)	Recherche par nom dans toutes les bibliothèques (Entrée)
+Librería temporal (solo esta sesión)	Bibliothèque temporaire (cette session uniquement)
+Librería permanente	Bibliothèque permanente
 Añadir Archivos...	Ajouter fichiers...
+Quitar del Navegador	Retirer du navigateur
+Corregir Url Interna (archivo renombrado)	Corriger l'URL interne (fichier renommé)
+Dentro pone "%s": Cinema 4D no la monta si no coincide con el nombre del archivo.	Elle contient « %s » : Cinema 4D ne la monte que si cela correspond au nom du fichier.
 Catálogos	Catalogues
 Ordenador	Ordinateur
 Red	Réseau
 Resultado de la Búsqueda	Résultats de la recherche
+  (temporal)	  (temporaire)
+Temporal: solo en esta sesión	Temporaire : cette session uniquement
+   (ninguna librería)	   (aucune bibliothèque)
+No hay librerías. Abre un .lib4d (Archivo > Abrir) o cópialo a library/browser.	Il n'y a aucune bibliothèque. Ouvrez un .lib4d (Fichier > Ouvrir) ou copiez-le dans library/browser.
+Aún no has cargado ningún preestablecido en esta sesión.	Vous n'avez encore chargé aucun préréglage dans cette session.
+Sin resultados.	Aucun résultat.
+Carpeta vacía.	Dossier vide.
+Suéltalo en el visor para añadirlo a la escena	Déposez-le dans la vue pour l'ajouter à la scène
+Mover a...	Déplacer vers...
+Modelo / escena de Cinema 4D	Modèle / scène Cinema 4D
 Carpeta	Dossier
+Archivo (textura, imagen...)	Fichier (texture, image...)
+temporal (solo esta sesión)	temporaire (cette session uniquement)
+  ·  librería temporal (solo esta sesión)	  ·  bibliothèque temporaire (cette session uniquement)
+  ·  librería permanente	  ·  bibliothèque permanente
+Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. Clic derecho > Corregir Url Interna.	Cette bibliothèque a été renommée en dehors de Cinema 4D : son URL interne ne correspond pas au fichier. Clic droit > Corriger l'URL interne.
+No hay ninguna librería de preestablecidos.	Il n'y a aucune bibliothèque de préréglages.
+Crear "Mis Preestablecidos"	Créer « Mes préréglages »
+Mis Preestablecidos	Mes préréglages
+Librería	Bibliothèque
+(elige una)	(choisissez-en une)
+(raíz de la librería)	(racine de la bibliothèque)
+ objetos	 objets
+ polígonos	 polygones
+ materiales	 matériaux
+" guardado en "	" enregistré dans "
 Idioma	Langue
 Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	Langue enregistrée. Redémarrez Iron3D Studio pour l'appliquer.
 Se aplicará al reiniciar Iron3D Studio.	Prend effet au redémarrage d'Iron3D Studio.
 Editor de Curvas	Éditeur de courbes
 Guardar como	Enregistrer sous
+%s\\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)	%s\\nAjouter l'objet %s  (Alt+clic : comme enfant de la sélection)
+%s\\nTodavía no implementado en Iron3D	%s\\nPas encore implémenté dans Iron3D
+Eje X / Encabezado [X]\\n(todavía no implementado)	Axe X / Cap [X]\\n(pas encore implémenté)
+Eje Y / Inclinación [Y]\\n(todavía no implementado)	Axe Y / Tangage [Y]\\n(pas encore implémenté)
+Eje Z / Alabeo [Z]\\n(todavía no implementado)	Axe Z / Roulis [Z]\\n(pas encore implémenté)
+Usar Sistema de Coordenadas de Objeto [W]\\n(ahora: Mundo)	Utiliser le système de coordonnées de l'objet [W]\\n(actuel : Monde)
+Usar Sistema de Coordenadas de Mundo [W]\\n(ahora: Objeto)	Utiliser le système de coordonnées du monde [W]\\n(actuel : Objet)
+Renderizar Vista Activa\\nRenderiza la vista activa en el propio visor.\\n[Atajo de Teclado Ctrl+R]	Rendre la vue active\\nRend la vue active directement dans la vue 3D.\\n[Raccourci clavier Ctrl+R]
+Renderizar en Visor de Imágenes [Mayús+R]\\nRenderiza la cámara activa con la Configuración de Render.	Rendre dans le visualiseur d'images [Maj+R]\\nRend la caméra active avec les paramètres de rendu.
+Hacer Editable [C]\\nConvierte Cubo, Esfera o Plano en un Objeto Poligonal.	Rendre éditable [C]\\nConvertit un cube, une sphère ou un plan en objet polygonal.
+Usar Modo Textura\\n(todavía no implementado)	Utiliser le mode Texture\\n(pas encore implémenté)
+Modo Ajuste\\n(todavía no implementado)	Mode Magnétisme\\n(pas encore implémenté)
+Vista Solo\\n(todavía no implementado)	Vue Solo\\n(pas encore implémenté)
+Activar Fijación [Mayús+S]\\n(todavía no implementado)	Activer le magnétisme [Maj+S]\\n(pas encore implémenté)
+Plano de Trabajo\\n(todavía no implementado)	Plan de travail\\n(pas encore implémenté)
+Bloquear Plano de Trabajo\\n(todavía no implementado)	Verrouiller le plan de travail\\n(pas encore implémenté)
+\\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.	\\nL'objet sélectionné est hors de la vue. Clic : amener la caméra dessus.
+Visible en %s: %s\\n(clic para cambiar)	Visible dans %s : %s\\n(cliquez pour modifier)
+%s\\nDisposición: %s	%s\\nDisposition : %s
+Exportado a Cinema 4D	Exporté vers Cinema 4D
+Une los puntos que coinciden (misma posición,\\nnormal y color) al conectar.	Réunit les points qui coïncident (même position,\\nnormale et couleur) lors de la connexion.
+Render por CPU con el sombreado de las miniaturas:\\nsin sombras ni texturas todavía.	Rendu CPU avec l'ombrage des miniatures :\\npas encore d'ombres ni de textures.
+Modo Línea: corta lo que cruza la línea.\\nCon polígonos seleccionados, solo esos.	Mode Ligne : coupe tout ce que la ligne traverse.\\nAvec des polygones sélectionnés, seulement ceux-ci.
+Eliminar de la Librería	Retirer de la bibliothèque
+Nueva Librería de Preestablecidos	Nouvelle bibliothèque de préréglages
+Mover a	Déplacer vers
+Sin  / \\\\ : * ? " < > |	Sans  / \\ : * ? " < > |
+\\nDoble clic o arrastrar al visor: cargar	\\nDouble-clic ou glisser dans la vue : charger
+\\nDoble clic: abrir	\\nDouble-clic : ouvrir
+%s\\n%d modelos  ·  %s	%s\\n%d modèles  ·  %s
+%s\\n(clic para quitar el aviso)	%s\\n(cliquez pour masquer l'avertissement)
+Guardar como Preestablecido	Enregistrer comme préréglage
+Tanque de Petróleo	Réservoir d'huile
+Terreno Fractal	Paysage
+Vectorizador	Vectoriseur
+Derretir	Fonte
+Envoltura	Enveloppe
+Cargar Material Preestablecido	Charger un préréglage de matériau
+Spline Arco	Outil Spline d'arc
+Unión de Splines	Union de splines
+Intersección de Splines	Intersection de splines
+Herramienta de Nubes	Outil Nuage
+Grupo de Nubes	Groupe de nuages
+Nube	Nuage
+Cámara Objetivo	Caméra cible
+Cámara de Movimiento	Caméra de mouvement
+Luz Objetivo	Lumière cible
+Luz IES	Lumière IES
+Herramienta de Iluminación	Outil d'éclairage
+Vista Perspectiva	Vue en perspective
+Vista Superior	Vue de dessus
+Vista Derecha	Vue de droite
+Vista Frontal	Vue de face
+Vista Izquierda	Vue de gauche
+Vista Trasera	Vue arrière
+Vista Inferior	Vue de dessous
+Guardar Proyecto	Enregistrer le projet
+Selección Contorno	Sélection du contour
+Aumentar Selección	Agrandir la sélection
+Fijación 2.5D	Magnétisme 2.5D
+Construcción de Personaje	Créateur de personnage
+Objeto %s [%s]	Objet %s [%s]
+Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f	Teinte %.0f°  Sat. %.0f%%  Lum. %.0f%%  Luminosité %.0f%%  Contraste %.0f%%  Gamma %.2f
+Editor de Material  [%s]	Éditeur de matériaux  [%s]
+Render: %d x %d en %.2f s	Rendu : %d x %d en %.2f s
+%s: %zu de %zu seleccionados	%s : %zu sur %zu sélectionné(s)
+%d elementos	%d éléments
+Esquema	Outliner
+Espacio de trabajo:	Espace de travail :
+Librería de preestablecidos de Cinema 4D	Bibliothèque de préréglages Cinema 4D
+Objeto poligonal	Objet polygonal
+Nulo (vacio)	Nul (vide)
+Fotométrica	Photométrique
+Destriangular	Annuler la triangulation
+Destriangular: no hay triángulos vecinos que unir.	Annuler la triangulation : il n'y a pas de triangles voisins à réunir.
+Ocultar Selección	Masquer la sélection
+Ocultar No Seleccionados	Masquer les non sélectionnés
+Mostrar Todo	Tout afficher
+No se puede ocultar todo el objeto.	Impossible de masquer l'objet entier.
+Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio n'a pas pu ouvrir sa fenêtre.
+Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	Une carte graphique compatible Vulkan 1.3 ou OpenGL 3.3 est nécessaire. Essayez de mettre à jour vos pilotes graphiques.
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cono	Cône

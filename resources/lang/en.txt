@@ -980,6 +980,54 @@ Librería	Library
 Idioma	Language
 Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	Language saved. Restart Iron3D Studio to apply it.
 Se aplicará al reiniciar Iron3D Studio.	Takes effect when Iron3D Studio restarts.
+Tanque de Petróleo	Oil Tank
+Terreno Fractal	Landscape
+Vectorizador	Vectorizer
+Derretir	Melt
+Envoltura	Wrap
+Cargar Material Preestablecido	Load Material Preset
+Spline Arco	Arc Spline Tool
+Unión de Splines	Spline Union
+Intersección de Splines	Spline Intersection
+Herramienta de Nubes	Cloud Tool
+Grupo de Nubes	Cloud Group
+Nube	Cloud
+Cámara Objetivo	Target Camera
+Cámara de Movimiento	Motion Camera
+Luz Objetivo	Target Light
+Luz IES	IES Light
+Herramienta de Iluminación	Lighting Tool
+Vista Perspectiva	Perspective View
+Vista Superior	Top View
+Vista Derecha	Right View
+Vista Frontal	Front View
+Vista Izquierda	Left View
+Vista Trasera	Back View
+Vista Inferior	Bottom View
+Guardar Proyecto	Save Project
+Selección Contorno	Outline Selection
+Aumentar Selección	Grow Selection
+Fijación 2.5D	2.5D Snapping
+Construcción de Personaje	Character Builder
+Objeto %s [%s]	Object %s [%s]
+Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f	Hue %.0f°  Sat %.0f%%  Lum %.0f%%  Brightness %.0f%%  Contrast %.0f%%  Gamma %.2f
+Render: %d x %d en %.2f s	Render: %d x %d in %.2f s
+%s: %zu de %zu seleccionados	%s: %zu of %zu selected
+%d elementos	%d items
+Esquema	Outliner
+Espacio de trabajo:	Workspace:
+Librería de preestablecidos de Cinema 4D	Cinema 4D Preset Library
+Objeto poligonal	Polygon object
+Nulo (vacio)	Null (empty)
+Fotométrica	Photometric
+Destriangular	Untriangulate
+Destriangular: no hay triángulos vecinos que unir.	Untriangulate: there are no neighbouring triangles to join.
+Ocultar Selección	Hide Selected
+Ocultar No Seleccionados	Hide Unselected
+Mostrar Todo	Unhide All
+No se puede ocultar todo el objeto.	Cannot hide the whole object.
+Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio could not open its window.
+Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	It needs a graphics card with Vulkan 1.3 or OpenGL 3.3. Try updating your graphics drivers.
 Polígono Vacío	Empty Polygon
 Guía	Guide
 Cono	Cone
@@ -987,11 +1035,9 @@ Cilindro	Cylinder
 Disco	Disc
 Toroide	Torus
 Cápsula	Capsule
-Tanque de Petróleo	Oil Tank
 Pirámide	Pyramid
 Platónico	Platonic
 Figura	Figure
-Terreno Fractal	Landscape
 Lápiz	Pen
 Dibujo	Sketch
 Suavizado Spline	Spline Smooth
@@ -1001,7 +1047,6 @@ Hélice	Helix
 n-Lados	n-Side
 Rectángulo	Rectangle
 Estrella	Star
-Vectorizador	Vectorizer
 4-Lados	4-Side
 Cisoide	Cissoid
 Rueda Dentada	Cogwheel
@@ -1030,7 +1075,6 @@ Sesgar	Shear
 Afilar	Taper
 Enroscar	Twist
 Aplastar y Estirar	Squash  Stretch
-Derretir	Melt
 Explosión	Explosion
 FX Explosión	Explosion FX
 Romper	Shatter
@@ -1038,7 +1082,6 @@ Corrección	Correction
 Cubrir	Shrink Wrap
 Esferizar	Spherify
 Superficie	Surface
-Envoltura	Wrap
 Rail de Splines	Spline Rail
 Envolver Spline	Spline Wrap
 Colisión	Collision
@@ -1078,7 +1121,6 @@ Objetivo	Target
 Niebla	Fog
 Mostrar Subcanales	Show Sub-channels
 Guardar Todos los Materiales como...	Save All Materials as...
-Cargar Material Preestablecido	Load Material Preset
 Todos los archivos	All files
 Nueva Librería	New Library
 Nueva Carpeta	New Folder
@@ -1092,49 +1134,7 @@ Capas	Layers
 Propiedades	Properties
 Transformar	Transform
 Vista 3D	3D View
-Spline Arco	Arc Spline Tool
-Unión de Splines	Spline Union
-Intersección de Splines	Spline Intersection
-Herramienta de Nubes	Cloud Tool
-Grupo de Nubes	Cloud Group
-Nube	Cloud
-Cámara Objetivo	Target Camera
-Cámara de Movimiento	Motion Camera
-Luz Objetivo	Target Light
-Luz IES	IES Light
-Herramienta de Iluminación	Lighting Tool
-Vista Perspectiva	Perspective View
-Vista Superior	Top View
-Vista Derecha	Right View
-Vista Frontal	Front View
-Vista Izquierda	Left View
-Vista Trasera	Back View
-Vista Inferior	Bottom View
-Guardar Proyecto	Save Project
-Selección Contorno	Outline Selection
-Aumentar Selección	Grow Selection
-Fijación 2.5D	2.5D Snapping
-Construcción de Personaje	Character Builder
-Objeto %s [%s]	Object %s [%s]
-Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f	Hue %.0f°  Sat %.0f%%  Lum %.0f%%  Brightness %.0f%%  Contrast %.0f%%  Gamma %.2f
 Editor de Material  [%s]	Material Editor  [%s]
-Render: %d x %d en %.2f s	Render: %d x %d in %.2f s
-%s: %zu de %zu seleccionados	%s: %zu of %zu selected
-%d elementos	%d items
-Esquema	Outliner
-Espacio de trabajo:	Workspace:
-Librería de preestablecidos de Cinema 4D	Cinema 4D Preset Library
-Objeto poligonal	Polygon object
-Nulo (vacio)	Null (empty)
-Fotométrica	Photometric
-Destriangular	Untriangulate
-Destriangular: no hay triángulos vecinos que unir.	Untriangulate: there are no neighbouring triangles to join.
-Ocultar Selección	Hide Selected
-Ocultar No Seleccionados	Hide Unselected
-Mostrar Todo	Unhide All
-No se puede ocultar todo el objeto.	Cannot hide the whole object.
-Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio could not open its window.
-Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	It needs a graphics card with Vulkan 1.3 or OpenGL 3.3. Try updating your graphics drivers.
 Exportar a Source (SMD)	Export to Source (SMD)
 Escena.smd	Scene.smd
 Exportar SMD	Export SMD

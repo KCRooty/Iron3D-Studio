@@ -6,6 +6,14 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (12): Alemán, francés e italiano: el resto de la interfaz
+
+**Añadido**
+- Unas 340 cadenas más en alemán, francés e italiano (ayudas de las herramientas, Preferencias, Acerca de, importación y exportación, Navegador de Contenido, selección, Cuchillo, Puente, Cámaras y Vistas, avisos). Las tres lenguas quedan con la interfaz completa salvo los atajos de teclado, que no se traducen.
+- El contador de selección de la vista ("Polígonos: 2 de 6 seleccionados") pasa por el traductor; antes salía con "de ... seleccionados" en español incluso en inglés.
+
+**Probado:** captura en francés con un Cubo editable y dos polígonos seleccionados (menús, Atributos, contador y barra de estado en francés); el aplicador comprueba que cada traducción conserva los `%s/%d/%zu` y los saltos de línea de la cadena original. **No probado:** revisión por hablantes nativos (son traducciones propias, pueden tener giros mejorables); alemán e italiano por captura con todos los menús abiertos; ruso, polaco, checo, chino, japonés y coreano siguen con las cadenas oficiales de Cinema 4D más inglés como respaldo.
+
 ### 2026-11-20 (11): Exportar a Source (Valve SMD)
 
 **Añadido**

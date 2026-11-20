@@ -1,9 +1,16 @@
 # Iron3D Studio - it (clave = texto en espanol; valor = traduccion)
 Importar Cinema 4D	Importa Cinema 4D
+Grabar Objetos Activos: no hay ningún objeto seleccionado.	Registra oggetti attivi: nessun oggetto selezionato.
+Grabar Objetos Activos: Posición, Escala y Rotación están desactivadas.	Registra oggetti attivi: Posizione, Scala e Rotazione sono disattivate.
+Clave grabada en el fotograma 	Chiave registrata al fotogramma 
+ objeto).	 oggetto).
+ objetos).	 oggetti).
 Extrusión	Estrusione
 Extrusión Interna	Estrusione interna
 Bisel	Smussa
 Cuchillo	Coltello
+: arrastra en el visor para dibujar la línea de corte.	: trascina nella vista per tracciare la linea di taglio.
+: arrastra en horizontal en el visor (o usa Aplicar).	: trascina in orizzontale nella vista (oppure usa Applica).
 Superior	Sopra
 Derecha	Destra
 Frontal	Frontale
@@ -16,29 +23,55 @@ Luz	Luce
 Cámara	Camera
 Polígono	Poligono
 Nulo	Nullo
+Parámetro todavía no implementado en Iron3D	Parametro non ancora implementato in Iron3D
+Clic: mostrar esta página. Mayús+Clic: mostrar varias a la vez.	Clic: mostra questa pagina. Maiusc+clic: mostrane più di una insieme.
 Abrir librería	Apri libreria
+Abrir una librería necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe. Cópiala a library/browser.	Per aprire una libreria serve la finestra di dialogo file del sistema, che su questa piattaforma non esiste ancora. Copiala in library/browser.
 Abrir librería de preestablecidos	Apri libreria di preset
 Librerías de preestablecidos de Cinema 4D	Librerie di preset Cinema 4D
 Este preestablecido no es un modelo de Cinema 4D.	Questo preset non è un modello Cinema 4D.
+No se pudo escribir el archivo temporal en 	Impossibile scrivere il file temporaneo in 
+Textura que no está en ninguna librería montada: 	Texture non presente in nessuna libreria montata: 
 Importar OBJ	Importa OBJ
 Importar glTF	Importa glTF
 Abrir	Apri
+Escenas y librerías (iron, c4d, obj, glb, lib4d)	Scene e librerie (iron, c4d, obj, glb, lib4d)
 Fusionar	Unisci
+Fusionar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	Per l'unione serve la finestra di dialogo file del sistema, che su questa piattaforma non esiste ancora.
+Escenas de Cinema 4D, OBJ, glTF e Iron3D	Scene Cinema 4D, OBJ, glTF e Iron3D
+Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	Per l'esportazione serve la finestra di dialogo file del sistema, che su questa piattaforma non esiste ancora.
 Exportar	Esporta
 La escena está vacía.	La scena è vuota.
 Exportar a Wavefront	Esporta in Wavefront
+Escena.obj	Scena.obj
 Exportar OBJ	Esporta OBJ
 Exportar a glTF	Esporta in glTF
+Escena.glb	Scena.glb
 Exportar glTF	Esporta glTF
 Exportar a Cinema 4D	Esporta in Cinema 4D
+Escena.c4d	Scena.c4d
 Guardar Objetos Seleccionados como	Salva oggetti selezionati come
+Objetos.c4d	Oggetti.c4d
 Mat	Nuovo
 Simetría	Simmetria
 Sistema de coordenadas: Mundo	Sistema di coordinate: Mondo
 Sistema de coordenadas: Objeto	Sistema di coordinate: Oggetto
+Activar Eje: se mueve el eje, no el objeto	Abilita asse: si muove l'asse, non l'oggetto
+Activar Eje: desactivado	Abilita asse: off
 Fotogramas Clave Automáticos: activados	Keyframing automatico: attivo
 Fotogramas Clave Automáticos: desactivados	Keyframing automatico: disattivo
+Hacer Editable: selecciona un Cubo, Esfera o Plano (los demás ya son editables o no tienen malla).	Rendi modificabile: seleziona un Cubo, una Sfera o un Piano (gli altri sono già modificabili o non hanno mesh).
+Hacer Editable: 1 objeto convertido a Objeto Poligonal.	Rendi modificabile: 1 oggetto convertito in oggetto poligonale.
+Hacer Editable: 	Rendi modificabile: 
+ objetos convertidos a Objeto Poligonal.	 oggetti convertiti in oggetti poligonali.
 Animación eliminada.	Animazione eliminata.
+Estado Actual a Objeto: 	Stato corrente in oggetto: 
+ copia poligonal creada.	 copia poligonale creata.
+ copias poligonales creadas.	 copie poligonali create.
+Estado Actual a Objeto: la selección no tiene geometría.	Stato corrente in oggetto: la selezione non ha geometria.
+Conectar Objetos: 	Collega oggetti: 
+ mallas unidas en un Objeto Polígono.	 mesh uniti in un unico oggetto poligonale.
+Conectar Objetos: la selección no tiene geometría.	Collega oggetti: la selezione non ha geometria.
 Supr	Canc
 Buscar orden...	Cerca comandi...
 Ninguna orden coincide.	Nessun comando trovato.
@@ -73,6 +106,7 @@ Guardar como...	Salva Progetto come...
 Guardar incrementalmente...	Salva in modo incrementale...
 Guardar Todo	Salva Tutti i Progetti
 Guardar Objetos Seleccionados como...	Salva Oggetti Selezionati come...
+Esta compilación no lleva el Cineware SDK de MAXON	Questa build non include il Cineware SDK di MAXON
 Archivos recientes	File recenti
 Salir	Esci
 Edición	Modifica
@@ -157,6 +191,9 @@ Fotograma Anterior	Fotogramma precedente
 Repetir (Loop)	Ripeti (ciclo)
 Personaje	Personaggio
 Resolver IK (experimental)	Risolvi IK (sperimentale)
+ cadenas resueltas.	 catene risolte.
+IK: ninguna etiqueta IK activa con Punta y Objetivo alcanzables.	IK: nessun tag IK attivo con punta e obiettivo raggiungibili.
+Mueve las articulaciones de cada etiqueta IK para que la punta llegue a su objetivo	Sposta i giunti di ogni tag IK in modo che la punta raggiunga l'obiettivo
 Articulación	Giunto
 Piel	Pelle
 Pesos	Pesi
@@ -185,6 +222,7 @@ Pellizcar	Schiacciare
 Amasar	Impasta
 Rastreador de Objetos	Tracker oggetto
 Ocultar Seleccionado	Nascondi Selezionati
+Intercambiar Clonador-Matriz	Scambia matrice del Cloner
 Selección MoGraph	Selezione MoGraph
 Clonador	Clona
 Matriz	Matrice
@@ -212,22 +250,48 @@ Animar	Animazione
 Visualizar	Visualizza
 Deshacer la última acción.	Annulla l'ultima azione.
 Rehacer la última acción deshecha.	Ripeti l'ultima azione annullata.
+Selección en Vivo [Atajo de Teclado 9]	Selezione dinamica [Scorciatoia da tastiera 9]
 Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.	Selezione dinamica: fai clic e trascina per selezionare elementi. SHIFT aggiunge alla selezione, CTRL rimuove.
+Herramienta de Mover [Atajo de Teclado E]	Strumento Sposta [Scorciatoia da tastiera E]
 Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.	Sposta: fai clic e trascina per spostare elementi. SHIFT quantizza il movimento / aggiunge alla selezione in modalità punti, CTRL rimuove.
+Herramienta de Escalar [Atajo de Teclado T]	Strumento Scala [Scorciatoia da tastiera T]
 Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.	Scala: fai clic e trascina per scalare elementi. SHIFT quantizza la scala / aggiunge alla selezione in modalità punti, CTRL rimuove.
+Herramienta de Rotar [Atajo de Teclado R]	Strumento Ruota [Scorciatoia da tastiera R]
 Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.	Ruota: fai clic e trascina per ruotare elementi. SHIFT quantizza la rotazione / aggiunge alla selezione in modalità punti, CTRL rimuove.
+Bloqueo de eje X: todavía no implementado.	Blocco asse X: non ancora implementato.
+Bloqueo de eje Y: todavía no implementado.	Blocco asse Y: non ancora implementato.
+Bloqueo de eje Z: todavía no implementado.	Blocco asse Z: non ancora implementato.
+Cambia los ejes del gizmo entre los del objeto y los del mundo.	Alterna gli assi del gizmo tra quelli dell'oggetto e quelli del mondo.
 Renderiza la vista activa en el propio visor.	Renderizza la vista attiva direttamente nel viewport.
 Renderiza la cámara activa en el Visor de Imágenes.	Renderizza la camera attiva nel Visualizzatore immagini.
+Editar Configuración de Render... [Ctrl+B]	Modifica impostazioni di rendering... [Ctrl+B]
 Resolución, antialiasing y fondo del render.	Risoluzione di render, antialiasing e sfondo.
+Cubo  (mantener pulsado: más objetos)	Cubo  (tieni premuto: altri oggetti)
+Lápiz  (mantener pulsado: más splines)	Penna  (tieni premuto: altre spline)
+Subdivisión Superficie  (mantener pulsado: generadores)	Superficie di suddivisione  (tieni premuto: generatori)
+Matriz  (mantener pulsado: modelado)	Array  (tieni premuto: modellazione)
+Doblar  (mantener pulsado: deformadores)	Piega  (tieni premuto: deformatori)
+Suelo  (mantener pulsado: escena)	Pavimento  (tieni premuto: scena)
+Cámara  (mantener pulsado: más cámaras)	Camera  (tieni premuto: altre camere)
+Luz  (mantener pulsado: más luces)	Luce  (tieni premuto: altre luci)
+Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado.	Clic: crea l'oggetto. Tieni premuto o clic destro: apri la palette del gruppo. Alt+clic: crea come figlio della selezione.
 Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.	Rendi modificabile: converte gli oggetti parametrici selezionati in oggetti poligonali.
+Usar Modo Modelo	Usa modalità Modello
 Modo Modelo: se editan objetos enteros.	Modalità modello: vengono modificati oggetti interi.
+Modo Textura: todavía no implementado.	Modalità Texture: non ancora implementata.
 Activar Eje [L]	Attiva asse [L]
+Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.	Modalità Asse: spostando, ruotando o scalando cambia solo l'asse dell'oggetto; la geometria modificabile e i figli restano al loro posto.
 Usar Modo Puntos	Usa modalità punti
 Modo Puntos: elige y mueve puntos de un objeto editable (C para hacerlo editable).	Modalità punti: seleziona e sposta i punti di un oggetto modificabile (C lo rende modificabile).
 Usar Modo Aristas	Usa modalità spigoli
 Modo Aristas: elige y mueve aristas de un objeto editable.	Modalità spigoli: seleziona e sposta gli spigoli di un oggetto modificabile.
 Usar Modo Polígonos	Usa modalità poligoni
 Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.	Modalità poligoni: seleziona e sposta poligoni (triangoli).
+Modo Ajuste: todavía no implementado.	Modalità Snap: non ancora implementata.
+Vista Solo: todavía no implementado.	Vista Solo: non ancora implementata.
+Fijación: todavía no implementado.	Snap: non ancora implementato.
+Plano de Trabajo: todavía no implementado.	Piano di lavoro: non ancora implementato.
+Bloquear Plano de Trabajo: todavía no implementado.	Blocca piano di lavoro: non ancora implementato.
 Usar como Cámara de Render	Usa come camera di render
 Deshacer Vista	Annulla Vista
 Rehacer Vista	Ripeti Vista
@@ -298,6 +362,9 @@ Todas las Vistas	Tutte le Viste
 Mover Cámara (arrastrar)	Sposta camera (trascina)
 Zoom de Cámara (arrastrar)	Zoom camera (trascina)
 Rotar Cámara (arrastrar)	Ruota camera (trascina)
+Cambiar Vista (todavía no implementado)	Cambia vista (non ancora implementato)
+Multi-vista: todavía no implementado.	Viste multiple: non ancora implementate.
+Arrastre sobre el icono para navegar por la vista.	Trascina sull'icona per navigare nella vista.
 Espaciado Cuadrícula : 100 cm	Spaziatura griglia : 100 cm
 Fusionar Objetos...	Inserisci Oggetti...
 Guardar como Preestablecido...	Salva Presettaggi...
@@ -312,6 +379,10 @@ Añadir	Aggiungi
 Duplicar	Duplica
 Etiqueta de Textura	Tag texture
 Favoritos	Segnalibri
+Buscar (todavía no implementado)	Cerca (non ancora implementato)
+Filtrar (todavía no implementado)	Filtro (non ancora implementato)
+Clic: seleccionar. Ctrl+Clic: anadir o quitar de la seleccion. Doble clic: renombrar. Clic derecho: menú contextual. Arrastre un material aquí para asignarlo.	Clic: seleziona. Ctrl+clic: aggiungi alla selezione o rimuovi. Doppio clic: rinomina. Clic destro: menu contestuale. Trascina qui un materiale per assegnarlo.
+CINEMA 4D Etiquetas	Tag CINEMA 4D
 Eliminar Etiqueta de Textura	Elimina tag texture
 Fong	Phong
 Protección	Protezione
@@ -332,6 +403,8 @@ Eliminar de Todas las Tomas	Rimuovi da Tutti i Take
 Gestor de Tomas...	Gestione Take...
 Establecer como Raíz	Setta come Radice
 Contraer Todo	Comprimi Tutto
+ objeto convertido.	 oggetto convertito.
+ objetos convertidos.	 oggetti convertiti.
 Estado Actual del Objeto	Stato Corrente ad Oggetto
 Expandir Grupo de Objetos	Separa Oggetti
 Eliminar Sin Hijos	Cancella Senza Figli
@@ -343,6 +416,9 @@ Renombrar	Rinomina
 Por Defecto	Predefinito
 Activado	Abilitato
 Apagado	Disattivo
+Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.	Punto in alto: visibile nell'editor. Punto in basso: visibile nel render. Grigio = Predefinito (eredita dal genitore), verde = Attivo, rosso = Disattivato.
+Etiqueta de Textura [%s]	Tag Texture [%s]
+%s (todavía no implementado)	%s (non ancora implementato)
 Atrás	Indietro
 Adelante	Avanti
 Subir	Carica
@@ -356,6 +432,8 @@ A Realizar	Note
 Interpolación de Claves	Animazione
 Escala del Proyecto	Scala progetto
 Centímetros	Centimetri
+Escalar Proyecto: todavía no implementado en Iron3D.	Scala progetto: non ancora implementato in Iron3D.
+Fotogramas por segundo: velocidad de reproducción de la Línea de Tiempo.	Fotogrammi al secondo: velocità di riproduzione della timeline.
 Tiempo del Proyecto	Tempo progetto
 Tiempo Mínimo	Tempo minimo
 Tiempo Máximo	Tempo massimo
@@ -374,7 +452,9 @@ Flujo de Trabajo Lineal	Workflow lineare
 Introducir Perfil de Color	Profilo colore di input
 Cargar Preestablecido...	Carica Presettaggio...
 Guardar Preestablecido...	Salva Presettaggio...
+Preestablecidos de proyecto: todavía no implementados en Iron3D.	Preset del progetto: non ancora implementati in Iron3D.
 Página no disponible	Pagina non disponibile
+  Todavía no implementado en Iron3D.	  Non ancora implementato in Iron3D.
 Básico	Base
 General	Generale
 Detalles	Dettagli
@@ -388,7 +468,9 @@ Propiedades Básicas	Proprietà Base
 Nombre	Nome
 Capa	Livello
 Visible en Editor	Visibile nell'editor
+Visible en Editor (punto superior): Por Defecto hereda del padre, Activado lo muestra siempre, Apagado lo oculta en el visor.	Visibile nell'editor (punto in alto): Predefinito eredita dal genitore, Attivo lo mostra sempre, Disattivato lo nasconde nella vista.
 Visible en Render	Visibile nel render
+Visible en Render (punto inferior): Iron3D todavía no tiene render final; el valor se guarda en la escena.	Visibile nel render (punto in basso): Iron3D non ha ancora un render finale; il valore viene salvato nella scena.
 Usar Color	Usa colore
 Desactivado	Disabilitato
 Coordenadas	Coordinate
@@ -401,9 +483,11 @@ Foco Cuadrado	Spot quadrato
 Foco Paralelo	Spot parallelo
 Foco Paralelo Cuadrado	Spot parallelo quadrato
 Área	Area
+Tipo de luz. En el visor, Tubo, Área e IES iluminan como una Omni; Paralela y Foco Paralelo como una Infinita.	Tipo di luce. Nella vista, Tubo, Area e IES illuminano come una Omni; Parallela e Spot parallelo come una Infinita.
 Ninguno	Nessuno
 Mapeado (Suave)	Shadow map (morbide)
 Trazado (Duro)	Raytraced (nette)
+Con sombra activada, la primera luz de la escena que la tenga proyecta sombras en el visor.	Con le ombre attive, la prima luce della scena che le ha proietta ombre nella vista.
 Luz Visible	Luce visibile
 No Ilumina	Nessuna illuminazione
 Mostrar Iluminación	Mostra illuminazione
@@ -417,6 +501,7 @@ ZY (refleja X)	ZY (specchia X)
 XZ (refleja Y)	XZ (specchia Y)
 XY (refleja Z)	XY (specchia Z)
 Tolerancia	Tolleranza
+  Refleja al primer hijo con malla; el hijo se edita aparte.	  Specchia il primo figlio con una mesh; il figlio si modifica separatamente.
 Radio	Raggio
 Relación de Aspecto	Rapporto d'aspetto
 Orientación	Orientamento
@@ -446,30 +531,44 @@ Limitar Ángulo	Limite angolo
 Usar Bordes	Usa spigoli
 Ángulo Interior	Angolo interno
 Ángulo Exterior	Angolo esterno
+Inverso Cuadrado (Físicamente Exacto)	Quadrato inverso (fisicamente accurato)
 Lineal	Lineare
 Escalón	Passo
+Inverso Cuadrado Limitado	Quadrato inverso limitato
+Inverso Limitado	Inverso limitato
 Decaimiento	Decadenza
+Cómo pierde fuerza la luz con la distancia. En las inversas, el Radio es la distancia a la que da el 100 %.	Come la luce sfuma con la distanza. Per i decadimenti inversi, il raggio è la distanza a cui dà il 100 %.
 Radio Interior	Raggio interno
 Radio/Decaimiento	Raggio/Decadimento
 Tamaño Horizontal	Dimensione orizzontale
 Tamaño Vertical	Dimensione verticale
 Tamaño en Profundidad	Dimensione in profondità
+  En el visor, las sombras son siempre mapeadas y de una sola luz.	  Nella vista le ombre sono sempre mappate e provengono da una sola luce.
 Normal	Normale
 Restar	Sottrazione
 Multiplicar	Moltiplica
 Circular	Cerchio
 Cuadrado	Quadrato
+Especular - Blinn (Heredado)	Speculare - Blinn (Legacy)
+Especular - Phong (Heredado)	Speculare - Phong (Legacy)
 Lambertiano (Difuso)	Lambertian (Diffuso)
 Oren-Nayar (Difuso)	Oren-Nayar (Diffuso)
+Irawan (Tejido)	Irawan (tessuto)
 Promedio	Media
 Mínimo	Minimo
 Máximo	Massimo
 Metal	Metallo
 Dieléctrico	Dielettrico
 Conductor	Conduttore
+ nudos	 nodi
+ capas	 livelli
+no se evalúa en el visor	non valutato nella vista
 Textura	Texture
 Elegir imagen	Scegli immagine
 Imágenes	Immagini
+Elegir la imagen del canal (sustituye al shader importado).	Scegli l'immagine del canale (sostituisce lo shader importato).
+Quitar la textura del canal.	Rimuovi la texture del canale.
+  Hay shaders que el visor todavía no evalúa.	  Alcuni shader non sono ancora valutati nella vista.
 Brillo	Luminosità
 Muestreo	Campionamento
 Desenfoque Desfase	Offset Blur
@@ -495,7 +594,10 @@ Fuerza Relieve	Forza Rilevo
 Color de Capa	Colore Livello
 (ninguna)	(nessuno)
 Fresnel de Capa	Livello Fresnel
+  Sin capas importadas: el visor usa Metálico/Rugosidad.	  Nessun livello importato: la vista usa Metallico/Rugosità.
 Visor (PBR equivalente)	Viewport (equivalente PBR)
+Metálico	Metallico
+  El visor todavía no pinta cada capa por separado (brillos de color, Atenuación).	  La vista non disegna ancora ogni livello separatamente (riflessi colorati, attenuazione).
 Luminancia	Luminanza
 Reflectancia	Riflettanza
 Relieve	Rilievo
@@ -503,6 +605,8 @@ Fosforescencia	Alone
 Iluminación	Illuminazione
 Asignar	Assegna
 Refracción	Rifrazione
+  Ningún objeto usa este material. Arrástrelo al Gestor de Objetos.	  Nessun oggetto usa questo materiale. Trascinalo nel Gestore oggetti.
+Etiqueta de Textura [Textura]	Tag Texture [Texture]
 Propiedades de Etiqueta	Proprietà tag
 Material	Materiale
 Proyección	Proiezione
@@ -522,17 +626,28 @@ Repeticiones V	Ripetizioni V
 Datos de Usuario	Dati Utente
 Añadir Datos de Usuario...	Aggiungi Dati Utente...
 Gestionar Datos de Usuario...	Gestisci Dati Utente...
+%zu clave%s seleccionada%s	%zu chiave%s selezionata%s
 Interpolación Spline	Interpolazione spline
 Interpolación Lineal	Interpolazione lineare
 Interpolación Escalón	Interpolazione a gradini
 Eliminar Claves	Elimina tasti
+Claves movidas 	Chiavi spostate 
+Eliminadas 	Eliminato 
+ clave.	 chiave.
+ claves.	 chiavi.
 Interpolación 	Interpolazione 
+ en 	 a 
 Esc. X	Scl. X
 Esc. Y	Scl. Y
 Esc. Z	Scl. Z
+%s: sin claves (F9 graba)	%s: nessuna chiave (F9 registra)
 Sin objeto activo	Nessun oggetto attivo
 Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.	Timeline: fai clic e trascina per cambiare il fotogramma corrente.
 Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.	Tasto: clic per selezionare (Shift aggiunge), trascina per spostare, clic destro per l'interpolazione.
+Tiempo Mínimo del proyecto.	Tempo minimo del progetto.
+Rango de previo (Tiempo Mínimo/Máximo de Previo).	Intervallo di anteprima (tempo min/max anteprima).
+Tiempo Máximo del proyecto (editable, la regla se reescala).	Tempo massimo del progetto (modificabile, il righello si riscala).
+Tiempo Máximo de Previo.	Tempo massimo anteprima.
 Ir al Inicio [Mayús+F]	Vai all'inizio [Shift+F]
 Ir a la Clave Anterior [Ctrl+F]	Vai al tasto precedente [Ctrl+F]
 Ir al Fotograma Anterior [F]	Vai al fotogramma precedente [F]
@@ -543,9 +658,13 @@ Ir a la Clave Siguiente [Ctrl+G]	Vai al tasto successivo [Ctrl+G]
 Ir al Final [Mayús+G]	Vai alla fine [Shift+G]
 Grabar Objetos Activos [F9]	Registra oggetti attivi [F9]
 Fotogramas Clave Automáticos [Ctrl+F9]	Keyframing automatico [Ctrl+F9]
+Selección de Claves (todavía no implementado)	Selezione chiavi (non ancora implementato)
 Grabar Posición	Registra posizione
 Grabar Escala	Registra scala
 Grabar Rotación	Registra rotazione
+Grabar Parámetro (todavía no implementado)	Registra parametro (non ancora implementato)
+Grabar Nivel de Puntos (todavía no implementado)	Registra animazione a livello di punti (non ancora implementato)
+Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D	Editor grafico / Dope Sheet: non ancora implementato in Iron3D
 Guardar Materiales como...	Salva Materiali come...
 Guardar Material Preestablecido...	Salva preset materiale...
 Función	Funzione
@@ -554,6 +673,8 @@ Aplicar	Applica
 Eliminar Materiales sin Usar	Elimina materiali inutilizzati
 Cargar Textura...	Carica texture...
 Editar Textura...	Modifica texture...
+Clic: seleccionar material. Doble clic: Editor de Material (en el nombre: renombrar). Arrastre a un objeto para asignarlo.	Clic: seleziona il materiale. Doppio clic: Editor materiali (sul nome: rinomina). Trascinalo su un oggetto per assegnarlo.
+Doble clic en un espacio vacío del Gestor de Materiales para crear un material nuevo.	Fai doppio clic su uno spazio vuoto nel Gestore materiali per creare un nuovo materiale.
 Doble clic aquí para crear un material	Doppio clic per creare un materiale
 Posición	Posizione
 Tamaño	Dimensione
@@ -562,60 +683,318 @@ Escala	Scala
 Objeto (Rel)	Oggetto (Rel)
 Objeto (Abs)	Oggetto (Abs)
 Mundo	Mondo
+Sistema de coordenadas de los campos (solo Objeto (Rel) disponible por ahora).	Sistema di coordinate dei campi (per ora è disponibile solo Oggetto (Rel)).
+Tamaño: medidas en cm. Escala: multiplicador del objeto.	Dimensione: misure in cm. Scala: moltiplicatore dell'oggetto.
+Aplicar los valores de los campos al objeto seleccionado.	Applica i valori dei campi all'oggetto selezionato.
 Selección Rectangular: arrastre para seleccionar los objetos que toque el rectángulo. MAYÚSCULAS añade, CTRL quita.	Selezione rettangolare: trascina per selezionare gli oggetti toccati dal rettangolo. SHIFT aggiunge, CTRL rimuove.
 Selección con Lazo: dibuje una zona para seleccionar los objetos que queden dentro. MAYÚSCULAS añade, CTRL quita.	Selezione a lazo: disegna un'area per selezionare gli oggetti al suo interno. SHIFT aggiunge, CTRL rimuove.
 Selección en Vivo: Haga clic para seleccionar elementos.	Selezione dinamica: fai clic per selezionare elementi.
 Nombre de archivo:	Nome file:
+Carpeta: %s	Cartella: %s
+Cargado: 	Caricato: 
+Error al cargar: 	Errore di caricamento: 
+Guardado: 	Salvato: 
+Error al guardar: 	Errore di salvataggio: 
 Cancelar	Annulla
+Colores y disposición de los paneles como en cada programa. Se aplica al momento.	Colori e layout dei pannelli come in ogni programma. Applicato immediatamente.
+Mis presets	I miei preset
 Personalizar	Personalizza
 Colores	Colori
+Fondo de paneles	Sfondo dei pannelli
+Fondo de campos	Sfondo dei campi
+Acento	Accento
+Azul de herramientas	Blu degli strumenti
 Texto	Testo
+Fondo del visor	Sfondo della vista
+Barra superior	Barra superiore
+Columna lateral	Colonna laterale
+Columna de objetos	Colonna degli oggetti
+Objetos / Atributos	Oggetti / Attributi
+Fila inferior	Riga inferiore
+Línea de tiempo	Timeline
+Pestañas verticales	Schede verticali
+Redondeo	Arrotondamento
+Personalizado (sin guardar)	Personalizzato (non salvato)
+Nombre del preset	Nome del preset
+Guardar como preset	Salva come preset
+Preset guardado en presets/.	Preset salvato in presets/.
+Escriba un nombre válido (letras, números, espacios, - o _).	Inserisci un nome valido (lettere, numeri, spazi, - o _).
+Preset eliminado.	Preset eliminato.
+Restablecer	Ripristina
+Vuelve al preset integrado «%s».	Torna al preset integrato «%s».
+Guardado. Se usará al abrir Iron3D.	Salvato. Verrà usato all'avvio di Iron3D.
+Error al guardar las preferencias.	Errore durante il salvataggio delle preferenze.
+Preset activo: %s	Preset attivo: %s
 Preferencias	Preferenze
 Interfaz	Interfaccia
 Visor	Vista
 Archivos	File
 Unidades	Unità
 Renderizador	Renderizzatore
+Backend activo en esta sesión: %s	Backend attivo in questa sessione: %s
 OpenGL	Hardware Viewport
+Backend de render (se aplica al reiniciar):	Backend di rendering (applicato al riavvio):
+Guardado. Reinicie Iron3D Studio para aplicarlo.	Salvato. Riavvia Iron3D Studio per applicarlo.
+Asignación	Assegnazione
 Normales	Normali
+  Ningún objeto usa este material.	  Nessun oggetto usa questo materiale.
+Acerca de Iron3D Studio	Informazioni su Iron3D Studio
+Interfaz inspirada en el flujo de trabajo de Cinema 4D R19.	Interfaccia ispirata al flusso di lavoro di Cinema 4D R19.
+Cinema 4D es una marca de Maxon; Iron3D no está afiliado a Maxon.	Cinema 4D è un marchio di Maxon; Iron3D non è affiliato a Maxon.
+La importación de archivos .c4d usa el Cineware SDK	L'importazione di file .c4d usa il Cineware SDK
+de MAXON Computer GmbH, integrado según su licencia.	di MAXON Computer GmbH, integrato con la sua licenza.
+No se pudo abrir	Impossibile aprire
+%d objetos, %d con malla, %d materiales, %d luces	%d oggetti, %d con mesh, %d materiali, %d luci
+%lld puntos, %lld polígonos	%lld punti, %lld poligoni
+%d generadores con la geometría guardada por Cinema 4D	%d generatori con la geometria salvata da Cinema 4D
+%d primitivas reconstruidas desde sus parámetros	%d primitive ricostruite dai loro parametri
+Importado sin avisos.	Importato senza avvisi.
+Revisa:	Controlla:
 Cerrar	Chiudi
+%d objetos: %d mallas, %d primitivas, %d luces	%d oggetti: %d mesh, %d primitive, %d luci
+%d materiales, %lld puntos, %lld polígonos	%d materiali, %lld punti, %lld poligoni
+Exportado sin avisos.	Esportato senza avvisi.
+Tolerante	Tollerante
+Se elige todo lo que toque la zona.	Viene selezionato tutto ciò che l'area tocca.
+Solo se elige lo que queda dentro entero.	Viene selezionato solo ciò che sta interamente all'interno.
+Solo Seleccionar Visibles	Seleziona solo elementi visibili
+Puntos, aristas y polígonos tapados por la malla no se eligen.	Punti, spigoli e poligoni nascosti dalla mesh non vengono selezionati.
+También se eligen los tapados (a través de la malla).	Vengono selezionati anche quelli nascosti (attraverso la mesh).
 Visor de Imágenes	Visualizzatore Immagini
+Guardar render	Salva render
+Imagen PNG	Immagine PNG
+Render guardado: 	Render salvato: 
+No se pudo guardar el render.	Impossibile salvare il render.
+Ajustar a la Ventana	Adatta alla finestra
+Renderizar	Render
 Configuración...	Impostazioni...
+Todavía no hay ningún render (Mayús+R).	Non c'è ancora nessun render (Maiusc+R).
+%s · %d x %d · antialiasing %dx%d · %.2f s · %d triángulos	%s · %d x %d · antialiasing %dx%d · %.2f s · %d triangoli
 Configuración de Render	Settaggi di Rendering
 Salida	Output
+1080 x 1080 (cuadrado)	1080 x 1080 (quadrato)
 Preestablecido	Presettaggi
+Elegir...	Scegli...
+Usar el tamaño del visor	Usa la dimensione della vista
+Anchura (px)	Larghezza (px)
+Altura (px)	Altezza (px)
 Antialiasing	Anti-Aliasing
+Ninguno (1x1)	Nessuno (1x1)
+Geometría (2x2)	Geometria (2x2)
+Mejor (4x4)	Migliore (4x4)
 Fondo	Sfondo
 Arriba	Su
 Abajo	Giù
+Malla demasiado grande para dibujar sus componentes.	Mesh troppo grande per disegnarne i componenti.
 Puntos	Punti
 Aristas	Lati
 Polígonos	Poligoni
+Selecciona un objeto editable y entra en modo Puntos, Aristas o Polígonos.	Seleziona un oggetto modificabile ed entra in modalità Punti, Spigoli o Poligoni.
+ seleccionados.	 selezionato/i.
+Bucle y Anillo funcionan en modo Aristas.	Anello e Cerchio funzionano in modalità Spigoli.
 Invertir Selección	Inverti Selezione
+Comprobar Malla: sin problemas.	Controlla mesh: nessun problema.
+Comprobar Malla: 	Controlla mesh: 
+ aristas abiertas, 	 spigoli aperti, 
+ no manifold, 	 non-manifold, 
+ puntos sueltos, 	 punti isolati, 
+ polígonos sin área.	 poligoni ad area zero.
+Puente: selecciona exactamente 2 polígonos (modo Polígonos).	Ponte: seleziona esattamente 2 poligoni (modalità Poligoni).
+Puente: los dos polígonos deben tener el mismo número de lados.	Ponte: i due poligoni devono avere lo stesso numero di lati.
+Soldar: selecciona al menos 2 puntos.	Salda: seleziona almeno 2 punti.
+Cerrar Agujero: no hay bordes abiertos que toquen la selección.	Chiudi buco: nessun bordo aperto tocca la selezione.
+Alinear Normales: ya están todas alineadas.	Allinea normali: sono già tutte allineate.
+Triangular: no hay polígonos de más de 3 lados.	Triangola: non ci sono poligoni con più di 3 lati.
+Operación desconocida: 	Operazione sconosciuta: 
+ elementos.	 elementi.
+Eliminados 	Eliminato 
+ polígono.	 poligono.
+ polígonos.	 poligoni.
+: selecciona polígonos de un objeto editable.	: seleziona poligoni di un oggetto modificabile.
+Cuchillo: selecciona un objeto editable (C).	Coltello: seleziona un oggetto modificabile (C).
+Cuchillo: la línea no corta ningún polígono.	Coltello: la linea non taglia nessun poligono.
+Cuchillo: 	Coltello: 
+ polígono cortado.	 poligono tagliato.
+ polígonos cortados.	 poligoni tagliati.
+Desplazamiento (cm)	Offset (cm)
+Desplazamiento de Inserción (cm)	Offset inset (cm)
+Extrusión (cm)	Estrusione (cm)
+Solo Visibles	Solo visibili
+o arrastra en el visor	oppure trascina nella vista
+(objeto editable)	(oggetto modificabile)
+ vertices sin espejo.	 vertici senza specchio.
+Iron3D Studio - hoja de iconos (%d)	Iron3D Studio - foglio icone (%d)
 Preestablecidos	Presettaggi
 Elementos Recientes	Elementi Recenti
+Resultado de la Búsqueda: "	Risultato della ricerca: "
+Preestablecidos > 	Preset > 
+Ya hay una librería con ese nombre en library/browser.	Esiste già una libreria con questo nome in library/browser.
+No se pudo copiar la librería a library/browser: 	Impossibile copiare la libreria in library/browser: 
+" es ahora permanente (	" è ora permanente (
+Librería "	Libreria "
+" creada en library/browser.	" creata in library/browser.
+Carpeta "	Cartella "
+" creada.	" creata.
+No se puede leer 	Impossibile leggere: 
+ modelos y 	 modelli e 
+ archivos añadidos a "	 file aggiunti a "
+Añadir a la librería	Aggiungi alla libreria
+Modelos y texturas	Modelli e texture
+" eliminado de "	" rimosso da "
 Ya existe 	esiste già 
+; muévela antes de corregir.	; spostala prima di correggerla.
+No se pudo renombrar la librería: 	Impossibile rinominare la libreria: 
+Url interna corregida (copia de seguridad en 	URL interno corretto (backup in 
+¿Eliminar "%s"%s?	Eliminare "%s"%s?
+ y todo su contenido	 e tutto il suo contenuto
+Se borra de la librería (%s).	Viene eliminato dalla libreria (%s).
+Carpeta de destino (vacío = raíz, "a/b" = subcarpetas):	Cartella di destinazione (vuoto = radice, "a/b" = sottocartelle):
 Nombre:	Nome:
+Ruta no válida (o dentro de sí misma).	Percorso non valido (o all'interno di se stesso).
+Se guarda en library/browser: sale siempre.	Viene salvata in library/browser: si carica sempre.
+Todavía no implementado	Non ancora implementato
+Nuevo Navegador	Nuovo browser
 Nueva Carpeta...	Nuova Cartella...
+Abre antes una librería (o una carpeta suya)	Apri prima una libreria (o una delle sue cartelle)
 Nuevo Catálogo...	Nuovo Catalogo...
 Nueva Librería de Preestablecidos...	Nuova Libreria Presettaggi...
+Añadir Archivos a la Librería...	Aggiungi file alla libreria...
+Abrir Librería de Preestablecidos...	Apri libreria di preset...
+Hacer Permanente (copiar a library/browser)	Rendi permanente (copia in library/browser)
+Quitar Librería del Navegador	Rimuovi libreria dal browser
+Cargar en la Escena	Carica nella scena
+Intro	Invio
 Borrar	Cancella
 Renombrar...	Rinomina...
 Iconos Pequeños	Icone Piccole
 Iconos Medianos	Icone Medie
 Iconos Grandes	Icone Grandi
+Mostrar Texturas y Archivos	Mostra texture e file
+Ir a	Vai a
 Buscar...	Cerca...
+Busca por nombre en todas las librerías (Intro)	Cerca per nome in tutte le librerie (Invio)
+Librería temporal (solo esta sesión)	Libreria temporanea (solo questa sessione)
+Librería permanente	Libreria permanente
 Añadir Archivos...	Seleziona File da Caricare...
+Quitar del Navegador	Rimuovi dal browser
+Corregir Url Interna (archivo renombrado)	Correggi URL interno (file rinominato)
+Dentro pone "%s": Cinema 4D no la monta si no coincide con el nombre del archivo.	Al suo interno c'è «%s»: Cinema 4D la monta solo se corrisponde al nome del file.
 Catálogos	Cataloghi
 Ordenador	Computer
 Red	Network
 Resultado de la Búsqueda	Risultati Ricerca
+  (temporal)	  (temporanea)
+Temporal: solo en esta sesión	Temporanea: solo questa sessione
+   (ninguna librería)	   (nessuna libreria)
+No hay librerías. Abre un .lib4d (Archivo > Abrir) o cópialo a library/browser.	Non ci sono librerie. Apri un .lib4d (File > Apri) oppure copialo in library/browser.
+Aún no has cargado ningún preestablecido en esta sesión.	Non hai ancora caricato nessun preset in questa sessione.
+Sin resultados.	Nessun risultato.
+Carpeta vacía.	Cartella vuota.
+Suéltalo en el visor para añadirlo a la escena	Rilascialo nella vista per aggiungerlo alla scena
+Mover a...	Sposta in...
+Modelo / escena de Cinema 4D	Modello / scena Cinema 4D
 Carpeta	Cartella
+Archivo (textura, imagen...)	File (texture, immagine...)
+temporal (solo esta sesión)	temporanea (solo questa sessione)
+  ·  librería temporal (solo esta sesión)	  ·  libreria temporanea (solo questa sessione)
+  ·  librería permanente	  ·  libreria permanente
+Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. Clic derecho > Corregir Url Interna.	Questa libreria è stata rinominata fuori da Cinema 4D: il suo URL interno non corrisponde al file. Clic destro > Correggi URL interno.
+No hay ninguna librería de preestablecidos.	Non ci sono librerie di preset.
+Crear "Mis Preestablecidos"	Crea "I miei preset"
+Mis Preestablecidos	I miei preset
+Librería	Libreria
+(elige una)	(scegline una)
+(raíz de la librería)	(radice della libreria)
+ objetos	 oggetti
+ polígonos	 poligoni
+ materiales	 materiali
+" guardado en "	" salvato in "
 Idioma	Lingua
 Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	Lingua salvata. Riavvia Iron3D Studio per applicarla.
 Se aplicará al reiniciar Iron3D Studio.	Avrà effetto al riavvio di Iron3D Studio.
 Editor de Curvas	Editor curve
 Guardar como	Salva con nome
+%s\\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)	%s\\nAggiungi oggetto %s  (Alt+clic: come figlio della selezione)
+%s\\nTodavía no implementado en Iron3D	%s\\nNon ancora implementato in Iron3D
+Eje X / Encabezado [X]\\n(todavía no implementado)	Asse X / Heading [X]\\n(non ancora implementato)
+Eje Y / Inclinación [Y]\\n(todavía no implementado)	Asse Y / Pitch [Y]\\n(non ancora implementato)
+Eje Z / Alabeo [Z]\\n(todavía no implementado)	Asse Z / Bank [Z]\\n(non ancora implementato)
+Usar Sistema de Coordenadas de Objeto [W]\\n(ahora: Mundo)	Usa il sistema di coordinate dell'oggetto [W]\\n(ora: Mondo)
+Usar Sistema de Coordenadas de Mundo [W]\\n(ahora: Objeto)	Usa il sistema di coordinate del mondo [W]\\n(ora: Oggetto)
+Renderizar Vista Activa\\nRenderiza la vista activa en el propio visor.\\n[Atajo de Teclado Ctrl+R]	Renderizza vista attiva\\nRenderizza la vista attiva direttamente nella vista.\\n[Scorciatoia da tastiera Ctrl+R]
+Renderizar en Visor de Imágenes [Mayús+R]\\nRenderiza la cámara activa con la Configuración de Render.	Renderizza nel visualizzatore immagini [Maiusc+R]\\nRenderizza la camera attiva con le impostazioni di rendering.
+Hacer Editable [C]\\nConvierte Cubo, Esfera o Plano en un Objeto Poligonal.	Rendi modificabile [C]\\nConverte Cubo, Sfera o Piano in un oggetto poligonale.
+Usar Modo Textura\\n(todavía no implementado)	Usa modalità Texture\\n(non ancora implementato)
+Modo Ajuste\\n(todavía no implementado)	Modalità Snap\\n(non ancora implementato)
+Vista Solo\\n(todavía no implementado)	Vista Solo\\n(non ancora implementato)
+Activar Fijación [Mayús+S]\\n(todavía no implementado)	Abilita snap [Maiusc+S]\\n(non ancora implementato)
+Plano de Trabajo\\n(todavía no implementado)	Piano di lavoro\\n(non ancora implementato)
+Bloquear Plano de Trabajo\\n(todavía no implementado)	Blocca piano di lavoro\\n(non ancora implementato)
+\\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.	\\nL'oggetto selezionato è fuori dalla vista. Clic: porta la camera su di esso.
+Visible en %s: %s\\n(clic para cambiar)	Visibile in %s: %s\\n(clic per cambiare)
+%s\\nDisposición: %s	%s\\nLayout: %s
+Exportado a Cinema 4D	Esportato in Cinema 4D
+Une los puntos que coinciden (misma posición,\\nnormal y color) al conectar.	Unisce i punti coincidenti (stessa posizione,\\nnormale e colore) durante il collegamento.
+Render por CPU con el sombreado de las miniaturas:\\nsin sombras ni texturas todavía.	Render CPU con l'ombreggiatura delle miniature:\\nancora senza ombre né texture.
+Modo Línea: corta lo que cruza la línea.\\nCon polígonos seleccionados, solo esos.	Modalità Linea: taglia tutto ciò che la linea attraversa.\\nCon poligoni selezionati, solo quelli.
+Eliminar de la Librería	Rimuovi dalla libreria
+Nueva Librería de Preestablecidos	Nuova libreria di preset
+Mover a	Sposta in
+Sin  / \\\\ : * ? " < > |	Senza  / \\ : * ? " < > |
+\\nDoble clic o arrastrar al visor: cargar	\\nDoppio clic o trascina nella vista: carica
+\\nDoble clic: abrir	\\nDoppio clic: apri
+%s\\n%d modelos  ·  %s	%s\\n%d modelli  ·  %s
+%s\\n(clic para quitar el aviso)	%s\\n(clic per chiudere l'avviso)
+Guardar como Preestablecido	Salva come preset
+Tanque de Petróleo	Serbatoio d'olio
+Terreno Fractal	Paesaggio
+Vectorizador	Vettorizzatore
+Derretir	Fusione
+Envoltura	Avvolgi
+Cargar Material Preestablecido	Carica preset materiale
+Spline Arco	Strumento Spline ad arco
+Unión de Splines	Unione di spline
+Intersección de Splines	Intersezione di spline
+Herramienta de Nubes	Strumento Nuvola
+Grupo de Nubes	Gruppo di nuvole
+Nube	Nuvola
+Cámara Objetivo	Camera target
+Cámara de Movimiento	Camera di movimento
+Luz Objetivo	Luce target
+Luz IES	Luce IES
+Herramienta de Iluminación	Strumento illuminazione
+Vista Perspectiva	Vista prospettica
+Vista Superior	Vista dall'alto
+Vista Derecha	Vista da destra
+Vista Frontal	Vista frontale
+Vista Izquierda	Vista da sinistra
+Vista Trasera	Vista posteriore
+Vista Inferior	Vista dal basso
+Guardar Proyecto	Salva progetto
+Selección Contorno	Seleziona contorno
+Aumentar Selección	Espandi selezione
+Fijación 2.5D	Snap 2.5D
+Construcción de Personaje	Creatore di personaggi
+Objeto %s [%s]	Oggetto %s [%s]
+Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f	Tonalità %.0f°  Sat. %.0f%%  Lum. %.0f%%  Luminosità %.0f%%  Contrasto %.0f%%  Gamma %.2f
+Editor de Material  [%s]	Editor materiali  [%s]
+Render: %d x %d en %.2f s	Render: %d x %d in %.2f s
+%s: %zu de %zu seleccionados	%s: %zu di %zu selezionati
+%d elementos	%d elementi
+Esquema	Outliner
+Espacio de trabajo:	Area di lavoro:
+Librería de preestablecidos de Cinema 4D	Libreria di preset Cinema 4D
+Objeto poligonal	Oggetto poligonale
+Nulo (vacio)	Null (vuoto)
+Fotométrica	Fotometrica
+Destriangular	Annulla triangolazione
+Destriangular: no hay triángulos vecinos que unir.	Annulla triangolazione: non ci sono triangoli adiacenti da unire.
+Ocultar Selección	Nascondi selezione
+Ocultar No Seleccionados	Nascondi non selezionati
+Mostrar Todo	Mostra tutto
+No se puede ocultar todo el objeto.	Impossibile nascondere l'intero oggetto.
+Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio non è riuscito ad aprire la sua finestra.
+Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	Serve una scheda grafica con Vulkan 1.3 o OpenGL 3.3. Prova ad aggiornare i driver della scheda grafica.
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula
