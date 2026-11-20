@@ -76,6 +76,11 @@ MeshEditResult subdividePolygons(const MeshData& mesh, const MeshTopology& topo,
 MeshEditResult flipPolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);
 // Triangular: cada poligono de mas de 3 lados pasa a n-2 triangulos (abanico). La seleccion nueva son los triangulos.
 MeshEditResult triangulatePolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);
+// Destriangular: une pares de triangulos vecinos en cuadrilateros cuando sus normales forman menos de `maxAngleDeg`
+// grados y el cuadrilatero resultante es convexo. Cada triangulo entra en un solo par. La seleccion nueva son los
+// cuadrilateros. `polys` vacio = todos. changed = cuadrilateros creados (0 = nada que unir).
+MeshEditResult untriangulatePolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys,
+                                     float maxAngleDeg = 5.0f);
 // Alinear Normales: dentro de cada isla conectada de `polys`, todos los poligonos quedan orientados como el primero
 // (invierte los que recorren una arista compartida en el mismo sentido). changed = 0 si ya estaba todo alineado.
 MeshEditResult alignNormals(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);

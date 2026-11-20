@@ -613,6 +613,65 @@ MeshEditResult triangulatePolygons(const MeshData& mesh, const MeshTopology& top
     return finish(std::move(verts), out, changed);
 }
 
+MeshEditResult untriangulatePolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys,
+                                     float maxAngleDeg) {
+    std::vector<Vertex> verts = mesh.vertices;
+    const std::vector<Face> faces = polyFaces(mesh, topo);
+    const float cosMax = std::cos(glm::radians(maxAngleDeg));
+    const int np = (int)topo.polys.size();
+    auto eligible = [&](int p) { return topo.polys[(size_t)p].size() == 3 && (polys.empty() || polys.count(p)); };
+    // Arista dirigida (a,b) -> triangulo que la recorre.
+    std::map<std::pair<int, int>, int> dirEdge;
+    for (int p = 0; p < np; ++p) {
+        if (!eligible(p)) continue;
+        const auto& pl = topo.polys[(size_t)p];
+        for (size_t k = 0; k < 3; ++k) dirEdge[{pl[k], pl[(k + 1) % 3]}] = p;
+    }
+    std::vector<char> used((size_t)np, 0);
+    std::vector<Face> out;
+    int changed = 0;
+    for (int p = 0; p < np; ++p) {
+        if (used[(size_t)p]) continue;
+        bool merged = false;
+        if (eligible(p)) {
+            const auto& pl = topo.polys[(size_t)p];
+            for (size_t k = 0; k < 3 && !merged; ++k) {
+                const int u = pl[k], v = pl[(k + 1) % 3], x = pl[(k + 2) % 3];
+                const auto it = dirEdge.find({v, u});
+                if (it == dirEdge.end()) continue;
+                const int q = it->second;
+                if (q == p || used[(size_t)q] || q < p) continue;
+                if (glm::dot(topo.polyNormals[(size_t)p], topo.polyNormals[(size_t)q]) < cosMax) continue;
+                const auto& ql = topo.polys[(size_t)q];
+                int y = -1, yk = -1;
+                for (size_t j = 0; j < 3; ++j)
+                    if (ql[j] != u && ql[j] != v) { y = ql[j]; yk = (int)j; }
+                if (y < 0) continue;
+                // Cuadrilatero u, y, v, x: convexo si todos los giros miran como la normal.
+                const glm::vec3 quad[4] = {topo.points[(size_t)u], topo.points[(size_t)y], topo.points[(size_t)v],
+                                           topo.points[(size_t)x]};
+                const glm::vec3 n = glm::normalize(topo.polyNormals[(size_t)p] + topo.polyNormals[(size_t)q]);
+                bool convex = true;
+                for (int i = 0; i < 4 && convex; ++i) {
+                    const glm::vec3 e1 = quad[(i + 1) % 4] - quad[i], e2 = quad[(i + 2) % 4] - quad[(i + 1) % 4];
+                    if (glm::dot(glm::cross(e1, e2), n) <= 1e-9f) convex = false;
+                }
+                if (!convex) continue;
+                Face f;
+                f.v = {faces[(size_t)p].v[k], faces[(size_t)q].v[(size_t)yk], faces[(size_t)p].v[(k + 1) % 3],
+                       faces[(size_t)p].v[(k + 2) % 3]};
+                f.sel = true;
+                out.push_back(std::move(f));
+                used[(size_t)p] = used[(size_t)q] = 1;
+                ++changed;
+                merged = true;
+            }
+        }
+        if (!merged && !used[(size_t)p]) out.push_back(faces[(size_t)p]);
+    }
+    return finish(std::move(verts), out, changed);
+}
+
 MeshEditResult alignNormals(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys) {
     // Arista dirigida (a,b) -> poligonos de `polys` que la recorren en ese sentido.
     std::map<std::pair<int, int>, std::vector<int>> dirEdge;

@@ -1127,3 +1127,5 @@ Librería de preestablecidos de Cinema 4D	Cinema 4D Preset Library
 Objeto poligonal	Polygon object
 Nulo (vacio)	Null (empty)
 Fotométrica	Photometric
+Destriangular	Untriangulate
+Destriangular: no hay triángulos vecinos que unir.	Untriangulate: there are no neighbouring triangles to join.

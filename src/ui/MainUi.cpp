@@ -2532,6 +2532,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
             if (ImGui::MenuItemEx(tr("Invertir Normales"), kIconGutterText, "U~R", false, cm != 0)) g.compOp = "flip";
             if (ImGui::MenuItemEx(tr("Alinear Normales"), kIconGutterText, "U~A", false, cm != 0)) g.compOp = "align";
             if (ImGui::MenuItemEx(tr("Triangular"), kIconGutterText, nullptr, false, cm != 0)) g.compOp = "triang";
+            if (ImGui::MenuItemEx(tr("Destriangular"), kIconGutterText, nullptr, false, cm != 0)) g.compOp = "untriang";
         }
         ImGui::EndMenu();
     }
@@ -6547,8 +6548,8 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
         name = tr("Cerrar Agujero Poligonal");
         r = closeHoles(*c.mesh, t, selectedPoints());
         if (!r.changed) { flashStatus(tr("Cerrar Agujero: no hay bordes abiertos que toquen la selección.")); return false; }
-    } else if (op == "subdiv" || op == "flip" || op == "align" || op == "triang") {
-        name = op == "subdiv" ? tr("Subdividir") : op == "flip" ? tr("Invertir Normales") : op == "align" ? tr("Alinear Normales") : tr("Triangular");
+    } else if (op == "subdiv" || op == "flip" || op == "align" || op == "triang" || op == "untriang") {
+        name = op == "subdiv" ? tr("Subdividir") : op == "flip" ? tr("Invertir Normales") : op == "align" ? tr("Alinear Normales") : op == "untriang" ? tr("Destriangular") : tr("Triangular");
         std::set<int> polys;
         if (mode == 3) polys = c.sel;
         if (polys.empty())
@@ -6558,6 +6559,9 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
         else if (op == "align") {
             r = alignNormals(*c.mesh, t, polys);
             if (!r.changed) { flashStatus(tr("Alinear Normales: ya están todas alineadas.")); return false; }
+        } else if (op == "untriang") {
+            r = untriangulatePolygons(*c.mesh, t, mode == 3 ? c.sel : std::set<int>{});
+            if (!r.changed) { flashStatus(tr("Destriangular: no hay triángulos vecinos que unir.")); return false; }
         } else {
             r = triangulatePolygons(*c.mesh, t, polys);
             if (!r.changed) { flashStatus(tr("Triangular: no hay polígonos de más de 3 lados.")); return false; }

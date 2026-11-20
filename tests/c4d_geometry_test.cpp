@@ -724,6 +724,13 @@ int main() {
         check(tr.changed == 6 && trt.points.size() == 8 && euler(trt) == 2, "triangular: 6 cuadrilateros pasan a triangulos, 8 puntos");
         check(triangulatePolygons(tr.mesh, trt, {}).changed == 0, "triangular: lo ya triangulado no cambia");
 
+        // Destriangular: los 12 triangulos del cubo vuelven a 6 cuadrilateros; sin triangulos, no cambia.
+        const MeshEditResult ut = untriangulatePolygons(tr.mesh, trt, {});
+        const MeshTopology utt = buildMeshTopology(ut.mesh);
+        check(ut.changed == 6 && utt.polys.size() == 6 && utt.points.size() == 8 && euler(utt) == 2,
+              "destriangular: 12 triangulos del cubo -> 6 cuadrilateros");
+        check(untriangulatePolygons(cube, t, {}).changed == 0, "destriangular: sin triangulos no cambia");
+
         // Alinear Normales: con una cara al reves se arregla; una malla ya coherente no cambia.
         std::set<int> all;
         for (int p = 0; p < (int)t.polys.size(); ++p) all.insert(p);

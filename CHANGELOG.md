@@ -6,6 +6,13 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (4): Malla > Destriangular
+
+**Nuevo**
+- **Destriangular** (Malla): une pares de triángulos vecinos en cuadriláteros cuando sus normales forman menos de 5° y el resultado es convexo. Con selección de polígonos actúa sobre ellos; sin selección, sobre toda la malla. Los triángulos sueltos se quedan como están.
+
+**Probado:** `iron3d_tests` (los 12 triángulos de un cubo vuelven a 6 cuadriláteros, 8 puntos, malla cerrada; sin triángulos no cambia). **No probado:** el clic en el menú con la interfaz abierta; el umbral de 5° es fijo (C4D lo deja elegir) y no genera n-gons.
+
 ### 2026-11-20 (3): Interfaz en inglés por defecto y multilenguaje
 
 **Nuevo**
