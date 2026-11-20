@@ -1012,6 +1012,11 @@ No se puede ocultar todo el objeto.	Das gesamte Objekt kann nicht ausgeblendet w
 Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio konnte sein Fenster nicht öffnen.
 Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	Es wird eine Grafikkarte mit Vulkan 1.3 oder OpenGL 3.3 benötigt. Versuche, deine Grafiktreiber zu aktualisieren.
 SMD: %d huesos y %d mallas con pesos; solo la pose actual, sin animación. Cada material de Source necesita su .vmt.	SMD: %d Knochen und %d Netze mit Gewichten; nur die aktuelle Pose, keine Animation. Jedes Source-Material braucht seine .vmt.
+Línea	Linie
+Bucle	Schleife
+Cuchillo: no hay ninguna arista bajo el cursor.	Messer: keine Kante unter dem Cursor.
+Cuchillo: esa arista no tiene un bucle de cuadriláteros que cortar.	Messer: diese Kante hat keine Schleife aus Vierecken zum Schneiden.
+Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic.	Schleifenmodus: Klick auf eine Kante; schneidet ihren ganzen Ring\nan der angeklickten Stelle.
 Polígono Vacío	Leeres Polygon
 Guía	Hilfslinie
 Cono	Kegel

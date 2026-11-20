@@ -44,6 +44,11 @@ MeshEditResult knifeCut(const MeshData& mesh, const MeshTopology& topo, const gl
                         const glm::vec3& planeNormal, const std::vector<char>& allowed,
                         const std::function<bool(const glm::vec3&)>& inRange);
 
+// Cuchillo en modo Bucle: corta todo el anillo de aristas de `edge` (las opuestas de cuadrilatero en
+// cuadrilatero) por el punto t (0..1, medido desde el extremo de menor indice de cada arista; 0.5 = mitad).
+// Cada cuadrilatero del anillo pasa a dos. changed = cuadrilateros partidos (0 = nada que cortar).
+MeshEditResult loopCut(const MeshData& mesh, const MeshTopology& topo, int edge, float t = 0.5f);
+
 // Seleccion de poligonos a partir de triangulos (tras rehacer la topologia).
 std::set<int> polysFromTris(const MeshTopology& topo, const std::vector<int>& tris);
 

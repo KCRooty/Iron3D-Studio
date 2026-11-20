@@ -6,6 +6,18 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (14): Cuchillo en modo Bucle
+
+**Añadido**
+- **Cuchillo (K) tiene ahora modo Bucle** además de Línea (selector en el panel de la herramienta). Un clic en una arista (a menos de 14 px) corta todo su anillo —las aristas opuestas de cuadrilátero en cuadrilátero— por el punto donde está el cursor a lo largo de la arista; cada cuadrilátero del anillo pasa a dos. «Solo Visibles» también vale aquí.
+- `loopCut` en `MeshEdit`: solo parte cuadriláteros cortados por dos aristas opuestas; el resto de la malla queda intacta y los vértices nuevos comparten posición entre caras vecinas (la malla sigue cerrada). Interpola color, UV y normal.
+- Cadenas nuevas traducidas a inglés, alemán, francés e italiano. Orden de línea `--ui-cmd=loop=x,y` para verificar sin input.
+- Pruebas: en el cubo, un anillo parte 4 caras (10 caras, 12 puntos, 20 aristas, Euler 2, sin bordes abiertos); arista inválida no hace nada; la esfera corta sus cuadriláteros.
+
+**Límites:** un solo corte por clic (sin varios cortes a la vez ni deslizar el punto antes de confirmar); no atraviesa triángulos ni n-gonos (el anillo se detiene ahí); la posición se mide desde el extremo de menor índice de cada arista, así que en anillos con aristas en sentidos opuestos el corte no sigue una proporción constante visual (con 0,5 no se nota).
+
+**No probado:** el clic real con ratón (solo `--ui-cmd`); un anillo cerrado en una malla compleja (solo cubo y esfera en el test).
+
 ### 2026-11-20 (13): Valve SMD con esqueleto y pesos
 
 **Añadido**

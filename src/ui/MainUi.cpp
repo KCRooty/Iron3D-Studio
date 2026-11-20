@@ -223,6 +223,7 @@ struct UiState {
     float symTolCm = 0.5f;
     float extrudeCm = 20.0f, innerInsetCm = 10.0f, bevelInsetCm = 10.0f, bevelExtrudeCm = 10.0f;
     bool knifeVisibleOnly = true;
+    bool knifeLoop = false;  // Cuchillo en modo Bucle (clic en una arista) en vez de Linea
     int chordM = -1000;  // fotograma en que se pulso M (atajos M~S)
     struct ToolDrag {
         bool active = false, applied = false;
@@ -6925,6 +6926,50 @@ int knifeLine(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera,
     return r.changed;
 }
 
+// Cuchillo en modo Bucle: el clic corta el anillo de la arista mas cercana (a menos de 14 px), por el punto
+// donde esta el cursor a lo largo de esa arista.
+int knifeLoopAt(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, const ViewportState& vp,
+                SceneHistory& history, float mx, float my) {
+    if (!editableMesh(selected)) {
+        flashStatus(tr("Cuchillo: selecciona un objeto editable (C)."));
+        return 0;
+    }
+    const MeshTopology topo = buildMeshTopology(*selected->mesh);
+    const CompProjector pr = compProjector(*selected, camera, vp);
+    std::vector<char> visible;
+    if (g.knifeVisibleOnly) {
+        const glm::mat4 mvp = pr.mvp;
+        visible = computeComponentVisibility(*selected->mesh, topo, mvp, (int)vp.w, (int)vp.h).edges;
+    }
+    int best = -1;
+    float bestD = 14.0f, bestT = 0.5f;
+    for (size_t e = 0; e < topo.edges.size(); ++e) {
+        if (!visible.empty() && (e >= visible.size() || !visible[e])) continue;
+        ImVec2 a, b;
+        if (!pr(topo.points[(size_t)topo.edges[e].first], a) || !pr(topo.points[(size_t)topo.edges[e].second], b)) continue;
+        const float dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+        if (l2 < 1.0f) continue;
+        const float t = std::clamp(((mx - a.x) * dx + (my - a.y) * dy) / l2, 0.0f, 1.0f);
+        const float ex = a.x + dx * t - mx, ey = a.y + dy * t - my;
+        const float d = std::sqrt(ex * ex + ey * ey);
+        if (d < bestD) { bestD = d; best = (int)e; bestT = t; }
+    }
+    if (best < 0) {
+        flashStatus(tr("Cuchillo: no hay ninguna arista bajo el cursor."));
+        return 0;
+    }
+    MeshEditResult r = loopCut(*selected->mesh, topo, best, bestT);
+    if (!r.changed) {
+        flashStatus(tr("Cuchillo: esa arista no tiene un bucle de cuadriláteros que cortar."));
+        return 0;
+    }
+    history.commitBefore(root);
+    selected->mesh = std::make_shared<const MeshData>(std::move(r.mesh));
+    if (g_vp) g.comp.sel.clear();
+    flashStatus(tr("Cuchillo: ") + std::to_string(r.changed) + (r.changed == 1 ? tr(" polígono cortado.") : tr(" polígonos cortados.")));
+    return r.changed;
+}
+
 void modelToolMouse(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, float mx, float my,
                     bool leftDown, bool leftPressed, SceneHistory& history) {
     auto& d = g.tdrag;
@@ -6933,6 +6978,11 @@ void modelToolMouse(SceneNode& root, SceneNode* selected, const OrbitalCamera& c
         d = {};
         d.startX = d.curX = mx;
         d.startY = d.curY = my;
+        if (g.modelTool == UiState::ModelTool::Knife && g.knifeLoop) {
+            knifeLoopAt(root, selected, camera, *g_vp, history, mx, my);
+            d = {};
+            return;
+        }
         if (g.modelTool == UiState::ModelTool::Knife) {
             d.active = editableMesh(selected) != nullptr;
             if (!d.active) flashStatus(tr("Cuchillo: selecciona un objeto editable (C)."));
@@ -7004,8 +7054,14 @@ void drawModelToolUi(SceneNode* selected, const ViewportState& vp) {
             ImGui::SetNextItemWidth(120.0f);
             ImGui::DragFloat(tr("Extrusión (cm)"), &g.bevelExtrudeCm, 0.5f, -10000.0f, 10000.0f, "%.1f");
         } else {
+            if (ImGui::RadioButton(tr("Línea"), !g.knifeLoop)) g.knifeLoop = false;
+            ImGui::SameLine();
+            if (ImGui::RadioButton(tr("Bucle"), g.knifeLoop)) g.knifeLoop = true;
             ImGui::Checkbox(tr("Solo Visibles"), &g.knifeVisibleOnly);
-            ImGui::TextDisabled(tr("Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos."));
+            if (g.knifeLoop)
+                ImGui::TextDisabled(tr("Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic."));
+            else
+                ImGui::TextDisabled(tr("Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos."));
         }
         if (g.modelTool != MT::Knife) {
             if (ImGui::Button(tr("Aplicar"))) g.toolApplyRequested = true;
@@ -7031,6 +7087,13 @@ void runPendingToolCmd(SceneNode& root, SceneNode* selected, const OrbitalCamera
         } catch (...) { return; }
     }
     using MT = UiState::ModelTool;
+    if (cmd.rfind("loop=", 0) == 0) {
+        if (nums.size() != 2) return;
+        setModelTool(MT::Knife);
+        g.knifeLoop = true;
+        knifeLoopAt(root, selected, camera, vp, history, vp.x + nums[0] * vp.w, vp.y + nums[1] * vp.h);
+        return;
+    }
     if (cmd.rfind("knife=", 0) == 0) {
         if (nums.size() != 4) return;
         setModelTool(MT::Knife);
@@ -7361,7 +7424,7 @@ bool queueUiCommand(const std::string& cmd) {
         g.compMoveRequested = true;
     }
     else if (cmd.rfind("meshop=", 0) == 0) g.compOp = cmd.substr(7);
-    else if (cmd.rfind("tool=", 0) == 0 || cmd.rfind("knife=", 0) == 0) g.pendingTool = cmd;
+    else if (cmd.rfind("tool=", 0) == 0 || cmd.rfind("knife=", 0) == 0 || cmd.rfind("loop=", 0) == 0) g.pendingTool = cmd;
     else if (cmd == "sel-all-visible") g.compSelectAllRequested = 1;   // marco que cubre todo el visor
     else if (cmd == "sel-all-through") g.compSelectAllRequested = 2;
     else if (cmd.rfind("comp=", 0) == 0) {  // comp=<modo 1-3>[:indices separados por coma]

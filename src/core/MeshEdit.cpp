@@ -246,6 +246,67 @@ MeshEditResult knifeCut(const MeshData& mesh, const MeshTopology& topo, const gl
     return finish(std::move(verts), out, changed);
 }
 
+MeshEditResult loopCut(const MeshData& mesh, const MeshTopology& topo, int edge, float t) {
+    std::vector<Vertex> verts = mesh.vertices;
+    std::vector<Face> faces = polyFaces(mesh, topo);
+    if (edge < 0 || edge >= (int)topo.edges.size()) return finish(std::move(verts), faces, 0);
+    t = std::clamp(t, 0.02f, 0.98f);
+    const std::set<int> ring = edgeRing(topo, edge);
+    std::map<std::pair<int, int>, int> edgeId;
+    for (size_t e = 0; e < topo.edges.size(); ++e) edgeId[topo.edges[e]] = (int)e;
+    auto eid = [&](int a, int b) {
+        auto it = edgeId.find({std::min(a, b), std::max(a, b)});
+        return it == edgeId.end() ? -1 : it->second;
+    };
+    std::vector<Face> out;
+    int changed = 0;
+    for (size_t p = 0; p < faces.size(); ++p) {
+        const auto& pl = topo.polys[p];
+        const Face& f = faces[p];
+        if (pl.size() != 4) { out.push_back(f); continue; }
+        int hit[4];
+        int count = 0;
+        for (int k = 0; k < 4; ++k) {
+            hit[k] = ring.count(eid(pl[(size_t)k], pl[(size_t)(k + 1) % 4])) ? 1 : 0;
+            count += hit[k];
+        }
+        // Solo cuadrilateros cortados por dos aristas opuestas (k y k+2).
+        int k0 = -1;
+        if (count == 2 && hit[0] && hit[2]) k0 = 0;
+        else if (count == 2 && hit[1] && hit[3]) k0 = 1;
+        if (k0 < 0) { out.push_back(f); continue; }
+        // Nuevos vertices: el punto se calcula desde el extremo de menor indice
+        // (las dos caras que comparten la arista dan exactamente el mismo).
+        auto cutVertex = [&](size_t k) {
+            const size_t k1 = (k + 1) % 4;
+            const int a = pl[k], b = pl[k1];
+            const bool swap = a > b;
+            const int lo = swap ? b : a, hi = swap ? a : b;
+            const glm::vec3 pos = topo.points[(size_t)lo] + (topo.points[(size_t)hi] - topo.points[(size_t)lo]) * t;
+            const Vertex& va = verts[swap ? f.v[k1] : f.v[k]];
+            const Vertex& vb = verts[swap ? f.v[k] : f.v[k1]];
+            Vertex nv;
+            nv.position = pos;
+            nv.color = va.color + (vb.color - va.color) * t;
+            nv.uv = va.uv + (vb.uv - va.uv) * t;
+            const glm::vec3 nn = va.normal + (vb.normal - va.normal) * t;
+            nv.normal = glm::length(nn) > 1e-12f ? glm::normalize(nn) : va.normal;
+            verts.push_back(nv);
+            return (uint32_t)(verts.size() - 1);
+        };
+        const size_t ka = (size_t)k0, kb = (size_t)k0 + 2;
+        const uint32_t m1 = cutVertex(ka), m2 = cutVertex(kb);
+        // v[ka] m1 v[ka+1] v[ka+2] m2 v[kb+1]: dos cuadrilateros.
+        Face A, B;
+        A.v = {m1, f.v[(ka + 1) % 4], f.v[(ka + 2) % 4], m2};
+        B.v = {m2, f.v[(kb + 1) % 4], f.v[ka], m1};
+        out.push_back(A);
+        out.push_back(B);
+        ++changed;
+    }
+    return finish(std::move(verts), out, changed);
+}
+
 // --- Seleccion por topologia ---------------------------------------------------
 
 namespace {

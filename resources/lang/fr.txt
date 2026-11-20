@@ -1017,6 +1017,11 @@ No se puede ocultar todo el objeto.	Impossible de masquer l'objet entier.
 Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio n'a pas pu ouvrir sa fenêtre.
 Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	Une carte graphique compatible Vulkan 1.3 ou OpenGL 3.3 est nécessaire. Essayez de mettre à jour vos pilotes graphiques.
 SMD: %d huesos y %d mallas con pesos; solo la pose actual, sin animación. Cada material de Source necesita su .vmt.	SMD : %d os et %d maillages avec poids ; pose actuelle uniquement, sans animation. Chaque matériau Source a besoin de son .vmt.
+Línea	Ligne
+Bucle	Boucle
+Cuchillo: no hay ninguna arista bajo el cursor.	Couteau : aucune arête sous le curseur.
+Cuchillo: esa arista no tiene un bucle de cuadriláteros que cortar.	Couteau : cette arête n'a pas de boucle de quadrilatères à couper.
+Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic.	Mode Boucle : cliquez sur une arête ; coupe tout son anneau\nà l'endroit du clic.
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cono	Cône

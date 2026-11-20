@@ -710,6 +710,19 @@ int main() {
         check(vert >= 0 && edgeRing(st, vert).size() == 18, "anillo: 18 aristas verticales alrededor");
         check(eq >= 0 && edgeRing(st, eq).size() > 2, "anillo del ecuador: recorre los meridianos");
 
+        // Cuchillo en Bucle: un anillo del cubo (4 aristas, 4 caras) -> 4 caras mas, 4 puntos nuevos, malla cerrada.
+        {
+            const MeshEditResult lc = loopCut(cube, t, 0, 0.5f);
+            const MeshTopology lt = buildMeshTopology(lc.mesh);
+            check(lc.changed == 4, "bucle cortado: 4 caras partidas");
+            check(lt.polys.size() == 10 && lt.points.size() == 12 && lt.edges.size() == 20, "bucle cortado: 10 caras, 12 puntos, 20 aristas");
+            check(euler(lt) == 2, "bucle cortado: sigue siendo una malla cerrada (Euler 2)");
+            check(checkMesh(lt).clean(), "bucle cortado: sin bordes abiertos");
+            check(loopCut(cube, t, -1).changed == 0, "bucle cortado: arista invalida no hace nada");
+            // En la esfera (polos triangulares) un anillo vertical solo parte los cuadrilateros.
+            check(vert >= 0 && loopCut(makeSphereMesh(), st, vert, 0.3f).changed > 0, "bucle cortado: esfera");
+        }
+
         // Aumentar / Reducir / Conectados con la cara de arriba.
         const std::set<int> grown = growSelection(t, 3, {top});
         check(grown.size() == 5, "aumentar: arriba + 4 lados");
