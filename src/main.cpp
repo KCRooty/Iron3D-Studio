@@ -13,6 +13,7 @@ extern "C" __declspec(dllimport) int __stdcall MessageBoxW(void* hWnd, const wch
                                                          unsigned int type);
 #endif
 #include <GLFW/glfw3.h>
+#include "core/WindowSize.h"
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -479,6 +480,7 @@ int main(int argc, char** argv) {
     // "--frame=<nombre>" encuadra ese objeto y "--select=<nombre>" lo deja
     // seleccionado (verificacion de la flecha de objeto fuera de vista).
     std::string frameArg, selectArg;
+    int sizeW = 0, sizeH = 0; // "--size=WxH": ventana de ese tamano sin maximizar (capturas a una resolucion exacta)
     std::string langArg; // "--lang=<codigo>": idioma de esta sesion sin tocar preferencias
     std::vector<std::string> uiCmdArgs; // "--ui-cmd=make-editable|frame-selected|commander[:texto]|vp-menu"
     bool travelArg = false; // "--travel": como pulsar la flecha (viaje hacia el seleccionado)
@@ -515,6 +517,9 @@ int main(int argc, char** argv) {
             selectArg = a.substr(9);
         } else if (a.rfind("--ui-cmd=", 0) == 0) {
             uiCmdArgs.push_back(a.substr(9));
+        } else if (a.rfind("--size=", 0) == 0) {
+            int w = 0, h = 0;
+            if (std::sscanf(a.c_str() + 7, "%dx%d", &w, &h) == 2 && w >= 640 && h >= 480 && w <= 7680 && h <= 4320) { sizeW = w; sizeH = h; }
         } else if (a.rfind("--lang=", 0) == 0) {
             langArg = a.substr(7); // idioma solo para esta sesion (verificacion); no se guarda
         } else if (a.rfind("--ui-preset=", 0) == 0) {
@@ -543,12 +548,12 @@ int main(int argc, char** argv) {
 
     configureWindowHints(backend);
     // La interfaz de C4D esta pensada para pantalla completa: se abre maximizada.
-    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+    glfwWindowHint(GLFW_MAXIMIZED, sizeW > 0 ? GLFW_FALSE : GLFW_TRUE);
     if (noFocus) {
         glfwWindowHint(GLFW_FOCUSED, GLFW_FALSE);
         glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_FALSE);
     }
-    GLFWwindow* window = glfwCreateWindow(1600, 900, "Iron3D Studio", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(sizeW > 0 ? sizeW : 1600, sizeH > 0 ? sizeH : 900, "Iron3D Studio", nullptr, nullptr);
     if (!window) {
         std::fprintf(stderr, "[Iron3D] glfwCreateWindow fallo.\n");
 #if defined(_WIN32)
@@ -560,6 +565,7 @@ int main(int argc, char** argv) {
 #endif
         return 1;
     }
+    if (sizeW > 0) iron3d::forceWindowClientSize(window, sizeW, sizeH);
     {
         // Icono de la ventana (logo I3DS); en Windows el .exe lleva ademas el suyo (resources/iron3d.rc).
         GLFWimage icon;

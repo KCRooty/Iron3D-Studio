@@ -130,6 +130,7 @@ add_executable(Iron3DStudio
     src/core/Paths.cpp
     src/core/Preferences.cpp
     src/core/I18n.cpp
+    src/core/WindowSize.cpp
     src/core/Material.cpp
     src/core/ShaderTree.cpp
     src/core/ChannelBake.cpp
