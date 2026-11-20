@@ -6,6 +6,22 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (24): Luces como en C4D: estrella y gizmos por tipo
+
+**Cambiado**
+- La luz ya no se dibuja como esfera negra: ahora es una **estrellita blanca de líneas** en su posición (14 rayos, tamaño fijo en escena, sin escala del nodo), amarilla si está seleccionada.
+- Según el tipo se añade el gizmo de C4D: **Foco** y **Foco cuadrado** (cono hasta un círculo/cuadrado, con eje central; el radio sale del ángulo exterior), **Paralela con foco** (cilindro/prisma), **Infinita/Paralela** (flecha hacia +Z), **Área** (rectángulo o disco del tamaño de la luz, con una marca hacia donde ilumina) y **Tubo** (una línea). Omni y Fotométrica: solo la estrella.
+- El gizmo gira con la luz (apunta hacia +Z local, como en C4D).
+- Tests: 14 rayos dentro del radio, Omni sin líneas extra, radio del cono = tan(ángulo/2) × largo, flecha de la Infinita, rectángulo del Área con la mitad del tamaño a cada lado, la estrella centrada en la luz y luz oculta sin gizmo.
+
+**Límites**
+- La longitud del cono y de la flecha es fija (250 cm), no sigue el radio de decaimiento real.
+- **Sin tiradores** (los puntos naranjas de C4D) para cambiar ángulo o tamaño arrastrando: se edita en el panel de Atributos.
+- Para elegir una luz con el ratón se sigue usando una esfera invisible del tamaño de la estrella, no las líneas del gizmo.
+- Tubo y Fotométrica son aproximaciones; la forma real del área distinta de rectángulo/disco no está.
+
+**Verificado:** tests y compilación. **Sin probar:** el aspecto en el visor (Vulkan y OpenGL) ni la selección con clic reales.
+
 ### 2026-11-20 (23): Seleccionar Patrón
 
 **Añadido**

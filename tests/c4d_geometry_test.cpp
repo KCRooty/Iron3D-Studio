@@ -3,6 +3,7 @@
 
 #include "core/SceneNode.h"
 #include "core/MeshEdit.h"
+#include "core/LightGizmo.h"
 #include "core/Boolean.h"
 #include "core/Clone.h"
 #include "core/Deform.h"
@@ -916,6 +917,50 @@ int main() {
             check(bc.present && bc.mode == 2 && bc.count == 5 && std::fabs(bc.radiusCm - 123.0f) < 1e-3f && std::fabs(bc.rotStepDeg - 7.0f) < 1e-3f &&
                       std::fabs(bc.scaleStepPct - 12.5f) < 1e-3f && std::fabs(bc.offset.z - 30.0f) < 1e-3f,
                   "clonador: ajustes conservados tras guardar");
+        }
+
+        // Gizmo de las luces: estrella + cono / flecha / rectangulo.
+        {
+            std::vector<glm::vec3> star, spot, inf, area, omni;
+            lightStarLines(0.12f, star);
+            check(star.size() == 2 * 14 && star.size() % 2 == 0, "estrella de la luz: 14 rayos");
+            bool inRadius = true;
+            for (const glm::vec3& p : star) inRadius = inRadius && glm::length(p) <= 0.12f + 1e-5f;
+            check(inRadius, "estrella: ningun rayo sale del radio");
+            LightData l;
+            lightGizmoLocalLines(l, omni);
+            check(omni.empty(), "Omni: solo estrella, sin lineas extra");
+            l.kind = LightKind::Spot;
+            l.outerAngleDeg = 60.0f;
+            lightGizmoLocalLines(l, spot);
+            check(!spot.empty() && spot.size() % 2 == 0, "Foco: segmentos en pares");
+            float zMax = 0.0f, rMax = 0.0f;
+            for (const glm::vec3& p : spot) { zMax = std::max(zMax, p.z); rMax = std::max(rMax, std::hypot(p.x, p.y)); }
+            check(std::fabs(rMax - std::tan(glm::radians(30.0f)) * zMax) < 1e-3f, "Foco: radio del cono = tan(angulo/2) * largo");
+            l.kind = LightKind::Infinite;
+            lightGizmoLocalLines(l, inf);
+            check(inf.size() == 2 * 5, "Infinita: eje + 4 aletas de flecha");
+            l.kind = LightKind::Area;
+            l.areaShape = 1;
+            l.areaSize = glm::vec3(2.0f, 1.0f, 1.0f);
+            lightGizmoLocalLines(l, area);
+            float xMax = 0.0f, yMax = 0.0f;
+            for (const glm::vec3& p : area) { xMax = std::max(xMax, std::fabs(p.x)); yMax = std::max(yMax, std::fabs(p.y)); }
+            check(std::fabs(xMax - 1.0f) < 1e-5f && std::fabs(yMax - 0.5f) < 1e-5f, "Area: rectangulo con la mitad del tamano a cada lado");
+            SceneNode root("r");
+            SceneNode* ln = root.addChild("Luz", PrimitiveType::Light);
+            ln->position = glm::vec3(1.0f, 2.0f, 3.0f);
+            std::vector<Vertex> lines;
+            buildLightGizmos(root, nullptr, lines);
+            check(lines.size() == star.size(), "buildLightGizmos: una Omni da solo la estrella");
+            glm::vec3 c(0.0f);
+            for (const Vertex& v : lines) c += v.position;
+            c /= (float)lines.size();
+            check(glm::length(c - ln->position) < 1e-3f, "buildLightGizmos: la estrella esta centrada en la luz");
+            ln->editorVis = VisMode::Off;
+            lines.clear();
+            buildLightGizmos(root, nullptr, lines);
+            check(lines.empty(), "luz oculta: sin gizmo");
         }
 
         // Seleccionar Patron.

@@ -54,6 +54,7 @@ extern "C" __declspec(dllimport) int __stdcall MultiByteToWideChar(unsigned int 
 #include "ui/AppIconData.h"
 #include "core/Skin.h"
 #include "core/NullShapes.h"
+#include "core/LightGizmo.h"
 
 namespace {
 
@@ -303,14 +304,9 @@ void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vect
             break;
         }
         case PrimitiveType::Light: {
-            // Icono de tamano fijo, ignora la escala del nodo a proposito --
-            // una luz no es geometria escalable, es un marcador. Ahora SI se
-            // ilumina de verdad (es geometria normal a ojos del renderer),
-            // lo cual de paso hace que se vea donde esta la luz.
-            const glm::mat4 iconWorld = parentWorld *
-                glm::translate(glm::mat4(1.0f), node.position) *
-                glm::scale(glm::mat4(1.0f), glm::vec3(0.12f));
-            if (pass == 0) renderer.drawMesh(meshes.sphere, iconWorld, viewProj * iconWorld, material);
+            // Desde 2026-11-20 la luz no se dibuja como esfera: su marcador es una estrella de
+            // lineas (core/LightGizmo.h), como en C4D. Aqui no se dibuja nada; el clic sigue
+            // usando una esfera invisible del tamano de la estrella (ver pickNode).
             break;
         }
         case PrimitiveType::Camera: {
@@ -1203,6 +1199,7 @@ int main(int argc, char** argv) {
             // Formas de los Nulos (controladores de rig): lineas en mundo, una vez por fotograma.
             std::vector<Vertex> nullLines;
             if (!viewport.renderView) iron3d::buildNullShapes(sceneRoot, selected, nullLines);
+            if (!viewport.renderView) iron3d::buildLightGizmos(sceneRoot, selected, nullLines);
             const std::vector<Vertex> noTris;
 
             for (const Panel& pn : panels) {

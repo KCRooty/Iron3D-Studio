@@ -106,6 +106,7 @@ add_executable(Iron3DStudio
     src/core/Clone.cpp
     src/core/Boolean.cpp
     src/core/NullShapes.cpp
+    src/core/LightGizmo.cpp
     src/importers/obj/ObjIO.cpp
     src/importers/smd/SmdIO.cpp
     src/importers/gltf/GltfIO.cpp
@@ -349,6 +350,7 @@ add_executable(iron3d_tests
     src/core/MeshData.cpp
     src/core/PrimitiveShapes.cpp
     src/core/Deform.cpp
+    src/core/LightGizmo.cpp
     src/core/Clone.cpp
     src/core/Boolean.cpp
     src/core/MeshTopology.cpp
@@ -449,6 +451,7 @@ add_executable(skin_test
     src/core/Deform.cpp
     src/core/Clone.cpp
     src/core/NullShapes.cpp
+    src/core/LightGizmo.cpp
     src/core/MeshData.cpp
     src/core/PrimitiveShapes.cpp
     src/core/MeshTopology.cpp
