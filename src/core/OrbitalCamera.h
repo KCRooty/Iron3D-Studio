@@ -61,6 +61,24 @@ public:
         bool invertOrbit = false;
     } nav;
 
+    // Punto de vista (vista, objetivo, distancia y angulos) para Deshacer/Rehacer Vista del menu Vista.
+    struct ViewState {
+        View view = View::Perspective;
+        glm::vec3 target{0.0f};
+        float distance = 4.0f, yaw = 0.0f, pitch = 0.0f;
+        bool operator==(const ViewState& o) const {
+            return view == o.view && target == o.target && distance == o.distance && yaw == o.yaw && pitch == o.pitch;
+        }
+    };
+    ViewState saveView() const { return {view_, target_, distance_, yaw_, pitch_}; }
+    void restoreView(const ViewState& s) {
+        view_ = s.view;
+        target_ = s.target;
+        distance_ = s.distance;
+        yaw_ = s.yaw;
+        pitch_ = s.pitch;
+    }
+
 private:
     View view_ = View::Perspective;
     glm::vec3 target_{0.0f, 0.0f, 0.0f};

@@ -3333,14 +3333,59 @@ void drawLeftToolbar(ImVec2 pos, ImVec2 size) {
 
 // --- Visor: menu propio + overlays (secciones 11, 12 y 16) --------------------------
 
+// Historial de puntos de vista de cada visor (Vista > Deshacer/Rehacer Vista). Un cambio de camara cuenta como uno
+// cuando se queda quieta unos frames (el final de un arrastre o de un giro de rueda).
+struct ViewHistory {
+    std::vector<OrbitalCamera::ViewState> undo, redo;
+    OrbitalCamera::ViewState committed, lastFrame;
+    bool init = false;
+    int still = 0;
+};
+
+ViewHistory& trackView(const OrbitalCamera& camera) {
+    static std::map<const OrbitalCamera*, ViewHistory> all;
+    ViewHistory& h = all[&camera];
+    const OrbitalCamera::ViewState now = camera.saveView();
+    if (!h.init) {
+        h.committed = h.lastFrame = now;
+        h.init = true;
+    } else if (!(now == h.committed)) {
+        h.still = now == h.lastFrame ? h.still + 1 : 0;
+        if (h.still >= 12) {
+            h.undo.push_back(h.committed);
+            if (h.undo.size() > 50) h.undo.erase(h.undo.begin());
+            h.redo.clear();
+            h.committed = now;
+            h.still = 0;
+        }
+    } else {
+        h.still = 0;
+    }
+    h.lastFrame = now;
+    return h;
+}
+
 void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& camera, ViewportState& vp,
                         ImVec2 pos, ImVec2 size) {
+    ViewHistory& viewHist = trackView(camera);
     beginPanel("##vpheader", pos, size, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar);
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu(tr("Vista"))) {
             ImGui::MenuItem(tr("Usar como Cámara de Render"), nullptr, false, false);
             ImGui::Separator();
-            disabledItems({{tr("Deshacer Vista"), tr("Ctrl+Mayús+Z")}, {tr("Rehacer Vista"), tr("Ctrl+Mayús+Y")}, {nullptr, nullptr}});
+            if (ImGui::MenuItem(tr("Deshacer Vista"), tr("Ctrl+Mayús+Z"), false, !viewHist.undo.empty())) {
+                viewHist.redo.push_back(viewHist.committed);
+                viewHist.committed = viewHist.undo.back();
+                viewHist.undo.pop_back();
+                camera.restoreView(viewHist.committed);
+            }
+            if (ImGui::MenuItem(tr("Rehacer Vista"), tr("Ctrl+Mayús+Y"), false, !viewHist.redo.empty())) {
+                viewHist.undo.push_back(viewHist.committed);
+                viewHist.committed = viewHist.redo.back();
+                viewHist.redo.pop_back();
+                camera.restoreView(viewHist.committed);
+            }
+            ImGui::Separator();
             if (ImGui::MenuItem(tr("Encuadrar Todo"), tr("Alt+H"))) frameNodes(camera, root, false);
             if (ImGui::MenuItem(tr("Encuadrar Geometría"), "H")) frameNodes(camera, root, false);
             if (ImGui::MenuItem(tr("Encuadrar Elementos Activos"), "O", false, selected != nullptr))
