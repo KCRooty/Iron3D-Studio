@@ -1038,6 +1038,19 @@ Eje	Axis
 Cuchillo: el clic no toca la malla.	Knife: the click does not touch the mesh.
 Cuchillo: el plano no corta ningún polígono.	Knife: the plane cuts no polygon.
 Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	Plane mode: click the mesh; cuts with a plane\nperpendicular to the chosen axis through that point.
+Segmentos de Rotación	Rotation Segments
+Radio Exterior	Outer Radius
+Radio del Anillo	Ring Radius
+Radio del Tubo	Pipe Radius
+Segmentos del Anillo	Ring Segments
+Segmentos del Tubo	Pipe Segments
+Segmentos de la Tapa	Cap Segments
+Profundidad	Depth
+Tetraedro	Tetrahedron
+Octaedro	Octahedron
+Icosaedro	Icosahedron
+Dodecaedro	Dodecahedron
+  Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  Parametric primitive: editing the mesh (points, edges...) drops the parameters.
 Polígono Vacío	Empty Polygon
 Guía	Guide
 Cono	Cone

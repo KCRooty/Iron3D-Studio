@@ -1005,6 +1005,16 @@ Eje	Asse
 Cuchillo: el clic no toca la malla.	Coltello: il clic non tocca la mesh.
 Cuchillo: el plano no corta ningún polígono.	Coltello: il piano non taglia nessun poligono.
 Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	Modalità Piano: clic sulla mesh; taglia con un piano\nperpendicolare all'asse scelto passante per quel punto.
+Segmentos de Rotación	Segmenti di rotazione
+Radio Exterior	Raggio esterno
+Radio del Anillo	Raggio dell'anello
+Radio del Tubo	Raggio del tubo
+Segmentos del Anillo	Segmenti dell'anello
+Segmentos del Tubo	Segmenti del tubo
+Segmentos de la Tapa	Segmenti del cappuccio
+Profundidad	Profondità
+Octaedro	Ottaedro
+  Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  Primitiva parametrica: modificare la mesh (punti, spigoli...) elimina i parametri.
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula

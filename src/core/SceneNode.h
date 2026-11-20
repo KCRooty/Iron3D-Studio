@@ -251,6 +251,7 @@ public:
     NullDisplay nullDisplay;
     IkTagData ik;
     SymmetryData symmetry;
+    ParamShape param;  // primitiva poligonal con parametros editables (ver MeshData.h)
     // Solo con primitive == Mesh: partes con su propio material, ordenadas por
     // firstIndex y sin solaparse (ver MaterialPart).
     std::vector<MaterialPart> materialParts;

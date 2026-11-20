@@ -10,6 +10,7 @@
 #include "Vertex.h"
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 namespace iron3d {
@@ -33,6 +34,20 @@ void updateBounds(MeshData& mesh);
 MeshData makeCubeMesh();
 MeshData makeSphereMesh(int rings = 12, int segments = 18);
 MeshData makePlaneMesh();
+
+// Parametros de una primitiva poligonal (2026-11-20). El nodo sigue siendo un Objeto poligonal; mientras su
+// malla sea la que genero estos parametros (`generated`), el panel de Atributos deja editarlos y la
+// regenera. En cuanto se edita la malla, el puntero deja de coincidir y se vuelve a un objeto normal.
+// No se guarda en la escena (al reabrir, la malla queda como objeto poligonal sin parametros).
+struct ParamShape {
+    // 0 ninguno, 1 Cilindro, 2 Cono, 3 Disco, 4 Toroide, 5 Capsula, 6 Tubo, 7 Piramide, 8 Platonico
+    int kind = 0;
+    float a = 100.0f, b = 100.0f, c = 100.0f;  // medidas en cm (ver paramShapeLabels)
+    int seg1 = 24, seg2 = 12;
+    std::shared_ptr<const MeshData> generated;
+};
+ParamShape defaultParamShape(int kind);
+MeshData buildParamShape(const ParamShape& p);  // la malla en unidades (1 = 200 cm)
 
 // Primitivas poligonales (PrimitiveShapes.cpp): cuadrilateros en los lados, n-gonos en las tapas.
 MeshData makeCylinderMesh(float radius = 0.5f, float height = 1.0f, int seg = 24);

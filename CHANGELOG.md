@@ -6,6 +6,21 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (17): Primitivas poligonales con parámetros editables
+
+**Añadido**
+- Las ocho primitivas nuevas (Cilindro, Cono, Disco, Toroide, Cápsula, Tubo, Pirámide, Platónico) ya son **paramétricas**: en Atributos > Objeto se editan radio/altura/anchura (en cm), segmentos de rotación, del anillo, del tubo y de la tapa, y el Platónico tiene selector Tetraedro / Octaedro / Icosaedro / Dodecaedro. La malla se regenera al arrastrar.
+- Se queda como Objeto poligonal normal: en cuanto se edita la malla (puntos, aristas, extrusión...), la primitiva pierde los parámetros y vuelve a ser un objeto editable corriente (y se ve la ficha de siempre).
+- Clonar/copiar conserva los parámetros. Parámetros traducidos a inglés, alemán, francés e italiano.
+- Test: cada tipo genera una malla válida (cerrada, salvo el Disco) y cambiar los parámetros cambia la malla.
+
+**Límites**
+- Los parámetros **no se guardan en la escena**: al reabrir un `.iron` la malla vuelve como Objeto poligonal sin parámetros.
+- Cápsula: la altura mínima es 2 × el radio. Disco y Tubo: el radio interior se recorta justo por debajo del exterior.
+- Sin Phong/redondeo ni orientación del eje (siempre Y).
+
+**Verificado:** tests; captura del panel del Toroide en alemán (80/20 cm, 32/12 segmentos). **Sin probar:** arrastrar los campos con ratón real y deshacer/rehacer tras editarlos.
+
 ### 2026-11-20 (16): Primitivas poligonales: Cilindro, Cono, Disco, Toroide, Cápsula, Tubo, Pirámide y Platónico
 
 **Añadido**

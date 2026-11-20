@@ -1738,17 +1738,11 @@ struct PaletteItem {
 };
 
 // Primitivas poligonales: se crean ya como Objeto poligonal editable (sin parametros todavia).
-bool makeNamedPrimitive(const std::string& key, MeshData& out) {
-    if (key == "Cono") out = makeConeMesh();
-    else if (key == "Cilindro") out = makeCylinderMesh();
-    else if (key == "Disco") out = makeDiscMesh();
-    else if (key == "Toroide") out = makeTorusMesh();
-    else if (key == "Cápsula") out = makeCapsuleMesh();
-    else if (key == "Tubo") out = makeTubeMesh();
-    else if (key == "Pirámide") out = makePyramidMesh();
-    else if (key == "Platónico") out = makePlatonicMesh(2);
-    else return false;
-    return true;
+int paramKindFor(const std::string& key) {
+    static const char* names[] = {"", "Cilindro", "Cono", "Disco", "Toroide", "Cápsula", "Tubo", "Pirámide", "Platónico"};
+    for (int i = 1; i < 9; ++i)
+        if (key == names[i]) return i;
+    return 0;
 }
 
 // Crea el objeto de un elemento de menu/paleta; las luces salen con su tipo
@@ -1768,11 +1762,13 @@ void createPaletteItem(SceneNode& root, SceneNode*& selected, SceneHistory& hist
         return;
     }
     {
-        MeshData pm;
-        if (makeNamedPrimitive(it.name.key, pm)) {
+        const int pk = paramKindFor(it.name.key);
+        if (pk > 0) {
             SceneNode* pn = createObject(root, selected, history, PrimitiveType::Mesh);
             if (pn) {
-                pn->mesh = std::make_shared<const MeshData>(std::move(pm));
+                pn->param = defaultParamShape(pk);
+                pn->mesh = std::make_shared<const MeshData>(buildParamShape(pn->param));
+                pn->param.generated = pn->mesh;
                 pn->setName(tr(it.name.key));
             }
             return;
@@ -4029,6 +4025,52 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                 roFloat(tr("Segmentos en Z"), 1, "%.0f");
                 roCheck(tr("Superficies Separadas"), false);
                 roCheck(tr("Canto"), false);
+            } else if (node.primitive == PrimitiveType::Mesh && node.param.kind != 0 && node.mesh == node.param.generated) {
+                ParamShape& ps = node.param;
+                struct Field { const char* label; float* v; float mn, mx; };
+                std::vector<Field> fl;
+                std::vector<std::pair<const char*, int*>> il;
+                switch (ps.kind) {
+                    case 1: case 2: fl = {{"Radio", &ps.a, 0.1f, 5000}, {"Altura", &ps.b, 0.1f, 5000}}; il = {{"Segmentos de Rotación", &ps.seg1}}; break;
+                    case 3: fl = {{"Radio Exterior", &ps.a, 0.1f, 5000}, {"Radio Interior", &ps.b, 0.0f, 5000}}; il = {{"Segmentos de Rotación", &ps.seg1}}; break;
+                    case 4: fl = {{"Radio del Anillo", &ps.a, 0.1f, 5000}, {"Radio del Tubo", &ps.b, 0.1f, 5000}}; il = {{"Segmentos del Anillo", &ps.seg1}, {"Segmentos del Tubo", &ps.seg2}}; break;
+                    case 5: fl = {{"Radio", &ps.a, 0.1f, 5000}, {"Altura", &ps.b, 0.2f, 5000}}; il = {{"Segmentos de Rotación", &ps.seg1}, {"Segmentos de la Tapa", &ps.seg2}}; break;
+                    case 6: fl = {{"Radio Interior", &ps.a, 0.1f, 5000}, {"Radio Exterior", &ps.b, 0.2f, 5000}, {"Altura", &ps.c, 0.1f, 5000}}; il = {{"Segmentos de Rotación", &ps.seg1}}; break;
+                    case 7: fl = {{"Anchura", &ps.a, 0.1f, 5000}, {"Profundidad", &ps.b, 0.1f, 5000}, {"Altura", &ps.c, 0.1f, 5000}}; break;
+                    case 8: fl = {{"Radio", &ps.a, 0.1f, 5000}}; break;
+                    default: break;
+                }
+                bool changed = false;
+                int id = 0;
+                for (Field& f : fl) {
+                    propLabel(tr(f.label));
+                    ImGui::SetNextItemWidth(fieldWidth());
+                    ImGui::PushID(id++);
+                    if (ImGui::DragFloat("##pf", f.v, 0.5f, f.mn, f.mx, tr("%.1f cm"))) { *f.v = std::clamp(*f.v, f.mn, f.mx); changed = true; }
+                    trackEdit(history, root);
+                    ImGui::PopID();
+                }
+                for (auto& f : il) {
+                    propLabel(tr(f.first));
+                    ImGui::SetNextItemWidth(fieldWidth());
+                    ImGui::PushID(id++);
+                    if (ImGui::DragInt("##pi", f.second, 0.2f, 3, 128)) { *f.second = std::clamp(*f.second, 3, 128); changed = true; }
+                    trackEdit(history, root);
+                    ImGui::PopID();
+                }
+                if (ps.kind == 8) {
+                    propLabel(tr("Tipo"));
+                    const char* kinds[] = {tr("Tetraedro"), tr("Octaedro"), tr("Icosaedro"), tr("Dodecaedro")};
+                    ImGui::SetNextItemWidth(fieldWidth());
+                    if (ImGui::Combo("##pk", &ps.seg1, kinds, 4)) { history.commitBefore(root); changed = true; }
+                }
+                if (changed) {
+                    MeshData nm = buildParamShape(ps);
+                    node.mesh = std::make_shared<const MeshData>(std::move(nm));
+                    ps.generated = node.mesh;
+                    g.comp.sel.clear();
+                }
+                ImGui::TextDisabled(tr("  Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros."));
             } else if (node.primitive == PrimitiveType::Mesh) {
                 const MeshData* m = node.mesh.get();
                 roFloat(tr("Vértices"), m ? (float)m->vertices.size() : 0.0f, "%.0f");

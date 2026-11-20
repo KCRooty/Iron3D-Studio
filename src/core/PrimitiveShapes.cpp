@@ -239,4 +239,37 @@ MeshData makePlatonicMesh(int kind, float radius) {
     return b.finish();
 }
 
+ParamShape defaultParamShape(int kind) {
+    ParamShape p;
+    p.kind = kind;
+    switch (kind) {
+        case 1: p.a = 100; p.b = 200; p.seg1 = 24; break;                 // radio, altura
+        case 2: p.a = 100; p.b = 200; p.seg1 = 24; break;
+        case 3: p.a = 100; p.b = 0; p.seg1 = 32; break;                   // radio exterior, interior
+        case 4: p.a = 80; p.b = 20; p.seg1 = 32; p.seg2 = 12; break;      // radio del anillo, del tubo
+        case 5: p.a = 50; p.b = 200; p.seg1 = 24; p.seg2 = 6; break;      // radio, altura total
+        case 6: p.a = 60; p.b = 100; p.c = 200; p.seg1 = 24; break;       // interior, exterior, altura
+        case 7: p.a = 200; p.b = 200; p.c = 200; break;                   // ancho, fondo, alto
+        case 8: p.a = 100; p.seg1 = 2; break;                             // radio, tipo (0..3)
+        default: break;
+    }
+    return p;
+}
+
+MeshData buildParamShape(const ParamShape& p) {
+    const float k = 1.0f / 200.0f;
+    const int s1 = std::max(3, p.seg1), s2 = std::max(3, p.seg2);
+    switch (p.kind) {
+        case 1: return makeCylinderMesh(p.a * k, p.b * k, s1);
+        case 2: return makeConeMesh(p.a * k, p.b * k, s1);
+        case 3: return makeDiscMesh(p.a * k, std::min(p.b, p.a * 0.98f) * k, s1);
+        case 4: return makeTorusMesh(p.a * k, p.b * k, s1, s2);
+        case 5: return makeCapsuleMesh(p.a * k, std::max(p.b, p.a * 2.0f) * k, s1, std::max(2, p.seg2));
+        case 6: return makeTubeMesh(std::min(p.a, p.b * 0.98f) * k, p.b * k, p.c * k, s1);
+        case 7: return makePyramidMesh(p.a * k, p.b * k, p.c * k);
+        case 8: return makePlatonicMesh(std::clamp(p.seg1, 0, 3), p.a * k);
+        default: return MeshData{};
+    }
+}
+
 }  // namespace iron3d

@@ -1021,6 +1021,19 @@ Eje	Achse
 Cuchillo: el clic no toca la malla.	Messer: der Klick trifft das Netz nicht.
 Cuchillo: el plano no corta ningún polígono.	Messer: die Ebene schneidet kein Polygon.
 Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	Ebenenmodus: auf das Netz klicken; schneidet mit einer Ebene\nsenkrecht zur gewählten Achse durch diesen Punkt.
+Segmentos de Rotación	Rotationssegmente
+Radio Exterior	Außenradius
+Radio del Anillo	Ringradius
+Radio del Tubo	Rohrradius
+Segmentos del Anillo	Ringsegmente
+Segmentos del Tubo	Rohrsegmente
+Segmentos de la Tapa	Kappensegmente
+Profundidad	Tiefe
+Tetraedro	Tetraeder
+Octaedro	Oktaeder
+Icosaedro	Ikosaeder
+Dodecaedro	Dodekaeder
+  Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  Parametrische Primitive: Das Bearbeiten des Netzes (Punkte, Kanten...) verwirft die Parameter.
 Polígono Vacío	Leeres Polygon
 Guía	Hilfslinie
 Cono	Kegel

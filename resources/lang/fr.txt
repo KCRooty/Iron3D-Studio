@@ -1026,6 +1026,19 @@ Eje	Axe
 Cuchillo: el clic no toca la malla.	Couteau : le clic ne touche pas le maillage.
 Cuchillo: el plano no corta ningún polígono.	Couteau : le plan ne coupe aucun polygone.
 Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	Mode Plan : cliquez sur le maillage ; coupe avec un plan\nperpendiculaire à l'axe choisi passant par ce point.
+Segmentos de Rotación	Segments de rotation
+Radio Exterior	Rayon extérieur
+Radio del Anillo	Rayon de l'anneau
+Radio del Tubo	Rayon du tube
+Segmentos del Anillo	Segments de l'anneau
+Segmentos del Tubo	Segments du tube
+Segmentos de la Tapa	Segments du capuchon
+Profundidad	Profondeur
+Tetraedro	Tétraèdre
+Octaedro	Octaèdre
+Icosaedro	Icosaèdre
+Dodecaedro	Dodécaèdre
+  Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  Primitive paramétrique : modifier le maillage (points, arêtes...) perd les paramètres.
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cono	Cône

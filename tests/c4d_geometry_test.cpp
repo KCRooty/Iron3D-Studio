@@ -755,6 +755,23 @@ int main() {
             }
         }
 
+        // Primitivas paramétricas: cada tipo genera una malla valida y los parametros la cambian.
+        {
+            for (int k = 1; k <= 8; ++k) {
+                const ParamShape ps = defaultParamShape(k);
+                const MeshData pm = buildParamShape(ps);
+                const std::string nm = "parametrica " + std::to_string(k);
+                check(!pm.indices.empty(), (nm + ": genera malla").c_str());
+                if (k != 3) check(checkMesh(buildMeshTopology(pm)).clean(), (nm + ": cerrada").c_str());
+                ParamShape big = ps;
+                big.a *= 2.0f;
+                big.seg1 = k == 8 ? 3 : ps.seg1 + 8;
+                const MeshData bm = buildParamShape(big);
+                check(bm.boundsMax != pm.boundsMax || bm.indices.size() != pm.indices.size(), (nm + ": los parametros cambian la malla").c_str());
+            }
+            check(buildParamShape(defaultParamShape(0)).indices.empty(), "parametrica 0: sin malla");
+        }
+
         // Aumentar / Reducir / Conectados con la cara de arriba.
         const std::set<int> grown = growSelection(t, 3, {top});
         check(grown.size() == 5, "aumentar: arriba + 4 lados");
