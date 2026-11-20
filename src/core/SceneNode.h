@@ -234,6 +234,12 @@ public:
     // pasos de deshacer reutilizan la misma malla sin copiarla; editarla
     // (cuando haya modelado) sera crear una nueva y cambiar el puntero.
     std::shared_ptr<const MeshData> mesh;
+    // Poligonos ocultos del editor (Seleccion > Ocultar). Solo vale mientras
+    // la malla sea la misma (hiddenFor): cualquier edicion crea otra malla y
+    // los poligonos vuelven a verse.
+    std::shared_ptr<const std::vector<char>> hiddenPolys;
+    const MeshData* hiddenFor = nullptr;
+    bool hasHidden() const { return hiddenPolys && mesh && hiddenFor == mesh.get(); }
 
     // Solo con primitive == Light / Camera; texTag acompana a materialIndex.
     LightData light;

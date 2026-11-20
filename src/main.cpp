@@ -23,6 +23,7 @@ extern "C" __declspec(dllimport) int __stdcall MessageBoxW(void* hWnd, const wch
 
 #include "gfx/IRenderer.h"
 #include "core/MeshData.h"
+#include "core/MeshTopology.h"
 #include "core/OrbitalCamera.h"
 #include "core/SceneNode.h"
 #include "core/SceneHistory.h"
@@ -63,6 +64,35 @@ struct SceneMeshes {
     iron3d::MeshHandle cube = iron3d::kInvalidMesh, sphere = iron3d::kInvalidMesh, plane = iron3d::kInvalidMesh;
     struct Entry { std::weak_ptr<const iron3d::MeshData> owner; iron3d::MeshHandle handle; };
     std::unordered_map<const iron3d::MeshData*, Entry> custom;
+    // Nodos con poligonos ocultos: malla filtrada propia, por id de nodo.
+    struct HiddenEntry {
+        std::weak_ptr<const iron3d::MeshData> src;
+        std::shared_ptr<const std::vector<char>> mask;
+        std::shared_ptr<const iron3d::MeshData> filtered;
+        iron3d::MeshHandle handle = iron3d::kInvalidMesh;
+    };
+    std::unordered_map<int, HiddenEntry> hiddenMeshes;
+
+    iron3d::MeshHandle forHidden(const iron3d::SceneNode& node) {
+        auto it = hiddenMeshes.find(node.id());
+        if (it != hiddenMeshes.end() && it->second.src.lock() == node.mesh && it->second.mask == node.hiddenPolys)
+            return it->second.handle;
+        if (it != hiddenMeshes.end()) {
+            if (it->second.handle != iron3d::kInvalidMesh) renderer->destroyMesh(it->second.handle);
+            hiddenMeshes.erase(it);
+        }
+        const iron3d::MeshTopology topo = iron3d::buildMeshTopology(*node.mesh);
+        std::vector<char> keep(topo.polys.size(), 1);
+        for (size_t p = 0; p < keep.size() && p < node.hiddenPolys->size(); ++p) keep[p] = (*node.hiddenPolys)[p] ? 0 : 1;
+        HiddenEntry e;
+        e.src = node.mesh;
+        e.mask = node.hiddenPolys;
+        e.filtered = std::make_shared<const iron3d::MeshData>(iron3d::keepPolygons(*node.mesh, topo, keep));
+        if (!e.filtered->indices.empty()) e.handle = renderer->createMesh(*e.filtered);
+        const iron3d::MeshHandle h = e.handle;
+        hiddenMeshes.emplace(node.id(), std::move(e));
+        return h;
+    }
 
     iron3d::MeshHandle forNode(const iron3d::SceneNode& node) {
         using iron3d::PrimitiveType;
@@ -72,6 +102,7 @@ struct SceneMeshes {
             case PrimitiveType::Plane: return plane;
             case PrimitiveType::Mesh: {
                 if (!node.mesh || node.mesh->indices.empty()) return iron3d::kInvalidMesh;
+                if (node.hasHidden()) return forHidden(node);
                 auto it = custom.find(node.mesh.get());
                 if (it != custom.end() && !it->second.owner.expired()) return it->second.handle;
                 if (it != custom.end()) { // misma direccion reutilizada por una malla nueva
@@ -87,6 +118,14 @@ struct SceneMeshes {
     }
 
     void collect() {
+        for (auto it = hiddenMeshes.begin(); it != hiddenMeshes.end();) {
+            if (it->second.src.expired()) {
+                if (it->second.handle != iron3d::kInvalidMesh) renderer->destroyMesh(it->second.handle);
+                it = hiddenMeshes.erase(it);
+            } else {
+                ++it;
+            }
+        }
         for (auto it = custom.begin(); it != custom.end();) {
             if (it->second.owner.expired()) {
                 renderer->destroyMesh(it->second.handle);

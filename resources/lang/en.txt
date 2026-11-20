@@ -1129,3 +1129,7 @@ Nulo (vacio)	Null (empty)
 Fotométrica	Photometric
 Destriangular	Untriangulate
 Destriangular: no hay triángulos vecinos que unir.	Untriangulate: there are no neighbouring triangles to join.
+Ocultar Selección	Hide Selected
+Ocultar No Seleccionados	Hide Unselected
+Mostrar Todo	Unhide All
+No se puede ocultar todo el objeto.	Cannot hide the whole object.

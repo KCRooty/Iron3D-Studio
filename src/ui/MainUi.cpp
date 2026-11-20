@@ -273,6 +273,7 @@ struct UiState {
         // Visibilidad (z-buffer en CPU), en cache mientras no cambien malla, camara ni visor.
         ComponentVisibility vis;
         const MeshData* visMesh = nullptr;
+        const void* visHidden = nullptr;
         glm::mat4 visMvp{0.0f};
         int visW = 0, visH = 0;
         int nodeId = -1, mode = 0;
@@ -2456,6 +2457,10 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         if (ImGui::MenuItemEx(tr("Selección de Anillo"), kIconGutterText, "U~B", false, cm == 2)) g.compOp = "ring";
         if (ImGui::MenuItemEx(tr("Selección Contorno"), kIconGutterText, "U~Q", false, cm != 0)) g.compOp = "outline";
         if (ImGui::MenuItemEx(tr("Rellenar Selección"), kIconGutterText, "U~F", false, cm == 3)) g.compOp = "fill";
+        ImGui::Separator();
+        if (ImGui::MenuItemEx(tr("Ocultar Selección"), kIconGutterText, "", false, cm != 0)) g.compOp = "hide";
+        if (ImGui::MenuItemEx(tr("Ocultar No Seleccionados"), kIconGutterText, "", false, cm != 0)) g.compOp = "hideinv";
+        if (ImGui::MenuItemEx(tr("Mostrar Todo"), kIconGutterText, "", false, cm != 0)) g.compOp = "unhide";
         ImGui::Separator();
         if (iconMenuItem(Icon::MnuSelectAll, tr("Seleccionar Todo"), tr("Ctrl+A"))) g.pendingCmd = UiCmd::SelectAll;
         if (iconMenuItem(Icon::MnuDeselect, tr("Deseleccionar Todo"), tr("Esc"), false, selected != nullptr)) selected = nullptr;
@@ -6302,9 +6307,11 @@ constexpr size_t kMaxCompDraw = 60000;  // por encima no se dibujan (rendimiento
 const ComponentVisibility& compVisibility(const SceneNode& n, const OrbitalCamera& camera, const ViewportState& vp) {
     auto& c = g.comp;
     const glm::mat4 mvp = compProjector(n, camera, vp).mvp;
-    if (c.visMesh != c.mesh.get() || c.visMvp != mvp || c.visW != (int)vp.w || c.visH != (int)vp.h) {
-        c.vis = computeComponentVisibility(*c.mesh, c.topo, mvp, (int)vp.w, (int)vp.h);
+    if (c.visMesh != c.mesh.get() || c.visHidden != n.hiddenPolys.get() || c.visMvp != mvp || c.visW != (int)vp.w || c.visH != (int)vp.h) {
+        c.vis = computeComponentVisibility(*c.mesh, c.topo, mvp, (int)vp.w, (int)vp.h,
+                                           n.hasHidden() ? n.hiddenPolys.get() : nullptr);
         c.visMesh = c.mesh.get();
+        c.visHidden = n.hiddenPolys.get();
         c.visMvp = mvp;
         c.visW = (int)vp.w;
         c.visH = (int)vp.h;
@@ -6510,6 +6517,38 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
     }
     if (op == "grow") { c.sel = growSelection(t, mode, c.sel); return done(tr("Aumentar Selección")); }
     if (op == "shrink") { c.sel = shrinkSelection(t, mode, c.sel); return done(tr("Reducir Selección")); }
+    if (op == "hide" || op == "hideinv" || op == "unhide") {
+        if (op == "unhide") {
+            selected->hiddenPolys.reset();
+            selected->hiddenFor = nullptr;
+            flashStatus(tr("Mostrar Todo"));
+            return true;
+        }
+        std::vector<char> hid(t.polys.size(), 0);
+        if (selected->hasHidden())
+            for (size_t i = 0; i < hid.size() && i < selected->hiddenPolys->size(); ++i) hid[i] = (*selected->hiddenPolys)[i];
+        std::vector<char> inSel(t.polys.size(), 0);
+        if (mode == 3) {
+            for (int i : c.sel) if (i >= 0 && (size_t)i < inSel.size()) inSel[(size_t)i] = 1;
+        } else {  // puntos/aristas: poligonos cuyos puntos estan todos elegidos
+            const std::set<int> pts = selectedPoints();
+            for (size_t p = 0; p < t.polys.size(); ++p) {
+                bool all = !t.polys[p].empty();
+                for (int q : t.polys[p]) all = all && pts.count(q) > 0;
+                inSel[p] = all ? 1 : 0;
+            }
+        }
+        for (size_t p = 0; p < hid.size(); ++p)
+            if (op == "hide" ? inSel[p] : !inSel[p]) hid[p] = 1;
+        size_t shown = 0;
+        for (char h : hid) shown += h ? 0 : 1;
+        if (shown == 0) { flashStatus(tr("No se puede ocultar todo el objeto.")); return false; }
+        selected->hiddenPolys = std::make_shared<const std::vector<char>>(std::move(hid));
+        selected->hiddenFor = selected->mesh.get();
+        c.sel.clear();
+        flashStatus(op == "hide" ? tr("Ocultar Selección") : tr("Ocultar No Seleccionados"));
+        return true;
+    }
     if (op == "outline") { c.sel = outlineSelection(t, mode, c.sel); return done(tr("Selección Contorno")); }
     if (op == "fill") { c.sel = fillSelection(t, c.sel); return done(tr("Rellenar Selección")); }
     if (op == "connected") { c.sel = connectedSelection(t, mode, c.sel); return done(tr("Seleccionar Conectados")); }

@@ -6,6 +6,14 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (6): Selección > Ocultar Selección, Ocultar No Seleccionados y Mostrar Todo
+
+**Nuevo**
+- **Ocultar Selección / Ocultar No Seleccionados / Mostrar Todo** (menú Selección, modos de componentes). Los polígonos ocultos dejan de dibujarse en el visor (el render usa una malla filtrada) y de tapar a los componentes de detrás; sus puntos y aristas dejan de mostrarse y de poder elegirse si solo los usan polígonos ocultos. En modo Puntos/Aristas se ocultan los polígonos cuyos puntos están todos elegidos. No deja ocultar el objeto entero.
+
+**Probado:** `iron3d_tests` (la cara oculta no se ve y deja de tapar a la de detrás); compila Debug/Release. **No probado:** el clic en los menús con la interfaz abierta ni el render del objeto con polígonos ocultos.
+**Límites:** el ocultado se pierde al editar la malla (cualquier edición crea otra malla) y no se guarda en el `.iron`. En C4D el ocultado es por componente (puntos y aristas sueltos); aquí es por polígono.
+
 ### 2026-11-20 (5): Selección > Contorno y Rellenar Selección
 
 **Nuevo**

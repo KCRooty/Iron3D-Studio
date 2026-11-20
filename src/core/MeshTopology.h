@@ -59,7 +59,9 @@ void removeUnusedVertices(MeshData& mesh);
 struct ComponentVisibility {
     std::vector<char> points, edges, polys;
 };
+// hidden (opcional, uno por poligono): esos poligonos no tapan nada y sus
+// puntos/aristas, si solo los usan poligonos ocultos, salen como no visibles.
 ComponentVisibility computeComponentVisibility(const MeshData& mesh, const MeshTopology& topo, const glm::mat4& mvp,
-                                               int width, int height);
+                                               int width, int height, const std::vector<char>* hidden = nullptr);
 
 } // namespace iron3d

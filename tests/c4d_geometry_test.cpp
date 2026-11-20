@@ -476,6 +476,17 @@ int main() {
         for (size_t i = 0; i < t.points.size(); ++i) visPts += v.points[i];
         check(visPts == 4, "visibilidad: de frente se ven 4 puntos del cubo");
         (void)visPolys;
+        // Ocultar la cara de delante: ya no tapa, y la de detras pasa a verse.
+        std::vector<char> hid(t.polys.size(), 0);
+        for (size_t p = 0; p < t.polys.size(); ++p)
+            if (t.polyNormals[p].z > 0.9f) hid[p] = 1;
+        const ComponentVisibility vh = computeComponentVisibility(cube, t, proj * view, 400, 400, &hid);
+        int frontVisH = 1, backVisH = 0;
+        for (size_t p = 0; p < t.polys.size(); ++p) {
+            if (t.polyNormals[p].z > 0.9f) frontVisH = vh.polys[p];
+            if (t.polyNormals[p].z < -0.9f) backVisH = vh.polys[p];
+        }
+        check(frontVisH == 0 && backVisH == 1, "ocultar: la cara oculta no se ve y deja de tapar a la de detras");
     }
 
 

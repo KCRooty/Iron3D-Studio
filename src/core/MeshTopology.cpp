@@ -217,7 +217,8 @@ void removeUnusedVertices(MeshData& mesh) {
 }
 
 ComponentVisibility computeComponentVisibility(const MeshData& mesh, const MeshTopology& topo, const glm::mat4& mvp,
-                                               int width, int height) {
+                                               int width, int height, const std::vector<char>* hidden) {
+    auto polyHidden = [&](size_t p) { return hidden && p < hidden->size() && (*hidden)[p]; };
     ComponentVisibility vis;
     const int W = std::max(1, width / 2), H = std::max(1, height / 2);
     // Se guarda 1/w (mas grande = mas cerca); 0 = fondo.
@@ -232,6 +233,7 @@ ComponentVisibility computeComponentVisibility(const MeshData& mesh, const MeshT
     for (size_t i = 0; i < mesh.vertices.size(); ++i) sv[i] = project(mesh.vertices[i].position);
     for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
         const uint32_t ia = mesh.indices[i], ib = mesh.indices[i + 1], ic = mesh.indices[i + 2];
+        if (hidden && i / 3 < topo.triPoly.size() && topo.triPoly[i / 3] >= 0 && polyHidden((size_t)topo.triPoly[i / 3])) continue;
         if (ia >= sv.size() || ib >= sv.size() || ic >= sv.size()) continue;
         const SV a = sv[ia], b = sv[ib], c = sv[ic];
         if (!a.ok || !b.ok || !c.ok) continue;
@@ -275,7 +277,17 @@ ComponentVisibility computeComponentVisibility(const MeshData& mesh, const MeshT
     for (size_t i = 0; i < topo.edges.size(); ++i)
         vis.edges[i] = visible((topo.points[(size_t)topo.edges[i].first] + topo.points[(size_t)topo.edges[i].second]) * 0.5f);
     vis.polys.resize(topo.polys.size());
-    for (size_t i = 0; i < topo.polys.size(); ++i) vis.polys[i] = visible(polyCenter(topo, (int)i));
+    for (size_t i = 0; i < topo.polys.size(); ++i) vis.polys[i] = polyHidden(i) ? 0 : visible(polyCenter(topo, (int)i));
+    if (hidden) {  // un punto solo se ve si lo usa algun poligono visible
+        std::vector<char> pointShown(topo.points.size(), 0);
+        for (size_t p = 0; p < topo.polys.size(); ++p)
+            if (!polyHidden(p))
+                for (int q : topo.polys[p]) pointShown[(size_t)q] = 1;
+        for (size_t i = 0; i < topo.points.size(); ++i)
+            if (!pointShown[i]) vis.points[i] = 0;
+        for (size_t i = 0; i < topo.edges.size(); ++i)
+            if (!pointShown[(size_t)topo.edges[i].first] && !pointShown[(size_t)topo.edges[i].second]) vis.edges[i] = 0;
+    }
     return vis;
 }
 
