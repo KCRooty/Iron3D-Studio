@@ -32,6 +32,10 @@ struct PolySoup {
     // UV de cada esquina (a, b, c, d) como la etiqueta UVW de C4D; vacio =
     // sin UV. Si no esta vacio, tiene el mismo tamano que polys.
     std::vector<std::array<glm::dvec2, 4>> uvs;
+    // N-gons de C4D (NgonBase): numero de N-gon de cada poligono, -1 = poligono suelto. Vacio = ninguno.
+    // Si no esta vacio, tiene el mismo tamano que polys. Los poligonos de un mismo N-gon forman un solo
+    // poligono de Iron3D (faceTris) en vez de varios triangulos y cuadrilateros sueltos.
+    std::vector<int> ngon;
 
     // Anade `other` transformado por `xform` (matriz de C4D como dmat4:
     // columnas v1, v2, v3, off).

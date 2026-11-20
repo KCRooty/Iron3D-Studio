@@ -727,6 +727,27 @@ void appendPolygons(PolygonObject* po, const glm::dmat4& xform, c4d::PolySoup& o
     for (Int32 i = 0; i < np; ++i) s.points.push_back(vec(p[i]));
     s.polys.reserve((size_t)nf);
     for (Int32 i = 0; i < nf; ++i) s.polys.push_back({(int)f[i].a, (int)f[i].b, (int)f[i].c, (int)f[i].d});
+    // N-gons: cada Pgon lista los poligonos que lo forman (ID de cada arista); los que comparten N-gon se
+    // juntan en un solo poligono al convertir la malla.
+    if (NgonBase* nb = po->GetNgonBase()) {
+        const Int32 ng = nb->GetCount();
+        Pgon* pg = nb->GetNgons();
+        if (pg && ng > 0) {
+            s.ngon.assign((size_t)nf, -1);
+            int next = 0;
+            for (Int32 g = 0; g < ng; ++g) {
+                std::vector<int> ids;
+                const Int32 ec = pg[g].GetCount();
+                for (Int32 e = 0; e < ec; ++e) {
+                    const Int32 id = pg[g].ID(e);
+                    if (id >= 0 && id < nf && std::find(ids.begin(), ids.end(), (int)id) == ids.end()) ids.push_back((int)id);
+                }
+                if (ids.size() < 2) continue;
+                for (int id : ids) s.ngon[(size_t)id] = next;
+                ++next;
+            }
+        }
+    }
     // UV de la etiqueta UVW (una por poligono, esquinas a b c d).
     if (BaseTag* t = po->GetTag(Tuvw)) {
         UVWTag* uvw = static_cast<UVWTag*>(t);
@@ -1254,17 +1275,33 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
     // Poligonos agrupados por parte (estable: primero los del material del
     // objeto, luego cada parte en orden), para que cada una sea un rango.
     std::vector<int> slotOfPoly;
-    if (!parts.empty()) {
+    const bool hasNgons = soup.ngon.size() == soup.polys.size() && !soup.ngon.empty();
+    if (!parts.empty() || hasNgons) {
+        // Orden: por parte de material y, dentro, los poligonos de un mismo N-gon seguidos (en el sitio del
+        // primero). Sin partes ni N-gons no se reordena nada.
+        std::vector<size_t> anchor(soup.polys.size());
+        std::map<int, size_t> firstOfGroup;
+        for (size_t i = 0; i < anchor.size(); ++i) {
+            anchor[i] = i;
+            if (hasNgons && soup.ngon[i] >= 0) anchor[i] = firstOfGroup.emplace(soup.ngon[i], i).first->second;
+        }
+        auto slotOf = [&](size_t i) { return !parts.empty() && i < polySlot.size() ? polySlot[i] : 0; };
         std::vector<size_t> order(soup.polys.size());
         for (size_t i = 0; i < order.size(); ++i) order[i] = i;
-        std::stable_sort(order.begin(), order.end(), [&](size_t x, size_t y) { return polySlot[x] < polySlot[y]; });
+        std::stable_sort(order.begin(), order.end(), [&](size_t x, size_t y) {
+            if (slotOf(x) != slotOf(y)) return slotOf(x) < slotOf(y);
+            return anchor[x] < anchor[y];
+        });
         c4d::PolySoup sorted;
         sorted.points = std::move(soup.points);
         sorted.polys.reserve(order.size());
         for (size_t i : order) sorted.polys.push_back(soup.polys[i]);
         if (!soup.uvs.empty())
             for (size_t i : order) sorted.uvs.push_back(soup.uvs[i]);
-        for (size_t i : order) slotOfPoly.push_back(polySlot[i]);
+        if (hasNgons)
+            for (size_t i : order) sorted.ngon.push_back(soup.ngon[i]);
+        if (!parts.empty())
+            for (size_t i : order) slotOfPoly.push_back(polySlot[i]);
         soup = std::move(sorted);
     }
     if (!soup.empty()) {

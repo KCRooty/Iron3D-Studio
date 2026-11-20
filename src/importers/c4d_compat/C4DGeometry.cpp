@@ -118,7 +118,16 @@ void PolySoup::append(const PolySoup& other, const glm::dmat4& xform) {
     const bool withUv = !uvs.empty() || !other.uvs.empty();
     if (withUv && uvs.empty()) uvs.assign(polys.size(), {});
     for (const glm::dvec3& p : other.points) points.push_back(glm::dvec3(xform * glm::dvec4(p, 1.0)));
+    const size_t polysBefore = polys.size();
     for (const auto& f : other.polys) polys.push_back({f[0] + base, f[1] + base, f[2] + base, f[3] + base});
+    // N-gons: los numeros de la otra sopa se desplazan para no chocar con los de esta.
+    if (!ngon.empty() || !other.ngon.empty()) {
+        if (ngon.size() != polysBefore) ngon.assign(polysBefore, -1);
+        int next = 0;
+        for (int g : ngon) next = std::max(next, g + 1);
+        for (size_t i = 0; i < other.polys.size(); ++i)
+            ngon.push_back(other.ngon.size() == other.polys.size() && other.ngon[i] >= 0 ? other.ngon[i] + next : -1);
+    }
     if (withUv) {
         if (other.uvs.size() == other.polys.size()) uvs.insert(uvs.end(), other.uvs.begin(), other.uvs.end());
         else uvs.resize(polys.size(), {});
@@ -452,6 +461,19 @@ MeshData toIronMesh(const PolySoup& soup, double smoothAngleRad, std::vector<uin
         for (size_t fi = 0; fi < faces.size(); ++fi)
             for (int k = 0; k < faces[fi].n; ++k) adj[(size_t)faces[fi].idx[k]].push_back((int)fi);
         cosLimit = (float)std::cos(std::min(smoothAngleRad, kPi)) - 1e-5f;
+    }
+
+    // Poligonos de Iron3D: cada cara de C4D es un triangulo o un cuadrilatero; las que son un mismo N-gon (y
+    // van seguidas) se juntan en un solo poligono. Sin esto, un cubo quedaba como triangulos sueltos.
+    const bool hasNgon = soup.ngon.size() == soup.polys.size() && !soup.ngon.empty();
+    mesh.faceTris.reserve(faces.size());
+    int prevGroup = -1;
+    for (const Face& f : faces) {
+        const uint32_t tris = f.n == 4 ? 2u : 1u;
+        const int g = hasNgon ? soup.ngon[f.poly] : -1;
+        if (g >= 0 && g == prevGroup && !mesh.faceTris.empty()) mesh.faceTris.back() += tris;
+        else mesh.faceTris.push_back(tris);
+        prevGroup = g;
     }
 
     mesh.vertices.reserve(faces.size() * 4);

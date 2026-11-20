@@ -71,6 +71,24 @@ int main() {
         const MeshData cube = c4d::toIronMesh(c4d::makeCube({200.0, 200.0, 200.0}), -1.0);
         check(cube.indices.size() == 36, "cubo: 12 triangulos");
         check(facesPointOut(cube, fromCenter), "cubo: caras hacia fuera");
+        {
+            // El cubo importado son 6 poligonos (cuadrilateros), no 12 triangulos sueltos.
+            const MeshTopology ct = buildMeshTopology(cube);
+            check(cube.faceTris.size() == 6 && ct.polys.size() == 6 && ct.points.size() == 8, "cubo importado: 6 poligonos, 8 puntos");
+        }
+        {
+            // Un N-gon de C4D (dos cuadrilateros con el mismo numero) pasa a ser UN poligono de 6 lados.
+            c4d::PolySoup s;
+            s.points = {{0, 0, 0}, {1, 0, 0}, {2, 0, 0}, {2, 1, 0}, {1, 1, 0}, {0, 1, 0}};
+            s.polys = {{0, 1, 4, 5}, {1, 2, 3, 4}};
+            s.ngon = {0, 0};
+            const MeshData m = c4d::toIronMesh(s, -1.0);
+            const MeshTopology nt = buildMeshTopology(m);
+            check(m.faceTris.size() == 1 && m.faceTris[0] == 4 && nt.polys.size() == 1 && nt.polys[0].size() == 6,
+                  "N-gon importado: un poligono de 6 lados");
+            s.ngon = {-1, -1};
+            check(c4d::toIronMesh(s, -1.0).faceTris.size() == 2, "sin N-gon: dos cuadrilateros");
+        }
         check(nearly(cube.boundsMin, glm::vec3(-0.5f)) && nearly(cube.boundsMax, glm::vec3(0.5f)),
               "cubo de 200 cm = 1 unidad");
     }

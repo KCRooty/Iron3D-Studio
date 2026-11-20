@@ -6,6 +6,21 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (31): Los modelos .c4d importan con sus polígonos reales (cuadriláteros y N-gons)
+
+**Corregido**
+- Al importar un `.c4d`, cada cuadrilátero se guardaba como dos triángulos y el editor tenía que adivinar cuáles iban juntos; un cubo podía salir como 12 triángulos sueltos y dos triángulos consecutivos casi coplanares se pegaban por error. Ahora el importador marca exactamente los polígonos que trae C4D: un cubo importado son **6 polígonos y 8 puntos**, como en Cinema 4D.
+- **N-gons:** se leen del `NgonBase` del objeto (cada N-gon lista los polígonos que lo forman) y se juntan en un solo polígono de Iron3D. Probado con archivos reales: `reifenmantel` de `cs_buildon.c4d` sale con 146 N-gons, el modelo de `MODELOS fox.c4d` con los suyos, y `stairs.c4d`/`knot.c4d` con todos sus cuadriláteros (594 y 11 520) sin triángulos sueltos.
+- Los polígonos de un mismo N-gon se mantienen seguidos al reordenar por parte de material.
+- La herramienta `c4d_probe` muestra ahora puntos, polígonos y cuántos son triángulos, cuadriláteros y N-gons de cada malla.
+
+**Límites**
+- Un N-gon con agujero (varios segmentos) o cuyos polígonos queden separados por un material distinto se divide en polígonos sueltos en vez de perderse.
+- Las escenas `.iron` guardadas antes de este cambio con cubos de triángulos sueltos no se migran: unir triángulos coplanares podría estropear mallas importadas legítimas.
+- La exportación a `.c4d` sigue escribiendo triángulos y cuadriláteros, sin N-gons.
+
+**Verificado:** compilación, tests (incluye cubo = 6 polígonos y un N-gon de 6 lados) e importación de archivos `.c4d` reales con el probe. **Sin probar:** el aspecto en el editor de un modelo con N-gons.
+
 ### 2026-11-20 (30): Menú contextual de modelado como el de C4D, menú Malla completo y Preferencias con árbol
 
 **Añadido**

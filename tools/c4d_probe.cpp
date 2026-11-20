@@ -4,6 +4,7 @@
 //
 //   c4d_probe.exe archivo.c4d [--save salida.iron]
 
+#include "core/MeshTopology.h"
 #include "core/Paths.h"
 #include "core/SceneSerializer.h"
 #include "core/ThumbnailRenderer.h"
@@ -28,6 +29,12 @@ static void print(const SceneNode& n, const std::vector<Material>& mats, int dep
     std::printf("  pos=(%.3f %.3f %.3f) rot=(%.1f %.1f %.1f) esc=(%.2f %.2f %.2f)", n.position.x, n.position.y,
                 n.position.z, n.rotationDeg.x, n.rotationDeg.y, n.rotationDeg.z, n.scale.x, n.scale.y, n.scale.z);
     if (n.mesh) std::printf("  verts=%zu tris=%zu", n.mesh->vertices.size(), n.mesh->indices.size() / 3);
+    if (n.mesh) {
+        const MeshTopology tp = buildMeshTopology(*n.mesh);
+        size_t tri = 0, quad = 0, ng = 0;
+        for (const auto& pl : tp.polys) (pl.size() == 3 ? tri : pl.size() == 4 ? quad : ng)++;
+        std::printf("  puntos=%zu poligonos=%zu (tri=%zu quad=%zu ngon=%zu)", tp.points.size(), tp.polys.size(), tri, quad, ng);
+    }
     if (n.materialIndex >= 0 && (size_t)n.materialIndex < mats.size())
         std::printf("  mat=\"%s\"", mats[(size_t)n.materialIndex].name.c_str());
     if (n.editorVis == VisMode::Off) std::printf("  (oculto)");
