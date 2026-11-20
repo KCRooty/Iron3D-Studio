@@ -239,6 +239,12 @@ public:
     SceneNode* insertChild(std::unique_ptr<SceneNode> child, size_t index);
     // Posicion de `child` entre los hijos, o children().size() si no es hijo.
     size_t indexOf(const SceneNode* child) const;
+    // Mover nodos a otro padre (Gestor de Objetos: arrastrar y soltar). `index` es la posicion en
+    // newParent antes de sacar nada; los nodos conservan su posicion en el mundo y su orden relativo.
+    // canReparentNodes: false si hay un nodo sin padre (la raiz) o si newParent es uno de ellos o cuelga de
+    // uno (un objeto no puede ir dentro de si mismo). reparentNodes no toca nada cuando es false.
+    static bool canReparentNodes(const std::vector<SceneNode*>& nodes, const SceneNode& newParent);
+    static bool reparentNodes(const std::vector<SceneNode*>& nodes, SceneNode& newParent, size_t index);
     // Inverso de localMatrix(): posicion, rotacion X/Y/Z y escala a partir de
     // una matriz T*Rz*Ry*Rx*S (sin cizalla). Sirve para conservar la posicion
     // en mundo al cambiar de padre.

@@ -919,6 +919,34 @@ int main() {
                   "clonador: ajustes conservados tras guardar");
         }
 
+        // Mover nodos entre padres (arrastrar y soltar en el Gestor de Objetos).
+        {
+            SceneNode rt("r");
+            SceneNode* a = rt.addChild("a", PrimitiveType::Cube);
+            SceneNode* b = rt.addChild("b", PrimitiveType::Cube);
+            SceneNode* c = rt.addChild("c", PrimitiveType::Cube);
+            SceneNode* a1 = a->addChild("a1", PrimitiveType::Cube);
+            a->position = glm::vec3(1.0f, 0.0f, 0.0f);
+            c->position = glm::vec3(5.0f, 0.0f, 0.0f);
+            check(!SceneNode::canReparentNodes({a}, *a) && !SceneNode::canReparentNodes({a}, *a1), "mover: no se mete en si mismo ni en un descendiente");
+            check(!SceneNode::canReparentNodes({&rt}, *a) && !SceneNode::canReparentNodes({}, *a), "mover: la raiz y la lista vacia no se mueven");
+            check(!SceneNode::reparentNodes({a}, *a1, 0) && rt.children().size() == 3, "mover: operacion invalida no toca nada");
+            check(SceneNode::reparentNodes({c}, *a, 0), "mover: c dentro de a");
+            check(a->children().size() == 2 && a->children()[0].get() == c && c->parent() == a, "mover: c queda el primero entre los hijos de a");
+            check(rt.children().size() == 2, "mover: la raiz pierde a c");
+            const glm::vec3 cw = glm::vec3(c->worldMatrix()[3]);
+            check(glm::length(cw - glm::vec3(5.0f, 0.0f, 0.0f)) < 1e-4f && std::fabs(c->position.x - 4.0f) < 1e-4f,
+                  "mover: conserva la posicion en el mundo (local 4, mundo 5)");
+            check(SceneNode::reparentNodes({a}, rt, 2) && rt.children()[0].get() == b && rt.children()[1].get() == a,
+                  "mover: a al final de la raiz (mismo padre) -> b, a");
+            check(SceneNode::reparentNodes({a}, rt, 0) && rt.children()[0].get() == a && rt.children()[1].get() == b,
+                  "mover: a al principio -> a, b");
+            check(SceneNode::reparentNodes({b, a}, *a1, 0) == false, "mover: a dentro de su hijo sigue invalido");
+            SceneNode* d = rt.addChild("d", PrimitiveType::Cube);
+            check(SceneNode::reparentNodes({b, d}, *a, 1) && a->children()[1].get() == b && a->children()[2].get() == d,
+                  "mover: varios nodos conservan su orden");
+        }
+
         // Gizmo de las luces: estrella + cono / flecha / rectangulo.
         {
             std::vector<glm::vec3> star, spot, inf, area, omni;

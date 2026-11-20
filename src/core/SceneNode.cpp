@@ -114,6 +114,30 @@ size_t SceneNode::indexOf(const SceneNode* child) const {
     return children_.size();
 }
 
+bool SceneNode::canReparentNodes(const std::vector<SceneNode*>& nodes, const SceneNode& newParent) {
+    if (nodes.empty()) return false;
+    for (const SceneNode* n : nodes) {
+        if (!n || !n->parent_) return false;
+        for (const SceneNode* p = &newParent; p; p = p->parent_)
+            if (p == n) return false;
+    }
+    return true;
+}
+
+bool SceneNode::reparentNodes(const std::vector<SceneNode*>& nodes, SceneNode& newParent, size_t index) {
+    if (!canReparentNodes(nodes, newParent)) return false;
+    index = std::min(index, newParent.children_.size());
+    for (SceneNode* n : nodes) {
+        SceneNode* old = n->parent_;
+        if (old == &newParent && old->indexOf(n) < index) --index; // al sacarlo, lo de detras sube un puesto
+        const glm::mat4 world = n->worldMatrix();
+        SceneNode* moved = newParent.insertChild(old->detachChild(n), index);
+        moved->setLocalMatrix(glm::inverse(newParent.worldMatrix()) * world);
+        ++index;
+    }
+    return true;
+}
+
 void SceneNode::setLocalMatrix(const glm::mat4& m) {
     position = glm::vec3(m[3]);
     glm::vec3 c0(m[0]), c1(m[1]), c2(m[2]);

@@ -886,13 +886,44 @@ void trackEdit(SceneHistory& history, const SceneNode& root) {
 
 // --- Creacion de objetos -----------------------------------------------------------
 
-// Seccion 18.6: Alt+clic crea el objeto como hijo del seleccionado; un clic
-// normal lo crea en la raiz de la escena. Siempre queda seleccionado.
+std::vector<SceneNode*> topLevelSelection(SceneNode& root, SceneNode* clicked);
+void selectOnly(SceneNode*& selected, SceneNode* n);
+
+// Hace que createObject cree siempre como hijo del seleccionado (menu "Anadir Hijo" del Gestor de Objetos).
+bool g_forceChild = false;
+
+// Seccion 18.6 (combinaciones de C4D al crear un objeto con el seleccionado):
+//   sin tecla -> raiz de la escena      Alt -> hijo del seleccionado
+//   Ctrl -> hermano DEBAJO              Ctrl+Mayus -> hermano ARRIBA
+//   Alt+Ctrl -> padre de toda la seleccion (la seleccion pasa a ser hijo del objeto nuevo)
+// (Alt+Mayus = un hijo en cada seleccionado se resuelve en createPaletteItem.) Siempre queda seleccionado.
 SceneNode* createObject(SceneNode& root, SceneNode*& selected, SceneHistory& history, PrimitiveType type) {
+    const ImGuiIO& io = ImGui::GetIO();
+    const bool alt = io.KeyAlt || g_forceChild;
     SceneNode* parent = &root;
-    if (ImGui::GetIO().KeyAlt && selected) parent = selected;
+    size_t at = root.children().size();
+    std::vector<SceneNode*> wrapped;
+    if (selected && selected->parent()) {
+        if (alt && io.KeyCtrl && !g_forceChild) {
+            wrapped = topLevelSelection(root, selected);
+            parent = wrapped.front()->parent();
+            at = parent->indexOf(wrapped.front());
+        } else if (alt) {
+            parent = selected;
+            at = selected->children().size();
+        } else if (io.KeyCtrl) {
+            parent = selected->parent();
+            at = parent->indexOf(selected) + (io.KeyShift ? 0 : 1);
+        }
+    }
     history.commitBefore(root);
-    selected = parent->addChild(defaultNameFor(type), type);    g.focus = AttrFocus::Object;
+    SceneNode* made = parent->insertChild(std::make_unique<SceneNode>(defaultNameFor(type), type), at);
+    if (!wrapped.empty()) {
+        SceneNode::reparentNodes(wrapped, *made, made->children().size());
+        selectOnly(selected, made);
+    }
+    selected = made;
+    g.focus = AttrFocus::Object;
     if (parent != &root) g.collapsed.erase(parent->id());
     return selected;
 }
@@ -1798,7 +1829,7 @@ int paramKindFor(const std::string& key) {
 
 // Crea el objeto de un elemento de menu/paleta; las luces salen con su tipo
 // y con el nombre del menu, como en C4D ("Foco", "Luz Infinita"...).
-void createPaletteItem(SceneNode& root, SceneNode*& selected, SceneHistory& history, const PaletteItem& it) {
+void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& history, const PaletteItem& it) {
     // Simetria (generador): un Nulo con SymmetryData; si hay un objeto con malla seleccionado se mete dentro.
     if (std::string(it.name.key) == "Simetría") {
         SceneNode* sel = selected;
@@ -1866,6 +1897,23 @@ void createPaletteItem(SceneNode& root, SceneNode*& selected, SceneHistory& hist
         n->light.kind = (LightKind)it.lightKind;
         n->setName((const char*)it.name);
     }
+}
+
+// Alt+Mayus: un objeto nuevo como hijo de CADA objeto seleccionado (N jerarquias independientes). Cada uno
+// es un paso de deshacer. Con un solo seleccionado equivale a Alt.
+void createPaletteItem(SceneNode& root, SceneNode*& selected, SceneHistory& history, const PaletteItem& it) {
+    const ImGuiIO& io = ImGui::GetIO();
+    if (io.KeyAlt && io.KeyShift && !io.KeyCtrl && selected) {
+        const std::vector<SceneNode*> targets = topLevelSelection(root, selected);
+        if (targets.size() > 1) {
+            for (SceneNode* tg : targets) {
+                selectOnly(selected, tg);
+                createPaletteItemOne(root, selected, history, it);
+            }
+            return;
+        }
+    }
+    createPaletteItemOne(root, selected, history, it);
 }
 
 void drawPalette(const char* id, const PaletteItem* items, int count, int columns, SceneNode& root,
@@ -3453,19 +3501,26 @@ void collectRows(SceneNode& node, int depth, std::vector<TreeRow>& out) {
 }
 
 void addChildMenu(SceneNode& root, SceneNode* parent, SceneNode*& selected, SceneHistory& history) {
+    // Con `parent` = la raiz vale lo de siempre (Alt: hijo del seleccionado, Ctrl: hermano...); con otro padre
+    // el objeto nace dentro de el. Mismos objetos que las paletas (cilindro, toroide, luces...).
+    auto make = [&](const PaletteItem& it) {
+        if (parent == &root) {
+            createPaletteItem(root, selected, history, it);
+        } else {
+            selected = parent;
+            g_forceChild = true;
+            createPaletteItem(root, selected, history, it);
+            g_forceChild = false;
+        }
+    };
     for (const auto& it : kPrimitives) {
         if (!it.functional) continue;
-        if (ImGui::MenuItem(it.name)) {
-            history.commitBefore(root);
-            selected = parent->addChild(defaultNameFor(it.type), it.type);
-            g.collapsed.erase(parent->id());
-            g.focus = AttrFocus::Object;
-        }
+        if (ImGui::MenuItem(it.name)) make(it);
     }
-    if (ImGui::MenuItem(tr("Luz"))) {
-        history.commitBefore(root);
-        selected = parent->addChild(tr("Luz"), PrimitiveType::Light);
-        g.collapsed.erase(parent->id());
+    ImGui::Separator();
+    for (const auto& it : kLights) {
+        if (!it.functional) continue;
+        if (ImGui::MenuItem(it.name)) make(it);
     }
 }
 
@@ -3539,6 +3594,16 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
     SceneNode* pendingDuplicate = nullptr;
     SceneNode* pendingGroup = nullptr;
     SceneNode* pendingDissolve = nullptr;
+    // Arrastrar y soltar objetos (hacer hijos / reordenar): lo que suelta el bucle y se aplica al final.
+    int moveDragId = -1;
+    SceneNode* moveTarget = nullptr;
+    int moveZone = 1; // 0 = antes de la fila (hermano arriba), 1 = dentro (hijo), 2 = despues (hermano debajo)
+    bool moveToRoot = false;
+    auto rowNode = [&](int id) -> SceneNode* {
+        for (const TreeRow& tr_ : rows)
+            if (tr_.node->id() == id) return tr_.node;
+        return nullptr;
+    };
 
     for (size_t r = 0; r < rows.size(); ++r) {
         SceneNode* node = rows[r].node;
@@ -3572,7 +3637,32 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
             g.renameFocus = true;
         }
         if (rowHovered) g.hint = tr("Clic: seleccionar. Ctrl+Clic: anadir o quitar de la seleccion. Doble clic: renombrar. Clic derecho: menú contextual. Arrastre un material aquí para asignarlo.");
+        if (ImGui::BeginDragDropSource(0)) {
+            const int dragId = node->id();
+            ImGui::SetDragDropPayload("IRON3D_NODE", &dragId, sizeof(int));
+            const size_t nSel = g.selIds.count(dragId) ? topLevelSelection(root, node).size() : 1;
+            if (nSel > 1) ImGui::Text(tr("%d objetos"), (int)nSel);
+            else ImGui::TextUnformatted(node->name().c_str());
+            ImGui::EndDragDropSource();
+        }
         if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload(
+                    "IRON3D_NODE", ImGuiDragDropFlags_AcceptBeforeDelivery | ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
+                SceneNode* dragged = rowNode(*(const int*)pl->Data);
+                const float my = ImGui::GetIO().MousePos.y - p.y;
+                const int zone = my < rowH * 0.25f ? 0 : (my > rowH * 0.75f ? 2 : 1);
+                SceneNode* newParent = zone == 1 ? node : node->parent();
+                if (dragged && newParent && SceneNode::canReparentNodes(topLevelSelection(root, dragged), *newParent)) {
+                    const float lx = p.x + 4 + depth * 16.0f;
+                    if (zone == 1) dl->AddRect(p, q, kAmber, 0.0f, 0, 2.0f);
+                    else dl->AddLine(ImVec2(lx, zone == 0 ? p.y : q.y), ImVec2(q.x, zone == 0 ? p.y : q.y), kAmber, 2.0f);
+                    if (pl->IsDelivery()) {
+                        moveDragId = dragged->id();
+                        moveTarget = node;
+                        moveZone = zone;
+                    }
+                }
+            }
             if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("IRON3D_MAT")) {
                 const int mi = *(const int*)pl->Data;
                 if (hasGeometry(node->primitive) && mi >= 0 && (size_t)mi < materials.size()) {
@@ -3780,6 +3870,13 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
     if (rest.y > 4) {
         ImGui::InvisibleButton("##empty", ImVec2(fullW, rest.y), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) selected = nullptr;
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("IRON3D_NODE")) {
+                moveDragId = *(const int*)pl->Data;
+                moveToRoot = true;
+            }
+            ImGui::EndDragDropTarget();
+        }
         if (ImGui::BeginPopupContextItem("##emptyctx")) {
             if (ImGui::BeginMenu(tr("Añadir"))) {
                 addChildMenu(root, &root, selected, history);
@@ -3793,6 +3890,27 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
     ImGui::PopStyleVar();
     ImGui::End();
 
+    if (moveDragId >= 0 && (moveTarget || moveToRoot)) {
+        if (SceneNode* dragged = rowNode(moveDragId)) {
+            const std::vector<SceneNode*> nodes = topLevelSelection(root, dragged);
+            SceneNode* par = &root;
+            size_t at = root.children().size();
+            if (!moveToRoot && moveTarget) {
+                if (moveZone == 1) {
+                    par = moveTarget;
+                    at = moveTarget->children().size();
+                } else if (moveTarget->parent()) {
+                    par = moveTarget->parent();
+                    at = par->indexOf(moveTarget) + (moveZone == 2 ? 1 : 0);
+                }
+            }
+            if (SceneNode::canReparentNodes(nodes, *par)) {
+                history.commitBefore(root);
+                SceneNode::reparentNodes(nodes, *par, at);
+                if (par != &root) g.collapsed.erase(par->id());
+            }
+        }
+    }
     if (pendingGroup) groupObjects(root, selected, history, pendingGroup);
     if (pendingDissolve) dissolveNode(root, selected, history, pendingDissolve);
     if (pendingDuplicate && pendingDuplicate->parent()) {

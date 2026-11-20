@@ -6,6 +6,22 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (25): Gestor de Objetos: arrastrar para hacer hijos y combinaciones de modificadores al crear
+
+**Añadido**
+- **Arrastrar y soltar objetos en el Gestor de Objetos** (antes no existía): se agarra una fila y se suelta sobre otra. El tercio de arriba de la fila lo pone **encima como hermano** (línea ámbar arriba), el centro lo mete **dentro como hijo** (recuadro ámbar) y el tercio de abajo **debajo como hermano**. Soltar en la zona vacía del panel lo lleva al final de la raíz. Si hay varios objetos seleccionados y agarras uno de ellos, se mueven todos juntos (solo los de más arriba; sus hijos van con ellos) manteniendo su orden. Los objetos **no se mueven en el mundo** al cambiar de padre. Un objeto no se puede soltar dentro de sí mismo ni de uno de sus descendientes (no sale la marca y no pasa nada). Un solo paso de deshacer.
+- **Combinaciones de teclas al crear un objeto** con uno seleccionado, tomadas de la referencia de C4D (`c4d_ui_reference_visual.md` §18.6), en menús y paletas: **Alt** = hijo del seleccionado, **Ctrl** = hermano debajo, **Ctrl+Mayús** = hermano arriba, **Alt+Ctrl** = padre de toda la selección (la selección pasa a ser hija del objeto nuevo), **Alt+Mayús** = un objeto nuevo como hijo de cada seleccionado.
+- El menú **Objetos > Añadir** del Gestor de Objetos antes creaba siempre en la raíz y ignoraba el Alt, y solo tenía Cubo, Esfera, Plano y Luz. Ahora ofrece las mismas primitivas y luces que las paletas y respeta Alt/Ctrl/Mayús. «Añadir Hijo» del menú contextual también usa esa lista y siempre crea dentro del objeto elegido.
+- Tests de `SceneNode::reparentNodes` / `canReparentNodes`: no meterse en sí mismo ni en un descendiente, la raíz no se mueve, conserva la posición en el mundo, orden dentro del mismo padre (al principio y al final) y varios nodos a la vez.
+
+**Límites**
+- **El arrastre y las combinaciones de teclas no se han probado con ratón y teclado reales** (solo la lógica de mover nodos tiene tests). Falta comprobar sobre todo que el arrastre no choca con el clic de selección y que Alt+clic en menús llega bien.
+- Alt+Mayús con varios seleccionados deja un paso de deshacer por objeto creado.
+- Las zonas hijo/hermano son fijas (25 % / 50 % / 25 % de la altura de la fila); no hay autoexpandir al mantener el cursor sobre una fila plegada ni autodesplazamiento al arrastrar cerca del borde.
+- Los objetos con efecto sobre su hijo (Simetría, Clonador, deformadores) se pueden arrastrar como los demás, pero no se avisa si queda un hijo que ya no cumple su papel.
+
+**Verificado:** tests y compilación. **Sin probar:** arrastrar con el ratón y los atajos con teclado real.
+
 ### 2026-11-20 (24): Luces como en C4D: estrella y gizmos por tipo
 
 **Cambiado**
