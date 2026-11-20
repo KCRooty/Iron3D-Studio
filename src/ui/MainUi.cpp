@@ -6428,7 +6428,7 @@ void drawComponentOverlay(const SceneNode* selected, const OrbitalCamera& camera
         }
     const char* names[] = {"", tr("Puntos"), tr("Aristas"), tr("Polígonos")};
     char buf[128];
-    std::snprintf(buf, sizeof(buf), "%s: %zu de %zu seleccionados", names[c.mode], c.sel.size(), componentCount());
+    std::snprintf(buf, sizeof(buf), tr("%s: %zu de %zu seleccionados"), names[c.mode], c.sel.size(), componentCount());
     dl->AddText(ImVec2(vp.x + 8, vp.y + 24), IM_COL32(230, 230, 230, 220), buf);
     dl->PopClipRect();
 }

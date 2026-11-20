@@ -8,11 +8,11 @@
 
 ![Interfaz de Iron3D Studio](docs/screenshots/01-interfaz.png)
 
-*El espacio de trabajo: menús, barras de herramientas, visor 3D, Gestor de Objetos, Atributos, Línea de Tiempo y Gestor de Coordenadas. Todos los iconos están dibujados en código.*
+*El espacio de trabajo: menús, barras de herramientas, visor 3D, Gestor de Objetos, Atributos, Línea de Tiempo, Gestor de Materiales y Gestor de Coordenadas. Todos los iconos están dibujados en código. La interfaz está en inglés por defecto y se puede cambiar a otros 10 idiomas desde Preferencias o desde el instalador.*
 
-![Selección múltiple con el eje en el centro](docs/screenshots/02-seleccion-multiple.png)
+![Modo Polígonos: un polígono seleccionado del Cubo](docs/screenshots/02-modelado-poligonos.png)
 
-*Selección múltiple (Mayús+clic en el visor, Ctrl+clic en el Gestor de Objetos): contorno naranja en todo lo seleccionado y el eje de transformación en el centro del conjunto.*
+*Modo Polígonos sobre un Cubo hecho editable (C): el polígono seleccionado se resalta y se puede extruir, biselar, cortar, ocultar o soldar desde los menús Malla y Selección.*
 
 DCC 3D open source (Static Forge) que replica el flujo de trabajo de Cinema 4D R19 —
 código 100% propio, reimplementación clean-room — con evaluación en GPU (Vulkan),
@@ -22,7 +22,7 @@ compatibilidad con `.c4d`/`.lib4d` y plugins de R19.
 Documento Maestro del proyecto en `V:\ObsidianVault\14-Iron3D-CoalMix\Iron3D_CoalMix_Documento_Maestro_2026-10-27.pdf`
 (resumen en `estado.md` de esa misma carpeta).
 
-Estado (2026-11-05): en desarrollo temprano, sin versión publicada. Fases 1 y 2 hechas
+Estado (2026-11-20): en desarrollo temprano, sin versión publicada (hay una demo 0.2.0 repartida a testers). Fases 1 y 2 hechas
 (grafo de escena, Gestor de Objetos, gizmo mover/rotar/escalar). Desde entonces: render
 PBR con sombras y SSAO (Vulkan), selección múltiple, modos libres del gizmo, 222 iconos
 propios, presets de interfaz (Cinema 4D, Blender, Maya, 3ds Max, Source Filmmaker),
