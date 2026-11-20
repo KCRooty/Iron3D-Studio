@@ -1200,6 +1200,22 @@ int main() {
             check(dis.changed == 1 && dst.polys.size() == st.polys.size() - 1, "disolver: dos cuadrilateros vecinos pasan a uno");
         }
 
+        // Conectar, Clonar, Voltear Arista y Planchar sobre el cubo.
+        {
+            const auto& tp = t.polys[(size_t)top];
+            const MeshEditResult con = connectPoints(cube, t, {tp[0], tp[2]});
+            check(con.changed == 1 && buildMeshTopology(con.mesh).polys.size() == t.polys.size() + 1, "conectar: la tapa se parte en dos");
+            check(connectPoints(cube, t, {tp[0], tp[1]}).changed == 0, "conectar: puntos vecinos no hacen nada");
+            const MeshEditResult cl = clonePolygons(cube, t, {top});
+            check(cl.changed == 1 && buildMeshTopology(cl.mesh).polys.size() == t.polys.size() + 1, "clonar: un poligono mas");
+            const MeshEditResult tri = triangulatePolygons(cube, t, {top});
+            const MeshTopology tt = buildMeshTopology(tri.mesh);
+            const MeshEditResult turned = turnEdges(tri.mesh, tt, {{std::min(tp[0], tp[2]), std::max(tp[0], tp[2])}, {std::min(tp[1], tp[3]), std::max(tp[1], tp[3])}});
+            check(turned.changed == 1 && buildMeshTopology(turned.mesh).polys.size() == tt.polys.size(), "voltear arista: gira la diagonal");
+            const MeshEditResult rl = relaxPoints(cube, t, {}, 0.5f, 1);
+            check(rl.changed > 0 && rl.mesh.vertices.size() == cube.vertices.size(), "planchar: mueve puntos");
+        }
+
         // Cerrar Agujero: el cubo sin la cara de arriba vuelve a cerrarse.
         std::vector<char> keep(t.polys.size(), 1);
         keep[(size_t)top] = 0;

@@ -116,6 +116,16 @@ MeshEditResult collapsePolygons(const MeshData& mesh, const MeshTopology& topo, 
 // poligono. Solo si el resultado es un lazo cerrado y convexo; si no, esos poligonos se quedan como estaban.
 // changed = poligonos que han desaparecido al unirse (0 = nada que unir).
 MeshEditResult dissolveEdges(const MeshData& mesh, const MeshTopology& topo, const std::set<std::pair<int, int>>& edges);
+// Planchar (M~G): acerca cada punto a la media de sus vecinos (`strength` 0..1, `iterations` pasadas). Con `points`
+// vacio, todos; los puntos de un borde abierto no se mueven. changed = vertices movidos.
+MeshEditResult relaxPoints(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& points, float strength,
+                           int iterations);
+// Voltear Arista (M~V): gira la diagonal compartida por dos triangulos (si el cuadrilatero es convexo). changed = aristas.
+MeshEditResult turnEdges(const MeshData& mesh, const MeshTopology& topo, const std::set<std::pair<int, int>>& edges);
+// Clonar: copia los poligonos dados encima de los originales (la copia queda seleccionada). changed = poligonos.
+MeshEditResult clonePolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys);
+// Conectar (M~M): parte cada poligono que tiene dos puntos seleccionados no vecinos con una arista entre ellos.
+MeshEditResult connectPoints(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& points);
 
 // Comprobar Malla: problemas de la topologia (indices de MeshTopology).
 struct MeshCheck {

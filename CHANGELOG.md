@@ -6,6 +6,19 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (33): Planchar, Voltear Arista, Clonar y Conectar
+
+**Añadido**
+- **Planchar** (puntos seleccionados, o toda la malla si no hay): cada punto se acerca a la media de sus vecinos, 3 pasadas al 50 %; los puntos de un borde abierto no se mueven y las normales se recalculan.
+- **Voltear Arista** (modo Aristas): gira la diagonal que comparten dos triángulos, salvo que el cuadrilátero resultante sea cóncavo.
+- **Clonar** (modo Polígonos): copia los polígonos seleccionados encima de los originales y deja la copia seleccionada.
+- **Conectar** (puntos): parte cada polígono que tenga dos puntos seleccionados no vecinos con una arista entre ellos.
+
+**Límites**
+- Conectar con aristas parte por los extremos de las aristas, no por sus puntos medios. Planchar no tiene aún ajustes de intensidad.
+
+**Verificado:** compilación y tests sobre el cubo. **Sin probar:** los comandos en pantalla.
+
 ### 2026-11-20 (32): Disolver y polos de la esfera
 
 **Añadido**

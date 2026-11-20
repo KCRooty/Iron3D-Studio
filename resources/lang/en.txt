@@ -1275,3 +1275,8 @@ Centrar Eje a Selección	Center Axis to Selection
 Abrir Carpeta de Preferencias...	Open Preferences Folder...
 Disolver: selecciona aristas, o polígonos vecinos.	Dissolve: select edges, or neighboring polygons.
 Disolver: el resultado no sería un polígono convexo.	Dissolve: the result would not be a convex planar polygon.
+Planchar: no hay puntos que alisar.	Iron: no points to smooth.
+Voltear Arista: selecciona aristas (modo Aristas).	Turn Edge: select edges (Edges mode).
+Voltear Arista: solo entre dos triángulos y sin cuadrilátero cóncavo.	Turn Edge: only between two triangles and without a concave quad.
+Clonar: selecciona polígonos (modo Polígonos).	Clone: select polygons (Polygons mode).
+Conectar: selecciona 2 puntos no vecinos de un mismo polígono.	Connect: select 2 non-adjacent points of the same polygon.

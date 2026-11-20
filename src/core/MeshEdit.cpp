@@ -1170,4 +1170,184 @@ MeshEditResult dissolveEdges(const MeshData& mesh, const MeshTopology& topo, con
     return finish(std::move(verts), out, changed);
 }
 
+
+namespace {
+
+// Normales de los triangulos tocados (los que usan algun vertice de render marcado): suma de normales de cara
+// ponderadas por area, con el giro que ya tenia la normal (las aristas vivas siguen vivas, las suaves suaves).
+void renormalizeTouched(MeshData& m, const std::vector<char>& moved) {
+    std::vector<char> touched(m.vertices.size(), 0);
+    for (size_t i = 0; i + 2 < m.indices.size(); i += 3)
+        if (moved[m.indices[i]] || moved[m.indices[i + 1]] || moved[m.indices[i + 2]])
+            for (size_t k = 0; k < 3; ++k) touched[m.indices[i + k]] = 1;
+    std::vector<glm::vec3> acc(m.vertices.size(), glm::vec3(0.0f));
+    for (size_t i = 0; i + 2 < m.indices.size(); i += 3) {
+        const uint32_t a = m.indices[i], b = m.indices[i + 1], c = m.indices[i + 2];
+        if (!touched[a] && !touched[b] && !touched[c]) continue;
+        glm::vec3 n = glm::cross(m.vertices[b].position - m.vertices[a].position, m.vertices[c].position - m.vertices[a].position);
+        if (glm::dot(n, m.vertices[a].normal + m.vertices[b].normal + m.vertices[c].normal) < 0.0f) n = -n;
+        acc[a] += n;
+        acc[b] += n;
+        acc[c] += n;
+    }
+    for (size_t v = 0; v < m.vertices.size(); ++v)
+        if (touched[v] && glm::length(acc[v]) > 1e-12f) m.vertices[v].normal = glm::normalize(acc[v]);
+}
+
+} // namespace
+
+MeshEditResult relaxPoints(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& points, float strength,
+                           int iterations) {
+    MeshEditResult r;
+    r.mesh = mesh;
+    const size_t np = topo.points.size();
+    std::vector<std::vector<int>> nb(np);
+    for (const auto& e : topo.edges) {
+        nb[(size_t)e.first].push_back(e.second);
+        nb[(size_t)e.second].push_back(e.first);
+    }
+    // Los puntos del borde abierto no se mueven (la malla no se encoge por los lados).
+    std::map<std::pair<int, int>, int> uses;
+    for (const auto& pl : topo.polys)
+        for (size_t k = 0; k < pl.size(); ++k) {
+            const int a = pl[k], b = pl[(k + 1) % pl.size()];
+            ++uses[{std::min(a, b), std::max(a, b)}];
+        }
+    std::vector<char> fixed(np, 0);
+    for (const auto& [e, n] : uses)
+        if (n < 2) fixed[(size_t)e.first] = fixed[(size_t)e.second] = 1;
+    std::vector<glm::vec3> pos = topo.points;
+    std::vector<char> moved(np, 0);
+    strength = std::clamp(strength, 0.0f, 1.0f);
+    for (int it = 0; it < std::max(1, iterations); ++it) {
+        std::vector<glm::vec3> next = pos;
+        for (size_t q = 0; q < np; ++q) {
+            if (nb[q].empty() || fixed[q] || (!points.empty() && !points.count((int)q))) continue;
+            glm::vec3 avg(0.0f);
+            for (int o : nb[q]) avg += pos[(size_t)o];
+            avg /= (float)nb[q].size();
+            next[q] = pos[q] + (avg - pos[q]) * strength;
+            moved[q] = 1;
+        }
+        pos = std::move(next);
+    }
+    std::vector<char> movedV(mesh.vertices.size(), 0);
+    for (size_t v = 0; v < mesh.vertices.size(); ++v) {
+        const int q = topo.vertexPoint[v];
+        if (q >= 0 && (size_t)q < np && moved[(size_t)q]) {
+            if (glm::length(pos[(size_t)q] - r.mesh.vertices[v].position) > 1e-9f) ++r.changed;
+            r.mesh.vertices[v].position = pos[(size_t)q];
+            movedV[v] = 1;
+        }
+    }
+    if (!r.changed) return r;
+    renormalizeTouched(r.mesh, movedV);
+    updateBounds(r.mesh);
+    return r;
+}
+
+MeshEditResult turnEdges(const MeshData& mesh, const MeshTopology& topo, const std::set<std::pair<int, int>>& edges) {
+    const std::vector<Face> faces = polyFaces(mesh, topo);
+    std::vector<Vertex> verts = mesh.vertices;
+    std::map<std::pair<int, int>, int> owner;
+    for (size_t p = 0; p < topo.polys.size(); ++p) {
+        const auto& pl = topo.polys[p];
+        for (size_t k = 0; k < pl.size(); ++k) owner[{pl[k], pl[(k + 1) % pl.size()]}] = (int)p;
+    }
+    std::vector<char> used(topo.polys.size(), 0);
+    std::vector<Face> out;
+    int changed = 0;
+    for (const auto& e : edges) {
+        const auto a = owner.find({e.first, e.second}), b = owner.find({e.second, e.first});
+        if (a == owner.end() || b == owner.end()) continue;
+        const int p = a->second, q = b->second;
+        if (p == q || used[(size_t)p] || used[(size_t)q] || topo.polys[(size_t)p].size() != 3 || topo.polys[(size_t)q].size() != 3) continue;
+        // p: a -> b -> x ; q: b -> a -> y. Cuadrilatero a, y, b, x con la diagonal x-y.
+        const auto& pp = topo.polys[(size_t)p];
+        const auto& qq = topo.polys[(size_t)q];
+        size_t kx = 0, ky = 0;
+        for (size_t k = 0; k < 3; ++k) {
+            if (pp[k] != e.first && pp[k] != e.second) kx = k;
+            if (qq[k] != e.first && qq[k] != e.second) ky = k;
+        }
+        const int pa = e.first, pb = e.second;
+        auto vOf = [&](int poly, int point) {
+            const auto& pl = topo.polys[(size_t)poly];
+            for (size_t k = 0; k < pl.size(); ++k)
+                if (pl[k] == point) return faces[(size_t)poly].v[k];
+            return faces[(size_t)poly].v[0];
+        };
+        const uint32_t va = vOf(p, pa), vb = vOf(p, pb), vx = faces[(size_t)p].v[kx], vy = faces[(size_t)q].v[ky];
+        // Con la diagonal girada no debe salir un triangulo invertido (cuadrilatero concavo).
+        const glm::vec3 pa3 = topo.points[(size_t)pa], pb3 = topo.points[(size_t)pb], px = topo.points[(size_t)pp[kx]],
+                        py = topo.points[(size_t)qq[ky]];
+        const glm::vec3 n = topo.polyNormals[(size_t)p] + topo.polyNormals[(size_t)q];
+        if (glm::dot(glm::cross(py - pa3, px - py), n) <= 1e-9f || glm::dot(glm::cross(px - pb3, py - px), n) <= 1e-9f) continue;
+        Face t1, t2;
+        t1.v = {vx, va, vy};
+        t2.v = {vy, vb, vx};
+        t1.sel = t2.sel = true;
+        out.push_back(std::move(t1));
+        out.push_back(std::move(t2));
+        used[(size_t)p] = used[(size_t)q] = 1;
+        ++changed;
+    }
+    for (size_t p = 0; p < faces.size(); ++p)
+        if (!used[p]) out.push_back(faces[p]);
+    return finish(std::move(verts), out, changed);
+}
+
+MeshEditResult clonePolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys) {
+    std::vector<Vertex> verts = mesh.vertices;
+    std::vector<Face> faces = polyFaces(mesh, topo);
+    int changed = 0;
+    const size_t n = faces.size();
+    for (size_t p = 0; p < n; ++p) {
+        if (!polys.count((int)p)) continue;
+        Face c;
+        for (uint32_t v : faces[p].v) {
+            c.v.push_back((uint32_t)verts.size());
+            verts.push_back(verts[v]);
+        }
+        c.sel = true;
+        faces[p].sel = false;
+        faces.push_back(std::move(c));
+        ++changed;
+    }
+    return finish(std::move(verts), faces, changed);
+}
+
+MeshEditResult connectPoints(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& points) {
+    std::vector<Vertex> verts = mesh.vertices;
+    const std::vector<Face> faces = polyFaces(mesh, topo);
+    std::vector<Face> out;
+    int changed = 0;
+    for (size_t p = 0; p < faces.size(); ++p) {
+        const auto& pl = topo.polys[p];
+        const size_t n = pl.size();
+        std::vector<size_t> sel;
+        for (size_t k = 0; k < n; ++k)
+            if (points.count(pl[k])) sel.push_back(k);
+        bool split = false;
+        if (n >= 4 && sel.size() >= 2) {
+            for (size_t i = 0; i < sel.size() && !split; ++i)
+                for (size_t j = i + 1; j < sel.size() && !split; ++j) {
+                    const size_t a = sel[i], b = sel[j];
+                    const size_t gap = b - a;
+                    if (gap < 2 || gap > n - 2) continue;  // vecinos: ya hay arista
+                    Face f1, f2;
+                    for (size_t k = a; k <= b; ++k) f1.v.push_back(faces[p].v[k]);
+                    for (size_t k = b; k <= a + n; ++k) f2.v.push_back(faces[p].v[k % n]);
+                    f1.sel = f2.sel = true;
+                    out.push_back(std::move(f1));
+                    out.push_back(std::move(f2));
+                    split = true;
+                    ++changed;
+                }
+        }
+        if (!split) out.push_back(faces[p]);
+    }
+    return finish(std::move(verts), out, changed);
+}
+
 } // namespace iron3d

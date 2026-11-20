@@ -2592,7 +2592,7 @@ void meshCreateTools(const SceneNode* s) {
 }
 
 void meshTransformTools(const SceneNode* s) {
-    meshItem(tr("Planchar"), "M~G", "", s);
+    meshItem(tr("Planchar"), "M~G", "relax", s);
     meshItem(tr("Magnetismo"), "M~I", "", s);
     meshItem(tr("Reflejar"), "M~H", "", s);
     meshItem(tr("Puntada y Cosido"), "M~P", "", s);
@@ -2623,13 +2623,13 @@ void meshNgonItems(const SceneNode* s) {
 
 void meshCommandsMenu(const SceneNode* s) {
     meshItem(tr("Matriz"), "", "", s);
-    meshItem(tr("Clonar"), "", "", s);
+    meshItem(tr("Clonar"), "", "clone", s, 3);
     ImGui::Separator();
     meshItem(tr("Desconectar..."), "U~D, U~Mayús+D", "", s);
     meshItem(tr("Separar"), "U~P", "split", s, 3);
     ImGui::Separator();
     meshItem(tr("Colapso"), "U~C", "collapse", s);
-    meshItem(tr("Conectar"), "M~M", "", s);
+    meshItem(tr("Conectar"), "M~M", "connect", s);
     meshItem(tr("Fundir"), "U~Z", "", s);
     meshItem(tr("Disolver"), "M~N", "dissolve", s);
     ImGui::Separator();
@@ -2638,7 +2638,7 @@ void meshCommandsMenu(const SceneNode* s) {
     meshItem(tr("Destriangular..."), "U~U, U~Mayús+U", "untriang", s);
     ImGui::Separator();
     meshItem(tr("Asignar Valor al Punto"), "M~U", "", s);
-    meshItem(tr("Voltear Arista"), "M~V", "", s);
+    meshItem(tr("Voltear Arista"), "M~V", "turn", s, 2);
     meshItem(tr("Aristas a Spline"), "", "", s);
     meshItem(tr("Cambiar Orden de Puntos"), "", "", s);
     ImGui::Separator();
@@ -2667,7 +2667,7 @@ void drawComponentContextMenu(SceneNode& root, SceneNode*& selected, SceneHistor
     meshItem(tr("Cerrar Agujero de Polígonos"), "M~D", "close", s);
     meshItem(tr("Lápiz Polígonos"), "M~E", "", s);
     meshItem(tr("Disolver"), "M~N", "dissolve", s);
-    meshItem(tr("Planchar"), "M~G", "", s);
+    meshItem(tr("Planchar"), "M~G", "relax", s);
     meshItem(tr("Cortar Línea"), "K~K, M~K", "tool:knife", s);
     meshItem(tr("Cortar Plano"), "K~J, M~J", "", s);
     meshItem(tr("Cortar Cíclico/Trayectoria"), "K~L, M~L", "", s);
@@ -2690,7 +2690,7 @@ void drawComponentContextMenu(SceneNode& root, SceneNode*& selected, SceneHistor
     meshNormalsItems(s);
     ImGui::Separator();
     meshItem(tr("Matriz"), "", "", s);
-    meshItem(tr("Clonar"), "", "", s);
+    meshItem(tr("Clonar"), "", "clone", s, 3);
     meshItem(tr("Colapso"), "U~C", "collapse", s);
     meshItem(tr("Desconectar..."), "U~D, U~Mayús+D", "", s);
     meshItem(tr("Fundir"), "U~Z", "", s);
@@ -7410,6 +7410,25 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
             r = weldPoints(*c.mesh, t, selectedPoints());
             if (!r.changed) { flashStatus(tr("Colapso: selecciona al menos 2 puntos.")); return false; }
         }
+    } else if (op == "relax") {
+        name = tr("Planchar");
+        r = relaxPoints(*c.mesh, t, selectedPoints(), 0.5f, 3);
+        if (!r.changed) { flashStatus(tr("Planchar: no hay puntos que alisar.")); return false; }
+    } else if (op == "turn") {
+        name = tr("Voltear Arista");
+        std::set<std::pair<int, int>> ed;
+        if (mode == 2) for (int i : c.sel) if (i >= 0 && (size_t)i < t.edges.size()) ed.insert(t.edges[(size_t)i]);
+        if (ed.empty()) { flashStatus(tr("Voltear Arista: selecciona aristas (modo Aristas).")); return false; }
+        r = turnEdges(*c.mesh, t, ed);
+        if (!r.changed) { flashStatus(tr("Voltear Arista: solo entre dos triángulos y sin cuadrilátero cóncavo.")); return false; }
+    } else if (op == "clone") {
+        name = tr("Clonar");
+        if (mode != 3 || c.sel.empty()) { flashStatus(tr("Clonar: selecciona polígonos (modo Polígonos).")); return false; }
+        r = clonePolygons(*c.mesh, t, c.sel);
+    } else if (op == "connect") {
+        name = tr("Conectar");
+        r = connectPoints(*c.mesh, t, selectedPoints());
+        if (!r.changed) { flashStatus(tr("Conectar: selecciona 2 puntos no vecinos de un mismo polígono.")); return false; }
     } else if (op == "dissolve") {
         name = tr("Disolver");
         std::set<std::pair<int, int>> ed;
