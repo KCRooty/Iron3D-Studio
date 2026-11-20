@@ -472,6 +472,37 @@ int main() {
               "HIDDEN: poligonos ocultos guardados y leidos");
     }
 
+    // --- Cerrar Agujero con agujeros concavos (orejas) -------------------------
+    {
+        const glm::vec2 outline[6] = {{0, 0}, {2, 0}, {2, 1}, {1, 1}, {1, 2}, {0, 2}};  // L, antihoraria
+        MeshData m;
+        for (int i = 0; i < 6; ++i) {
+            const glm::vec2 a = outline[i], b = outline[(i + 1) % 6];
+            const glm::vec3 d = glm::normalize(glm::vec3(b.x - a.x, b.y - a.y, 0.0f));
+            const glm::vec3 nrm = glm::cross(d, glm::vec3(0, 0, 1));  // hacia fuera
+            const uint32_t base = (uint32_t)m.vertices.size();
+            m.vertices.push_back({glm::vec3(a.x, a.y, 0), glm::vec3(0.8f), nrm});
+            m.vertices.push_back({glm::vec3(b.x, b.y, 0), glm::vec3(0.8f), nrm});
+            m.vertices.push_back({glm::vec3(b.x, b.y, 1), glm::vec3(0.8f), nrm});
+            m.vertices.push_back({glm::vec3(a.x, a.y, 1), glm::vec3(0.8f), nrm});
+            m.indices.insert(m.indices.end(), {base, base + 1, base + 2, base, base + 2, base + 3});
+            m.faceTris.push_back(2);
+        }
+        updateBounds(m);
+        const MeshTopology t0 = buildMeshTopology(m);
+        check(t0.polys.size() == 6, "agujero en L: 6 paredes");
+        const MeshEditResult closed = closeHoles(m, t0, {});
+        const MeshTopology t1 = buildMeshTopology(closed.mesh);
+        // 6 paredes + 2 tapas en L de 4 triangulos cada una
+        check(t1.polys.size() == 14, "agujero en L: las dos tapas concavas se cierran con 4 triangulos cada una");
+        std::set<std::pair<int, int>> dir;
+        for (const auto& pl : t1.polys)
+            for (size_t k = 0; k < pl.size(); ++k) dir.insert({pl[k], pl[(k + 1) % pl.size()]});
+        bool sealed = true;
+        for (const auto& [a, b] : dir) sealed = sealed && dir.count({b, a}) > 0;
+        check(sealed, "agujero en L: malla cerrada y con las caras bien orientadas");
+    }
+
     // --- Visibilidad de componentes (Solo Seleccionar Visibles) ---------------
     {
         const MeshData cube = makeCubeMesh();

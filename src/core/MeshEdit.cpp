@@ -1,6 +1,7 @@
 #include "MeshEdit.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <map>
 #include <utility>
@@ -482,6 +483,39 @@ MeshEditResult weldPoints(const MeshData& mesh, const MeshTopology& topo, const 
     return finish(std::move(verts), out, (int)sel.size());
 }
 
+// Triangulacion por orejas de un contorno plano (en el orden dado). Devuelve
+// ternas de indices del contorno; vacio si no se puede (degenerado).
+std::vector<std::array<int, 3>> earClipContour(const std::vector<glm::vec3>& pts) {
+    std::vector<std::array<int, 3>> out;
+    const int n = (int)pts.size();
+    if (n < 3) return out;
+    const glm::vec3 nrm = newellNormal(pts);
+    if (glm::length(nrm) < 0.5f) return out;
+    std::vector<int> idx((size_t)n);
+    for (int i = 0; i < n; ++i) idx[(size_t)i] = i;
+    auto side = [&](int a, int b, int c) { return glm::dot(glm::cross(pts[(size_t)b] - pts[(size_t)a], pts[(size_t)c] - pts[(size_t)b]), nrm); };
+    int guard = n * n + 8;
+    while (idx.size() > 3 && guard-- > 0) {
+        bool clipped = false;
+        for (size_t i = 0; i < idx.size() && !clipped; ++i) {
+            const int a = idx[(i + idx.size() - 1) % idx.size()], b = idx[i], c = idx[(i + 1) % idx.size()];
+            if (side(a, b, c) <= 1e-9f) continue;  // esquina concava o recta
+            bool inside = false;
+            for (int q : idx) {
+                if (q == a || q == b || q == c) continue;
+                if (side(a, b, q) >= -1e-9f && side(b, c, q) >= -1e-9f && side(c, a, q) >= -1e-9f) { inside = true; break; }
+            }
+            if (inside) continue;
+            out.push_back({a, b, c});
+            idx.erase(idx.begin() + (long)i);
+            clipped = true;
+        }
+        if (!clipped) { out.clear(); return out; }
+    }
+    if (idx.size() == 3) out.push_back({idx[0], idx[1], idx[2]});
+    return out;
+}
+
 MeshEditResult closeHoles(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& touchPoints) {
     std::vector<Vertex> verts = mesh.vertices;
     std::vector<Face> faces = polyFaces(mesh, topo);
@@ -524,9 +558,26 @@ MeshEditResult closeHoles(const MeshData& mesh, const MeshTopology& topo, const 
         if (!touched) continue;
         std::vector<glm::vec3> pts;
         for (int lq : loop) pts.push_back(topo.points[(size_t)lq]);
-        Face f = flatFace(verts, pts, verts[colorVertex[start]].color, glm::vec3(0, 1, 0));
-        f.sel = true;
-        faces.push_back(f);
+        // Convexo: un solo poligono. Concavo: triangulos por orejas (los poligonos de Iron3D son convexos).
+        const glm::vec3 nrm = newellNormal(pts);
+        bool convex = true;
+        for (size_t k = 0; k < pts.size() && convex; ++k) {
+            const glm::vec3 a = pts[k], b = pts[(k + 1) % pts.size()], c = pts[(k + 2) % pts.size()];
+            if (glm::dot(glm::cross(b - a, c - b), nrm) < -1e-9f) convex = false;
+        }
+        const std::vector<std::array<int, 3>> ears = convex ? std::vector<std::array<int, 3>>{} : earClipContour(pts);
+        if (convex || ears.empty()) {
+            Face f = flatFace(verts, pts, verts[colorVertex[start]].color, glm::vec3(0, 1, 0));
+            f.sel = true;
+            faces.push_back(f);
+        } else {
+            for (const auto& e : ears) {
+                Face f = flatFace(verts, {pts[(size_t)e[0]], pts[(size_t)e[1]], pts[(size_t)e[2]]},
+                                  verts[colorVertex[start]].color, glm::vec3(0, 1, 0));
+                f.sel = true;
+                faces.push_back(f);
+            }
+        }
         ++changed;
     }
     return finish(std::move(verts), faces, changed);

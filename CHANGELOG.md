@@ -6,6 +6,13 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (9): Cerrar Agujero Poligonal con agujeros cóncavos
+
+**Arreglado**
+- **Cerrar Agujero** triangulaba el contorno en abanico, que solo vale para agujeros convexos: uno en forma de L daba triángulos que salían del contorno. Ahora, si el contorno es cóncavo, se triangula por orejas (un polígono por triángulo, porque los polígonos de Iron3D son convexos); si es convexo, sigue siendo un solo polígono.
+
+**Probado:** `iron3d_tests` (prisma en L sin tapas: las dos tapas cóncavas se cierran con 4 triángulos cada una, la malla queda cerrada y con todas las caras orientadas de forma coherente). **No probado:** con el menú Malla en la interfaz; agujeros con puntos repetidos o contornos no planos.
+
 ### 2026-11-20 (8): .iron guarda los polígonos ocultos; arreglos de carga y de compilación
 
 **Nuevo**
