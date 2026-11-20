@@ -1351,6 +1351,80 @@ MeshEditResult connectPoints(const MeshData& mesh, const MeshTopology& topo, con
 }
 
 
+MeshEditResult transformAlongNormal(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& points, int kind,
+                                    float amount) {
+    MeshEditResult r;
+    r.mesh = mesh;
+    const size_t np = topo.points.size();
+    // Normal media por punto (suma de las normales de los poligonos que lo tocan) y normal de la seleccion.
+    std::vector<glm::vec3> pn(np, glm::vec3(0.0f));
+    for (size_t p = 0; p < topo.polys.size(); ++p)
+        for (int q : topo.polys[p])
+            if (q >= 0 && (size_t)q < np) pn[(size_t)q] += topo.polyNormals[p];
+    std::vector<int> sel;
+    glm::vec3 center(0.0f), axis(0.0f);
+    for (int q : points)
+        if (q >= 0 && (size_t)q < np) {
+            sel.push_back(q);
+            center += topo.points[(size_t)q];
+            axis += pn[(size_t)q];
+        }
+    if (sel.empty()) return r;
+    center /= (float)sel.size();
+    if (glm::length(axis) < 1e-9f) return r;
+    axis = glm::normalize(axis);
+    std::vector<glm::vec3> pos = topo.points;
+    for (int q : sel) {
+        glm::vec3& v = pos[(size_t)q];
+        if (kind == 0) {  // mover: cada punto por su propia normal
+            if (glm::length(pn[(size_t)q]) > 1e-9f) v += glm::normalize(pn[(size_t)q]) * amount;
+        } else if (kind == 1) {  // escalar: a lo largo de la normal de la seleccion, respecto a su centro
+            const glm::vec3 d = v - center;
+            v += axis * (glm::dot(d, axis) * (amount - 1.0f));
+        } else {  // rotar: alrededor de la normal de la seleccion por su centro (amount en grados)
+            const float a = glm::radians(amount), c = std::cos(a), s = std::sin(a);
+            const glm::vec3 d = v - center;
+            v = center + d * c + glm::cross(axis, d) * s + axis * glm::dot(axis, d) * (1.0f - c);
+        }
+    }
+    std::vector<char> moved(mesh.vertices.size(), 0);
+    for (size_t v = 0; v < mesh.vertices.size(); ++v) {
+        const int q = topo.vertexPoint[v];
+        if (q >= 0 && (size_t)q < np && std::binary_search(sel.begin(), sel.end(), q)) {
+            if (glm::length(pos[(size_t)q] - r.mesh.vertices[v].position) > 1e-9f) ++r.changed;
+            r.mesh.vertices[v].position = pos[(size_t)q];
+            moved[v] = 1;
+        }
+    }
+    if (!r.changed) return r;
+    renormalizeTouched(r.mesh, moved);
+    updateBounds(r.mesh);
+    return r;
+}
+
+MeshEditResult arrayPolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys, int count,
+                             const glm::vec3& offset) {
+    std::vector<Vertex> verts = mesh.vertices;
+    std::vector<Face> faces = polyFaces(mesh, topo);
+    const size_t n = faces.size();
+    int changed = 0;
+    for (int k = 1; k <= std::max(1, count); ++k)
+        for (size_t p = 0; p < n; ++p) {
+            if (!polys.empty() && !polys.count((int)p)) continue;
+            Face c;
+            for (uint32_t v : faces[p].v) {
+                Vertex nv = verts[v];
+                nv.position += offset * (float)k;
+                c.v.push_back((uint32_t)verts.size());
+                verts.push_back(nv);
+            }
+            c.sel = true;
+            faces.push_back(std::move(c));
+            ++changed;
+        }
+    return finish(std::move(verts), faces, changed);
+}
+
 MeshEditResult mirrorPolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys, int axis) {
     axis = std::clamp(axis, 0, 2);
     std::vector<Vertex> verts = mesh.vertices;

@@ -127,6 +127,15 @@ MeshEditResult clonePolygons(const MeshData& mesh, const MeshTopology& topo, con
 // Reflejar (M~H): copia reflejada de los poligonos dados (todos si estan vacios) respecto al plano X/Y/Z (axis 0/1/2)
 // que pasa por el origen del objeto; la copia queda seleccionada. changed = poligonos copiados.
 MeshEditResult mirrorPolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys, int axis);
+// Mover / Escalar / Rotar Normal (M~Z, M~#, M~,): kind 0 = mueve cada punto `amount` por su normal; 1 = escala la
+// seleccion `amount` veces a lo largo de su normal media, respecto a su centro; 2 = la gira `amount` grados alrededor de
+// su normal media por su centro. changed = vertices movidos (0 = nada que hacer).
+MeshEditResult transformAlongNormal(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& points, int kind,
+                                    float amount);
+// Matriz: `count` copias de los poligonos dados (todos si estan vacios), cada una `offset` mas lejos que la anterior;
+// las copias quedan seleccionadas. changed = poligonos creados.
+MeshEditResult arrayPolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys, int count,
+                             const glm::vec3& offset);
 // Conectar (M~M): parte cada poligono que tiene dos puntos seleccionados no vecinos con una arista entre ellos.
 MeshEditResult connectPoints(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& points);
 

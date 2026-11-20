@@ -6,6 +6,17 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (39): Malla: Mover/Escalar/Rotar Normal, Matriz y Configuración Modelado
+
+**Añadido**
+- **Mover Normal**: cada punto seleccionado (o los de las aristas/polígonos seleccionados) se desplaza 10 cm por su normal. **Escalar Normal**: escala la selección ×1,25 a lo largo de su normal media respecto a su centro. **Rotar Normal**: la gira 15° alrededor de su normal media por su centro. Se pueden repetir y deshacer.
+- **Matriz**: 3 copias de los polígonos seleccionados (o de toda la malla) desplazadas en X el ancho de la selección más un 10 %; las copias quedan seleccionadas.
+- **Configuración Modelado** abre Preferencias.
+
+**Límites:** los valores son fijos (sin diálogo de parámetros ni arrastre interactivo como en Cinema 4D). Siguen en gris: Crear Punto, Pincel, Lápiz Polígonos, Magnetismo, Puntada y Cosido, Extrusión Matriz, Suavizar Desplazamiento, Desconectar, Asignar Valor al Punto, Aristas a Spline y Cambiar Orden de Puntos.
+
+**Verificado:** compilación y tests de las funciones en el cubo. **Sin probar:** en pantalla.
+
 ### 2026-11-20 (38): Opciones de verificación para abrir menús y diálogos sin clics
 
 **Añadido** (solo para probar la interfaz, no cambian nada al usarla)

@@ -1216,6 +1216,15 @@ int main() {
             check(mi.changed == 1 && buildMeshTopology(mi.mesh).polys.size() == t.polys.size() + 1, "reflejar: copia la tapa");
             const MeshEditResult mf = dissolveEdges(cube, t, {});
             check(mf.changed == 0, "disolver sin aristas no hace nada");
+            // Normales: mover los 4 puntos de la tapa por su normal los sube; escalar/rotar los deja en su sitio en Y.
+            const std::set<int> topPts(tp.begin(), tp.end());
+            const MeshEditResult nm = transformAlongNormal(cube, t, topPts, 0, 0.1f);
+            check(nm.changed > 0 && nm.mesh.vertices.size() == cube.vertices.size(), "mover normal: mueve puntos");
+            const MeshEditResult nr = transformAlongNormal(cube, t, topPts, 2, 30.0f);
+            check(nr.changed > 0 && std::fabs(nr.mesh.boundsMax.y - cube.boundsMax.y) < 1e-4f, "rotar normal: gira sin subir la tapa");
+            check(transformAlongNormal(cube, t, {}, 0, 0.1f).changed == 0, "normal sin seleccion no hace nada");
+            const MeshEditResult ar = arrayPolygons(cube, t, {top}, 3, glm::vec3(1.0f, 0.0f, 0.0f));
+            check(ar.changed == 3 && buildMeshTopology(ar.mesh).polys.size() == t.polys.size() + 3, "matriz: 3 copias");
             const MeshEditResult rl = relaxPoints(cube, t, {}, 0.5f, 1);
             check(rl.changed > 0 && rl.mesh.vertices.size() == cube.vertices.size(), "planchar: mueve puntos");
         }

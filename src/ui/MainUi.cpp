@@ -2643,9 +2643,9 @@ void meshTransformTools(const SceneNode* s) {
     meshItem(tr("Extrusión Matriz"), "M~X", "", s);
     meshItem(tr("Suavizar Desplazamiento"), "M~Y", "", s);
     ImGui::Separator();
-    meshItem(tr("Mover Normal"), "M~Z", "", s);
-    meshItem(tr("Escalar Normal"), "M~#", "", s);
-    meshItem(tr("Rotar Normal"), "M~,", "", s);
+    meshItem(tr("Mover Normal"), "M~Z", "normalmove", s);
+    meshItem(tr("Escalar Normal"), "M~#", "normalscale", s);
+    meshItem(tr("Rotar Normal"), "M~,", "normalrot", s);
 }
 
 void meshNormalsItems(const SceneNode* s) {
@@ -2661,7 +2661,7 @@ void meshNgonItems(const SceneNode* s) {
 }
 
 void meshCommandsMenu(const SceneNode* s) {
-    meshItem(tr("Matriz"), "", "", s);
+    meshItem(tr("Matriz"), "", "array", s);
     meshItem(tr("Clonar"), "", "clone", s, 3);
     ImGui::Separator();
     meshItem(tr("Desconectar..."), "U~D, U~Mayús+D", "", s);
@@ -2688,7 +2688,7 @@ void meshCommandsMenu(const SceneNode* s) {
         if (gear) openToolOptions((int)UiState::OptWin::Optimize);
     }
     meshItem(tr("Restaurar Escala..."), "", "resetscale", s);
-    meshItem(tr("Configuración Modelado"), "Mayús+M", "", s);
+    meshItem(tr("Configuración Modelado"), "Mayús+M", "modelsettings", s);
     ImGui::Separator();
     meshItem(tr("Comprobar Malla"), "", "check", s);
 }
@@ -2722,13 +2722,13 @@ void drawComponentContextMenu(SceneNode& root, SceneNode*& selected, SceneHistor
     meshItem(tr("Extrusión Matriz"), "M~X", "", s);
     meshItem(tr("Suavizar Desplazamiento"), "M~Y", "", s);
     ImGui::Separator();
-    meshItem(tr("Mover Normal"), "M~Z", "", s);
-    meshItem(tr("Escalar Normal"), "M~#", "", s);
-    meshItem(tr("Rotar Normal"), "M~,", "", s);
+    meshItem(tr("Mover Normal"), "M~Z", "normalmove", s);
+    meshItem(tr("Escalar Normal"), "M~#", "normalscale", s);
+    meshItem(tr("Rotar Normal"), "M~,", "normalrot", s);
     ImGui::Separator();
     meshNormalsItems(s);
     ImGui::Separator();
-    meshItem(tr("Matriz"), "", "", s);
+    meshItem(tr("Matriz"), "", "array", s);
     meshItem(tr("Clonar"), "", "clone", s, 3);
     meshItem(tr("Colapso"), "U~C", "collapse", s);
     meshItem(tr("Desconectar..."), "U~D, U~Mayús+D", "", s);
@@ -3063,9 +3063,9 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         if (beginMenuDbg(tr("Normales"))) {
             meshNormalsItems(ms);
             ImGui::Separator();
-            meshItem(tr("Mover Normal"), "M~Z", "", ms);
-            meshItem(tr("Escalar Normal"), "M~#", "", ms);
-            meshItem(tr("Rotar Normal"), "M~,", "", ms);
+            meshItem(tr("Mover Normal"), "M~Z", "normalmove", ms);
+            meshItem(tr("Escalar Normal"), "M~#", "normalscale", ms);
+            meshItem(tr("Rotar Normal"), "M~,", "normalrot", ms);
             ImGui::EndMenu();
         }
         if (beginMenuDbg(tr("Centrar Ejes"))) {
@@ -7431,6 +7431,10 @@ int componentModeFor(const SceneNode* n) { return syncComponents(n) ? g.comp.mod
 // seleccion no crean paso de deshacer (como el resto de la seleccion de
 // componentes); las de malla si.
 bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, const std::string& op) {
+    if (op == "modelsettings") {  // Configuracion Modelado: los ajustes de modelado viven en Preferencias
+        g.showPrefs = true;
+        return false;
+    }
     if (!syncComponents(selected)) {
         flashStatus(tr("Selecciona un objeto editable y entra en modo Puntos, Aristas o Polígonos."));
         return false;
@@ -7597,6 +7601,29 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
         name = tr("Reflejar");
         r = mirrorPolygons(*c.mesh, t, mode == 3 ? c.sel : std::set<int>{}, g.symAxis >= 0 ? g.symAxis : 0);
         if (!r.changed) { flashStatus(tr("Reflejar: no hay polígonos.")); return false; }
+    } else if (op == "normalmove" || op == "normalscale" || op == "normalrot") {
+        // Valores fijos (como Planchar): 10 cm, x1,25 y 15 grados; se pueden repetir o deshacer.
+        const int kind = op == "normalmove" ? 0 : op == "normalscale" ? 1 : 2;
+        name = kind == 0 ? tr("Mover Normal") : kind == 1 ? tr("Escalar Normal") : tr("Rotar Normal");
+        const std::set<int> pts = selectedPoints();
+        if (pts.empty()) { flashStatus(std::string(name) + tr(": no hay nada seleccionado.")); return false; }
+        r = transformAlongNormal(*c.mesh, t, pts, kind, kind == 0 ? 10.0f / kCmPerUnit : kind == 1 ? 1.25f : 15.0f);
+        if (!r.changed) { flashStatus(std::string(name) + tr(": la selección no tiene normal definida.")); return false; }
+    } else if (op == "array") {
+        name = tr("Matriz");
+        const std::set<int> ps = mode == 3 ? c.sel : std::set<int>{};
+        glm::vec3 lo(1e30f), hi(-1e30f);
+        for (size_t p = 0; p < t.polys.size(); ++p) {
+            if (!ps.empty() && !ps.count((int)p)) continue;
+            for (int q : t.polys[p]) {
+                lo = glm::min(lo, t.points[(size_t)q]);
+                hi = glm::max(hi, t.points[(size_t)q]);
+            }
+        }
+        if (lo.x > hi.x) { flashStatus(tr("Matriz: no hay polígonos.")); return false; }
+        // 3 copias desplazadas en X el ancho de la seleccion mas un 10 %.
+        r = arrayPolygons(*c.mesh, t, ps, 3, glm::vec3((hi.x - lo.x) * 1.1f, 0.0f, 0.0f));
+        if (!r.changed) { flashStatus(tr("Matriz: no hay polígonos.")); return false; }
     } else if (op == "clone") {
         name = tr("Clonar");
         if (mode != 3 || c.sel.empty()) { flashStatus(tr("Clonar: selecciona polígonos (modo Polígonos).")); return false; }
