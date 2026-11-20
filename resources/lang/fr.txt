@@ -1022,6 +1022,10 @@ Bucle	Boucle
 Cuchillo: no hay ninguna arista bajo el cursor.	Couteau : aucune arête sous le curseur.
 Cuchillo: esa arista no tiene un bucle de cuadriláteros que cortar.	Couteau : cette arête n'a pas de boucle de quadrilatères à couper.
 Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic.	Mode Boucle : cliquez sur une arête ; coupe tout son anneau\nà l'endroit du clic.
+Eje	Axe
+Cuchillo: el clic no toca la malla.	Couteau : le clic ne touche pas le maillage.
+Cuchillo: el plano no corta ningún polígono.	Couteau : le plan ne coupe aucun polygone.
+Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	Mode Plan : cliquez sur le maillage ; coupe avec un plan\nperpendiculaire à l'axe choisi passant par ce point.
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cono	Cône

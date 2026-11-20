@@ -6,6 +6,19 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (15): Cuchillo en modo Plano y arreglo del rayo del Cuchillo en Línea
+
+**Añadido**
+- **Cuchillo (K) en modo Plano:** un clic en la malla fija un punto (el primer triángulo que toca el rayo) y corta con un plano perpendicular al eje local elegido (X, Y o Z) que pasa por ese punto. Con polígonos seleccionados, solo corta esos. El selector del panel ahora es Línea / Plano / Bucle. Orden `--ui-cmd=plane=x,y,eje` para verificar sin input.
+- Cadenas nuevas traducidas a inglés, alemán, francés e italiano.
+
+**Arreglado**
+- **El Cuchillo en modo Línea trazaba el plano reflejado en vertical.** `screenRay` espera la proyección con la Y invertida (la que usa `main.cpp` para picar), pero el Cuchillo le pasaba la normal; solo coincidía con líneas simétricas respecto al centro del visor. Ahora usa la proyección correcta para el rayo y la normal para proyectar a pantalla. Comprobado con captura: una línea horizontal por el cubo corta las dos caras visibles (28 vértices, 16 triángulos).
+
+**Límites:** el plano es siempre paralelo a un eje local (no se puede orientar libremente); no hay vista previa antes de hacer clic.
+
+**No probado:** clic real con ratón (solo `--ui-cmd`); el resto de funciones que llaman a `screenRay` con la proyección sin invertir (queda pendiente revisarlas).
+
 ### 2026-11-20 (14): Cuchillo en modo Bucle
 
 **Añadido**

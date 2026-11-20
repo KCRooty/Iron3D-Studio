@@ -1001,6 +1001,10 @@ Bucle	Anello
 Cuchillo: no hay ninguna arista bajo el cursor.	Coltello: nessuno spigolo sotto il cursore.
 Cuchillo: esa arista no tiene un bucle de cuadriláteros que cortar.	Coltello: questo spigolo non ha un anello di quadrilateri da tagliare.
 Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic.	Modalità Anello: clic su uno spigolo; taglia tutto il suo anello\nnel punto in cui clicchi.
+Eje	Asse
+Cuchillo: el clic no toca la malla.	Coltello: il clic non tocca la mesh.
+Cuchillo: el plano no corta ningún polígono.	Coltello: il piano non taglia nessun poligono.
+Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	Modalità Piano: clic sulla mesh; taglia con un piano\nperpendicolare all'asse scelto passante per quel punto.
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula

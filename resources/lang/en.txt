@@ -1034,6 +1034,10 @@ Bucle	Loop
 Cuchillo: no hay ninguna arista bajo el cursor.	Knife: no edge under the cursor.
 Cuchillo: esa arista no tiene un bucle de cuadriláteros que cortar.	Knife: that edge has no loop of quads to cut.
 Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic.	Loop mode: click an edge; cuts its whole ring\nat the point where you click.
+Eje	Axis
+Cuchillo: el clic no toca la malla.	Knife: the click does not touch the mesh.
+Cuchillo: el plano no corta ningún polígono.	Knife: the plane cuts no polygon.
+Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	Plane mode: click the mesh; cuts with a plane\nperpendicular to the chosen axis through that point.
 Polígono Vacío	Empty Polygon
 Guía	Guide
 Cono	Cone

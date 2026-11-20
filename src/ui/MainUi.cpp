@@ -223,6 +223,8 @@ struct UiState {
     float symTolCm = 0.5f;
     float extrudeCm = 20.0f, innerInsetCm = 10.0f, bevelInsetCm = 10.0f, bevelExtrudeCm = 10.0f;
     bool knifeVisibleOnly = true;
+    int knifeAxis = 1;       // modo Plano: eje local (0 X, 1 Y, 2 Z) que es la normal del plano
+    bool knifePlane = false;  // Cuchillo en modo Plano
     bool knifeLoop = false;  // Cuchillo en modo Bucle (clic en una arista) en vez de Linea
     int chordM = -1000;  // fotograma en que se pulso M (atajos M~S)
     struct ToolDrag {
@@ -6888,8 +6890,10 @@ int knifeLine(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera,
     const glm::mat4 view = camera.viewMatrix();
     const glm::mat4 proj = camera.projectionMatrix(vp.w / std::max(1.0f, vp.h), false);
     const glm::vec3 eye = glm::vec3(glm::inverse(view)[3]);
-    const Ray r0 = TransformGizmo::screenRay(s0.x - vp.x, s0.y - vp.y, (int)vp.w, (int)vp.h, view, proj, eye);
-    const Ray r1 = TransformGizmo::screenRay(s1.x - vp.x, s1.y - vp.y, (int)vp.w, (int)vp.h, view, proj, eye);
+    // screenRay espera la proyeccion con la Y invertida (la de main.cpp); `proj` (sin invertir) es para proyectar a pantalla.
+    const glm::mat4 projRay = camera.projectionMatrix(vp.w / std::max(1.0f, vp.h), true);
+    const Ray r0 = TransformGizmo::screenRay(s0.x - vp.x, s0.y - vp.y, (int)vp.w, (int)vp.h, view, projRay, eye);
+    const Ray r1 = TransformGizmo::screenRay(s1.x - vp.x, s1.y - vp.y, (int)vp.w, (int)vp.h, view, projRay, eye);
     const glm::vec3 between = r1.origin - r0.origin;
     // Perspectiva: los dos rayos salen del ojo; ortografica: son paralelos.
     glm::vec3 nW = glm::length(between) > 1e-6f ? glm::cross(r0.direction, between) : glm::cross(r0.direction, r1.direction);
@@ -6970,6 +6974,63 @@ int knifeLoopAt(SceneNode& root, SceneNode* selected, const OrbitalCamera& camer
     return r.changed;
 }
 
+// Cuchillo en modo Plano: el clic fija un punto sobre la malla (el primer triangulo que toca el rayo) y el
+// plano que corta pasa por el con el eje local elegido como normal.
+int knifePlaneAt(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, const ViewportState& vp,
+                 SceneHistory& history, float mx, float my) {
+    if (!editableMesh(selected)) {
+        flashStatus(tr("Cuchillo: selecciona un objeto editable (C)."));
+        return 0;
+    }
+    const glm::mat4 view = camera.viewMatrix();
+    const glm::mat4 proj = camera.projectionMatrix(vp.w / std::max(1.0f, vp.h), true);  // la que espera screenRay
+    const glm::vec3 eye = glm::vec3(glm::inverse(view)[3]);
+    const Ray ray = TransformGizmo::screenRay(mx - vp.x, my - vp.y, (int)vp.w, (int)vp.h, view, proj, eye);
+    const glm::mat4 invW = glm::inverse(selected->worldMatrix());
+    const glm::vec3 o = glm::vec3(invW * glm::vec4(ray.origin, 1.0f));
+    const glm::vec3 dir = glm::vec3(invW * glm::vec4(ray.direction, 0.0f));
+    const MeshData& m = *selected->mesh;
+    float bestT = 1e30f;
+    for (size_t i = 0; i + 2 < m.indices.size(); i += 3) {
+        const glm::vec3 a = m.vertices[m.indices[i]].position, b = m.vertices[m.indices[i + 1]].position,
+                        c = m.vertices[m.indices[i + 2]].position;
+        const glm::vec3 e1 = b - a, e2 = c - a, pv = glm::cross(dir, e2);
+        const float det = glm::dot(e1, pv);
+        if (std::fabs(det) < 1e-12f) continue;
+        const glm::vec3 tv = o - a;
+        const float u = glm::dot(tv, pv) / det;
+        if (u < 0.0f || u > 1.0f) continue;
+        const glm::vec3 qv = glm::cross(tv, e1);
+        const float v = glm::dot(dir, qv) / det;
+        if (v < 0.0f || u + v > 1.0f) continue;
+        const float t = glm::dot(e2, qv) / det;
+        if (t > 1e-6f && t < bestT) bestT = t;
+    }
+    if (bestT > 1e29f) {
+        flashStatus(tr("Cuchillo: el clic no toca la malla."));
+        return 0;
+    }
+    const glm::vec3 hit = o + dir * bestT;
+    glm::vec3 nL(0.0f);
+    nL[std::clamp(g.knifeAxis, 0, 2)] = 1.0f;
+    const MeshTopology topo = buildMeshTopology(m);
+    std::vector<char> allowed;
+    if (g_vp && g_vp->compMode == 3 && syncComponents(selected) && !g.comp.sel.empty()) {
+        allowed.assign(topo.polys.size(), 0);
+        for (int p : g.comp.sel) if (p < (int)allowed.size()) allowed[(size_t)p] = 1;
+    }
+    MeshEditResult r = knifeCut(m, topo, hit, nL, allowed, nullptr);
+    if (!r.changed) {
+        flashStatus(tr("Cuchillo: el plano no corta ningún polígono."));
+        return 0;
+    }
+    history.commitBefore(root);
+    selected->mesh = std::make_shared<const MeshData>(std::move(r.mesh));
+    if (g_vp) g.comp.sel.clear();
+    flashStatus(tr("Cuchillo: ") + std::to_string(r.changed) + (r.changed == 1 ? tr(" polígono cortado.") : tr(" polígonos cortados.")));
+    return r.changed;
+}
+
 void modelToolMouse(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, float mx, float my,
                     bool leftDown, bool leftPressed, SceneHistory& history) {
     auto& d = g.tdrag;
@@ -6978,6 +7039,11 @@ void modelToolMouse(SceneNode& root, SceneNode* selected, const OrbitalCamera& c
         d = {};
         d.startX = d.curX = mx;
         d.startY = d.curY = my;
+        if (g.modelTool == UiState::ModelTool::Knife && g.knifePlane) {
+            knifePlaneAt(root, selected, camera, *g_vp, history, mx, my);
+            d = {};
+            return;
+        }
         if (g.modelTool == UiState::ModelTool::Knife && g.knifeLoop) {
             knifeLoopAt(root, selected, camera, *g_vp, history, mx, my);
             d = {};
@@ -7054,11 +7120,20 @@ void drawModelToolUi(SceneNode* selected, const ViewportState& vp) {
             ImGui::SetNextItemWidth(120.0f);
             ImGui::DragFloat(tr("Extrusión (cm)"), &g.bevelExtrudeCm, 0.5f, -10000.0f, 10000.0f, "%.1f");
         } else {
-            if (ImGui::RadioButton(tr("Línea"), !g.knifeLoop)) g.knifeLoop = false;
+            if (ImGui::RadioButton(tr("Línea"), !g.knifeLoop && !g.knifePlane)) { g.knifeLoop = false; g.knifePlane = false; }
             ImGui::SameLine();
-            if (ImGui::RadioButton(tr("Bucle"), g.knifeLoop)) g.knifeLoop = true;
+            if (ImGui::RadioButton(tr("Plano"), g.knifePlane)) { g.knifeLoop = false; g.knifePlane = true; }
+            ImGui::SameLine();
+            if (ImGui::RadioButton(tr("Bucle"), g.knifeLoop)) { g.knifeLoop = true; g.knifePlane = false; }
+            if (g.knifePlane) {
+                ImGui::SetNextItemWidth(90.0f);
+                const char* axes[] = {"X", "Y", "Z"};
+                ImGui::Combo(tr("Eje"), &g.knifeAxis, axes, 3);
+            }
             ImGui::Checkbox(tr("Solo Visibles"), &g.knifeVisibleOnly);
-            if (g.knifeLoop)
+            if (g.knifePlane)
+                ImGui::TextDisabled(tr("Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto."));
+            else if (g.knifeLoop)
                 ImGui::TextDisabled(tr("Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic."));
             else
                 ImGui::TextDisabled(tr("Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos."));
@@ -7087,6 +7162,15 @@ void runPendingToolCmd(SceneNode& root, SceneNode* selected, const OrbitalCamera
         } catch (...) { return; }
     }
     using MT = UiState::ModelTool;
+    if (cmd.rfind("plane=", 0) == 0) {
+        if (nums.size() != 3) return;
+        setModelTool(MT::Knife);
+        g.knifeLoop = false;
+        g.knifePlane = true;
+        g.knifeAxis = (int)nums[2];
+        knifePlaneAt(root, selected, camera, vp, history, vp.x + nums[0] * vp.w, vp.y + nums[1] * vp.h);
+        return;
+    }
     if (cmd.rfind("loop=", 0) == 0) {
         if (nums.size() != 2) return;
         setModelTool(MT::Knife);
@@ -7424,7 +7508,7 @@ bool queueUiCommand(const std::string& cmd) {
         g.compMoveRequested = true;
     }
     else if (cmd.rfind("meshop=", 0) == 0) g.compOp = cmd.substr(7);
-    else if (cmd.rfind("tool=", 0) == 0 || cmd.rfind("knife=", 0) == 0 || cmd.rfind("loop=", 0) == 0) g.pendingTool = cmd;
+    else if (cmd.rfind("tool=", 0) == 0 || cmd.rfind("knife=", 0) == 0 || cmd.rfind("loop=", 0) == 0 || cmd.rfind("plane=", 0) == 0) g.pendingTool = cmd;
     else if (cmd == "sel-all-visible") g.compSelectAllRequested = 1;   // marco que cubre todo el visor
     else if (cmd == "sel-all-through") g.compSelectAllRequested = 2;
     else if (cmd.rfind("comp=", 0) == 0) {  // comp=<modo 1-3>[:indices separados por coma]

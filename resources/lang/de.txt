@@ -1017,6 +1017,10 @@ Bucle	Schleife
 Cuchillo: no hay ninguna arista bajo el cursor.	Messer: keine Kante unter dem Cursor.
 Cuchillo: esa arista no tiene un bucle de cuadriláteros que cortar.	Messer: diese Kante hat keine Schleife aus Vierecken zum Schneiden.
 Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic.	Schleifenmodus: Klick auf eine Kante; schneidet ihren ganzen Ring\nan der angeklickten Stelle.
+Eje	Achse
+Cuchillo: el clic no toca la malla.	Messer: der Klick trifft das Netz nicht.
+Cuchillo: el plano no corta ningún polígono.	Messer: die Ebene schneidet kein Polygon.
+Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	Ebenenmodus: auf das Netz klicken; schneidet mit einer Ebene\nsenkrecht zur gewählten Achse durch diesen Punkt.
 Polígono Vacío	Leeres Polygon
 Guía	Hilfslinie
 Cono	Kegel
