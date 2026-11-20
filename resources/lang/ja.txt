@@ -373,6 +373,12 @@ Carpeta	フォルダ
 Idioma	言語
 Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	言語を保存しました。適用するには Iron3D Studio を再起動してください。
 Se aplicará al reiniciar Iron3D Studio.	Iron3D Studio の再起動後に反映されます。
+Doblar	屈曲
+Enroscar	ツイスト
+Afilar	テーパー
+Hinchar	膨張
+Sesgar	シアー
+Booleano	ブール
 Polígono Vacío	空のポリゴン
 Guía	ガイド
 Cono	円錐
@@ -407,7 +413,6 @@ Forro	ロフト
 Recorrido	スイープ
 Bezier	ベジェ
 Formación de Átomos	アトム
-Booleano	ブール
 Máscara de Spline	スプラインマスク
 Conector	コネクター
 Generador Python	Python ジェネレータ
@@ -416,11 +421,6 @@ Instancia	インスタンス
 Metaball	メタボール
 Fractura	破砕
 Trazador	トレーサ
-Doblar	屈曲
-Hinchar	膨張
-Sesgar	シアー
-Afilar	テーパー
-Enroscar	ツイスト
 Aplastar y Estirar	スクワッシュ＆ストレッチ
 Explosión	爆発
 FX Explosión	爆発 FX

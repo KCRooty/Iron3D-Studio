@@ -373,6 +373,12 @@ Carpeta	Folder
 Idioma	Język
 Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	Język zapisany. Uruchom ponownie Iron3D Studio, aby go zastosować.
 Se aplicará al reiniciar Iron3D Studio.	Zmiana zadziała po ponownym uruchomieniu Iron3D Studio.
+Doblar	Zginanie
+Enroscar	Skręcanie
+Afilar	Zbieżność
+Hinchar	Wybrzuszanie
+Sesgar	Pochylanie
+Booleano	Operacja Boole'a
 Polígono Vacío	Pusty wielobok
 Guía	Linia przewodnia
 Cono	Stożek
@@ -406,7 +412,6 @@ Torno	Lathe
 Forro	Loft
 Recorrido	Sweep
 Formación de Átomos	Szyk atomów
-Booleano	Operacja Boole'a
 Máscara de Spline	Maska splajnu
 Conector	Łącznik
 Generador Python	Python Generator
@@ -414,11 +419,6 @@ Reducción de Polígonos	Redukcja wieloboków
 Instancia	Klon
 Fractura	Pęknięcie
 Trazador	Tracer
-Doblar	Zginanie
-Hinchar	Wybrzuszanie
-Sesgar	Pochylanie
-Afilar	Zbieżność
-Enroscar	Skręcanie
 Aplastar y Estirar	Sciskanie i rozciąganie
 Explosión	Eksplozja
 FX Explosión	Eksplozja FX

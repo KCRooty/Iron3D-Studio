@@ -366,6 +366,12 @@ Carpeta	Adresář
 Idioma	Jazyk
 Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	Jazyk uložen. Pro použití restartujte Iron3D Studio.
 Se aplicará al reiniciar Iron3D Studio.	Projeví se po restartu Iron3D Studio.
+Doblar	Ohnutí
+Enroscar	Zkroucení
+Afilar	Zúžení
+Hinchar	Vydutí
+Sesgar	Zkosení
+Booleano	Boole
 Polígono Vacío	Prázdný polygon
 Guía	Vodítko
 Cono	Kužel
@@ -400,7 +406,6 @@ Forro	Potažení
 Recorrido	Protažení
 Bezier	Beziér
 Formación de Átomos	Atomová mřížka
-Booleano	Boole
 Máscara de Spline	Maska křivky
 Conector	Konektor
 Generador Python	Python generátor
@@ -409,11 +414,6 @@ Instancia	Instance
 Fractura	Fraktura
 Trazador	Vykreslení
 MoExtrude	Vytažení
-Doblar	Ohnutí
-Hinchar	Vydutí
-Sesgar	Zkosení
-Afilar	Zúžení
-Enroscar	Zkroucení
 FFD	VPD
 Aplastar y Estirar	ZmáčknoutNatáhnout
 Explosión	Exploze

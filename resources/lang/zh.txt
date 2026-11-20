@@ -377,6 +377,12 @@ Carpeta	文件夹
 Idioma	语言
 Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	语言已保存。请重新启动 Iron3D Studio 以应用。
 Se aplicará al reiniciar Iron3D Studio.	重新启动 Iron3D Studio 后生效。
+Doblar	弯曲
+Enroscar	扭曲
+Afilar	锥化
+Hinchar	膨胀
+Sesgar	斜切
+Booleano	布尔
 Polígono Vacío	空白多边形
 Guía	引导线
 Cono	圆锥
@@ -411,7 +417,6 @@ Forro	放样
 Recorrido	扫描
 Bezier	贝赛尔
 Formación de Átomos	晶格
-Booleano	布尔
 Máscara de Spline	样条布尔
 Conector	连接器
 Generador Python	Python 生成器
@@ -423,11 +428,6 @@ MoInstance	实例
 Trazador	追踪对象
 MoSpline	运动样条
 MoExtrude	运动挤压
-Doblar	弯曲
-Hinchar	膨胀
-Sesgar	斜切
-Afilar	锥化
-Enroscar	扭曲
 Aplastar y Estirar	挤压伸展
 Explosión	爆炸
 FX Explosión	爆炸FX

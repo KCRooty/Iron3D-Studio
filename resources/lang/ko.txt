@@ -380,6 +380,12 @@ Carpeta	폴더
 Idioma	언어
 Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	언어가 저장되었습니다. 적용하려면 Iron3D Studio를 다시 시작하세요.
 Se aplicará al reiniciar Iron3D Studio.	Iron3D Studio를 다시 시작하면 적용됩니다.
+Doblar	구부리기
+Enroscar	트위스트
+Afilar	테이퍼
+Hinchar	팽창
+Sesgar	기울기
+Booleano	부울
 Polígono Vacío	빈 폴리곤
 Guía	가이드
 Cono	원뿔
@@ -414,7 +420,6 @@ Forro	로프트
 Recorrido	스윕
 Bezier	베지어
 Formación de Átomos	원자 배열
-Booleano	부울
 Máscara de Spline	스플라인 마스크
 Conector	커넥터
 Generador Python	Python 제네레이터
@@ -426,11 +431,6 @@ MoInstance	모인스턴스
 Trazador	트레이서 오브젝트
 MoSpline	모스플라인
 MoExtrude	돌출
-Doblar	구부리기
-Hinchar	팽창
-Sesgar	기울기
-Afilar	테이퍼
-Enroscar	트위스트
 Aplastar y Estirar	스쿼시＆스트래치
 Explosión	폭발
 FX Explosión	폭발 FX

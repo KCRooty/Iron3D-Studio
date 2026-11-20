@@ -376,6 +376,12 @@ Carpeta	Папка
 Idioma	Язык
 Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	Язык сохранён. Перезапустите Iron3D Studio, чтобы применить его.
 Se aplicará al reiniciar Iron3D Studio.	Вступит в силу после перезапуска Iron3D Studio.
+Doblar	Изогнуть
+Enroscar	Закрутить
+Afilar	Сжать
+Hinchar	Вздуть
+Sesgar	Сдвинуть
+Booleano	Булев
 Polígono Vacío	Пустой полигон
 Guía	Направляющая
 Cono	Конус
@@ -410,7 +416,6 @@ Forro	Лофт
 Recorrido	Sweep
 Bezier	Безье
 Formación de Átomos	Атомная решетка
-Booleano	Булев
 Máscara de Spline	Маска по сплайну
 Conector	Коннектор
 Generador Python	Генератор Python
@@ -423,11 +428,6 @@ MoInstance	МоИнстанция
 Trazador	Трейсер
 MoSpline	МоСплайн
 MoExtrude	МоВыдавливание
-Doblar	Изогнуть
-Hinchar	Вздуть
-Sesgar	Сдвинуть
-Afilar	Сжать
-Enroscar	Закрутить
 Aplastar y Estirar	Сжатие и растяжение
 Explosión	Взрыв
 FX Explosión	Взрыв FX
