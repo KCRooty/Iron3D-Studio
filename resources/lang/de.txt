@@ -1070,6 +1070,7 @@ Posición Aleatoria Z	Zufällige Position Z
 Giro Aleatorio	Zufällige Drehung
 Escala Aleatoria	Zufällige Skalierung
 Semilla	Startwert
+  Modo Objeto: una copia en cada punto del 2.º hijo con malla.	  Objektmodus: ein Klon an jedem Punkt des 2. Kindobjekts mit Netz.
 Polígono Vacío	Leeres Polygon
 Guía	Hilfslinie
 Cono	Kegel

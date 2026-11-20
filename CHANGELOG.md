@@ -6,6 +6,20 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (22): Clonador: modo Objeto
+
+**Añadido**
+- Cuarto modo del Clonador, **Objeto**: clona el primer hijo con malla en cada punto del **segundo** hijo con malla (los vértices repetidos, como los 24 del Cubo, cuentan como un solo punto; máximo 1000). Si mueves o editas el segundo hijo, las copias se recolocan en vivo. Con un solo hijo no genera nada.
+- Se guarda en el `.iron` (modo 3 del bloque `CLN`). Escala por copia, giro por copia y efector Aleatorio siguen valiendo en este modo.
+- Tests: 8 puntos únicos en un cubo, una copia por punto, copias en las esquinas, sin puntos no hay copias, un solo hijo no genera, dos hijos sí, no recalcula sin cambios y recoloca al mover el destino.
+
+**Límites**
+- Las copias **no se orientan** según la normal del punto ni se reparten por superficie/volumen: solo vértices.
+- El segundo hijo no se oculta solo: hay que apagar su visibilidad en el editor si no se quiere ver.
+- Sin selección de puntos ni peso por vértice como en C4D.
+
+**Verificado:** tests y compilación. **Sin probar:** en el visor ni con clics reales.
+
 ### 2026-11-20 (21): Clonador: efector Aleatorio
 
 **Añadido**

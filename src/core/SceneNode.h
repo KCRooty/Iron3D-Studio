@@ -147,7 +147,7 @@ struct DeformData {
 // Clonador (ver Clone.h): copias del primer hijo con malla en modo Lineal, Cuadricula o Radial.
 struct CloneData {
     bool present = false;
-    int mode = 0;               // 0 Lineal, 1 Cuadricula, 2 Radial
+    int mode = 0;               // 0 Lineal, 1 Cuadricula, 2 Radial, 3 Objeto (sobre los puntos del 2.o hijo con malla)
     int count = 3;              // copias (Lineal, Radial) o en X (Cuadricula)
     int countY = 1, countZ = 1; // solo Cuadricula
     glm::vec3 offset{100.0f, 0.0f, 0.0f};  // cm: paso (Lineal) o separacion en X/Y/Z (Cuadricula)
@@ -168,6 +168,8 @@ struct CloneData {
     glm::vec3 lastRandPos{1e9f};
     float lastRandRot = 1e9f, lastRandScale = 1e9f;
     int lastSeed = -1;
+    std::shared_ptr<const MeshData> lastSource2;  // modo Objeto: malla que da los puntos
+    glm::mat4 lastMatrix2{1.0f};
 };
 
 // Limites de rotacion de una articulacion (Ojoint, pestana IK > Limites de C4D, ids 3009..3015

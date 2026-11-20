@@ -4124,10 +4124,10 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
             sectionHeader(tr("Propiedades del Objeto"));
             CloneData& cl = node.clone;
             propLabel(tr("Modo"));
-            const char* modes[] = {tr("Lineal"), tr("Cuadrícula"), tr("Radial")};
+            const char* modes[] = {tr("Lineal"), tr("Cuadrícula"), tr("Radial"), tr("Objeto")};
             ImGui::SetNextItemWidth(-1);
             int cmode = cl.mode;
-            if (ImGui::Combo("##clmode", &cmode, modes, 3)) {
+            if (ImGui::Combo("##clmode", &cmode, modes, 4)) {
                 history.commitBefore(root);
                 cl.mode = cmode;
             }
@@ -4149,7 +4149,7 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                     val = v;
                 }
             };
-            intRow(cl.mode == 1 ? tr("Cantidad X") : tr("Cantidad"), "##clcount", cl.count, 1, 1000);
+            if (cl.mode != 3) intRow(cl.mode == 1 ? tr("Cantidad X") : tr("Cantidad"), "##clcount", cl.count, 1, 1000);
             if (cl.mode == 1) {
                 intRow(tr("Cantidad Y"), "##clcy", cl.countY, 1, 1000);
                 intRow(tr("Cantidad Z"), "##clcz", cl.countZ, 1, 1000);
@@ -4164,7 +4164,7 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                     history.commitBefore(root);
                     cl.axis = cax;
                 }
-            } else {
+            } else if (cl.mode != 3) {
                 fRow(cl.mode == 1 ? tr("Separación X") : tr("Paso X"), "##clox", cl.offset.x, 1.0f, "%.1f cm");
                 fRow(cl.mode == 1 ? tr("Separación Y") : tr("Paso Y"), "##cloy", cl.offset.y, 1.0f, "%.1f cm");
                 fRow(cl.mode == 1 ? tr("Separación Z") : tr("Paso Z"), "##cloz", cl.offset.z, 1.0f, "%.1f cm");
@@ -4179,7 +4179,8 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
             fRow(tr("Escala Aleatoria"), "##clrsc", cl.randScalePct, 0.5f, "%.1f %%");
             intRow(tr("Semilla"), "##clseed", cl.seed, 0, 100000);
             ImGui::TextDisabled(tr("  Clona el primer hijo con malla; el hijo se edita aparte."));
-            ImGui::TextDisabled((std::to_string(cloneCount(cl)) + " " + std::string(tr("copias"))).c_str());
+            if (cl.mode == 3) ImGui::TextDisabled(tr("  Modo Objeto: una copia en cada punto del 2.º hijo con malla."));
+            else ImGui::TextDisabled((std::to_string(cloneCount(cl)) + " " + std::string(tr("copias"))).c_str());
         } else if (node.symmetry.present) {
             sectionHeader(tr("Propiedades del Objeto"));
             propLabel(tr("Plano de Simetría"));

@@ -1075,6 +1075,7 @@ Posición Aleatoria Z	Position aléatoire Z
 Giro Aleatorio	Rotation aléatoire
 Escala Aleatoria	Échelle aléatoire
 Semilla	Graine
+  Modo Objeto: una copia en cada punto del 2.º hijo con malla.	  Mode Objet : un clone à chaque point du 2e enfant avec un maillage.
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cono	Cône

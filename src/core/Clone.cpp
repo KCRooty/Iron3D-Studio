@@ -3,6 +3,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <algorithm>
+#include <array>
+#include <set>
 #include <cmath>
 
 namespace iron3d {
@@ -33,9 +35,23 @@ int cloneCount(const CloneData& c) {
     return (int)std::min<long>(n, kMaxClones);
 }
 
-MeshData cloneMeshData(const MeshData& src, const CloneData& c, const glm::mat4& toParent) {
+std::vector<glm::vec3> cloneTargetPoints(const MeshData& m, const glm::mat4& toParent) {
+    std::vector<glm::vec3> pts;
+    std::set<std::array<long, 3>> seen;
+    for (const Vertex& v : m.vertices) {
+        const glm::vec3 p = glm::vec3(toParent * glm::vec4(v.position, 1.0f));
+        const std::array<long, 3> key = {std::lround(p.x * 10000.0f), std::lround(p.y * 10000.0f), std::lround(p.z * 10000.0f)};
+        if (seen.insert(key).second) {
+            pts.push_back(p);
+            if ((int)pts.size() >= kMaxClones) break;
+        }
+    }
+    return pts;
+}
+
+MeshData cloneMeshData(const MeshData& src, const CloneData& c, const glm::mat4& toParent, const std::vector<glm::vec3>* points) {
     MeshData out;
-    const int total = cloneCount(c);
+    const int total = c.mode == 3 ? (points ? (int)std::min<size_t>(points->size(), kMaxClones) : 0) : cloneCount(c);
     const size_t perV = src.vertices.size();
     if (!perV || src.indices.empty()) return out;
     const int copies = (int)std::min<size_t>((size_t)total, kMaxVertices / perV);
@@ -68,6 +84,10 @@ MeshData cloneMeshData(const MeshData& src, const CloneData& c, const glm::mat4&
             axisVec = glm::vec3(0.0f);
             axisVec[k] = 1.0f;
             ang = a + glm::radians(c.rotStepDeg) * (float)i;
+        } else if (c.mode == 3) {  // objeto: una copia en cada punto del otro objeto
+            pos = (*points)[i];
+            axisVec = glm::vec3(0, 1, 0);
+            ang = glm::radians(c.rotStepDeg) * (float)i;
         } else {  // lineal
             pos = off * (float)i;
             axisVec = glm::vec3(0, 1, 0);
@@ -103,14 +123,29 @@ SceneNode* firstMeshChild(SceneNode& node) {
     return nullptr;
 }
 
+SceneNode* secondMeshChild(SceneNode& node, const SceneNode* first) {
+    for (const auto& c : node.children())
+        if (c.get() != first && c->mesh && !c->clone.present) return c.get();
+    return nullptr;
+}
+
 void walk(SceneNode& node, int& count) {
     for (const auto& c : node.children()) walk(*c, count);  // primero los hijos: un clonador anidado ya esta al dia
     if (!node.clone.present) return;
     CloneData& d = node.clone;
     if (SceneNode* child = firstMeshChild(node)) {
         const glm::mat4 cm = child->localMatrix();
-        if (d.lastSource == child->mesh && d.lastChildMatrix == cm && sameParams(d) && node.mesh == d.output) return;
-        auto m = std::make_shared<const MeshData>(cloneMeshData(*child->mesh, d, cm));
+        SceneNode* other = d.mode == 3 ? secondMeshChild(node, child) : nullptr;
+        const glm::mat4 cm2 = other ? other->localMatrix() : glm::mat4(1.0f);
+        const std::shared_ptr<const MeshData> src2 = other ? other->mesh : nullptr;
+        if (d.lastSource == child->mesh && d.lastChildMatrix == cm && sameParams(d) && node.mesh == d.output &&
+            d.lastSource2 == src2 && d.lastMatrix2 == cm2)
+            return;
+        std::vector<glm::vec3> pts;
+        if (other) pts = cloneTargetPoints(*other->mesh, cm2);
+        auto m = std::make_shared<const MeshData>(cloneMeshData(*child->mesh, d, cm, d.mode == 3 ? &pts : nullptr));
+        d.lastSource2 = src2;
+        d.lastMatrix2 = cm2;
         node.mesh = m;
         node.primitive = PrimitiveType::Mesh;
         node.materialIndex = child->materialIndex;

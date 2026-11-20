@@ -507,7 +507,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
             CloneData& c = node.clone;
             c.present = true;
             ok = readAttrs(p, "CLN", err, [&](const std::string& k, const std::string& v) {
-                if (k == "mode") c.mode = std::clamp(std::stoi(v), 0, 2);
+                if (k == "mode") c.mode = std::clamp(std::stoi(v), 0, 3);
                 else if (k == "count") c.count = std::clamp(std::stoi(v), 1, 1000);
                 else if (k == "cy") c.countY = std::clamp(std::stoi(v), 1, 1000);
                 else if (k == "cz") c.countZ = std::clamp(std::stoi(v), 1, 1000);

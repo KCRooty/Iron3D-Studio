@@ -10,6 +10,8 @@
 
 #include <glm/glm.hpp>
 
+#include <vector>
+
 namespace iron3d {
 
 constexpr int kMaxClones = 1000;
@@ -17,8 +19,13 @@ constexpr int kMaxClones = 1000;
 // Numero de copias que producen los ajustes (ya recortado a kMaxClones).
 int cloneCount(const CloneData& c);
 
-// Copia `src` (llevada al espacio del nodo con `toParent`) segun los ajustes de `c`.
-MeshData cloneMeshData(const MeshData& src, const CloneData& c, const glm::mat4& toParent);
+// Puntos (sin repetir) de una malla, llevados al espacio del nodo clonador; sirven de destinos del modo Objeto.
+std::vector<glm::vec3> cloneTargetPoints(const MeshData& m, const glm::mat4& toParent);
+
+// Copia `src` (llevada al espacio del nodo con `toParent`) segun los ajustes de `c`. `points` solo se usa en el
+// modo Objeto (una copia por punto, hasta kMaxClones); sin puntos en ese modo no hay copias.
+MeshData cloneMeshData(const MeshData& src, const CloneData& c, const glm::mat4& toParent,
+                       const std::vector<glm::vec3>* points = nullptr);
 
 // Pone al dia el mesh de cada nodo clonador (no hace nada si nada ha cambiado). Devuelve cuantos se recalcularon.
 int evaluateCloners(SceneNode& root);

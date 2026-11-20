@@ -1051,6 +1051,7 @@ Posición Aleatoria Z	Posizione casuale Z
 Giro Aleatorio	Rotazione casuale
 Escala Aleatoria	Scala casuale
 Semilla	Seme
+  Modo Objeto: una copia en cada punto del 2.º hijo con malla.	  Modalità Oggetto: un clone su ogni punto del 2º figlio con mesh.
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula

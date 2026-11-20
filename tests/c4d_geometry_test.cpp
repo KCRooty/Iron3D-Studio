@@ -849,6 +849,33 @@ int main() {
             check(std::fabs(o.boundsMax.x - 1.5f) < 1e-4f, "clonador: la escala por copia crece (copia 3 = x3)");
             cl.count = 5000;
             check(cloneCount(cl) == kMaxClones, "clonador: limite de copias");
+            // Modo Objeto: una copia por punto del otro objeto.
+            {
+                CloneData oc;
+                oc.present = true; oc.mode = 3;
+                MeshData tgt = makeCubeMesh();  // 24 vertices que son 8 puntos distintos
+                const std::vector<glm::vec3> pts = cloneTargetPoints(tgt, glm::mat4(1.0f));
+                check(pts.size() == 8, "modo objeto: los vertices repetidos del cubo son 8 puntos");
+                MeshData small = makeCubeMesh();
+                for (Vertex& v : small.vertices) v.position *= 0.1f;
+                const MeshData oo = cloneMeshData(small, oc, glm::mat4(1.0f), &pts);
+                check(oo.vertices.size() == small.vertices.size() * 8, "modo objeto: una copia por punto");
+                check(std::fabs(oo.boundsMax.x - 0.55f) < 1e-4f && std::fabs(oo.boundsMin.x + 0.55f) < 1e-4f, "modo objeto: las copias quedan en las esquinas");
+                check(cloneMeshData(small, oc, glm::mat4(1.0f), nullptr).indices.empty(), "modo objeto: sin puntos no hay copias");
+                SceneNode r3("r");
+                SceneNode* h3 = r3.addChild("Clonador", PrimitiveType::None);
+                h3->clone.present = true;
+                h3->clone.mode = 3;
+                SceneNode* a3 = h3->addChild("Pequeno", PrimitiveType::Mesh);
+                a3->mesh = std::make_shared<const MeshData>(small);
+                check(evaluateCloners(r3) == 1 && h3->mesh && h3->mesh->indices.empty(), "modo objeto: con un solo hijo no genera nada");
+                SceneNode* b3 = h3->addChild("Destino", PrimitiveType::Mesh);
+                b3->mesh = std::make_shared<const MeshData>(tgt);
+                check(evaluateCloners(r3) == 1 && h3->mesh->vertices.size() == small.vertices.size() * 8, "modo objeto: con dos hijos clona en los puntos del segundo");
+                check(evaluateCloners(r3) == 0, "modo objeto: sin cambios no recalcula");
+                b3->setLocalMatrix(glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, 0.0f, 0.0f)));
+                check(evaluateCloners(r3) == 1 && h3->mesh->boundsMax.x > 5.4f, "modo objeto: mover el destino recoloca las copias");
+            }
             // Efector Aleatorio: reproducible, respeta el maximo y cambia con la semilla.
             {
                 CloneData rc;
