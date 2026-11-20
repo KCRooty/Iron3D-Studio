@@ -879,7 +879,13 @@ int main(int argc, char** argv) {
     glfwGetCursorPos(window, &lastMouseX, &lastMouseY);
     camera.resetMouseDelta(lastMouseX, lastMouseY);
 
-    while (!glfwWindowShouldClose(window)) {
+    while (true) {
+        if (glfwWindowShouldClose(window)) {
+            // Con cambios sin guardar pregunta Si / No / Cancelar; Cancelar deja el programa como estaba.
+            if (iron3d::confirmQuit(sceneRoot, history, materials)) break;
+            glfwSetWindowShouldClose(window, GLFW_FALSE);
+            viewport.requestQuit = false;
+        }
         glfwPollEvents();
         if (!g_droppedFiles.empty()) {
             // Una .lib4d se monta en el Navegador de Contenido (como arrastrarla

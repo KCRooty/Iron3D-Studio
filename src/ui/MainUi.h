@@ -64,6 +64,10 @@ struct ViewportState {
 // `beforeWorld`), deja sus hijos y, si es editable, su malla donde estaban.
 void compensateAxisMove(SceneNode& node, const glm::mat4& beforeWorld);
 
+// Al cerrar la ventana o Archivo > Salir: si hay cambios sin guardar pregunta Si / No / Cancelar (como C4D).
+// false = el usuario canceló (o el guardado falló/se canceló): hay que seguir con el programa abierto.
+bool confirmQuit(SceneNode& root, SceneHistory& history, std::vector<Material>& materials);
+
 // Libera las texturas propias de la UI (Visor de Imagenes) antes de apagar el renderer.
 void releaseUiTextures();
 

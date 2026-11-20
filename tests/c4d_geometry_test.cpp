@@ -10,6 +10,7 @@
 #include "core/Symmetry.h"
 #include "core/MeshTopology.h"
 #include "core/SceneSerializer.h"
+#include "core/SceneHistory.h"
 #include "core/ThumbnailRenderer.h"
 #include "core/TransformGizmo.h"
 #include "importers/c4d_compat/C4DGeometry.h"
@@ -957,6 +958,23 @@ int main() {
                 check(!m.faceTris.empty() && sum * 3 == m.indices.size(), "primitivas: faceTris cubre todos los triangulos");
             }
             check(makeCubeMesh().faceTris.size() == 6 && makePlaneMesh().faceTris.size() == 1, "cubo = 6 poligonos, plano = 1");
+        }
+
+        // "Cambios sin guardar" = la instantanea de la escena difiere de la tomada al guardar: estable si no se toca
+        // nada (aunque haya mallas editables), distinta en cuanto cambia algo.
+        {
+            std::vector<Material> mats;
+            SceneHistory hist(mats);
+            SceneNode rt("r");
+            SceneNode* cb = rt.addChild("cubo", PrimitiveType::Mesh);
+            MeshData cm = makeCubeMesh();
+            cb->mesh = std::make_shared<const MeshData>(std::move(cm));
+            const std::string a = hist.snapshot(rt);
+            check(a == hist.snapshot(rt) && a == hist.snapshot(rt), "guardado: la instantanea no cambia si no se toca nada");
+            cb->position.x = 3.0f;
+            check(hist.snapshot(rt) != a, "guardado: mover un objeto cambia la instantanea");
+            cb->position.x = 0.0f;
+            check(hist.snapshot(rt) == a, "guardado: volver al estado inicial vuelve a coincidir");
         }
 
         // Mover nodos entre padres (arrastrar y soltar en el Gestor de Objetos).

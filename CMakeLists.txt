@@ -360,6 +360,7 @@ add_executable(iron3d_tests
     src/core/Material.cpp
     src/core/ShaderTree.cpp
     src/core/SceneSerializer.cpp
+    src/core/SceneHistory.cpp
     src/core/ThumbnailRenderer.cpp
     src/core/TransformGizmo.cpp)
 target_include_directories(iron3d_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})

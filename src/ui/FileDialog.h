@@ -29,4 +29,9 @@ std::optional<std::filesystem::path> saveFileDialog(const std::string& title,
 std::vector<std::filesystem::path> openFilesDialog(const std::string& title,
                                                    const std::vector<std::pair<std::string, std::string>>& filters);
 
+// "¿Quiere guardar los cambios...?" con Si / No / Cancelar (como el de Cinema 4D). Solo en Windows;
+// en el resto devuelve No (no hay dialogo del sistema).
+enum class SaveChoice { Yes, No, Cancel };
+SaveChoice askSaveChanges(const std::string& title, const std::string& text);
+
 } // namespace iron3d

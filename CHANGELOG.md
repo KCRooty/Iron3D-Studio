@@ -6,6 +6,26 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (28): Aviso de guardar al cerrar, Guardar con el diálogo del sistema y caras seleccionadas sin diagonal
+
+**Añadido**
+- **Aviso al cerrar con cambios sin guardar**, como en Cinema 4D: «¿Quiere guardar los cambios en el proyecto "Sin Nombre 1" antes de salir?» con **Sí / No / Cancelar**. Si no se ha tocado nada, se cierra sin preguntar. **Sí** abre el diálogo de guardar del sistema (si el proyecto aún no tiene nombre) y cierra al terminar; si en ese diálogo se cancela, el programa sigue abierto como estaba. **No** cierra sin guardar. **Cancelar** no hace nada. Vale para el botón de cerrar la ventana, Alt+F4 y Archivo > Salir.
+- El mismo aviso al **Nuevo** y al **Abrir** (menú, atajos Ctrl+N / Ctrl+O y el Comandante) cuando hay cambios.
+- **Guardar (Ctrl+S)** y **Guardar como (Ctrl+Mayús+S)** usan el diálogo de guardar del sistema (`.iron`, nombre propuesto «Sin Nombre 1.iron»). Guardar vuelve a escribir sobre el archivo que ya tiene nombre sin preguntar. Antes abrían un cuadro propio con una carpeta fija.
+- Test: la instantánea de la escena (lo que decide si hay cambios) es estable si no se toca nada, cambia al mover un objeto y vuelve a coincidir al deshacer el movimiento.
+
+**Corregido**
+- Al seleccionar un **polígono** se veía una **diagonal** que lo partía en dos triángulos: cada triángulo se rellenaba por separado y el suavizado dejaba una costura. Ahora un polígono convexo se rellena de una vez; los cóncavos siguen rellenándose por triángulos.
+
+**Límites**
+- «Hay cambios» se decide comparando la escena entera con la guardada, no con un contador de ediciones: cambiar solo la cámara, la selección o la línea de tiempo no cuenta.
+- Abrir un `.c4d`, `.obj` o `.glb` deja el proyecto «sin nombre» (hay que guardar como `.iron`).
+- El aviso y el diálogo de guardar solo existen en Windows; en Linux se mantiene el cuadro propio de la carpeta `scenes/` y el cierre sin aviso.
+- Los textos nuevos del aviso aún no están traducidos a los demás idiomas (salen en español).
+- No se guarda aún la lista de archivos recientes ni el título de la ventana con el asterisco de cambios.
+
+**Verificado:** tests y compilación. **Sin probar:** el aviso real al cerrar (cuadro de Windows), el guardado con el diálogo y el relleno del polígono en el visor.
+
 ### 2026-11-20 (27): Cubo, Esfera y Plano sin caras partidas; contorno de selección que rodea la figura
 
 **Corregido**

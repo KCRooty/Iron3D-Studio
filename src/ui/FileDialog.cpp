@@ -124,9 +124,17 @@ std::optional<std::filesystem::path> saveFileDialog(const std::string& title,
     return std::filesystem::path(buffer.data());
 }
 
+SaveChoice askSaveChanges(const std::string& title, const std::string& text) {
+    const int r = MessageBoxW(GetActiveWindow(), widen(text).c_str(), widen(title).c_str(),
+                              MB_YESNOCANCEL | MB_ICONQUESTION | MB_SETFOREGROUND);
+    return r == IDYES ? SaveChoice::Yes : r == IDNO ? SaveChoice::No : SaveChoice::Cancel;
+}
+
 #else
 
 bool nativeFileDialogAvailable() { return false; }
+
+SaveChoice askSaveChanges(const std::string&, const std::string&) { return SaveChoice::No; }
 
 std::optional<std::filesystem::path> saveFileDialog(const std::string&,
                                                     const std::vector<std::pair<std::string, std::string>>&,

@@ -132,6 +132,12 @@ struct UiState {
     // Ultima herramienta usada (Espacio alterna con ella, como en C4D).
     int lastTool = -1, curTool = -1;
     bool showScene = false;
+    // Documento: ruta con la que se guardo/abrio (vacia = "Sin Nombre") y la escena tal como estaba al guardar;
+    // hay cambios sin guardar si la escena actual ya no coincide con ella. Se toma en el primer fotograma y
+    // otra vez tras Nuevo / Abrir (cleanInit = false).
+    std::filesystem::path docPath;
+    std::string cleanSnap;
+    bool cleanInit = false;
     bool sceneLoadMode = false;
     bool showPrefs = false;
     bool showMatEditor = false;
@@ -936,6 +942,8 @@ void newScene(SceneNode& root, SceneNode*& selected, SceneHistory& history, std:
     g.selectedMat = -1;
     g.focus = AttrFocus::Object;
     g.frame = (float)g.minFrame;
+    g.docPath.clear();
+    g.cleanInit = false;
 }
 
 void offsetMaterialIndices(SceneNode& node, int base) {
@@ -1073,6 +1081,53 @@ bool importGltfInto(const std::filesystem::path& path, SceneNode& dest, std::vec
 
 // Archivo > Abrir (Ctrl+O): .iron o .c4d con el dialogo del sistema. Sin
 // dialogo nativo (Linux por ahora) se usa el propio de la carpeta scenes/.
+// Guardar (Ctrl+S) / Guardar como (Ctrl+Mayus+S) con el dialogo del sistema, como C4D. Sin ruta todavia
+// (Sin Nombre) Guardar pide una. true = quedo guardado.
+bool saveDocument(SceneNode& root, SceneHistory& history, std::vector<Material>& materials, bool forceDialog) {
+    std::filesystem::path path = g.docPath;
+    if (forceDialog || path.empty()) {
+        if (!nativeFileDialogAvailable()) {
+            g.showScene = true;
+            g.sceneLoadMode = false;
+            return false;
+        }
+        const auto p = saveFileDialog(tr("Guardar Archivo"), {{"Iron3D", "*.iron"}},
+                                      path.empty() ? std::string("Sin Nombre 1.iron") : path.filename().string(), "iron");
+        if (!p) return false;
+        path = *p;
+    }
+    std::string err;
+    if (!saveScene(path, root, materials, &err)) {
+        reportFileError(path, err);
+        return false;
+    }
+    g.docPath = path;
+    g.cleanSnap = history.snapshot(root);
+    g.cleanInit = true;
+    return true;
+}
+
+bool hasUnsavedChanges(const SceneNode& root, const SceneHistory& history) {
+    return g.cleanInit && history.snapshot(root) != g.cleanSnap;
+}
+
+// Si hay cambios sin guardar pregunta Si / No / Cancelar. true = se puede seguir (guardado o descartado).
+bool confirmDiscardChanges(SceneNode& root, SceneHistory& history, std::vector<Material>& materials, const char* beforeWhat) {
+    if (!hasUnsavedChanges(root, history)) return true;
+    const std::string name = g.docPath.empty() ? std::string("Sin Nombre 1") : g.docPath.stem().string();
+    char text[512];
+    std::snprintf(text, sizeof(text), tr("¿Quiere guardar los cambios en el proyecto \"%s\" antes de %s?"), name.c_str(), beforeWhat);
+    switch (askSaveChanges("Iron3D Studio", text)) {
+        case SaveChoice::Yes: return saveDocument(root, history, materials, false);
+        case SaveChoice::No: return true;
+        default: return false;
+    }
+}
+
+bool confirmQuitImpl(SceneNode& root, SceneHistory& history, std::vector<Material>& materials) {
+    return confirmDiscardChanges(root, history, materials, tr("salir"));
+}
+
 void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history, std::vector<Material>& materials,
                    OrbitalCamera& camera) {
     if (!nativeFileDialogAvailable()) {
@@ -1114,6 +1169,8 @@ void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history,
     selected = nullptr;
     history.reset();
     g.selectedMat = -1;
+    g.docPath = isC4DPath(*path) || isObjPath(*path) || isGltfPath(*path) ? std::filesystem::path() : *path;
+    g.cleanInit = false;
     frameNodes(camera, root, false);
 }
 
@@ -2226,12 +2283,14 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
         if (pressed(ImGuiKey_V)) pasteClipboard(root, selected, history);
         if (pressed(ImGuiKey_R)) vp.renderView = true;
         if (pressed(ImGuiKey_B)) g.showRenderSettings = true;  // Editar Configuracion de Render
-        if (pressed(ImGuiKey_N)) newScene(root, selected, history, materials);
+        if (pressed(ImGuiKey_N) && confirmDiscardChanges(root, history, materials, tr("crear un proyecto nuevo")))
+            newScene(root, selected, history, materials);
         if (pressed(ImGuiKey_O)) {
             if (shift) mergeSceneFile(root, selected, history, materials);
-            else openSceneFile(root, selected, history, materials, camera);
+            else if (confirmDiscardChanges(root, history, materials, tr("abrir otro proyecto")))
+                openSceneFile(root, selected, history, materials, camera);
         }
-        if (pressed(ImGuiKey_S)) { g.showScene = true; g.sceneLoadMode = false; }
+        if (pressed(ImGuiKey_S)) saveDocument(root, history, materials, shift);
         if (pressed(ImGuiKey_E)) g.showPrefs = true;
         if (pressed(ImGuiKey_D)) { g.focus = AttrFocus::Project; }
         if (pressed(ImGuiKey_F9)) {  // Fotogramas Clave Automaticos
@@ -2407,10 +2466,10 @@ void drawCommander(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scene
         {"Luz", "", [&] { createObject(root, selected, history, PrimitiveType::Light); }, true},
         {"Nulo", "", [&] { createObject(root, selected, history, PrimitiveType::None); }, true},
         {"Nuevo Material", "", [&] { newMaterial(materials); }, true},
-        {"Nuevo Proyecto", tr("Ctrl+N"), [&] { newScene(root, selected, history, materials); }, true},
-        {"Abrir...", tr("Ctrl+O"), [&] { openSceneFile(root, selected, history, materials, camera); }, true},
+        {"Nuevo Proyecto", tr("Ctrl+N"), [&] { if (confirmDiscardChanges(root, history, materials, tr("crear un proyecto nuevo"))) newScene(root, selected, history, materials); }, true},
+        {"Abrir...", tr("Ctrl+O"), [&] { if (confirmDiscardChanges(root, history, materials, tr("abrir otro proyecto"))) openSceneFile(root, selected, history, materials, camera); }, true},
         {"Fusionar...", tr("Ctrl+Mayús+O"), [&] { mergeSceneFile(root, selected, history, materials); }, true},
-        {"Guardar Proyecto", tr("Ctrl+S"), [] { g.showScene = true; g.sceneLoadMode = false; }, true},
+        {"Guardar Proyecto", tr("Ctrl+S"), [&] { saveDocument(root, history, materials, false); }, true},
         {"Renderizar Vista Activa", tr("Ctrl+R"), [&] { vp.renderView = true; }, true},
         {"Preferencias...", tr("Ctrl+E"), [] { g.showPrefs = true; }, true},
         {"Configuración del Proyecto", tr("Ctrl+D"), [] { g.focus = AttrFocus::Project; }, true},
@@ -2583,14 +2642,16 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
     if (!ImGui::BeginMainMenuBar()) return;
 
     if (ImGui::BeginMenu(tr("Archivo"))) {
-        if (iconMenuItem(Icon::MnuNew, tr("Nuevo"), tr("Ctrl+N"))) newScene(root, selected, history, materials);
-        if (iconMenuItem(Icon::MnuOpen, tr("Abrir..."), tr("Ctrl+O"))) openSceneFile(root, selected, history, materials, camera);
+        if (iconMenuItem(Icon::MnuNew, tr("Nuevo"), tr("Ctrl+N")) && confirmDiscardChanges(root, history, materials, tr("crear un proyecto nuevo")))
+            newScene(root, selected, history, materials);
+        if (iconMenuItem(Icon::MnuOpen, tr("Abrir..."), tr("Ctrl+O")) && confirmDiscardChanges(root, history, materials, tr("abrir otro proyecto")))
+            openSceneFile(root, selected, history, materials, camera);
         if (ImGui::MenuItemEx(tr("Fusionar..."), kIconGutterText, tr("Ctrl+Mayús+O")))
             mergeSceneFile(root, selected, history, materials);
         disabledItems({{tr("Volver a Archivo Guardado..."), ""}, {nullptr, nullptr},
                        {tr("Cerrar"), tr("Ctrl+F4")}, {tr("Cerrar Todos"), tr("Ctrl+Mayús+F4")}, {nullptr, nullptr}});
-        if (iconMenuItem(Icon::MnuSave, tr("Guardar"), tr("Ctrl+S"))) { g.showScene = true; g.sceneLoadMode = false; }
-        if (iconMenuItem(Icon::MnuSaveAs, tr("Guardar como..."), tr("Ctrl+Mayús+S"))) { g.showScene = true; g.sceneLoadMode = false; }
+        if (iconMenuItem(Icon::MnuSave, tr("Guardar"), tr("Ctrl+S"))) saveDocument(root, history, materials, false);
+        if (iconMenuItem(Icon::MnuSaveAs, tr("Guardar como..."), tr("Ctrl+Mayús+S"))) saveDocument(root, history, materials, true);
         disabledItems({{tr("Guardar incrementalmente..."), ""}, {tr("Guardar Todo"), ""},
                        {tr("Guardar Proyecto con su Contenido..."), ""}});
         if (ImGui::MenuItemEx(tr("Guardar Objetos Seleccionados como..."), kIconGutterText, nullptr, false,
@@ -5700,6 +5761,8 @@ void drawSceneDialog(SceneNode& root, SceneNode*& selected, const std::filesyste
                     selected = nullptr;
                     history.reset();
                     g.selectedMat = -1;
+                    g.docPath = path;
+                    g.cleanInit = false;
                     statusMsg = tr("Cargado: ") + path.filename().string();
                     statusIsError = false;
                 } else {
@@ -5707,6 +5770,9 @@ void drawSceneDialog(SceneNode& root, SceneNode*& selected, const std::filesyste
                     statusIsError = true;
                 }
             } else if (saveScene(path, root, materials, &err)) {
+                g.docPath = path;
+                g.cleanSnap = history.snapshot(root);
+                g.cleanInit = true;
                 statusMsg = tr("Guardado: ") + path.filename().string();
                 statusIsError = false;
             } else {
@@ -6791,6 +6857,34 @@ void drawComponentOverlay(const SceneNode* selected, const OrbitalCamera& camera
         const MeshData& m = *c.mesh;
         for (int i : c.sel) {
             if (i >= (int)t.polys.size() || !vis.polys[(size_t)i]) continue;
+            // Un poligono convexo se rellena de una vez: rellenar sus triangulos por separado deja una
+            // costura (la diagonal) por el suavizado de los bordes.
+            {
+                const auto& pl = t.polys[(size_t)i];
+                std::vector<ImVec2> poly;
+                bool allOk = pl.size() >= 3 && pl.size() <= 16;
+                for (size_t k = 0; allOk && k < pl.size(); ++k) {
+                    allOk = ok[(size_t)pl[k]] != 0;
+                    if (allOk) poly.push_back(sp[(size_t)pl[k]]);
+                }
+                if (allOk) {
+                    float area = 0.0f;
+                    int pos = 0, neg = 0;
+                    const size_t n = poly.size();
+                    for (size_t k = 0; k < n; ++k) {
+                        const ImVec2 &a = poly[k], &b = poly[(k + 1) % n], &c2 = poly[(k + 2) % n];
+                        area += a.x * b.y - b.x * a.y;
+                        const float cr = (b.x - a.x) * (c2.y - b.y) - (b.y - a.y) * (c2.x - b.x);
+                        if (cr > 1e-3f) ++pos;
+                        else if (cr < -1e-3f) ++neg;
+                    }
+                    if (pos == 0 || neg == 0) {  // convexo (o degenerado): un solo relleno
+                        if (area < 0.0f) std::reverse(poly.begin(), poly.end());
+                        dl->AddConvexPolyFilled(poly.data(), (int)poly.size(), IM_COL32(255, 140, 30, 90));
+                        continue;
+                    }
+                }
+            }
             for (int tri : t.polyTris[(size_t)i]) {
                 ImVec2 q[3];
                 bool inFront = true;
@@ -7608,11 +7702,19 @@ void releaseUiTextures() {
     g.pv.tex = nullptr;
 }
 
+bool confirmQuit(SceneNode& root, SceneHistory& history, std::vector<Material>& materials) {
+    return confirmQuitImpl(root, history, materials);
+}
+
 void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
                  const std::filesystem::path& scenesDir, SceneHistory& history, float framerate,
                  RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath,
                  std::vector<Material>& materials, OrbitalCamera& camera, ViewportState& viewport) {
     g_vp = &viewport;
+    if (!g.cleanInit) {  // primer fotograma / tras Nuevo o Abrir: la escena actual es el punto guardado
+        g.cleanSnap = history.snapshot(root);
+        g.cleanInit = true;
+    }
     if (g.pendingWorldCoords) { viewport.worldCoords = true; g.pendingWorldCoords = false; }
     if (g.pendingAxisMode) { viewport.axisMode = true; g.pendingAxisMode = false; }
     g.hint.clear();
