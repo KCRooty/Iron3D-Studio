@@ -1080,6 +1080,13 @@ Escala por copia	Scale per clone
 Giro por copia	Rotation per clone
   Clona el primer hijo con malla; el hijo se edita aparte.	  Clones the first child with a mesh; the child is edited separately.
 copias	clones
+Efector Aleatorio	Random Effector
+Posición Aleatoria X	Random Position X
+Posición Aleatoria Y	Random Position Y
+Posición Aleatoria Z	Random Position Z
+Giro Aleatorio	Random Rotation
+Escala Aleatoria	Random Scale
+Semilla	Seed
 Polígono Vacío	Empty Polygon
 Guía	Guide
 Cono	Cone

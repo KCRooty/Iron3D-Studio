@@ -1044,6 +1044,13 @@ Escala por copia	Scala per clone
 Giro por copia	Rotazione per clone
   Clona el primer hijo con malla; el hijo se edita aparte.	  Clona il primo figlio con mesh; il figlio si modifica a parte.
 copias	cloni
+Efector Aleatorio	Effettore casuale
+Posición Aleatoria X	Posizione casuale X
+Posición Aleatoria Y	Posizione casuale Y
+Posición Aleatoria Z	Posizione casuale Z
+Giro Aleatorio	Rotazione casuale
+Escala Aleatoria	Scala casuale
+Semilla	Seme
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula

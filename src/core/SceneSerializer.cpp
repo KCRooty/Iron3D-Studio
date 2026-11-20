@@ -148,7 +148,9 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
         const CloneData& c = node.clone;
         out << indent << "  CLN mode=" << c.mode << " count=" << c.count << " cy=" << c.countY << " cz=" << c.countZ
             << " ox=" << c.offset.x << " oy=" << c.offset.y << " oz=" << c.offset.z << " radius=" << c.radiusCm
-            << " axis=" << c.axis << " scale=" << c.scaleStepPct << " rot=" << c.rotStepDeg << "\n";
+            << " axis=" << c.axis << " scale=" << c.scaleStepPct << " rot=" << c.rotStepDeg << " rpx=" << c.randPosCm.x
+            << " rpy=" << c.randPosCm.y << " rpz=" << c.randPosCm.z << " rrot=" << c.randRotDeg << " rscale=" << c.randScalePct
+            << " seed=" << c.seed << "\n";
     }
     if (node.deform.present)
         out << indent << "  DEF kind=" << node.deform.kind << " axis=" << node.deform.axis << " amount=" << node.deform.amount << "\n";
@@ -516,6 +518,12 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
                 else if (k == "axis") c.axis = std::clamp(std::stoi(v), 0, 2);
                 else if (k == "scale") c.scaleStepPct = std::stof(v);
                 else if (k == "rot") c.rotStepDeg = std::stof(v);
+                else if (k == "rpx") c.randPosCm.x = std::stof(v);
+                else if (k == "rpy") c.randPosCm.y = std::stof(v);
+                else if (k == "rpz") c.randPosCm.z = std::stof(v);
+                else if (k == "rrot") c.randRotDeg = std::stof(v);
+                else if (k == "rscale") c.randScalePct = std::stof(v);
+                else if (k == "seed") c.seed = std::stoi(v);
             });
         } else if (kind == "DEF") {
             node.deform.present = true;
@@ -826,6 +834,7 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
         CloneData& d = root.clone;
         d.present = s.present; d.mode = s.mode; d.count = s.count; d.countY = s.countY; d.countZ = s.countZ;
         d.offset = s.offset; d.radiusCm = s.radiusCm; d.axis = s.axis; d.scaleStepPct = s.scaleStepPct; d.rotStepDeg = s.rotStepDeg;
+        d.randPosCm = s.randPosCm; d.randRotDeg = s.randRotDeg; d.randScalePct = s.randScalePct; d.seed = s.seed;
     }
     root.symmetry.present = temp.symmetry.present;
     root.symmetry.axis = temp.symmetry.axis;

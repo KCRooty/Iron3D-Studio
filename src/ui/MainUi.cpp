@@ -4171,6 +4171,13 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
             }
             fRow(tr("Escala por copia"), "##clsc", cl.scaleStepPct, 0.5f, "%.1f %%");
             fRow(tr("Giro por copia"), "##clrot", cl.rotStepDeg, 0.5f, "%.1f °");
+            sectionHeader(tr("Efector Aleatorio"));
+            fRow(tr("Posición Aleatoria X"), "##clrpx", cl.randPosCm.x, 1.0f, "%.1f cm");
+            fRow(tr("Posición Aleatoria Y"), "##clrpy", cl.randPosCm.y, 1.0f, "%.1f cm");
+            fRow(tr("Posición Aleatoria Z"), "##clrpz", cl.randPosCm.z, 1.0f, "%.1f cm");
+            fRow(tr("Giro Aleatorio"), "##clrrot", cl.randRotDeg, 0.5f, "%.1f °");
+            fRow(tr("Escala Aleatoria"), "##clrsc", cl.randScalePct, 0.5f, "%.1f %%");
+            intRow(tr("Semilla"), "##clseed", cl.seed, 0, 100000);
             ImGui::TextDisabled(tr("  Clona el primer hijo con malla; el hijo se edita aparte."));
             ImGui::TextDisabled((std::to_string(cloneCount(cl)) + " " + std::string(tr("copias"))).c_str());
         } else if (node.symmetry.present) {

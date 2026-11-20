@@ -6,6 +6,20 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (21): Clonador: efector Aleatorio
+
+**Añadido**
+- Sección **Efector Aleatorio** en el Clonador: posición aleatoria máxima por eje (cm), giro aleatorio (°), escala aleatoria (%) y **semilla**. Cada copia recibe su propio valor; con la misma semilla la disposición es idéntica siempre, y cambiar la semilla da otra.
+- Se guarda en el `.iron` (claves `rpx/rpy/rpz/rrot/rscale/seed` del bloque `CLN`; los archivos anteriores siguen abriendo) y se copia con el nodo.
+- Tests: reproducibilidad, respeto del máximo, ejes a 0 sin moverse, cambio con la semilla y escala dentro del rango.
+
+**Límites**
+- Es un efector incrustado en el Clonador, no un objeto Efector independiente: no se puede compartir entre varios Clonadores ni acotar con falloff/campos.
+- Distribución uniforme (no hay Gauss, ruido ni Aleatorio de Color/Peso).
+- Las traducciones de las etiquetas nuevas (de/fr/it) no las ha revisado un hablante nativo.
+
+**Verificado:** tests y compilación. **Sin probar:** aspecto en el visor y uso con clics reales.
+
 ### 2026-11-20 (20): Clonador (Lineal, Cuadrícula, Radial)
 
 **Añadido**

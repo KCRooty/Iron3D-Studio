@@ -155,11 +155,19 @@ struct CloneData {
     int axis = 1;               // Radial: eje normal al circulo (0 X, 1 Y, 2 Z)
     float scaleStepPct = 0.0f;  // % de escala que se suma por copia
     float rotStepDeg = 0.0f;    // grados que se suman por copia
+    // Efector Aleatorio: cada copia se desplaza/gira/escala un valor al azar (reproducible con `seed`).
+    glm::vec3 randPosCm{0.0f};  // desplazamiento maximo por eje, en cm
+    float randRotDeg = 0.0f;    // giro maximo extra, en grados
+    float randScalePct = 0.0f;  // variacion maxima de escala, en %
+    int seed = 1;
     std::shared_ptr<const MeshData> output, lastSource;
     glm::mat4 lastChildMatrix{1.0f};
     int lastMode = -1, lastCount = -1, lastCountY = -1, lastCountZ = -1, lastAxis = -1;
     glm::vec3 lastOffset{1e9f};
     float lastRadius = -1.0f, lastScaleStep = 1e9f, lastRotStep = 1e9f;
+    glm::vec3 lastRandPos{1e9f};
+    float lastRandRot = 1e9f, lastRandScale = 1e9f;
+    int lastSeed = -1;
 };
 
 // Limites de rotacion de una articulacion (Ojoint, pestana IK > Limites de C4D, ids 3009..3015

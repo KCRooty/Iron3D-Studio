@@ -11,10 +11,18 @@ namespace {
 constexpr size_t kMaxVertices = 2000000;
 constexpr float kCmPerUnitClone = 200.0f;
 
+// Numero al azar en [-1, 1] que solo depende de la copia, el canal y la semilla (reproducible).
+float rand11(int i, int channel, int seed) {
+    uint32_t x = (uint32_t)i * 2654435761u ^ (uint32_t)channel * 40503u ^ (uint32_t)seed * 2246822519u;
+    x ^= x >> 15; x *= 2246822519u; x ^= x >> 13; x *= 3266489917u; x ^= x >> 16;
+    return (float)(x & 0xFFFFFF) / (float)0x7FFFFF - 1.0f;
+}
+
 bool sameParams(const CloneData& c) {
     return c.lastMode == c.mode && c.lastCount == c.count && c.lastCountY == c.countY && c.lastCountZ == c.countZ &&
            c.lastOffset == c.offset && c.lastRadius == c.radiusCm && c.lastAxis == c.axis &&
-           c.lastScaleStep == c.scaleStepPct && c.lastRotStep == c.rotStepDeg;
+           c.lastScaleStep == c.scaleStepPct && c.lastRotStep == c.rotStepDeg && c.lastRandPos == c.randPosCm &&
+           c.lastRandRot == c.randRotDeg && c.lastRandScale == c.randScalePct && c.lastSeed == c.seed;
 }
 } // namespace
 
@@ -65,7 +73,9 @@ MeshData cloneMeshData(const MeshData& src, const CloneData& c, const glm::mat4&
             axisVec = glm::vec3(0, 1, 0);
             ang = glm::radians(c.rotStepDeg) * (float)i;
         }
-        const float s = std::max(0.01f, 1.0f + c.scaleStepPct / 100.0f * (float)i);
+        pos += glm::vec3(rand11(i, 0, c.seed) * c.randPosCm.x, rand11(i, 1, c.seed) * c.randPosCm.y, rand11(i, 2, c.seed) * c.randPosCm.z) / kCmPerUnitClone;
+        ang += glm::radians(c.randRotDeg) * rand11(i, 3, c.seed);
+        const float s = std::max(0.01f, (1.0f + c.scaleStepPct / 100.0f * (float)i) * (1.0f + c.randScalePct / 100.0f * rand11(i, 4, c.seed)));
         t = glm::translate(glm::mat4(1.0f), pos);
         if (std::fabs(ang) > 1e-9f) t = glm::rotate(t, ang, axisVec);
         t = glm::scale(t, glm::vec3(s));
@@ -111,6 +121,7 @@ void walk(SceneNode& node, int& count) {
         d.lastMode = d.mode; d.lastCount = d.count; d.lastCountY = d.countY; d.lastCountZ = d.countZ;
         d.lastOffset = d.offset; d.lastRadius = d.radiusCm; d.lastAxis = d.axis;
         d.lastScaleStep = d.scaleStepPct; d.lastRotStep = d.rotStepDeg;
+        d.lastRandPos = d.randPosCm; d.lastRandRot = d.randRotDeg; d.lastRandScale = d.randScalePct; d.lastSeed = d.seed;
         ++count;
     } else if (node.mesh) {
         node.mesh.reset();

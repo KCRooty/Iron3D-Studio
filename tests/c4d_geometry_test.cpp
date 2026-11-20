@@ -849,6 +849,25 @@ int main() {
             check(std::fabs(o.boundsMax.x - 1.5f) < 1e-4f, "clonador: la escala por copia crece (copia 3 = x3)");
             cl.count = 5000;
             check(cloneCount(cl) == kMaxClones, "clonador: limite de copias");
+            // Efector Aleatorio: reproducible, respeta el maximo y cambia con la semilla.
+            {
+                CloneData rc;
+                rc.present = true; rc.mode = 0; rc.count = 20; rc.offset = glm::vec3(0.0f);
+                rc.randPosCm = glm::vec3(100.0f, 0.0f, 0.0f);  // +-0.5 unidades en X
+                const MeshData r1 = cloneMeshData(cube, rc, glm::mat4(1.0f));
+                const MeshData r2 = cloneMeshData(cube, rc, glm::mat4(1.0f));
+                bool same = r1.vertices.size() == r2.vertices.size();
+                for (size_t q = 0; same && q < r1.vertices.size(); ++q) same = r1.vertices[q].position == r2.vertices[q].position;
+                check(same, "aleatorio: misma semilla, misma malla");
+                check(r1.boundsMax.x <= 1.0f + 1e-4f && r1.boundsMin.x >= -1.0f - 1e-4f && r1.boundsMax.x > 0.6f, "aleatorio: respeta el maximo y mueve de verdad");
+                check(std::fabs(r1.boundsMax.y - 0.5f) < 1e-4f && std::fabs(r1.boundsMax.z - 0.5f) < 1e-4f, "aleatorio: los ejes a 0 no se mueven");
+                rc.seed = 7;
+                const MeshData r3 = cloneMeshData(cube, rc, glm::mat4(1.0f));
+                check(r3.boundsMax.x != r1.boundsMax.x || r3.boundsMin.x != r1.boundsMin.x, "aleatorio: otra semilla, otra disposicion");
+                rc.randPosCm = glm::vec3(0.0f); rc.randScalePct = 50.0f;
+                const MeshData r4 = cloneMeshData(cube, rc, glm::mat4(1.0f));
+                check(r4.boundsMax.x > 0.5f + 1e-3f && r4.boundsMax.x <= 0.75f + 1e-4f, "aleatorio: la escala varia dentro del 50 %");
+            }
             SceneNode root("r");
             SceneNode* holder = root.addChild("Clonador", PrimitiveType::None);
             holder->clone.present = true;

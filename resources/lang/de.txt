@@ -1063,6 +1063,13 @@ Escala por copia	Skalierung pro Klon
 Giro por copia	Drehung pro Klon
   Clona el primer hijo con malla; el hijo se edita aparte.	  Klont das erste Kindobjekt mit Netz; das Kind wird separat bearbeitet.
 copias	Klone
+Efector Aleatorio	Zufalls-Effektor
+Posición Aleatoria X	Zufällige Position X
+Posición Aleatoria Y	Zufällige Position Y
+Posición Aleatoria Z	Zufällige Position Z
+Giro Aleatorio	Zufällige Drehung
+Escala Aleatoria	Zufällige Skalierung
+Semilla	Startwert
 Polígono Vacío	Leeres Polygon
 Guía	Hilfslinie
 Cono	Kegel
