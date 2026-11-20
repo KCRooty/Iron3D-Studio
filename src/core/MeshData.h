@@ -34,4 +34,15 @@ MeshData makeCubeMesh();
 MeshData makeSphereMesh(int rings = 12, int segments = 18);
 MeshData makePlaneMesh();
 
+// Primitivas poligonales (PrimitiveShapes.cpp): cuadrilateros en los lados, n-gonos en las tapas.
+MeshData makeCylinderMesh(float radius = 0.5f, float height = 1.0f, int seg = 24);
+MeshData makeConeMesh(float radius = 0.5f, float height = 1.0f, int seg = 24);
+MeshData makeDiscMesh(float outer = 0.5f, float inner = 0.0f, int seg = 32);
+MeshData makeTorusMesh(float ringRadius = 0.4f, float pipeRadius = 0.1f, int ringSeg = 32, int pipeSeg = 12);
+MeshData makeCapsuleMesh(float radius = 0.25f, float height = 1.0f, int seg = 24, int capRings = 6);
+MeshData makeTubeMesh(float inner = 0.3f, float outer = 0.5f, float height = 1.0f, int seg = 24);
+MeshData makePyramidMesh(float width = 1.0f, float depth = 1.0f, float height = 1.0f);
+// kind: 0 tetraedro, 1 octaedro, 2 icosaedro, 3 dodecaedro
+MeshData makePlatonicMesh(int kind = 0, float radius = 0.5f);
+
 } // namespace iron3d

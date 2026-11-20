@@ -1737,6 +1737,20 @@ struct PaletteItem {
     int lightKind = -1; // Luces: LightKind con el que se crea (-1 = Omni por defecto)
 };
 
+// Primitivas poligonales: se crean ya como Objeto poligonal editable (sin parametros todavia).
+bool makeNamedPrimitive(const std::string& key, MeshData& out) {
+    if (key == "Cono") out = makeConeMesh();
+    else if (key == "Cilindro") out = makeCylinderMesh();
+    else if (key == "Disco") out = makeDiscMesh();
+    else if (key == "Toroide") out = makeTorusMesh();
+    else if (key == "Cápsula") out = makeCapsuleMesh();
+    else if (key == "Tubo") out = makeTubeMesh();
+    else if (key == "Pirámide") out = makePyramidMesh();
+    else if (key == "Platónico") out = makePlatonicMesh(2);
+    else return false;
+    return true;
+}
+
 // Crea el objeto de un elemento de menu/paleta; las luces salen con su tipo
 // y con el nombre del menu, como en C4D ("Foco", "Luz Infinita"...).
 void createPaletteItem(SceneNode& root, SceneNode*& selected, SceneHistory& history, const PaletteItem& it) {
@@ -1752,6 +1766,17 @@ void createPaletteItem(SceneNode& root, SceneNode*& selected, SceneHistory& hist
             g.collapsed.erase(selected->id());
         }
         return;
+    }
+    {
+        MeshData pm;
+        if (makeNamedPrimitive(it.name.key, pm)) {
+            SceneNode* pn = createObject(root, selected, history, PrimitiveType::Mesh);
+            if (pn) {
+                pn->mesh = std::make_shared<const MeshData>(std::move(pm));
+                pn->setName(tr(it.name.key));
+            }
+            return;
+        }
     }
     SceneNode* n = createObject(root, selected, history, it.type);
     if (n && it.type == PrimitiveType::Light && it.lightKind >= 0) {
@@ -1816,19 +1841,19 @@ const PaletteItem kPrimitives[] = {
     {"Nulo", Icon::Null, kNone, true},
     {"Polígono Vacío", Icon::EmptyPolygon, kNone, false},
     {"Guía", Icon::Guide, kNone, false},
-    {"Cono", Icon::Cone, kNone, false},
+    {"Cono", Icon::Cone, kNone, true},
     {"Cubo", Icon::Cube, PrimitiveType::Cube, true},
-    {"Cilindro", Icon::Cylinder, kNone, false},
-    {"Disco", Icon::Disc, kNone, false},
+    {"Cilindro", Icon::Cylinder, kNone, true},
+    {"Disco", Icon::Disc, kNone, true},
     {"Plano", Icon::Plane, PrimitiveType::Plane, true},
     {"Polígono", Icon::Polygon, kNone, false},
     {"Esfera", Icon::Sphere, PrimitiveType::Sphere, true},
-    {"Toroide", Icon::Torus, kNone, false},
-    {"Cápsula", Icon::Capsule, kNone, false},
+    {"Toroide", Icon::Torus, kNone, true},
+    {"Cápsula", Icon::Capsule, kNone, true},
     {"Tanque de Petróleo", Icon::OilTank, kNone, false},
-    {"Tubo", Icon::Tube, kNone, false},
-    {"Pirámide", Icon::Pyramid, kNone, false},
-    {"Platónico", Icon::Platonic, kNone, false},
+    {"Tubo", Icon::Tube, kNone, true},
+    {"Pirámide", Icon::Pyramid, kNone, true},
+    {"Platónico", Icon::Platonic, kNone, true},
     {"Figura", Icon::Figure, kNone, false},
     {"Terreno Fractal", Icon::Landscape, kNone, false},
     {"Relieve", Icon::Relief, kNone, false},
@@ -2469,7 +2494,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
     if (ImGui::BeginMenu(tr("Crear"))) {
         if (iconBeginMenu(Icon::Cube, tr("Objeto"))) {
             for (const auto& it : kPrimitives)
-                if (iconMenuItem(it.icon, it.name, nullptr, false, it.functional)) createObject(root, selected, history, it.type);
+                if (iconMenuItem(it.icon, it.name, nullptr, false, it.functional)) createPaletteItem(root, selected, history, it);
             ImGui::EndMenu();
         }
         auto stubMenu = [](Icon icon, const char* name, const PaletteItem* items, int n) {
@@ -7149,9 +7174,14 @@ void drawModelToolUi(SceneNode* selected, const ViewportState& vp) {
 }
 
 // --ui-cmd: tool=extrude:<cm> | tool=inner:<cm> | tool=bevel:<cm>,<cm> | knife=x0,y0,x1,y1 (fracciones del visor)
-void runPendingToolCmd(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, const ViewportState& vp,
+void runPendingToolCmd(SceneNode& root, SceneNode*& selected, const OrbitalCamera& camera, const ViewportState& vp,
                        SceneHistory& history) {
     const std::string cmd = g.pendingTool;
+    if (cmd.rfind("create=", 0) == 0) {  // create=<nombre de la paleta de Objetos>
+        for (const PaletteItem& it : kPrimitives)
+            if (it.functional && cmd.substr(7) == it.name.key) createPaletteItem(root, selected, history, it);
+        return;
+    }
     std::vector<float> nums;
     {
         const size_t at = cmd.find_first_of(":=", cmd.rfind("tool=", 0) == 0 ? 5 : 0);
@@ -7508,7 +7538,7 @@ bool queueUiCommand(const std::string& cmd) {
         g.compMoveRequested = true;
     }
     else if (cmd.rfind("meshop=", 0) == 0) g.compOp = cmd.substr(7);
-    else if (cmd.rfind("tool=", 0) == 0 || cmd.rfind("knife=", 0) == 0 || cmd.rfind("loop=", 0) == 0 || cmd.rfind("plane=", 0) == 0) g.pendingTool = cmd;
+    else if (cmd.rfind("tool=", 0) == 0 || cmd.rfind("knife=", 0) == 0 || cmd.rfind("loop=", 0) == 0 || cmd.rfind("plane=", 0) == 0 || cmd.rfind("create=", 0) == 0) g.pendingTool = cmd;
     else if (cmd == "sel-all-visible") g.compSelectAllRequested = 1;   // marco que cubre todo el visor
     else if (cmd == "sel-all-through") g.compSelectAllRequested = 2;
     else if (cmd.rfind("comp=", 0) == 0) {  // comp=<modo 1-3>[:indices separados por coma]

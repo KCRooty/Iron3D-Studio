@@ -723,6 +723,38 @@ int main() {
             check(vert >= 0 && loopCut(makeSphereMesh(), st, vert, 0.3f).changed > 0, "bucle cortado: esfera");
         }
 
+        // Primitivas poligonales: cerradas y orientadas hacia fuera (salvo el Disco, que es plano y abierto).
+        {
+            struct Prim { const char* name; MeshData m; bool closed; };
+            std::vector<Prim> prims;
+            prims.push_back({"cilindro", makeCylinderMesh(), true});
+            prims.push_back({"cono", makeConeMesh(), true});
+            prims.push_back({"toroide", makeTorusMesh(), true});
+            prims.push_back({"capsula", makeCapsuleMesh(), true});
+            prims.push_back({"tubo", makeTubeMesh(), true});
+            prims.push_back({"piramide", makePyramidMesh(), true});
+            for (int k = 0; k < 4; ++k) prims.push_back({"platonico", makePlatonicMesh(k), true});
+            prims.push_back({"disco", makeDiscMesh(), false});
+            prims.push_back({"disco con agujero", makeDiscMesh(0.5f, 0.2f), false});
+            for (const Prim& pr : prims) {
+                const MeshTopology pt = buildMeshTopology(pr.m);
+                const std::string nm = std::string("primitiva ") + pr.name;
+                check(!pt.polys.empty() && !pr.m.indices.empty(), (nm + ": tiene poligonos").c_str());
+                if (!pr.closed) continue;
+                check(checkMesh(pt).clean(), (nm + ": malla cerrada y limpia").c_str());
+                // orientacion: la normal geometrica de cada triangulo coincide con la normal de sus vertices
+                int out = 0, total = 0;
+                for (size_t i = 0; i + 2 < pr.m.indices.size(); i += 3) {
+                    const glm::vec3 a0 = pr.m.vertices[pr.m.indices[i]].position, b0 = pr.m.vertices[pr.m.indices[i + 1]].position,
+                                    c0 = pr.m.vertices[pr.m.indices[i + 2]].position;
+                    const glm::vec3 n = glm::cross(b0 - a0, c0 - a0);
+                    ++total;
+                    if (glm::dot(n, pr.m.vertices[pr.m.indices[i]].normal) > 0.0f) ++out;
+                }
+                check(out * 10 >= total * 9, (nm + ": orientada hacia fuera").c_str());
+            }
+        }
+
         // Aumentar / Reducir / Conectados con la cara de arriba.
         const std::set<int> grown = growSelection(t, 3, {top});
         check(grown.size() == 5, "aumentar: arriba + 4 lados");

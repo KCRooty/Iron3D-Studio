@@ -119,6 +119,7 @@ add_executable(Iron3DStudio
     src/gfx/OpenGLRenderer.cpp
     src/gfx/gl/GLLoader.cpp
     src/core/MeshData.cpp
+    src/core/PrimitiveShapes.cpp
     src/core/MeshTopology.cpp
     src/core/MeshEdit.cpp
     src/core/PrimitiveMesh.cpp
@@ -195,6 +196,7 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         src/importers/cineware/CinewareExporter.cpp
         src/importers/c4d_compat/C4DGeometry.cpp
         src/core/MeshData.cpp
+        src/core/PrimitiveShapes.cpp
         src/core/MeshTopology.cpp
         src/core/SceneNode.cpp
         src/core/Skin.cpp
@@ -220,6 +222,7 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         src/importers/cineware/CinewareExporter.cpp
         src/importers/c4d_compat/C4DGeometry.cpp
         src/core/MeshData.cpp
+        src/core/PrimitiveShapes.cpp
         src/core/MeshTopology.cpp
         src/core/SceneNode.cpp
         src/core/SceneSerializer.cpp
@@ -339,6 +342,7 @@ add_executable(iron3d_tests
     tests/c4d_geometry_test.cpp
     src/importers/c4d_compat/C4DGeometry.cpp
     src/core/MeshData.cpp
+    src/core/PrimitiveShapes.cpp
     src/core/MeshTopology.cpp
     src/core/MeshEdit.cpp
     src/core/SceneNode.cpp
@@ -370,6 +374,7 @@ add_executable(obj_test
     tests/obj_test.cpp
     src/importers/obj/ObjIO.cpp
     src/core/MeshData.cpp
+    src/core/PrimitiveShapes.cpp
     src/core/MeshTopology.cpp
     src/core/MeshEdit.cpp
     src/core/SceneNode.cpp
@@ -392,6 +397,7 @@ add_executable(smd_test
     tests/smd_test.cpp
     src/importers/smd/SmdIO.cpp
     src/core/MeshData.cpp
+    src/core/PrimitiveShapes.cpp
     src/core/SceneNode.cpp
     src/core/Material.cpp
     src/core/ShaderTree.cpp
@@ -410,6 +416,7 @@ add_executable(ik_test
     tests/ik_test.cpp
     src/core/IkSolver.cpp
     src/core/MeshData.cpp
+    src/core/PrimitiveShapes.cpp
     src/core/MeshTopology.cpp
     src/core/MeshEdit.cpp
     src/core/SceneNode.cpp
@@ -433,6 +440,7 @@ add_executable(skin_test
     src/core/Symmetry.cpp
     src/core/NullShapes.cpp
     src/core/MeshData.cpp
+    src/core/PrimitiveShapes.cpp
     src/core/MeshTopology.cpp
     src/core/MeshEdit.cpp
     src/core/SceneNode.cpp
@@ -454,6 +462,7 @@ add_executable(gltf_test
     tests/gltf_test.cpp
     src/importers/gltf/GltfIO.cpp
     src/core/MeshData.cpp
+    src/core/PrimitiveShapes.cpp
     src/core/MeshTopology.cpp
     src/core/MeshEdit.cpp
     src/core/SceneNode.cpp

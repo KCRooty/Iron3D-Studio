@@ -6,6 +6,19 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (16): Primitivas poligonales: Cilindro, Cono, Disco, Toroide, Cápsula, Tubo, Pirámide y Platónico
+
+**Añadido**
+- Ocho primitivas nuevas en Crear > Objeto y en la paleta de Objetos (antes estaban deshabilitadas): **Cilindro, Cono, Disco, Toroide, Cápsula, Tubo, Pirámide y Platónico**. Se crean ya como Objeto poligonal editable, con cuadriláteros en los lados y n-gonos en las tapas (`src/core/PrimitiveShapes.cpp`), listas para Extruir, Bisel, Cuchillo, Bucle, etc. Medida base 1 unidad = 200 cm, como el Cubo.
+- Orden `--ui-cmd=create=<Nombre>` para crear una primitiva sin input (verificación).
+- Test en `c4d_geometry_test`: todas las primitivas cerradas pasan «Comprobar malla» sin bordes abiertos y con las normales de los triángulos coherentes con las de los vértices.
+
+**Límites**
+- Todavía **no son paramétricas** (no hay radio/segmentos editables en el Gestor de Atributos tras crearlas): salen con valores fijos. El Platónico sale como icosaedro; tetraedro, octaedro y dodecaedro existen en el código pero no hay selector en la UI.
+- Disco y Tubo no tienen las opciones de C4D (radio interior, redondeo).
+
+**Verificado:** tests de geometría (topología cerrada y orientación); captura del Toroide (429 vértices, 768 triángulos, 200×40×200 cm). **Sin probar:** el resto de primitivas a la vista, ni creación con clic real desde el menú.
+
 ### 2026-11-20 (15): Cuchillo en modo Plano y arreglo del rayo del Cuchillo en Línea
 
 **Añadido**
