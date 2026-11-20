@@ -5873,7 +5873,7 @@ void drawInterfacePage(Preferences& prefs, const std::filesystem::path& prefsPat
         userLoaded = true;
     }
     {
-        // Idioma de la interfaz (como Cinema 4D): se guarda al elegirlo y se aplica al reiniciar.
+        // Idioma de la interfaz: se aplica al elegirlo (sin reiniciar) y se guarda para la proxima vez.
         const std::string active = i18n::currentLanguage();
         const std::string chosen = prefs.language.empty() ? active : prefs.language;
         const LanguageInfo* ci = i18n::findLanguage(chosen);
@@ -5884,13 +5884,12 @@ void drawInterfacePage(Preferences& prefs, const std::filesystem::path& prefsPat
             for (const LanguageInfo& li : i18n::languages()) {
                 if (ImGui::Selectable(li.nativeName, chosen == li.code)) {
                     prefs.language = li.code;
-                    statusMsg = savePreferences(prefsPath, prefs) ? tr("Idioma guardado. Reinicie Iron3D Studio para aplicarlo.")
-                                                                  : tr("Error al guardar las preferencias.");
+                    i18n::setLanguage(li.code);
+                    statusMsg = savePreferences(prefsPath, prefs) ? std::string() : std::string(tr("Error al guardar las preferencias."));
                 }
             }
             ImGui::EndCombo();
         }
-        if (chosen != active) ImGui::TextDisabled("%s", tr("Se aplicará al reiniciar Iron3D Studio."));
         ImGui::Separator();
     }
     auto choose = [&](const UiPreset& p) {

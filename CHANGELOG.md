@@ -6,6 +6,19 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (29): El idioma se cambia al momento, sin reiniciar
+
+**Corregido**
+- Al elegir un idioma en Preferencias > Interfaz solo se guardaba para el siguiente arranque y la interfaz seguía igual, así que parecía que no funcionaba. Ahora el cambio se aplica **al instante** (menús, paneles y atributos) y además se guarda para la próxima vez.
+- El idioma que se pasa con `--lang=<código>` en la línea de comandos manda sobre el de Preferencias en esa sesión; por eso, si se abría Iron3D con ese parámetro, elegir otro idioma al reiniciar no tenía efecto. Elegirlo en Preferencias lo cambia igualmente en la sesión.
+
+**Límites**
+- Los textos que algún panel ya guardó al abrirse pueden quedarse un momento en el idioma anterior hasta que se vuelvan a abrir.
+- Ruso, polaco, checo, chino, japonés y coreano siguen **sin traducción completa**: lo que falta sale en inglés.
+- Los diccionarios de los idiomas que se dejan atrás se conservan en memoria hasta cerrar el programa (unos cientos de KB cada uno).
+
+**Verificado:** compilación. **Sin probar:** el cambio en pantalla.
+
 ### 2026-11-20 (28): Aviso de guardar al cerrar, Guardar con el diálogo del sistema y caras seleccionadas sin diagonal
 
 **Añadido**

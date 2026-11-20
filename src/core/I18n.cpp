@@ -23,6 +23,9 @@ Dict g_dict;                 // idioma activo (ya mezclado con el ingles de resp
 Dict g_suffixCache;          // "Texto##id" -> "Translated##id" (almacenamiento estable)
 std::string g_lang = "en";
 bool g_identity = false;     // espanol: devuelve la clave tal cual
+// Diccionarios de idiomas anteriores: tr() devuelve punteros a sus textos y hay codigo que los guarda
+// (etiquetas estaticas), asi que al cambiar de idioma en caliente no se liberan (los nodos no se mueven).
+std::vector<Dict> g_retired;
 
 const std::vector<LanguageInfo> kLanguages = {
     {"en", "English", false, false},
@@ -92,8 +95,12 @@ std::string resolveStartupLanguage(const std::string& prefsLanguage) {
 }
 
 bool setLanguage(const std::string& code) {
-    g_dict.clear();
-    g_suffixCache.clear();
+    if (!g_dict.empty() || !g_suffixCache.empty()) {
+        g_retired.push_back(std::move(g_dict));
+        g_retired.push_back(std::move(g_suffixCache));
+    }
+    g_dict = Dict();
+    g_suffixCache = Dict();
     if (!findLanguage(code)) {
         g_lang = "en";
         g_identity = false;
