@@ -2,6 +2,7 @@
 #include "C4DIcons.h"
 #include "UiPreset.h"
 #include "UiTheme.h"
+#include "core/I18n.h"
 #include "core/SceneSerializer.h"
 #include "core/MeshData.h"
 #include "core/MeshTopology.h"
@@ -147,7 +148,7 @@ struct UiState {
     } camTrip;
     // Resultado de Abrir/Fusionar un .c4d (o el error de abrir cualquier archivo).
     bool showImport = false;
-    std::string importTitle = "Importar Cinema 4D"; // titulo del informe (c4d, obj...)
+    std::string importTitle = tr("Importar Cinema 4D"); // titulo del informe (c4d, obj...)
     C4DImportReport importReport;
     std::string importError;
     // Resultado de Exportar a Cinema 4D / Guardar Objetos Seleccionados como.
@@ -305,19 +306,19 @@ int recordActiveObjects(SceneNode& root, SceneNode* selected, SceneHistory* hist
     collectSelected(root, nodes);
     if (nodes.empty() && selected) nodes.push_back(selected);
     if (nodes.empty()) {
-        flashStatus("Grabar Objetos Activos: no hay ningún objeto seleccionado.");
+        flashStatus(tr("Grabar Objetos Activos: no hay ningún objeto seleccionado."));
         return 0;
     }
     if (!g.keyPos && !g.keyRot && !g.keyScl) {
-        flashStatus("Grabar Objetos Activos: Posición, Escala y Rotación están desactivadas.");
+        flashStatus(tr("Grabar Objetos Activos: Posición, Escala y Rotación están desactivadas."));
         return 0;
     }
     if (history) history->commitBefore(root);
     const int f = (int)std::lround(g.frame);
     for (SceneNode* n : nodes) recordKey(*n, f, g.keyPos, g.keyRot, g.keyScl);
     g.lastEvalFrame = g.frame;  // los valores actuales ya son los de este fotograma
-    flashStatus("Clave grabada en el fotograma " + std::to_string(f) + " (" + std::to_string(nodes.size()) +
-                (nodes.size() == 1 ? " objeto)." : " objetos)."));
+    flashStatus(tr("Clave grabada en el fotograma ") + std::to_string(f) + " (" + std::to_string(nodes.size()) +
+                (nodes.size() == 1 ? tr(" objeto).") : tr(" objetos).")));
     return (int)nodes.size();
 }
 
@@ -336,10 +337,10 @@ void jumpToKey(int dir) {
 // Abre la ventanita de opciones de una herramienta junto al raton.
 const char* modelToolName(UiState::ModelTool t) {
     switch (t) {
-        case UiState::ModelTool::Extrude: return "Extrusión";
-        case UiState::ModelTool::InnerExtrude: return "Extrusión Interna";
-        case UiState::ModelTool::Bevel: return "Bisel";
-        case UiState::ModelTool::Knife: return "Cuchillo";
+        case UiState::ModelTool::Extrude: return tr("Extrusión");
+        case UiState::ModelTool::InnerExtrude: return tr("Extrusión Interna");
+        case UiState::ModelTool::Bevel: return tr("Bisel");
+        case UiState::ModelTool::Knife: return tr("Cuchillo");
         default: return "";
     }
 }
@@ -352,8 +353,8 @@ void setModelTool(UiState::ModelTool t) {
     // Extruir y Biselar trabajan con poligonos: se pasa a ese modo (como C4D).
     if (t != UiState::ModelTool::Knife && g_vp) g_vp->compMode = 3;
     flashStatus(std::string(modelToolName(t)) + (t == UiState::ModelTool::Knife
-                                                    ? ": arrastra en el visor para dibujar la línea de corte."
-                                                    : ": arrastra en horizontal en el visor (o usa Aplicar)."));
+                                                    ? tr(": arrastra en el visor para dibujar la línea de corte.")
+                                                    : tr(": arrastra en horizontal en el visor (o usa Aplicar).")));
 }
 
 void openToolOptions(int which) {
@@ -405,12 +406,12 @@ void toggleQuad(OrbitalCamera& camera) {
 
 const char* viewLabel(CamView v, const char* perspName) {
     switch (v) {
-        case CamView::Top: return "Superior";
-        case CamView::Right: return "Derecha";
-        case CamView::Front: return "Frontal";
-        case CamView::Left: return "Izquierda";
-        case CamView::Back: return "Trasera";
-        case CamView::Bottom: return "Inferior";
+        case CamView::Top: return tr("Superior");
+        case CamView::Right: return tr("Derecha");
+        case CamView::Front: return tr("Frontal");
+        case CamView::Left: return tr("Izquierda");
+        case CamView::Back: return tr("Trasera");
+        case CamView::Bottom: return tr("Inferior");
         default: return perspName;
     }
 }
@@ -419,13 +420,13 @@ const char* viewLabel(CamView v, const char* perspName) {
 
 const char* defaultNameFor(PrimitiveType type) {
     switch (type) {
-        case PrimitiveType::Cube: return "Cubo";
-        case PrimitiveType::Sphere: return "Esfera";
-        case PrimitiveType::Plane: return "Plano";
-        case PrimitiveType::Light: return "Luz";
-        case PrimitiveType::Camera: return "Cámara";
-        case PrimitiveType::Mesh: return "Polígono";
-        case PrimitiveType::None: default: return "Nulo";
+        case PrimitiveType::Cube: return tr("Cubo");
+        case PrimitiveType::Sphere: return tr("Esfera");
+        case PrimitiveType::Plane: return tr("Plano");
+        case PrimitiveType::Light: return tr("Luz");
+        case PrimitiveType::Camera: return tr("Cámara");
+        case PrimitiveType::Mesh: return tr("Polígono");
+        case PrimitiveType::None: default: return tr("Nulo");
     }
 }
 
@@ -803,7 +804,7 @@ void roFloat(const char* label, float value, const char* fmt, bool animatable = 
     ImGui::DragFloat("##v", &value, 1.0f, 0.0f, 0.0f, fmt);
     ImGui::PopID();
     ImGui::EndDisabled();
-    setHint("Parámetro todavía no implementado en Iron3D");
+    setHint(tr("Parámetro todavía no implementado en Iron3D"));
 }
 
 void roCombo(const char* label, const char* value, bool animatable = false) {
@@ -814,7 +815,7 @@ void roCombo(const char* label, const char* value, bool animatable = false) {
     if (ImGui::BeginCombo("##v", value)) ImGui::EndCombo();
     ImGui::PopID();
     ImGui::EndDisabled();
-    setHint("Parámetro todavía no implementado en Iron3D");
+    setHint(tr("Parámetro todavía no implementado en Iron3D"));
 }
 
 void roCheck(const char* label, bool value, bool animatable = true) {
@@ -824,7 +825,7 @@ void roCheck(const char* label, bool value, bool animatable = true) {
     ImGui::Checkbox("##v", &value);
     ImGui::PopID();
     ImGui::EndDisabled();
-    setHint("Parámetro todavía no implementado en Iron3D");
+    setHint(tr("Parámetro todavía no implementado en Iron3D"));
 }
 
 // Fila de "pestanas" del Gestor de Atributos: en C4D son botones conmutables,
@@ -855,7 +856,7 @@ void attrTabRow(const char* const* names, int count, unsigned& mask) {
         const ImVec2 q(p.x + w, p.y + ts.y + 6);
         dl->AddRectFilled(p, q, on ? kTabActive : (hov ? IM_COL32(78, 78, 78, 255) : IM_COL32(64, 64, 64, 255)), 2.0f);
         dl->AddText(ImVec2(p.x + 7, p.y + 3), on ? IM_COL32(0, 0, 0, 255) : kTextCol, names[i]);
-        if (hov) g.hint = "Clic: mostrar esta página. Mayús+Clic: mostrar varias a la vez.";
+        if (hov) g.hint = tr("Clic: mostrar esta página. Mayús+Clic: mostrar varias a la vez.");
         ImGui::PopID();
         x += w + 2;
     }
@@ -905,7 +906,7 @@ void offsetMaterialIndices(SceneNode& node, int base) {
 
 void reportFileError(const std::filesystem::path& path, const std::string& err) {
     g.importReport = C4DImportReport{};
-    g.importTitle = "Importar Cinema 4D";
+    g.importTitle = tr("Importar Cinema 4D");
     g.importReport.fileName = pathUtf8(path.filename());
     g.importError = err;
     g.showImport = true;
@@ -931,12 +932,12 @@ void openPresetLibrary(const std::filesystem::path& path) {
 // Archivo > Abrir Libreria de Preestablecidos... del propio navegador.
 void openPresetLibraryDialog() {
     if (!nativeFileDialogAvailable()) {
-        reportFileError("Abrir librería", "Abrir una librería necesita el diálogo de archivos del sistema, que en "
-                                          "esta plataforma todavía no existe. Cópiala a library/browser.");
+        reportFileError(tr("Abrir librería"), tr("Abrir una librería necesita el diálogo de archivos del sistema, que en "
+                                          "esta plataforma todavía no existe. Cópiala a library/browser."));
         return;
     }
-    const auto path = openFileDialog("Abrir librería de preestablecidos",
-                                     {{"Librerías de preestablecidos de Cinema 4D", "*.lib4d"}});
+    const auto path = openFileDialog(tr("Abrir librería de preestablecidos"),
+                                     {{tr("Librerías de preestablecidos de Cinema 4D"), "*.lib4d"}});
     if (path) openPresetLibrary(*path);
 }
 
@@ -949,16 +950,16 @@ void loadPresetImpl(const PresetLibrary& lib, const PresetItem& item, SceneNode&
     std::vector<uint8_t> data;
     std::string err;
     if (!lib.readData(item, data, &err)) return reportNamedError(item.name, err);
-    if (data.size() < 8 || std::memcmp(data.data(), "QC4D", 4) != 0)
-        return reportNamedError(item.name, "Este preestablecido no es un modelo de Cinema 4D.");
+    if (data.size() < 8 || std::memcmp(data.data(), tr("QC4D"), 4) != 0)
+        return reportNamedError(item.name, tr("Este preestablecido no es un modelo de Cinema 4D."));
     std::error_code ec;
-    const auto dir = std::filesystem::temp_directory_path(ec) / "Iron3D";
+    const auto dir = std::filesystem::temp_directory_path(ec) / tr("Iron3D");
     std::filesystem::create_directories(dir, ec);
     const auto tmp = dir / ("preset_" + std::to_string(item.id) + ".c4d");
     {
         std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
         f.write(reinterpret_cast<const char*>(data.data()), std::streamsize(data.size()));
-        if (!f) return reportNamedError(item.name, "No se pudo escribir el archivo temporal en " + pathUtf8(dir) + ".");
+        if (!f) return reportNamedError(item.name, tr("No se pudo escribir el archivo temporal en ") + pathUtf8(dir) + ".");
     }
     data.clear();
     data.shrink_to_fit();
@@ -972,7 +973,7 @@ void loadPresetImpl(const PresetLibrary& lib, const PresetItem& item, SceneNode&
     const PresetTextureReport texRep =
         extractPresetTextures(lib, mountedLibraries(), dir / "texcache", materials, firstNewMaterial);
     for (const std::string& t : texRep.missing)
-        rep.warnings.push_back("Textura que no está en ninguna librería montada: " + t);
+        rep.warnings.push_back(tr("Textura que no está en ninguna librería montada: ") + t);
     history.commit(before);
     selected = nullptr;
     noteRecentPreset(lib, item);
@@ -1003,7 +1004,7 @@ bool importObjInto(const std::filesystem::path& path, SceneNode& dest, std::vect
     g.importReport.materials = orep.materials;
     g.importReport.warnings = orep.warnings;
     g.importError.clear();
-    g.importTitle = "Importar OBJ";
+    g.importTitle = tr("Importar OBJ");
     g.showImport = true;
     return true;
 }
@@ -1024,7 +1025,7 @@ bool importGltfInto(const std::filesystem::path& path, SceneNode& dest, std::vec
     g.importReport.materials = grep.materials;
     g.importReport.warnings = grep.warnings;
     g.importError.clear();
-    g.importTitle = "Importar glTF";
+    g.importTitle = tr("Importar glTF");
     g.showImport = true;
     return true;
 }
@@ -1038,10 +1039,10 @@ void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history,
         g.sceneLoadMode = true;
         return;
     }
-    const auto path = openFileDialog("Abrir", {{"Escenas y librerías (iron, c4d, obj, glb, lib4d)", "*.iron;*.c4d;*.obj;*.glb;*.gltf;*.lib4d"},
-                                               {"Iron3D", "*.iron"}, {"Cinema 4D", "*.c4d"}, {"Wavefront", "*.obj"},
+    const auto path = openFileDialog(tr("Abrir"), {{tr("Escenas y librerías (iron, c4d, obj, glb, lib4d)"), "*.iron;*.c4d;*.obj;*.glb;*.gltf;*.lib4d"},
+                                               {"Iron3D", "*.iron"}, {tr("Cinema 4D"), "*.c4d"}, {tr("Wavefront"), "*.obj"},
                                                {"glTF", "*.glb;*.gltf"},
-                                               {"Librería de preestablecidos de Cinema 4D", "*.lib4d"}});
+                                               {tr("Librería de preestablecidos de Cinema 4D"), "*.lib4d"}});
     if (!path) return;
     // Una .lib4d no sustituye la escena: se monta en el Navegador de Contenido
     // (Preestablecidos, solo esta sesion) y se abre su ventana, como en C4D.
@@ -1064,7 +1065,7 @@ void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history,
         materials = std::move(mats);
         g.importReport = rep;
         g.importError.clear();
-        g.importTitle = "Importar Cinema 4D";
+        g.importTitle = tr("Importar Cinema 4D");
         g.showImport = true;
     } else if (!loadScene(*path, root, materials, &err)) {
         return reportFileError(*path, err);
@@ -1079,13 +1080,13 @@ void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history,
 // otro .c4d o .iron, como en C4D. Se puede deshacer.
 void mergeSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history, std::vector<Material>& materials) {
     if (!nativeFileDialogAvailable()) {
-        reportFileError("Fusionar", "Fusionar necesita el diálogo de archivos del sistema, que en esta "
-                                    "plataforma todavía no existe.");
+        reportFileError(tr("Fusionar"), tr("Fusionar necesita el diálogo de archivos del sistema, que en esta "
+                                    "plataforma todavía no existe."));
         return;
     }
-    const auto path = openFileDialog("Fusionar", {{"Escenas de Cinema 4D, OBJ, glTF e Iron3D", "*.c4d;*.obj;*.glb;*.gltf;*.iron"},
-                                                  {"Cinema 4D", "*.c4d"}, {"Wavefront", "*.obj"},
-                                                  {"glTF", "*.glb;*.gltf"}, {"Iron3D", "*.iron"}});
+    const auto path = openFileDialog(tr("Fusionar"), {{tr("Escenas de Cinema 4D, OBJ, glTF e Iron3D"), "*.c4d;*.obj;*.glb;*.gltf;*.iron"},
+                                                  {tr("Cinema 4D"), "*.c4d"}, {tr("Wavefront"), "*.obj"},
+                                                  {"glTF", "*.glb;*.gltf"}, {tr("Iron3D"), "*.iron"}});
     if (!path) return;
     const std::string before = history.snapshot(root);
     std::string err;
@@ -1098,7 +1099,7 @@ void mergeSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history
         if (!importC4D(*path, root, materials, rep, &err)) return reportFileError(*path, err);
         g.importReport = rep;
         g.importError.clear();
-        g.importTitle = "Importar Cinema 4D";
+        g.importTitle = tr("Importar Cinema 4D");
         g.showImport = true;
     } else {
         SceneNode temp("tmp");
@@ -1132,11 +1133,11 @@ void exportC4DDialog(const std::vector<const SceneNode*>& roots, const std::vect
                      bool allMaterials, const std::string& title, const std::string& defaultName) {
     if (roots.empty()) return;
     if (!nativeFileDialogAvailable()) {
-        reportNamedError(title, "Exportar necesita el diálogo de archivos del sistema, que en esta plataforma "
-                                "todavía no existe.");
+        reportNamedError(title, tr("Exportar necesita el diálogo de archivos del sistema, que en esta plataforma "
+                                "todavía no existe."));
         return;
     }
-    const auto path = saveFileDialog(title, {{"Cinema 4D", "*.c4d"}}, defaultName, "c4d");
+    const auto path = saveFileDialog(title, {{tr("Cinema 4D"), "*.c4d"}}, defaultName, "c4d");
     if (!path) return;
     std::string err;
     C4DExportReport rep;
@@ -1150,10 +1151,10 @@ void exportC4DDialog(const std::vector<const SceneNode*>& roots, const std::vect
 void exportSceneObj(SceneNode& root, const std::vector<Material>& materials) {
     std::vector<const SceneNode*> roots;
     for (const auto& c : root.children()) roots.push_back(c.get());
-    if (roots.empty()) return reportNamedError("Exportar", "La escena está vacía.");
+    if (roots.empty()) return reportNamedError(tr("Exportar"), tr("La escena está vacía."));
     if (!nativeFileDialogAvailable())
-        return reportNamedError("Exportar", "Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.");
-    const auto path = saveFileDialog("Exportar a Wavefront", {{"Wavefront", "*.obj"}}, "Escena.obj", "obj");
+        return reportNamedError(tr("Exportar"), tr("Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe."));
+    const auto path = saveFileDialog(tr("Exportar a Wavefront"), {{tr("Wavefront"), "*.obj"}}, tr("Escena.obj"), "obj");
     if (!path) return;
     ObjReport orep;
     std::string err;
@@ -1167,7 +1168,7 @@ void exportSceneObj(SceneNode& root, const std::vector<Material>& materials) {
     g.importReport.materials = orep.materials;
     g.importReport.warnings = orep.warnings;
     g.importError.clear();
-    g.importTitle = "Exportar OBJ";
+    g.importTitle = tr("Exportar OBJ");
     g.showImport = true;
 }
 
@@ -1175,10 +1176,10 @@ void exportSceneObj(SceneNode& root, const std::vector<Material>& materials) {
 void exportSceneGlb(SceneNode& root, const std::vector<Material>& materials) {
     std::vector<const SceneNode*> roots;
     for (const auto& c : root.children()) roots.push_back(c.get());
-    if (roots.empty()) return reportNamedError("Exportar", "La escena está vacía.");
+    if (roots.empty()) return reportNamedError(tr("Exportar"), tr("La escena está vacía."));
     if (!nativeFileDialogAvailable())
-        return reportNamedError("Exportar", "Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.");
-    const auto path = saveFileDialog("Exportar a glTF", {{"glTF binario", "*.glb"}}, "Escena.glb", "glb");
+        return reportNamedError(tr("Exportar"), tr("Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe."));
+    const auto path = saveFileDialog(tr("Exportar a glTF"), {{tr("glTF binario"), "*.glb"}}, tr("Escena.glb"), "glb");
     if (!path) return;
     GltfReport grep;
     std::string err;
@@ -1192,22 +1193,22 @@ void exportSceneGlb(SceneNode& root, const std::vector<Material>& materials) {
     g.importReport.materials = grep.materials;
     g.importReport.warnings = grep.warnings;
     g.importError.clear();
-    g.importTitle = "Exportar glTF";
+    g.importTitle = tr("Exportar glTF");
     g.showImport = true;
 }
 
 void exportSceneC4D(SceneNode& root, const std::vector<Material>& materials) {
     std::vector<const SceneNode*> roots;
     for (const auto& c : root.children()) roots.push_back(c.get());
-    if (roots.empty()) return reportNamedError("Exportar", "La escena está vacía.");
-    exportC4DDialog(roots, materials, true, "Exportar a Cinema 4D", "Escena.c4d");
+    if (roots.empty()) return reportNamedError(tr("Exportar"), tr("La escena está vacía."));
+    exportC4DDialog(roots, materials, true, tr("Exportar a Cinema 4D"), tr("Escena.c4d"));
 }
 
 void exportSelectedC4D(SceneNode& root, SceneNode* selected, const std::vector<Material>& materials) {
     const auto roots = topSelected(root, selected);
     if (roots.empty()) return;
-    exportC4DDialog(roots, materials, false, "Guardar Objetos Seleccionados como",
-                    roots.size() == 1 ? roots.front()->name() + ".c4d" : std::string("Objetos.c4d"));
+    exportC4DDialog(roots, materials, false, tr("Guardar Objetos Seleccionados como"),
+                    roots.size() == 1 ? roots.front()->name() + ".c4d" : std::string(tr("Objetos.c4d")));
 }
 
 // Seleccion sin los nodos que ya cuelgan de otro seleccionado (al mover o
@@ -1263,7 +1264,7 @@ void groupObjects(SceneNode& root, SceneNode*& selected, SceneHistory& history, 
     if (nodes.empty() || !nodes.front()->parent()) return;
     history.commitBefore(root);
     SceneNode* parent = nodes.front()->parent();
-    SceneNode* null = parent->insertChild(std::make_unique<SceneNode>("Nulo"), parent->indexOf(nodes.front()));
+    SceneNode* null = parent->insertChild(std::make_unique<SceneNode>(tr("Nulo")), parent->indexOf(nodes.front()));
     for (SceneNode* n : nodes) reparentKeepWorld(n, *null, null->children().size());
     g.collapsed.insert(null->id());
     selectOnly(selected, null);
@@ -1651,7 +1652,7 @@ void handleMarqueeSelection(SceneNode& root, SceneNode*& selected, const Orbital
 
 void newMaterial(std::vector<Material>& materials) {
     Material m;
-    m.name = materials.empty() ? "Mat" : "Mat." + std::to_string(materials.size());
+    m.name = materials.empty() ? tr("Mat") : tr("Mat.") + std::to_string(materials.size());
     materials.push_back(m);
     g.selectedMat = (int)materials.size() - 1;
     g.focus = AttrFocus::Material;
@@ -1660,7 +1661,7 @@ void newMaterial(std::vector<Material>& materials) {
 // --- Paletas de objetos (seccion 3 y 18.1 de la referencia) --------------------
 
 struct PaletteItem {
-    const char* name;
+    Tr name;
     Icon icon;
     PrimitiveType type; // None + !functional = deshabilitado
     bool functional;
@@ -1671,13 +1672,13 @@ struct PaletteItem {
 // y con el nombre del menu, como en C4D ("Foco", "Luz Infinita"...).
 void createPaletteItem(SceneNode& root, SceneNode*& selected, SceneHistory& history, const PaletteItem& it) {
     // Simetria (generador): un Nulo con SymmetryData; si hay un objeto con malla seleccionado se mete dentro.
-    if (std::string(it.name) == "Simetría") {
+    if (std::string(it.name.key) == "Simetría") {
         SceneNode* sel = selected;
         const bool wrap = sel && sel->mesh && sel->parent();
         if (wrap) groupObjects(root, selected, history, nullptr);
         else createObject(root, selected, history, PrimitiveType::None);
         if (selected) {
-            selected->setName("Simetría");
+            selected->setName(tr("Simetría"));
             selected->symmetry.present = true;
             g.collapsed.erase(selected->id());
         }
@@ -1686,7 +1687,7 @@ void createPaletteItem(SceneNode& root, SceneNode*& selected, SceneHistory& hist
     SceneNode* n = createObject(root, selected, history, it.type);
     if (n && it.type == PrimitiveType::Light && it.lightKind >= 0) {
         n->light.kind = (LightKind)it.lightKind;
-        n->setName(it.name);
+        n->setName((const char*)it.name);
     }
 }
 
@@ -1727,8 +1728,8 @@ void drawPalette(const char* id, const PaletteItem* items, int count, int column
             dl->AddText(ImVec2(p.x + kGutterW + 5, p.y + 3), it.functional ? kTextCol : kTextDim, it.name);
             if (!it.functional) ImGui::EndDisabled();
             if (hov) {
-                if (it.functional) ImGui::SetTooltip("%s\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)", it.name, it.name);
-                else ImGui::SetTooltip("%s\nTodavía no implementado en Iron3D", it.name);
+                if (it.functional) ImGui::SetTooltip(tr("%s\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)"), it.name, it.name);
+                else ImGui::SetTooltip(tr("%s\nTodavía no implementado en Iron3D"), it.name);
             }
             ImGui::PopID();
         }
@@ -1916,11 +1917,11 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
         }
         if (pressed(ImGuiKey_W) && !shift) {
             vp.worldCoords = !vp.worldCoords;
-            flashStatus(vp.worldCoords ? "Sistema de coordenadas: Mundo" : "Sistema de coordenadas: Objeto");
+            flashStatus(vp.worldCoords ? tr("Sistema de coordenadas: Mundo") : tr("Sistema de coordenadas: Objeto"));
         }
         if (pressed(ImGuiKey_L) && !shift) {
             vp.axisMode = !vp.axisMode;
-            flashStatus(vp.axisMode ? "Activar Eje: se mueve el eje, no el objeto" : "Activar Eje: desactivado");
+            flashStatus(vp.axisMode ? tr("Activar Eje: se mueve el eje, no el objeto") : tr("Activar Eje: desactivado"));
         }
         if (pressed(ImGuiKey_T)) { mode = GizmoMode::Scale; vp.selectTool = false; }
         // Herramientas de modelado: D Extruir, I Extrusion Interna, M~S Biselar, K Cuchillo.
@@ -2015,7 +2016,7 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
         if (pressed(ImGuiKey_D)) { g.focus = AttrFocus::Project; }
         if (pressed(ImGuiKey_F9)) {  // Fotogramas Clave Automaticos
             g.autoKey = !g.autoKey;
-            flashStatus(g.autoKey ? "Fotogramas Clave Automáticos: activados" : "Fotogramas Clave Automáticos: desactivados");
+            flashStatus(g.autoKey ? tr("Fotogramas Clave Automáticos: activados") : tr("Fotogramas Clave Automáticos: desactivados"));
         }
         if (pressed(ImGuiKey_F)) jumpToKey(-1);  // Ir a la Clave Anterior
         if (pressed(ImGuiKey_G)) jumpToKey(1);   // Ir a la Clave Siguiente
@@ -2061,9 +2062,9 @@ void runPendingCmd(SceneNode& root, SceneNode*& selected, SceneHistory& history,
     switch (cmd) {
         case UiCmd::MakeEditable: {
             const int n = makeEditable(root, selected, history);
-            if (n == 0) flashStatus("Hacer Editable: selecciona un Cubo, Esfera o Plano (los demás ya son editables o no tienen malla).");
-            else flashStatus(n == 1 ? "Hacer Editable: 1 objeto convertido a Objeto Poligonal."
-                                    : "Hacer Editable: " + std::to_string(n) + " objetos convertidos a Objeto Poligonal.");
+            if (n == 0) flashStatus(tr("Hacer Editable: selecciona un Cubo, Esfera o Plano (los demás ya son editables o no tienen malla)."));
+            else flashStatus(n == 1 ? tr("Hacer Editable: 1 objeto convertido a Objeto Poligonal.")
+                                    : tr("Hacer Editable: ") + std::to_string(n) + tr(" objetos convertidos a Objeto Poligonal."));
             break;
         }
         case UiCmd::FrameSelected: frameSelection(camera, root, selected); break;
@@ -2080,7 +2081,7 @@ void runPendingCmd(SceneNode& root, SceneNode*& selected, SceneHistory& history,
             break;
         case UiCmd::SelectAll: selectAllObjects(root, selected); break;
         case UiCmd::SymmetryObject: {  // --ui-cmd=sym-obj: igual que Modelado > Simetria
-            const PaletteItem it{"Simetría", Icon::ModSymmetry, PrimitiveType::None, true};
+            const PaletteItem it{tr("Simetría"), Icon::ModSymmetry, PrimitiveType::None, true};
             createPaletteItem(root, selected, history, it);
             break;
         }
@@ -2098,20 +2099,20 @@ void runPendingCmd(SceneNode& root, SceneNode*& selected, SceneHistory& history,
             if (nodes.empty() && selected) nodes.push_back(selected);
             history.commitBefore(root);
             for (SceneNode* n : nodes) n->animPos = n->animRot = n->animScale = AnimTrack{};
-            flashStatus("Animación eliminada.");
+            flashStatus(tr("Animación eliminada."));
             break;
         }
         case UiCmd::CurrentState: {
             const int n = currentStateToObject(root, selected, history);
-            flashStatus(n ? "Estado Actual a Objeto: " + std::to_string(n) + (n == 1 ? " copia poligonal creada." : " copias poligonales creadas.")
-                          : std::string("Estado Actual a Objeto: la selección no tiene geometría."));
+            flashStatus(n ? tr("Estado Actual a Objeto: ") + std::to_string(n) + (n == 1 ? tr(" copia poligonal creada.") : tr(" copias poligonales creadas."))
+                          : std::string(tr("Estado Actual a Objeto: la selección no tiene geometría.")));
             break;
         }
         case UiCmd::Connect:
         case UiCmd::ConnectDelete: {
             const int n = connectObjects(root, selected, history, cmd == UiCmd::ConnectDelete);
-            flashStatus(n ? "Conectar Objetos: " + std::to_string(n) + " mallas unidas en un Objeto Polígono."
-                          : std::string("Conectar Objetos: la selección no tiene geometría."));
+            flashStatus(n ? tr("Conectar Objetos: ") + std::to_string(n) + tr(" mallas unidas en un Objeto Polígono.")
+                          : std::string(tr("Conectar Objetos: la selección no tiene geometría.")));
             break;
         }
         case UiCmd::None: break;
@@ -2123,7 +2124,7 @@ void runPendingCmd(SceneNode& root, SceneNode*& selected, SceneHistory& history,
 void drawCommander(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneHistory& history,
                    std::vector<Material>& materials, OrbitalCamera& camera, ViewportState& vp) {
     if (!g.showCommander) return;
-    struct Cmd { const char* name; const char* key; std::function<void()> run; bool enabled; };
+    struct Cmd { Tr name; const char* key; std::function<void()> run; bool enabled; };
     const bool hasSel = selected != nullptr;
     auto tool = [&](int t) {
         vp.selectTool = t >= 3;
@@ -2138,55 +2139,55 @@ void drawCommander(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scene
         {"Selección en Vivo", "9", [&] { tool(3); }, true},
         {"Selección Rectangular", "0", [&] { tool(4); }, true},
         {"Selección con Lazo", "8", [&] { tool(5); }, true},
-        {"Seleccionar Todo", "Ctrl+A", [] { g.pendingCmd = UiCmd::SelectAll; }, true},
+        {"Seleccionar Todo", tr("Ctrl+A"), [] { g.pendingCmd = UiCmd::SelectAll; }, true},
         {"Estado Actual a Objeto", "", [] { g.pendingCmd = UiCmd::CurrentState; }, hasSel},
         {"Conectar Objetos", "", [] { g.pendingCmd = UiCmd::Connect; }, hasSel},
         {"Conectar Objetos + Eliminar", "", [] { g.pendingCmd = UiCmd::ConnectDelete; }, hasSel},
         {"Encuadrar Geometría", "H", [] { g.pendingCmd = UiCmd::FrameAll; }, true},
-        {"Encuadrar Todo", "Alt+H", [] { g.pendingCmd = UiCmd::FrameAll; }, true},
+        {"Encuadrar Todo", tr("Alt+H"), [] { g.pendingCmd = UiCmd::FrameAll; }, true},
         {"Encuadrar Seleccionados", "S", [] { g.pendingCmd = UiCmd::FrameSelected; }, hasSel},
-        {"Encuadre por Defecto", "Mayús+H", [] { g.pendingCmd = UiCmd::ResetView; }, true},
+        {"Encuadre por Defecto", tr("Mayús+H"), [] { g.pendingCmd = UiCmd::ResetView; }, true},
         {"Vista Perspectiva", "F1", [] { g.pendingCmd = UiCmd::ViewPersp; }, true},
         {"Vista Superior", "F2", [] { g.pendingCmd = UiCmd::ViewTop; }, true},
         {"Vista Derecha", "F3", [] { g.pendingCmd = UiCmd::ViewRight; }, true},
         {"Vista Frontal", "F4", [] { g.pendingCmd = UiCmd::ViewFront; }, true},
         {"Todas las Vistas", "F5", [] { g.pendingCmd = UiCmd::ViewQuad; }, true},
-        {"Renderizar en Visor de Imágenes", "Mayús+R", [] { g.renderRequested = true; }, true},
+        {"Renderizar en Visor de Imágenes", tr("Mayús+R"), [] { g.renderRequested = true; }, true},
         {"Grabar Objetos Activos", "F9", [] { g.recordRequested = true; }, hasSel},
-        {"Fotogramas Clave Automáticos", "Ctrl+F9", [] { g.autoKey = !g.autoKey; }, true},
+        {"Fotogramas Clave Automáticos", tr("Ctrl+F9"), [] { g.autoKey = !g.autoKey; }, true},
         {"Eliminar Animación del Objeto", "", [] { g.pendingCmd = UiCmd::ClearAnimation; }, hasSel},
-        {"Editar Configuración de Render...", "Ctrl+B", [] { g.showRenderSettings = true; }, true},
+        {"Editar Configuración de Render...", tr("Ctrl+B"), [] { g.showRenderSettings = true; }, true},
         {"Visor de Imágenes...", "", [] { g.showPictureViewer = true; }, true},
         {"Sistema de Coordenadas de Mundo", "W", [] { if (g_vp) g_vp->worldCoords = !g_vp->worldCoords; }, true},
         {"Activar Eje", "L", [] { if (g_vp) g_vp->axisMode = !g_vp->axisMode; }, true},
         {"Vista Izquierda", "", [] { g.pendingCmd = UiCmd::ViewLeft; }, true},
         {"Vista Trasera", "", [] { g.pendingCmd = UiCmd::ViewBack; }, true},
         {"Vista Inferior", "", [] { g.pendingCmd = UiCmd::ViewBottom; }, true},
-        {"Agrupar Objetos", "Alt+G", [] { g.pendingCmd = UiCmd::Group; }, hasSel},
+        {"Agrupar Objetos", tr("Alt+G"), [] { g.pendingCmd = UiCmd::Group; }, hasSel},
         {"Seleccionar Hijos", "", [] { g.pendingCmd = UiCmd::SelectChildren; }, hasSel},
-        {"Deseleccionar Todo", "Esc", [&] { selected = nullptr; }, hasSel},
-        {"Eliminar", "Supr", [&] { deleteSelected(root, selected, history); }, hasSel},
-        {"Deshacer", "Ctrl+Z", [&] { if (history.undo(root)) selected = nullptr; }, true},
-        {"Rehacer", "Ctrl+Y", [&] { if (history.redo(root)) selected = nullptr; }, true},
+        {"Deseleccionar Todo", tr("Esc"), [&] { selected = nullptr; }, hasSel},
+        {"Eliminar", tr("Supr"), [&] { deleteSelected(root, selected, history); }, hasSel},
+        {"Deshacer", tr("Ctrl+Z"), [&] { if (history.undo(root)) selected = nullptr; }, true},
+        {"Rehacer", tr("Ctrl+Y"), [&] { if (history.redo(root)) selected = nullptr; }, true},
         {"Cubo", "", [&] { createObject(root, selected, history, PrimitiveType::Cube); }, true},
         {"Esfera", "", [&] { createObject(root, selected, history, PrimitiveType::Sphere); }, true},
         {"Plano", "", [&] { createObject(root, selected, history, PrimitiveType::Plane); }, true},
         {"Luz", "", [&] { createObject(root, selected, history, PrimitiveType::Light); }, true},
         {"Nulo", "", [&] { createObject(root, selected, history, PrimitiveType::None); }, true},
         {"Nuevo Material", "", [&] { newMaterial(materials); }, true},
-        {"Nuevo Proyecto", "Ctrl+N", [&] { newScene(root, selected, history, materials); }, true},
-        {"Abrir...", "Ctrl+O", [&] { openSceneFile(root, selected, history, materials, camera); }, true},
-        {"Fusionar...", "Ctrl+Mayús+O", [&] { mergeSceneFile(root, selected, history, materials); }, true},
-        {"Guardar Proyecto", "Ctrl+S", [] { g.showScene = true; g.sceneLoadMode = false; }, true},
-        {"Renderizar Vista Activa", "Ctrl+R", [&] { vp.renderView = true; }, true},
-        {"Preferencias...", "Ctrl+E", [] { g.showPrefs = true; }, true},
-        {"Configuración del Proyecto", "Ctrl+D", [] { g.focus = AttrFocus::Project; }, true},
-        {"Navegador de Contenido", "Mayús+F8", [] { g.browserOpen = true; }, true},
-        {"Gestor de Objetos", "Mayús+F1", [] { g.browserOpen = false; }, true},
+        {"Nuevo Proyecto", tr("Ctrl+N"), [&] { newScene(root, selected, history, materials); }, true},
+        {"Abrir...", tr("Ctrl+O"), [&] { openSceneFile(root, selected, history, materials, camera); }, true},
+        {"Fusionar...", tr("Ctrl+Mayús+O"), [&] { mergeSceneFile(root, selected, history, materials); }, true},
+        {"Guardar Proyecto", tr("Ctrl+S"), [] { g.showScene = true; g.sceneLoadMode = false; }, true},
+        {"Renderizar Vista Activa", tr("Ctrl+R"), [&] { vp.renderView = true; }, true},
+        {"Preferencias...", tr("Ctrl+E"), [] { g.showPrefs = true; }, true},
+        {"Configuración del Proyecto", tr("Ctrl+D"), [] { g.focus = AttrFocus::Project; }, true},
+        {"Navegador de Contenido", tr("Mayús+F8"), [] { g.browserOpen = true; }, true},
+        {"Gestor de Objetos", tr("Mayús+F1"), [] { g.browserOpen = false; }, true},
         {"Reproducir Hacia Delante", "F8", [] { g.playDir = g.playDir == 1 ? 0 : 1; }, true},
         {"Detener", "F7", [] { g.playDir = 0; }, true},
-        {"Ir al Inicio", "Mayús+F", [] { g.frame = (float)g.minFrame; }, true},
-        {"Ir al Final", "Mayús+G", [] { g.frame = (float)g.maxFrame; }, true},
+        {"Ir al Inicio", tr("Mayús+F"), [] { g.frame = (float)g.minFrame; }, true},
+        {"Ir al Final", tr("Mayús+G"), [] { g.frame = (float)g.maxFrame; }, true},
     };
 
     // Coincidencia sin mayusculas ni tildes simples: cada palabra del filtro
@@ -2206,7 +2207,7 @@ void drawCommander(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scene
     const std::string filter = fold(g.commanderBuf);
     std::vector<const Cmd*> hits;
     for (const Cmd& c : cmds) {
-        const std::string n = fold(c.name);
+        const std::string n = fold((const char*)c.name);
         bool ok = true;
         size_t p = 0;
         while (ok && p < filter.size()) {
@@ -2223,7 +2224,7 @@ void drawCommander(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scene
     ImGui::SetNextWindowPos(ImVec2(mv->Pos.x + mv->Size.x * 0.5f, mv->Pos.y + 90.0f), ImGuiCond_Appearing, ImVec2(0.5f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(420, 0));
     bool open = true;
-    if (ImGui::Begin("Commander", &open, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings |
+    if (ImGui::Begin(tr("Commander"), &open, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings |
                                             ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::IsWindowAppearing()) {
             std::snprintf(g.commanderBuf, sizeof(g.commanderBuf), "%s", g.commanderPreset.c_str());
@@ -2232,7 +2233,7 @@ void drawCommander(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scene
             ImGui::SetKeyboardFocusHere();
         }
         ImGui::SetNextItemWidth(-1);
-        const bool enter = ImGui::InputTextWithHint("##cmdq", "Buscar orden...", g.commanderBuf, sizeof(g.commanderBuf),
+        const bool enter = ImGui::InputTextWithHint("##cmdq", tr("Buscar orden..."), g.commanderBuf, sizeof(g.commanderBuf),
                                                     ImGuiInputTextFlags_EnterReturnsTrue);
         if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) g.commanderSel = std::min(g.commanderSel + 1, (int)hits.size() - 1);
         if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) g.commanderSel = std::max(g.commanderSel - 1, 0);
@@ -2249,7 +2250,7 @@ void drawCommander(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scene
             }
             ImGui::EndDisabled();
         }
-        if (hits.empty()) ImGui::TextDisabled("Ninguna orden coincide.");
+        if (hits.empty()) ImGui::TextDisabled(tr("Ninguna orden coincide."));
         ImGui::EndChild();
         if (enter && !hits.empty() && hits[g.commanderSel]->enabled) chosen = hits[g.commanderSel];
         if (chosen) {
@@ -2281,49 +2282,49 @@ void drawViewportContextMenu(SceneNode& root, SceneNode*& selected, GizmoMode& m
     }
     if (!ImGui::BeginPopup("##vpctx")) return;
     const bool hasSel = selected != nullptr;
-    if (iconMenuItem(Icon::Undo, "Deshacer", "Ctrl+Z", false, history.canUndo()))
+    if (iconMenuItem(Icon::Undo, tr("Deshacer"), tr("Ctrl+Z"), false, history.canUndo()))
         if (history.undo(root)) selected = nullptr;
     ImGui::Separator();
-    if (ImGui::MenuItem("Encuadrar Seleccionados", "S", false, hasSel)) g.pendingCmd = UiCmd::FrameSelected;
-    if (ImGui::MenuItem("Encuadrar Geometría", "H")) g.pendingCmd = UiCmd::FrameAll;
+    if (ImGui::MenuItem(tr("Encuadrar Seleccionados"), "S", false, hasSel)) g.pendingCmd = UiCmd::FrameSelected;
+    if (ImGui::MenuItem(tr("Encuadrar Geometría"), "H")) g.pendingCmd = UiCmd::FrameAll;
     ImGui::Separator();
-    if (iconMenuItem(Icon::MakeEditable, "Hacer Editable", "C", false, canMakeEditable(root, selected)))
+    if (iconMenuItem(Icon::MakeEditable, tr("Hacer Editable"), "C", false, canMakeEditable(root, selected)))
         g.pendingCmd = UiCmd::MakeEditable;
-    if (ImGui::MenuItem("Estado Actual a Objeto", nullptr, false, hasSel)) g.pendingCmd = UiCmd::CurrentState;
+    if (ImGui::MenuItem(tr("Estado Actual a Objeto"), nullptr, false, hasSel)) g.pendingCmd = UiCmd::CurrentState;
     {
         bool gc = false;
-        if (gearMenuItem(nullptr, "Conectar Objetos", nullptr, false, hasSel, &gc)) g.pendingCmd = UiCmd::Connect;
+        if (gearMenuItem(nullptr, tr("Conectar Objetos"), nullptr, false, hasSel, &gc)) g.pendingCmd = UiCmd::Connect;
         if (gc) openToolOptions((int)UiState::OptWin::Connect);
     }
-    if (ImGui::MenuItem("Conectar+Eliminar", nullptr, false, hasSel)) g.pendingCmd = UiCmd::ConnectDelete;
-    if (iconMenuItem(Icon::Null, "Agrupar Objetos", "Alt+G", false, hasSel)) g.pendingCmd = UiCmd::Group;
+    if (ImGui::MenuItem(tr("Conectar+Eliminar"), nullptr, false, hasSel)) g.pendingCmd = UiCmd::ConnectDelete;
+    if (iconMenuItem(Icon::Null, tr("Agrupar Objetos"), tr("Alt+G"), false, hasSel)) g.pendingCmd = UiCmd::Group;
     ImGui::Separator();
-    if (ImGui::BeginMenu("Nueva Etiqueta", false)) ImGui::EndMenu();
-    if (ImGui::BeginMenu("Restaurar Selección", false)) ImGui::EndMenu();
-    if (ImGui::MenuItem("Seleccionar Hijos", nullptr, false, hasSel && !selected->children().empty()))
+    if (ImGui::BeginMenu(tr("Nueva Etiqueta"), false)) ImGui::EndMenu();
+    if (ImGui::BeginMenu(tr("Restaurar Selección"), false)) ImGui::EndMenu();
+    if (ImGui::MenuItem(tr("Seleccionar Hijos"), nullptr, false, hasSel && !selected->children().empty()))
         g.pendingCmd = UiCmd::SelectChildren;
     ImGui::Separator();
-    disabledItems({{"Mostrar Pistas...", ""}, {"Mostrar F-Curves...", ""}, {"Mostrar Movimientos...", ""}});
+    disabledItems({{tr("Mostrar Pistas..."), ""}, {tr("Mostrar F-Curves..."), ""}, {tr("Mostrar Movimientos..."), ""}});
     ImGui::Separator();
-    if (iconMenuItem(Icon::Move, "Mover", "E", !vp.selectTool && mode == GizmoMode::Translate)) {
+    if (iconMenuItem(Icon::Move, tr("Mover"), "E", !vp.selectTool && mode == GizmoMode::Translate)) {
         mode = GizmoMode::Translate;
         vp.selectTool = false;
     }
-    if (iconMenuItem(Icon::Scale, "Escalar", "T", !vp.selectTool && mode == GizmoMode::Scale)) {
+    if (iconMenuItem(Icon::Scale, tr("Escalar"), "T", !vp.selectTool && mode == GizmoMode::Scale)) {
         mode = GizmoMode::Scale;
         vp.selectTool = false;
     }
-    if (iconMenuItem(Icon::Rotate, "Rotar", "R", !vp.selectTool && mode == GizmoMode::Rotate)) {
+    if (iconMenuItem(Icon::Rotate, tr("Rotar"), "R", !vp.selectTool && mode == GizmoMode::Rotate)) {
         mode = GizmoMode::Rotate;
         vp.selectTool = false;
     }
     ImGui::Separator();
-    if (iconMenuItem(Icon::LiveSelect, "Selección en Vivo", "9", vp.selectTool && vp.selectShape == 0)) { vp.selectTool = true; vp.selectShape = 0; }
+    if (iconMenuItem(Icon::LiveSelect, tr("Selección en Vivo"), "9", vp.selectTool && vp.selectShape == 0)) { vp.selectTool = true; vp.selectShape = 0; }
     {
         bool gr = false, gl = false;
         const Icon ir = Icon::MnuRectSelect, il = Icon::MnuLassoSelect;
-        if (gearMenuItem(&ir, "Selección Rectangular", "0", vp.selectTool && vp.selectShape == 1, true, &gr)) { vp.selectTool = true; vp.selectShape = 1; }
-        if (gearMenuItem(&il, "Selección con Lazo", "8", vp.selectTool && vp.selectShape == 2, true, &gl)) { vp.selectTool = true; vp.selectShape = 2; }
+        if (gearMenuItem(&ir, tr("Selección Rectangular"), "0", vp.selectTool && vp.selectShape == 1, true, &gr)) { vp.selectTool = true; vp.selectShape = 1; }
+        if (gearMenuItem(&il, tr("Selección con Lazo"), "8", vp.selectTool && vp.selectShape == 2, true, &gl)) { vp.selectTool = true; vp.selectShape = 2; }
         if (gr) { vp.selectTool = true; vp.selectShape = 1; openToolOptions((int)UiState::OptWin::RectSel); }
         if (gl) { vp.selectTool = true; vp.selectShape = 2; openToolOptions((int)UiState::OptWin::LassoSel); }
     }
@@ -2343,66 +2344,66 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
                   std::vector<Material>& materials, OrbitalCamera& camera, ViewportState& vp) {
     if (!ImGui::BeginMainMenuBar()) return;
 
-    if (ImGui::BeginMenu("Archivo")) {
-        if (iconMenuItem(Icon::MnuNew, "Nuevo", "Ctrl+N")) newScene(root, selected, history, materials);
-        if (iconMenuItem(Icon::MnuOpen, "Abrir...", "Ctrl+O")) openSceneFile(root, selected, history, materials, camera);
-        if (ImGui::MenuItemEx("Fusionar...", kIconGutterText, "Ctrl+Mayús+O"))
+    if (ImGui::BeginMenu(tr("Archivo"))) {
+        if (iconMenuItem(Icon::MnuNew, tr("Nuevo"), tr("Ctrl+N"))) newScene(root, selected, history, materials);
+        if (iconMenuItem(Icon::MnuOpen, tr("Abrir..."), tr("Ctrl+O"))) openSceneFile(root, selected, history, materials, camera);
+        if (ImGui::MenuItemEx(tr("Fusionar..."), kIconGutterText, tr("Ctrl+Mayús+O")))
             mergeSceneFile(root, selected, history, materials);
-        disabledItems({{"Volver a Archivo Guardado...", ""}, {nullptr, nullptr},
-                       {"Cerrar", "Ctrl+F4"}, {"Cerrar Todos", "Ctrl+Mayús+F4"}, {nullptr, nullptr}});
-        if (iconMenuItem(Icon::MnuSave, "Guardar", "Ctrl+S")) { g.showScene = true; g.sceneLoadMode = false; }
-        if (iconMenuItem(Icon::MnuSaveAs, "Guardar como...", "Ctrl+Mayús+S")) { g.showScene = true; g.sceneLoadMode = false; }
-        disabledItems({{"Guardar incrementalmente...", ""}, {"Guardar Todo", ""},
-                       {"Guardar Proyecto con su Contenido...", ""}});
-        if (ImGui::MenuItemEx("Guardar Objetos Seleccionados como...", kIconGutterText, nullptr, false,
+        disabledItems({{tr("Volver a Archivo Guardado..."), ""}, {nullptr, nullptr},
+                       {tr("Cerrar"), tr("Ctrl+F4")}, {tr("Cerrar Todos"), tr("Ctrl+Mayús+F4")}, {nullptr, nullptr}});
+        if (iconMenuItem(Icon::MnuSave, tr("Guardar"), tr("Ctrl+S"))) { g.showScene = true; g.sceneLoadMode = false; }
+        if (iconMenuItem(Icon::MnuSaveAs, tr("Guardar como..."), tr("Ctrl+Mayús+S"))) { g.showScene = true; g.sceneLoadMode = false; }
+        disabledItems({{tr("Guardar incrementalmente..."), ""}, {tr("Guardar Todo"), ""},
+                       {tr("Guardar Proyecto con su Contenido..."), ""}});
+        if (ImGui::MenuItemEx(tr("Guardar Objetos Seleccionados como..."), kIconGutterText, nullptr, false,
                               selected != nullptr && cinewareAvailable()))
             exportSelectedC4D(root, selected, materials);
         ImGui::Separator();
-        if (iconBeginMenu(Icon::MnuExport, "Exportar")) {
-            if (ImGui::MenuItem("Cinema 4D (*.c4d)...", nullptr, false, cinewareAvailable()))
+        if (iconBeginMenu(Icon::MnuExport, tr("Exportar"))) {
+            if (ImGui::MenuItem(tr("Cinema 4D (*.c4d)..."), nullptr, false, cinewareAvailable()))
                 exportSceneC4D(root, materials);
             if (!cinewareAvailable() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-                ImGui::SetTooltip("Esta compilación no lleva el Cineware SDK de MAXON");
-            if (ImGui::MenuItem("Wavefront (*.obj)...")) exportSceneObj(root, materials);
-            if (ImGui::MenuItem("glTF binario (*.glb)...")) exportSceneGlb(root, materials);
-            disabledItems({{"FBX (*.fbx)", ""}, {"Alembic (*.abc)", ""},
-                           {"STL (*.stl)", ""}, {"Collada 1.4 (*.dae)", ""}});
+                ImGui::SetTooltip(tr("Esta compilación no lleva el Cineware SDK de MAXON"));
+            if (ImGui::MenuItem(tr("Wavefront (*.obj)..."))) exportSceneObj(root, materials);
+            if (ImGui::MenuItem(tr("glTF binario (*.glb)..."))) exportSceneGlb(root, materials);
+            disabledItems({{tr("FBX (*.fbx)"), ""}, {tr("Alembic (*.abc)"), ""},
+                           {"STL (*.stl)", ""}, {tr("Collada 1.4 (*.dae)"), ""}});
             ImGui::EndMenu();
         }
-        ImGui::BeginMenuEx("Archivos recientes", kIconGutterText, false);
+        ImGui::BeginMenuEx(tr("Archivos recientes"), kIconGutterText, false);
         ImGui::Separator();
-        if (iconMenuItem(Icon::MnuExit, "Salir", "Alt+F4")) vp.requestQuit = true;
+        if (iconMenuItem(Icon::MnuExit, tr("Salir"), tr("Alt+F4"))) vp.requestQuit = true;
         ImGui::EndMenu();
     }
 
-    if (ImGui::BeginMenu("Edición")) {
-        if (iconMenuItem(Icon::Undo, "Deshacer", "Ctrl+Z", false, history.canUndo()))
+    if (ImGui::BeginMenu(tr("Edición"))) {
+        if (iconMenuItem(Icon::Undo, tr("Deshacer"), tr("Ctrl+Z"), false, history.canUndo()))
             if (history.undo(root)) selected = nullptr;
-        if (iconMenuItem(Icon::Redo, "Rehacer", "Ctrl+Y", false, history.canRedo()))
+        if (iconMenuItem(Icon::Redo, tr("Rehacer"), tr("Ctrl+Y"), false, history.canRedo()))
             if (history.redo(root)) selected = nullptr;
         ImGui::Separator();
-        iconMenuItem(Icon::MnuCut, "Cortar", "Ctrl+X", false, false);
-        if (iconMenuItem(Icon::MnuCopy, "Copiar", "Ctrl+C", false, selected != nullptr)) g.clipboardNodeId = selected->id();
-        if (iconMenuItem(Icon::MnuPaste, "Pegar", "Ctrl+V", false, g.clipboardNodeId >= 0)) {
+        iconMenuItem(Icon::MnuCut, tr("Cortar"), tr("Ctrl+X"), false, false);
+        if (iconMenuItem(Icon::MnuCopy, tr("Copiar"), tr("Ctrl+C"), false, selected != nullptr)) g.clipboardNodeId = selected->id();
+        if (iconMenuItem(Icon::MnuPaste, tr("Pegar"), tr("Ctrl+V"), false, g.clipboardNodeId >= 0)) {
             SceneNode* src = findById(root, g.clipboardNodeId);
             if (src && src->parent()) {
                 history.commitBefore(root);
                 selected = duplicateSubtree(*src->parent(), *src);
             }
         }
-        if (iconMenuItem(Icon::MnuDelete, "Eliminar", "Supr", false, selected != nullptr)) deleteSelected(root, selected, history);
+        if (iconMenuItem(Icon::MnuDelete, tr("Eliminar"), tr("Supr"), false, selected != nullptr)) deleteSelected(root, selected, history);
         ImGui::Separator();
-        if (iconMenuItem(Icon::MnuSelectAll, "Seleccionar Todo", "Ctrl+A")) g.pendingCmd = UiCmd::SelectAll;
-        if (iconMenuItem(Icon::MnuDeselect, "Deseleccionar Todo", "Esc", false, selected != nullptr)) selected = nullptr;
+        if (iconMenuItem(Icon::MnuSelectAll, tr("Seleccionar Todo"), tr("Ctrl+A"))) g.pendingCmd = UiCmd::SelectAll;
+        if (iconMenuItem(Icon::MnuDeselect, tr("Deseleccionar Todo"), tr("Esc"), false, selected != nullptr)) selected = nullptr;
         ImGui::Separator();
-        if (iconMenuItem(Icon::MnuProject, "Configuración del Proyecto...", "Ctrl+D")) g.focus = AttrFocus::Project;
-        ImGui::MenuItemEx("Escalar Proyecto...", kIconGutterText, "", false, false);
-        if (iconMenuItem(Icon::MnuPrefs, "Preferencias...", "Ctrl+E")) g.showPrefs = true;
+        if (iconMenuItem(Icon::MnuProject, tr("Configuración del Proyecto..."), tr("Ctrl+D"))) g.focus = AttrFocus::Project;
+        ImGui::MenuItemEx(tr("Escalar Proyecto..."), kIconGutterText, "", false, false);
+        if (iconMenuItem(Icon::MnuPrefs, tr("Preferencias..."), tr("Ctrl+E"))) g.showPrefs = true;
         ImGui::EndMenu();
     }
 
-    if (ImGui::BeginMenu("Crear")) {
-        if (iconBeginMenu(Icon::Cube, "Objeto")) {
+    if (ImGui::BeginMenu(tr("Crear"))) {
+        if (iconBeginMenu(Icon::Cube, tr("Objeto"))) {
             for (const auto& it : kPrimitives)
                 if (iconMenuItem(it.icon, it.name, nullptr, false, it.functional)) createObject(root, selected, history, it.type);
             ImGui::EndMenu();
@@ -2413,74 +2414,74 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
                 ImGui::EndMenu();
             }
         };
-        stubMenu(Icon::Spline, "Spline", kSplines, countOf(kSplines));
-        stubMenu(Icon::Nurbs, "Generadores", kGenerators, countOf(kGenerators));
-        stubMenu(Icon::ModArray, "Modelado", kModeling, countOf(kModeling));
-        stubMenu(Icon::Cloner, "MoGraph", kMoGraph, countOf(kMoGraph));
-        stubMenu(Icon::Deformer, "Deformador", kDeformers, countOf(kDeformers));
-        stubMenu(Icon::Floor, "Escena", kScene, countOf(kScene));
-        ImGui::BeginMenuEx("Física", kIconGutterText, false);
-        stubMenu(Icon::Camera, "Cámara", kCameras, countOf(kCameras));
-        if (iconBeginMenu(Icon::Light, "Luz")) {
+        stubMenu(Icon::Spline, tr("Spline"), kSplines, countOf(kSplines));
+        stubMenu(Icon::Nurbs, tr("Generadores"), kGenerators, countOf(kGenerators));
+        stubMenu(Icon::ModArray, tr("Modelado"), kModeling, countOf(kModeling));
+        stubMenu(Icon::Cloner, tr("MoGraph"), kMoGraph, countOf(kMoGraph));
+        stubMenu(Icon::Deformer, tr("Deformador"), kDeformers, countOf(kDeformers));
+        stubMenu(Icon::Floor, tr("Escena"), kScene, countOf(kScene));
+        ImGui::BeginMenuEx(tr("Física"), kIconGutterText, false);
+        stubMenu(Icon::Camera, tr("Cámara"), kCameras, countOf(kCameras));
+        if (iconBeginMenu(Icon::Light, tr("Luz"))) {
             for (const auto& it : kLights)
                 if (iconMenuItem(it.icon, it.name, nullptr, false, it.functional)) createPaletteItem(root, selected, history, it);
             ImGui::EndMenu();
         }
-        if (iconBeginMenu(Icon::MnuNewMaterial, "Materiales")) {
-            if (iconMenuItem(Icon::MnuNewMaterial, "Nuevo Material")) newMaterial(materials);
-            iconMenuItem(Icon::MnuNewPbrMaterial, "Nuevo Material PBR", "", false, false);
-            iconMenuItem(Icon::MnuLoadMaterial, "Cargar Materiales...", "", false, false);
+        if (iconBeginMenu(Icon::MnuNewMaterial, tr("Materiales"))) {
+            if (iconMenuItem(Icon::MnuNewMaterial, tr("Nuevo Material"))) newMaterial(materials);
+            iconMenuItem(Icon::MnuNewPbrMaterial, tr("Nuevo Material PBR"), "", false, false);
+            iconMenuItem(Icon::MnuLoadMaterial, tr("Cargar Materiales..."), "", false, false);
             ImGui::EndMenu();
         }
-        ImGui::BeginMenuEx("Etiqueta", kIconGutterText, false);
-        ImGui::BeginMenuEx("Sonido", kIconGutterText, false);
+        ImGui::BeginMenuEx(tr("Etiqueta"), kIconGutterText, false);
+        ImGui::BeginMenuEx(tr("Sonido"), kIconGutterText, false);
         ImGui::EndMenu();
     }
 
-    if (ImGui::BeginMenu("Selección")) {
-        ImGui::BeginMenuEx("Filtro de Selección", kIconGutterText, false);
-        if (iconMenuItem(Icon::LiveSelect, "Selección en Vivo", "9", vp.selectTool && vp.selectShape == 0)) { vp.selectTool = true; vp.selectShape = 0; }
+    if (ImGui::BeginMenu(tr("Selección"))) {
+        ImGui::BeginMenuEx(tr("Filtro de Selección"), kIconGutterText, false);
+        if (iconMenuItem(Icon::LiveSelect, tr("Selección en Vivo"), "9", vp.selectTool && vp.selectShape == 0)) { vp.selectTool = true; vp.selectShape = 0; }
         {
             bool gr = false, gl = false;
             const Icon ir = Icon::MnuRectSelect, il = Icon::MnuLassoSelect;
-            if (gearMenuItem(&ir, "Selección Rectangular", "0", vp.selectTool && vp.selectShape == 1, true, &gr)) { vp.selectTool = true; vp.selectShape = 1; }
-            if (gearMenuItem(&il, "Selección con Lazo", "8", vp.selectTool && vp.selectShape == 2, true, &gl)) { vp.selectTool = true; vp.selectShape = 2; }
+            if (gearMenuItem(&ir, tr("Selección Rectangular"), "0", vp.selectTool && vp.selectShape == 1, true, &gr)) { vp.selectTool = true; vp.selectShape = 1; }
+            if (gearMenuItem(&il, tr("Selección con Lazo"), "8", vp.selectTool && vp.selectShape == 2, true, &gl)) { vp.selectTool = true; vp.selectShape = 2; }
             if (gr) { vp.selectTool = true; vp.selectShape = 1; openToolOptions((int)UiState::OptWin::RectSel); }
             if (gl) { vp.selectTool = true; vp.selectShape = 2; openToolOptions((int)UiState::OptWin::LassoSel); }
         }
-        iconMenuItem(Icon::MnuPolySelect, "Selección de Polígono", "", false, false);
+        iconMenuItem(Icon::MnuPolySelect, tr("Selección de Polígono"), "", false, false);
         ImGui::Separator();
         const int cm = componentModeFor(selected);
-        if (iconMenuItem(Icon::MnuLoop, "Selección de Bucle", "U~L", false, cm == 2)) g.compOp = "loop";
-        if (ImGui::MenuItemEx("Selección de Anillo", kIconGutterText, "U~B", false, cm == 2)) g.compOp = "ring";
+        if (iconMenuItem(Icon::MnuLoop, tr("Selección de Bucle"), "U~L", false, cm == 2)) g.compOp = "loop";
+        if (ImGui::MenuItemEx(tr("Selección de Anillo"), kIconGutterText, "U~B", false, cm == 2)) g.compOp = "ring";
         for (const auto& it : std::initializer_list<std::pair<const char*, const char*>>{
-                 {"Selección Contorno", "U~Q"}, {"Rellenar Selección", "U~F"}})
+                 {tr("Selección Contorno"), "U~Q"}, {tr("Rellenar Selección"), "U~F"}})
             ImGui::MenuItemEx(it.first, kIconGutterText, it.second, false, false);
         ImGui::Separator();
-        if (iconMenuItem(Icon::MnuSelectAll, "Seleccionar Todo", "Ctrl+A")) g.pendingCmd = UiCmd::SelectAll;
-        if (iconMenuItem(Icon::MnuDeselect, "Deseleccionar Todo", "Esc", false, selected != nullptr)) selected = nullptr;
+        if (iconMenuItem(Icon::MnuSelectAll, tr("Seleccionar Todo"), tr("Ctrl+A"))) g.pendingCmd = UiCmd::SelectAll;
+        if (iconMenuItem(Icon::MnuDeselect, tr("Deseleccionar Todo"), tr("Esc"), false, selected != nullptr)) selected = nullptr;
         for (const auto& it : std::initializer_list<std::array<const char*, 3>>{
-                 {"Invertir Selección", "U~I", "invert"}, {"Seleccionar Conectados", "U~W", "connected"},
-                 {"Aumentar Selección", "U~Y", "grow"}, {"Reducir Selección", "U~K", "shrink"}})
+                 {tr("Invertir Selección"), "U~I", "invert"}, {tr("Seleccionar Conectados"), "U~W", "connected"},
+                 {tr("Aumentar Selección"), "U~Y", "grow"}, {tr("Reducir Selección"), "U~K", "shrink"}})
             if (ImGui::MenuItemEx(it[0], kIconGutterText, it[1], false, cm != 0)) g.compOp = it[2];
         ImGui::EndMenu();
     }
 
-    if (ImGui::BeginMenu("Herramientas")) {
-        if (iconMenuItem(Icon::Move, "Mover", "E", !vp.selectTool && mode == GizmoMode::Translate)) { mode = GizmoMode::Translate; vp.selectTool = false; }
-        if (iconMenuItem(Icon::Scale, "Escalar", "T", !vp.selectTool && mode == GizmoMode::Scale)) { mode = GizmoMode::Scale; vp.selectTool = false; }
-        if (iconMenuItem(Icon::Rotate, "Rotar", "R", !vp.selectTool && mode == GizmoMode::Rotate)) { mode = GizmoMode::Rotate; vp.selectTool = false; }
+    if (ImGui::BeginMenu(tr("Herramientas"))) {
+        if (iconMenuItem(Icon::Move, tr("Mover"), "E", !vp.selectTool && mode == GizmoMode::Translate)) { mode = GizmoMode::Translate; vp.selectTool = false; }
+        if (iconMenuItem(Icon::Scale, tr("Escalar"), "T", !vp.selectTool && mode == GizmoMode::Scale)) { mode = GizmoMode::Scale; vp.selectTool = false; }
+        if (iconMenuItem(Icon::Rotate, tr("Rotar"), "R", !vp.selectTool && mode == GizmoMode::Rotate)) { mode = GizmoMode::Rotate; vp.selectTool = false; }
         ImGui::Separator();
-        iconMenuItem(Icon::AxisX, "Eje X / Encabezado", "X", false, false);
-        iconMenuItem(Icon::AxisY, "Eje Y / Inclinación", "Y", false, false);
-        iconMenuItem(Icon::AxisZ, "Eje Z / Alabeo", "Z", false, false);
-        if (g_vp && iconMenuItem(Icon::CoordSystem, "Sistema de Coordenadas de Mundo", "W", g_vp->worldCoords))
+        iconMenuItem(Icon::AxisX, tr("Eje X / Encabezado"), "X", false, false);
+        iconMenuItem(Icon::AxisY, tr("Eje Y / Inclinación"), "Y", false, false);
+        iconMenuItem(Icon::AxisZ, tr("Eje Z / Alabeo"), "Z", false, false);
+        if (g_vp && iconMenuItem(Icon::CoordSystem, tr("Sistema de Coordenadas de Mundo"), "W", g_vp->worldCoords))
             g_vp->worldCoords = !g_vp->worldCoords;
         ImGui::Separator();
-        ImGui::MenuItemEx("Medir y Construir", kIconGutterText, "", false, false);
-        ImGui::MenuItemEx("Desplazamiento", kIconGutterText, "", false, false);
-        ImGui::BeginMenuEx("Organizar Objetos", kIconGutterText, false);
-        ImGui::BeginMenuEx("Centrar", kIconGutterText, false);
+        ImGui::MenuItemEx(tr("Medir y Construir"), kIconGutterText, "", false, false);
+        ImGui::MenuItemEx(tr("Desplazamiento"), kIconGutterText, "", false, false);
+        ImGui::BeginMenuEx(tr("Organizar Objetos"), kIconGutterText, false);
+        ImGui::BeginMenuEx(tr("Centrar"), kIconGutterText, false);
         ImGui::EndMenu();
     }
 
@@ -2490,159 +2491,159 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
             ImGui::EndMenu();
         }
     };
-    if (ImGui::BeginMenu("Malla")) {
-        if (iconMenuItem(Icon::MakeEditable, "Hacer Editable", "C", false, canMakeEditable(root, selected)))
+    if (ImGui::BeginMenu(tr("Malla"))) {
+        if (iconMenuItem(Icon::MakeEditable, tr("Hacer Editable"), "C", false, canMakeEditable(root, selected)))
             g.pendingCmd = UiCmd::MakeEditable;
-        if (ImGui::MenuItem("Estado Actual a Objeto", nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::CurrentState;
+        if (ImGui::MenuItem(tr("Estado Actual a Objeto"), nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::CurrentState;
         {
             bool gc = false;
             const Icon ic = Icon::ModConnect;
-            if (gearMenuItem(&ic, "Conectar Objetos", nullptr, false, selected != nullptr, &gc)) g.pendingCmd = UiCmd::Connect;
+            if (gearMenuItem(&ic, tr("Conectar Objetos"), nullptr, false, selected != nullptr, &gc)) g.pendingCmd = UiCmd::Connect;
             if (gc) openToolOptions((int)UiState::OptWin::Connect);
         }
-        if (ImGui::MenuItem("Conectar Objetos + Eliminar", nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::ConnectDelete;
+        if (ImGui::MenuItem(tr("Conectar Objetos + Eliminar"), nullptr, false, selected != nullptr)) g.pendingCmd = UiCmd::ConnectDelete;
         ImGui::Separator();
-        if (ImGui::BeginMenu("Simetría de edición", editableMesh(selected) != nullptr)) {
-            if (ImGui::MenuItem("Apagada", nullptr, g.symAxis < 0)) g.symAxis = -1;
-            if (ImGui::MenuItem("Plano X (izquierda/derecha)", nullptr, g.symAxis == 0)) g.symAxis = 0;
-            if (ImGui::MenuItem("Plano Y (arriba/abajo)", nullptr, g.symAxis == 1)) g.symAxis = 1;
-            if (ImGui::MenuItem("Plano Z (delante/detrás)", nullptr, g.symAxis == 2)) g.symAxis = 2;
+        if (ImGui::BeginMenu(tr("Simetría de edición"), editableMesh(selected) != nullptr)) {
+            if (ImGui::MenuItem(tr("Apagada"), nullptr, g.symAxis < 0)) g.symAxis = -1;
+            if (ImGui::MenuItem(tr("Plano X (izquierda/derecha)"), nullptr, g.symAxis == 0)) g.symAxis = 0;
+            if (ImGui::MenuItem(tr("Plano Y (arriba/abajo)"), nullptr, g.symAxis == 1)) g.symAxis = 1;
+            if (ImGui::MenuItem(tr("Plano Z (delante/detrás)"), nullptr, g.symAxis == 2)) g.symAxis = 2;
             ImGui::SetNextItemWidth(110.0f);
-            ImGui::DragFloat("Tolerancia (cm)", &g.symTolCm, 0.05f, 0.01f, 20.0f, "%.2f");
+            ImGui::DragFloat(tr("Tolerancia (cm)"), &g.symTolCm, 0.05f, 0.01f, 20.0f, "%.2f");
             ImGui::EndMenu();
         }
         {
             using MT = UiState::ModelTool;
             const bool editable = editableMesh(selected) != nullptr;
-            if (ImGui::MenuItemEx("Cuchillo", kIconGutterText, "K", g.modelTool == MT::Knife, editable)) setModelTool(MT::Knife);
-            if (ImGui::MenuItemEx("Extrusión", kIconGutterText, "D", g.modelTool == MT::Extrude, editable)) setModelTool(MT::Extrude);
-            if (ImGui::MenuItemEx("Extrusión Interna", kIconGutterText, "I", g.modelTool == MT::InnerExtrude, editable))
+            if (ImGui::MenuItemEx(tr("Cuchillo"), kIconGutterText, "K", g.modelTool == MT::Knife, editable)) setModelTool(MT::Knife);
+            if (ImGui::MenuItemEx(tr("Extrusión"), kIconGutterText, "D", g.modelTool == MT::Extrude, editable)) setModelTool(MT::Extrude);
+            if (ImGui::MenuItemEx(tr("Extrusión Interna"), kIconGutterText, "I", g.modelTool == MT::InnerExtrude, editable))
                 setModelTool(MT::InnerExtrude);
-            if (ImGui::MenuItemEx("Bisel", kIconGutterText, "M~S", g.modelTool == MT::Bevel, editable)) setModelTool(MT::Bevel);
+            if (ImGui::MenuItemEx(tr("Bisel"), kIconGutterText, "M~S", g.modelTool == MT::Bevel, editable)) setModelTool(MT::Bevel);
         }
         {
             const int cm = componentModeFor(selected);
-            if (ImGui::MenuItemEx("Cerrar Agujero Poligonal", kIconGutterText, "M~D", false, cm != 0)) g.compOp = "close";
-            if (ImGui::MenuItemEx("Soldar", kIconGutterText, "M~Q", false, cm != 0)) g.compOp = "weld";
-            if (ImGui::MenuItemEx("Subdividir", kIconGutterText, "U~S", false, cm != 0)) g.compOp = "subdiv";
-            if (ImGui::MenuItemEx("Puente", kIconGutterText, "M~B", false, cm == 3)) g.compOp = "bridge";
-            if (ImGui::MenuItemEx("Comprobar Malla", kIconGutterText, nullptr, false, cm != 0)) g.compOp = "check";
-            disabledItems({{"Pincel", "M~C"}, {"Planchar", "M~G"}, {nullptr, nullptr}});
-            if (ImGui::MenuItemEx("Invertir Normales", kIconGutterText, "U~R", false, cm != 0)) g.compOp = "flip";
-            if (ImGui::MenuItemEx("Alinear Normales", kIconGutterText, "U~A", false, cm != 0)) g.compOp = "align";
-            if (ImGui::MenuItemEx("Triangular", kIconGutterText, nullptr, false, cm != 0)) g.compOp = "triang";
+            if (ImGui::MenuItemEx(tr("Cerrar Agujero Poligonal"), kIconGutterText, "M~D", false, cm != 0)) g.compOp = "close";
+            if (ImGui::MenuItemEx(tr("Soldar"), kIconGutterText, "M~Q", false, cm != 0)) g.compOp = "weld";
+            if (ImGui::MenuItemEx(tr("Subdividir"), kIconGutterText, "U~S", false, cm != 0)) g.compOp = "subdiv";
+            if (ImGui::MenuItemEx(tr("Puente"), kIconGutterText, "M~B", false, cm == 3)) g.compOp = "bridge";
+            if (ImGui::MenuItemEx(tr("Comprobar Malla"), kIconGutterText, nullptr, false, cm != 0)) g.compOp = "check";
+            disabledItems({{tr("Pincel"), "M~C"}, {tr("Planchar"), "M~G"}, {nullptr, nullptr}});
+            if (ImGui::MenuItemEx(tr("Invertir Normales"), kIconGutterText, "U~R", false, cm != 0)) g.compOp = "flip";
+            if (ImGui::MenuItemEx(tr("Alinear Normales"), kIconGutterText, "U~A", false, cm != 0)) g.compOp = "align";
+            if (ImGui::MenuItemEx(tr("Triangular"), kIconGutterText, nullptr, false, cm != 0)) g.compOp = "triang";
         }
         ImGui::EndMenu();
     }
-    stubTop("Fijación", {{"Activar Fijación", "Mayús+S"}, {nullptr, nullptr}, {"Fijación 2D", ""},
-                         {"Fijación 2.5D", ""}, {"Fijación 3D", ""}, {nullptr, nullptr}, {"Plano de Trabajo", ""}});
+    stubTop(tr("Fijación"), {{tr("Activar Fijación"), tr("Mayús+S")}, {nullptr, nullptr}, {tr("Fijación 2D"), ""},
+                         {tr("Fijación 2.5D"), ""}, {tr("Fijación 3D"), ""}, {nullptr, nullptr}, {tr("Plano de Trabajo"), ""}});
 
-    if (ImGui::BeginMenu("Animación")) {
-        if (iconMenuItem(Icon::Record, "Grabar Objetos Activos", "F9")) g.recordRequested = true;
-        iconMenuItem(Icon::AutoKey, "Fotogramas Clave Automáticos", "Ctrl+F9", &g.autoKey);
-        if (iconMenuItem(Icon::PrevKey, "Ir a la Clave Anterior", "Ctrl+F", false, !g.selKeys.empty())) jumpToKey(-1);
-        if (iconMenuItem(Icon::NextKey, "Ir a la Clave Siguiente", "Ctrl+G", false, !g.selKeys.empty())) jumpToKey(1);
-        if (ImGui::MenuItemEx("Editor de Curvas...", kIconGutterText, nullptr, g.showCurves)) g.showCurves = !g.showCurves;
-        if (ImGui::BeginMenu("Claves Seleccionadas", !g.keySel.empty())) {
+    if (ImGui::BeginMenu(tr("Animación"))) {
+        if (iconMenuItem(Icon::Record, tr("Grabar Objetos Activos"), "F9")) g.recordRequested = true;
+        iconMenuItem(Icon::AutoKey, tr("Fotogramas Clave Automáticos"), tr("Ctrl+F9"), &g.autoKey);
+        if (iconMenuItem(Icon::PrevKey, tr("Ir a la Clave Anterior"), tr("Ctrl+F"), false, !g.selKeys.empty())) jumpToKey(-1);
+        if (iconMenuItem(Icon::NextKey, tr("Ir a la Clave Siguiente"), tr("Ctrl+G"), false, !g.selKeys.empty())) jumpToKey(1);
+        if (ImGui::MenuItemEx(tr("Editor de Curvas..."), kIconGutterText, nullptr, g.showCurves)) g.showCurves = !g.showCurves;
+        if (ImGui::BeginMenu(tr("Claves Seleccionadas"), !g.keySel.empty())) {
             drawKeyMenuItems();
             ImGui::EndMenu();
         }
-        if (ImGui::MenuItemEx("Eliminar Animación del Objeto", kIconGutterText, nullptr, false, !g.selKeys.empty()))
+        if (ImGui::MenuItemEx(tr("Eliminar Animación del Objeto"), kIconGutterText, nullptr, false, !g.selKeys.empty()))
             g.pendingCmd = UiCmd::ClearAnimation;
         ImGui::Separator();
-        if (iconMenuItem(Icon::Play, "Reproducir Hacia Delante", "F8", g.playDir == 1)) g.playDir = g.playDir == 1 ? 0 : 1;
-        if (iconMenuItem(Icon::PlayBack, "Reproducir Hacia Atrás", "F6", g.playDir == -1)) g.playDir = g.playDir == -1 ? 0 : -1;
-        if (iconMenuItem(Icon::Pause, "Parar", "F7")) g.playDir = 0;
+        if (iconMenuItem(Icon::Play, tr("Reproducir Hacia Delante"), "F8", g.playDir == 1)) g.playDir = g.playDir == 1 ? 0 : 1;
+        if (iconMenuItem(Icon::PlayBack, tr("Reproducir Hacia Atrás"), "F6", g.playDir == -1)) g.playDir = g.playDir == -1 ? 0 : -1;
+        if (iconMenuItem(Icon::Pause, tr("Parar"), "F7")) g.playDir = 0;
         ImGui::Separator();
-        if (iconMenuItem(Icon::ToStart, "Ir al Inicio", "Mayús+F")) g.frame = (float)g.minFrame;
-        if (iconMenuItem(Icon::ToEnd, "Ir al Final", "Mayús+G")) g.frame = (float)g.maxFrame;
-        if (iconMenuItem(Icon::StepFwd, "Fotograma Siguiente", "G")) g.frame = std::min((float)g.maxFrame, std::floor(g.frame) + 1);
-        if (iconMenuItem(Icon::StepBack, "Fotograma Anterior", "F")) g.frame = std::max((float)g.minFrame, std::ceil(g.frame) - 1);
+        if (iconMenuItem(Icon::ToStart, tr("Ir al Inicio"), tr("Mayús+F"))) g.frame = (float)g.minFrame;
+        if (iconMenuItem(Icon::ToEnd, tr("Ir al Final"), tr("Mayús+G"))) g.frame = (float)g.maxFrame;
+        if (iconMenuItem(Icon::StepFwd, tr("Fotograma Siguiente"), "G")) g.frame = std::min((float)g.maxFrame, std::floor(g.frame) + 1);
+        if (iconMenuItem(Icon::StepBack, tr("Fotograma Anterior"), "F")) g.frame = std::max((float)g.minFrame, std::ceil(g.frame) - 1);
         ImGui::Separator();
-        iconMenuItem(Icon::MnuLoop, "Repetir (Loop)", nullptr, &g.loop);
+        iconMenuItem(Icon::MnuLoop, tr("Repetir (Loop)"), nullptr, &g.loop);
         ImGui::EndMenu();
     }
-    if (ImGui::BeginMenu("Personaje")) {
-        if (ImGui::MenuItem("Resolver IK (experimental)")) {
+    if (ImGui::BeginMenu(tr("Personaje"))) {
+        if (ImGui::MenuItem(tr("Resolver IK (experimental)"))) {
             history.commitBefore(root);
             const int n = solveAllIk(root);
-            flashStatus(n > 0 ? "IK: " + std::to_string(n) + " cadenas resueltas."
-                              : "IK: ninguna etiqueta IK activa con Punta y Objetivo alcanzables.");
+            flashStatus(n > 0 ? tr("IK: ") + std::to_string(n) + tr(" cadenas resueltas.")
+                              : tr("IK: ninguna etiqueta IK activa con Punta y Objetivo alcanzables."));
         }
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Mueve las articulaciones de cada etiqueta IK para que la punta llegue a su objetivo");
-        disabledItems({{"Articulación", ""}, {"Piel", ""}, {"Pesos", ""}, {"Restricción", ""}});
+            ImGui::SetTooltip(tr("Mueve las articulaciones de cada etiqueta IK para que la punta llegue a su objetivo"));
+        disabledItems({{tr("Articulación"), ""}, {tr("Piel"), ""}, {tr("Pesos"), ""}, {tr("Restricción"), ""}});
         ImGui::EndMenu();
     }
-    stubTop("Simulación", {{"Partículas", ""}, {"Thinking Particles", ""}, {"Dinámicas", ""}, {"Cloth", ""},
-                           {"Hair", ""}});
-    if (ImGui::BeginMenu("Render")) {
+    stubTop(tr("Simulación"), {{tr("Partículas"), ""}, {tr("Thinking Particles"), ""}, {tr("Dinámicas"), ""}, {tr("Cloth"), ""},
+                           {tr("Hair"), ""}});
+    if (ImGui::BeginMenu(tr("Render"))) {
         {
             bool g1 = false;
             const Icon iv = Icon::RenderView;
-            if (gearMenuItem(&iv, "Renderizar Vista Activa", "Ctrl+R", false, true, &g1)) vp.renderView = true;
+            if (gearMenuItem(&iv, tr("Renderizar Vista Activa"), tr("Ctrl+R"), false, true, &g1)) vp.renderView = true;
             if (g1) g.showRenderSettings = true;
         }
-        iconMenuItem(Icon::MnuRenderRegion, "Renderizar Región", "Alt+R", false, false);
-        ImGui::MenuItemEx("Renderizar Seleccionados en Visor de Imágenes", kIconGutterText, "", false, false);
+        iconMenuItem(Icon::MnuRenderRegion, tr("Renderizar Región"), tr("Alt+R"), false, false);
+        ImGui::MenuItemEx(tr("Renderizar Seleccionados en Visor de Imágenes"), kIconGutterText, "", false, false);
         {
             bool g2 = false;
             const Icon ip = Icon::RenderPicture;
-            if (gearMenuItem(&ip, "Renderizar en Visor de Imágenes", "Mayús+R", false, true, &g2)) g.renderRequested = true;
+            if (gearMenuItem(&ip, tr("Renderizar en Visor de Imágenes"), tr("Mayús+R"), false, true, &g2)) g.renderRequested = true;
             if (g2) g.showRenderSettings = true;
         }
-        iconMenuItem(Icon::MnuInteractiveRegion, "Región de Render Interactivo", "Alt+R", false, false);
-        iconMenuItem(Icon::MnuMakePreview, "Crear Previsualización...", "Alt+B", false, false);
+        iconMenuItem(Icon::MnuInteractiveRegion, tr("Región de Render Interactivo"), tr("Alt+R"), false, false);
+        iconMenuItem(Icon::MnuMakePreview, tr("Crear Previsualización..."), tr("Alt+B"), false, false);
         ImGui::Separator();
-        ImGui::MenuItemEx("Añadir a la Cola de Render...", kIconGutterText, "", false, false);
-        iconMenuItem(Icon::MnuRenderQueue, "Cola de Render...", "", false, false);
+        ImGui::MenuItemEx(tr("Añadir a la Cola de Render..."), kIconGutterText, "", false, false);
+        iconMenuItem(Icon::MnuRenderQueue, tr("Cola de Render..."), "", false, false);
         ImGui::Separator();
-        if (iconMenuItem(Icon::RenderSettings, "Editar Configuración de Render...", "Ctrl+B")) g.showRenderSettings = true;
-        if (iconMenuItem(Icon::MnuPictureViewer, "Visor de Imágenes...", "")) g.showPictureViewer = true;
+        if (iconMenuItem(Icon::RenderSettings, tr("Editar Configuración de Render..."), tr("Ctrl+B"))) g.showRenderSettings = true;
+        if (iconMenuItem(Icon::MnuPictureViewer, tr("Visor de Imágenes..."), "")) g.showPictureViewer = true;
         ImGui::EndMenu();
     }
-    stubTop("Esculpir", {{"Subdividir", ""}, {"Reducir", ""}, {nullptr, nullptr}, {"Tirar", ""}, {"Suavizar", ""},
-                         {"Inflar", ""}, {"Aplanar", ""}, {"Pellizcar", ""}, {"Amasar", ""}});
-    stubTop("Motion Tracker", {{"Motion Tracker", ""}, {"Rastreador de Objetos", ""}});
-    stubTop("MoGraph", {{"Ocultar Seleccionado", ""}, {"Intercambiar Clonador-Matriz", ""}, {"Selección MoGraph", ""},
-                        {"Pincel Pesos MoGraph", ""}, {nullptr, nullptr}, {"Clonador", ""}, {"Matriz", ""},
-                        {"Fractura", ""}, {"Fractura Voronoi", ""}, {"MoText", ""}, {"PolyFX", ""}});
-    stubTop("Character", {{"Junta", ""}, {"Herramienta de Junta", ""}, {"Pintar Pesos", ""}, {"Etiqueta IK", ""},
-                          {"Construcción de Personaje", ""}});
-    stubTop("Línea de Trabajo", {{"Sketch and Toon", ""}, {"Hair", ""}});
-    stubTop("Plugins", {{"Ningún plugin cargado", ""}, {nullptr, nullptr}, {"Buscar Plugins...", ""}});
-    stubTop("Script", {{"Gestor de Scripts...", ""}, {"Consola...", "Mayús+F10"}, {nullptr, nullptr},
-                       {"Ejecutar Script...", ""}});
+    stubTop(tr("Esculpir"), {{tr("Subdividir"), ""}, {tr("Reducir"), ""}, {nullptr, nullptr}, {tr("Tirar"), ""}, {tr("Suavizar"), ""},
+                         {tr("Inflar"), ""}, {tr("Aplanar"), ""}, {tr("Pellizcar"), ""}, {tr("Amasar"), ""}});
+    stubTop(tr("Motion Tracker"), {{tr("Motion Tracker"), ""}, {tr("Rastreador de Objetos"), ""}});
+    stubTop(tr("MoGraph"), {{tr("Ocultar Seleccionado"), ""}, {tr("Intercambiar Clonador-Matriz"), ""}, {tr("Selección MoGraph"), ""},
+                        {tr("Pincel Pesos MoGraph"), ""}, {nullptr, nullptr}, {tr("Clonador"), ""}, {tr("Matriz"), ""},
+                        {tr("Fractura"), ""}, {tr("Fractura Voronoi"), ""}, {tr("MoText"), ""}, {tr("PolyFX"), ""}});
+    stubTop(tr("Character"), {{tr("Junta"), ""}, {tr("Herramienta de Junta"), ""}, {tr("Pintar Pesos"), ""}, {tr("Etiqueta IK"), ""},
+                          {tr("Construcción de Personaje"), ""}});
+    stubTop(tr("Línea de Trabajo"), {{tr("Sketch and Toon"), ""}, {tr("Hair"), ""}});
+    stubTop(tr("Plugins"), {{tr("Ningún plugin cargado"), ""}, {nullptr, nullptr}, {tr("Buscar Plugins..."), ""}});
+    stubTop(tr("Script"), {{tr("Gestor de Scripts..."), ""}, {tr("Consola..."), tr("Mayús+F10")}, {nullptr, nullptr},
+                       {tr("Ejecutar Script..."), ""}});
 
-    if (ImGui::BeginMenu("Ventana")) {
+    if (ImGui::BeginMenu(tr("Ventana"))) {
         // Los nombres siguen al preset (Esquema / Outliner / Scene Explorer...).
         const PanelNames& n = names();
-        if (iconMenuItem(Icon::MnuObjManager, n.objects, "Mayús+F1", !g.browserOpen)) g.browserOpen = false;
-        iconMenuItem(Icon::MnuMatManager, n.materials, "Mayús+F2", true, false);
-        iconMenuItem(Icon::MnuTimeline, n.timeline, "Mayús+F3", true, false);
-        iconMenuItem(Icon::MnuAttributes, n.attributes, "Mayús+F5", true, false);
-        iconMenuItem(Icon::MnuCoords, n.coords, "Mayús+F7", true, false);
+        if (iconMenuItem(Icon::MnuObjManager, n.objects, tr("Mayús+F1"), !g.browserOpen)) g.browserOpen = false;
+        iconMenuItem(Icon::MnuMatManager, n.materials, tr("Mayús+F2"), true, false);
+        iconMenuItem(Icon::MnuTimeline, tr(n.timeline), tr("Mayús+F3"), true, false);
+        iconMenuItem(Icon::MnuAttributes, n.attributes, tr("Mayús+F5"), true, false);
+        iconMenuItem(Icon::MnuCoords, n.coords, tr("Mayús+F7"), true, false);
         ImGui::Separator();
-        if (iconMenuItem(Icon::MnuMatEditor, "Editor de Material...", nullptr, g.showMatEditor)) g.showMatEditor = !g.showMatEditor;
-        if (iconMenuItem(Icon::MnuContentBrowser, "Navegador de Contenido", "Mayús+F8", g.browserOpen))
+        if (iconMenuItem(Icon::MnuMatEditor, tr("Editor de Material..."), nullptr, g.showMatEditor)) g.showMatEditor = !g.showMatEditor;
+        if (iconMenuItem(Icon::MnuContentBrowser, tr("Navegador de Contenido"), tr("Mayús+F8"), g.browserOpen))
             g.browserOpen = !g.browserOpen;
-        iconMenuItem(Icon::MnuLayers, "Gestor de Capas", "Mayús+F4", false, false);
+        iconMenuItem(Icon::MnuLayers, tr("Gestor de Capas"), tr("Mayús+F4"), false, false);
         ImGui::EndMenu();
     }
-    if (ImGui::BeginMenu("Ayuda")) {
-        iconMenuItem(Icon::MnuHelp, "Mostrar Ayuda...", "F1", false, false);
+    if (ImGui::BeginMenu(tr("Ayuda"))) {
+        iconMenuItem(Icon::MnuHelp, tr("Mostrar Ayuda..."), "F1", false, false);
         ImGui::Separator();
-        if (iconMenuItem(Icon::MnuAbout, "Acerca de Iron3D Studio...")) g.showAbout = true;
+        if (iconMenuItem(Icon::MnuAbout, tr("Acerca de Iron3D Studio..."))) g.showAbout = true;
         ImGui::EndMenu();
     }
 
     // Selector de "Entorno" a la derecha (seccion 13): de momento solo el de
     // Arranque existe en Iron3D. La etiqueta sigue al preset ("Espacio de
     // trabajo:" en Blender, "Workspace:" en Maya...).
-    static const char* kLayoutsC4D[] = {"Arranque", "Animar", "Modelado", "BP - UV Edit", "Esculpir", "Visualizar"};
-    static const char* kLayoutsBlender[] = {"Layout", "Modeling", "Sculpting", "UV Editing", "Texture Paint", "Animation"};
+    static const char* kLayoutsC4D[] = {tr("Arranque"), tr("Animar"), tr("Modelado"), tr("BP - UV Edit"), tr("Esculpir"), tr("Visualizar")};
+    static const char* kLayoutsBlender[] = {tr("Layout"), tr("Modeling"), tr("Sculpting"), tr("UV Editing"), tr("Texture Paint"), tr("Animation")};
     const char* const* kLayouts = g_preset.layout.arrangement == Arrangement::Blender ? kLayoutsBlender : kLayoutsC4D;
-    const char* layoutLabel = names().layoutLabel;
+    const char* layoutLabel = tr(names().layoutLabel);
     const float comboW = 140.0f;
     const float labelW = ImGui::CalcTextSize(layoutLabel).x;
     ImGui::SameLine(ImGui::GetWindowWidth() - comboW - labelW - 24.0f);
@@ -2670,30 +2671,30 @@ void drawTopToolbar(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scen
     const float b = size.y - 6.0f;
 
     const bool couldUndo = history.canUndo();
-    if (iconButton("undo", Icon::Undo, b, false, couldUndo, "Deshacer [Ctrl+Z]", "Deshacer la última acción.") == BtnResult::Click)
+    if (iconButton("undo", Icon::Undo, b, false, couldUndo, tr("Deshacer [Ctrl+Z]"), tr("Deshacer la última acción.")) == BtnResult::Click)
         if (history.undo(root)) selected = nullptr;
     ImGui::SameLine();
     const bool couldRedo = history.canRedo();
-    if (iconButton("redo", Icon::Redo, b, false, couldRedo, "Rehacer [Ctrl+Y]", "Rehacer la última acción deshecha.") == BtnResult::Click)
+    if (iconButton("redo", Icon::Redo, b, false, couldRedo, tr("Rehacer [Ctrl+Y]"), tr("Rehacer la última acción deshecha.")) == BtnResult::Click)
         if (history.redo(root)) selected = nullptr;
     ImGui::SameLine();
     toolbarSeparator(true, b);
     ImGui::SameLine();
 
-    if (iconButton("live", Icon::LiveSelect, b, vp.selectTool, true, "Selección en Vivo [Atajo de Teclado 9]",
-                   "Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.") == BtnResult::Click) {
+    if (iconButton("live", Icon::LiveSelect, b, vp.selectTool, true, tr("Selección en Vivo [Atajo de Teclado 9]"),
+                   tr("Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.")) == BtnResult::Click) {
         vp.selectTool = true;
         vp.selectShape = 0;
     }
     ImGui::SameLine();
     struct ToolDef { const char* id; Icon icon; GizmoMode m; const char* tip; const char* hint; };
     const ToolDef tools[] = {
-        {"move", Icon::Move, GizmoMode::Translate, "Herramienta de Mover [Atajo de Teclado E]",
-         "Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar."},
-        {"scale", Icon::Scale, GizmoMode::Scale, "Herramienta de Escalar [Atajo de Teclado T]",
-         "Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar."},
-        {"rotate", Icon::Rotate, GizmoMode::Rotate, "Herramienta de Rotar [Atajo de Teclado R]",
-         "Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar."},
+        {"move", Icon::Move, GizmoMode::Translate, tr("Herramienta de Mover [Atajo de Teclado E]"),
+         tr("Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.")},
+        {"scale", Icon::Scale, GizmoMode::Scale, tr("Herramienta de Escalar [Atajo de Teclado T]"),
+         tr("Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.")},
+        {"rotate", Icon::Rotate, GizmoMode::Rotate, tr("Herramienta de Rotar [Atajo de Teclado R]"),
+         tr("Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.")},
     };
     for (const auto& t : tools) {
         if (iconButton(t.id, t.icon, b, !vp.selectTool && mode == t.m, true, t.tip, t.hint) == BtnResult::Click) {
@@ -2707,33 +2708,33 @@ void drawTopToolbar(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scen
 
     // Bloqueo de ejes y sistema de coordenadas: activos por defecto en C4D,
     // todavia sin efecto en el gizmo de Iron3D.
-    iconButton("ax", Icon::AxisX, b, true, false, "Eje X / Encabezado [X]\n(todavía no implementado)", "Bloqueo de eje X: todavía no implementado.");
+    iconButton("ax", Icon::AxisX, b, true, false, tr("Eje X / Encabezado [X]\n(todavía no implementado)"), tr("Bloqueo de eje X: todavía no implementado."));
     ImGui::SameLine();
-    iconButton("ay", Icon::AxisY, b, true, false, "Eje Y / Inclinación [Y]\n(todavía no implementado)", "Bloqueo de eje Y: todavía no implementado.");
+    iconButton("ay", Icon::AxisY, b, true, false, tr("Eje Y / Inclinación [Y]\n(todavía no implementado)"), tr("Bloqueo de eje Y: todavía no implementado."));
     ImGui::SameLine();
-    iconButton("az", Icon::AxisZ, b, true, false, "Eje Z / Alabeo [Z]\n(todavía no implementado)", "Bloqueo de eje Z: todavía no implementado.");
+    iconButton("az", Icon::AxisZ, b, true, false, tr("Eje Z / Alabeo [Z]\n(todavía no implementado)"), tr("Bloqueo de eje Z: todavía no implementado."));
     ImGui::SameLine();
     if (iconButton("coord", Icon::CoordSystem, b, vp.worldCoords, true,
-                   vp.worldCoords ? "Usar Sistema de Coordenadas de Objeto [W]\n(ahora: Mundo)"
-                                  : "Usar Sistema de Coordenadas de Mundo [W]\n(ahora: Objeto)",
-                   "Cambia los ejes del gizmo entre los del objeto y los del mundo.") == BtnResult::Click)
+                   vp.worldCoords ? tr("Usar Sistema de Coordenadas de Objeto [W]\n(ahora: Mundo)")
+                                  : tr("Usar Sistema de Coordenadas de Mundo [W]\n(ahora: Objeto)"),
+                   tr("Cambia los ejes del gizmo entre los del objeto y los del mundo.")) == BtnResult::Click)
         vp.worldCoords = !vp.worldCoords;
     ImGui::SameLine();
     toolbarSeparator(true, b);
     ImGui::SameLine();
 
     if (iconButton("rview", Icon::RenderView, b, false, true,
-                   "Renderizar Vista Activa\nRenderiza la vista activa en el propio visor.\n[Atajo de Teclado Ctrl+R]",
-                   "Renderiza la vista activa en el propio visor.") == BtnResult::Click)
+                   tr("Renderizar Vista Activa\nRenderiza la vista activa en el propio visor.\n[Atajo de Teclado Ctrl+R]"),
+                   tr("Renderiza la vista activa en el propio visor.")) == BtnResult::Click)
         vp.renderView = true;
     ImGui::SameLine();
     if (iconButton("rpv", Icon::RenderPicture, b, false, true,
-                   "Renderizar en Visor de Imágenes [Mayús+R]\nRenderiza la cámara activa con la Configuración de Render.",
-                   "Renderiza la cámara activa en el Visor de Imágenes.") == BtnResult::Click)
+                   tr("Renderizar en Visor de Imágenes [Mayús+R]\nRenderiza la cámara activa con la Configuración de Render."),
+                   tr("Renderiza la cámara activa en el Visor de Imágenes.")) == BtnResult::Click)
         g.renderRequested = true;
     ImGui::SameLine();
-    if (iconButton("rset", Icon::RenderSettings, b, g.showRenderSettings, true, "Editar Configuración de Render... [Ctrl+B]",
-                   "Resolución, antialiasing y fondo del render.") == BtnResult::Click)
+    if (iconButton("rset", Icon::RenderSettings, b, g.showRenderSettings, true, tr("Editar Configuración de Render... [Ctrl+B]"),
+                   tr("Resolución, antialiasing y fondo del render.")) == BtnResult::Click)
         g.showRenderSettings = !g.showRenderSettings;
     ImGui::SameLine();
     toolbarSeparator(true, b);
@@ -2743,25 +2744,25 @@ void drawTopToolbar(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scen
                       PrimitiveType defType; bool defOk; const char* tip; };
     const GroupDef groups[] = {
         {"gcube", Icon::Cube, "##palPrim", kPrimitives, countOf(kPrimitives), 4, PrimitiveType::Cube, true,
-         "Cubo  (mantener pulsado: más objetos)"},
+         tr("Cubo  (mantener pulsado: más objetos)")},
         {"gspline", Icon::Spline, "##palSpline", kSplines, countOf(kSplines), 3, PrimitiveType::None, false,
-         "Lápiz  (mantener pulsado: más splines)"},
+         tr("Lápiz  (mantener pulsado: más splines)")},
         {"gnurbs", Icon::Nurbs, "##palGen", kGenerators, countOf(kGenerators), 2, PrimitiveType::None, false,
-         "Subdivisión Superficie  (mantener pulsado: generadores)"},
+         tr("Subdivisión Superficie  (mantener pulsado: generadores)")},
         {"gmodel", Icon::ModArray, "##palModel", kModeling, countOf(kModeling), 2, PrimitiveType::None, false,
-         "Matriz  (mantener pulsado: modelado)"},
+         tr("Matriz  (mantener pulsado: modelado)")},
         {"gdeform", Icon::Deformer, "##palDef", kDeformers, countOf(kDeformers), 4, PrimitiveType::None, false,
-         "Doblar  (mantener pulsado: deformadores)"},
+         tr("Doblar  (mantener pulsado: deformadores)")},
         {"gscene", Icon::Floor, "##palScene", kScene, countOf(kScene), 3, PrimitiveType::None, false,
-         "Suelo  (mantener pulsado: escena)"},
+         tr("Suelo  (mantener pulsado: escena)")},
         {"gcam", Icon::Camera, "##palCam", kCameras, countOf(kCameras), 1, PrimitiveType::None, false,
-         "Cámara  (mantener pulsado: más cámaras)"},
+         tr("Cámara  (mantener pulsado: más cámaras)")},
         {"glight", Icon::Light, "##palLight", kLights, countOf(kLights), 3, PrimitiveType::Light, true,
-         "Luz  (mantener pulsado: más luces)"},
+         tr("Luz  (mantener pulsado: más luces)")},
     };
     for (const auto& gr : groups) {
         const BtnResult r = iconButton(gr.id, gr.icon, b, false, true, gr.tip,
-                                       "Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado.",
+                                       tr("Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado."),
                                        true);
         const ImVec2 under(ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y + 2);
         if (r == BtnResult::Click) {
@@ -2785,38 +2786,38 @@ void drawLeftToolbar(ImVec2 pos, ImVec2 size) {
     beginPanel("##lefttoolbar", pos, size, ImGuiWindowFlags_NoScrollbar);
     const float b = size.x - 6.0f;
     if (iconButton("mkedit", Icon::MakeEditable, b, false, true,
-                   "Hacer Editable [C]\nConvierte Cubo, Esfera o Plano en un Objeto Poligonal.",
-                   "Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.") ==
+                   tr("Hacer Editable [C]\nConvierte Cubo, Esfera o Plano en un Objeto Poligonal."),
+                   tr("Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.")) ==
         BtnResult::Click)
         g.pendingCmd = UiCmd::MakeEditable;
     toolbarSeparator(false, b);
     const int cm = g_vp ? g_vp->compMode : 0;
-    if (iconButton("model", Icon::ModelMode, b, cm == 0, true, "Usar Modo Modelo", "Modo Modelo: se editan objetos enteros.") ==
+    if (iconButton("model", Icon::ModelMode, b, cm == 0, true, tr("Usar Modo Modelo"), tr("Modo Modelo: se editan objetos enteros.")) ==
             BtnResult::Click && g_vp)
         g_vp->compMode = 0;
-    iconButton("texmode", Icon::TextureMode, b, false, false, "Usar Modo Textura\n(todavía no implementado)", "Modo Textura: todavía no implementado.");
-    if (iconButton("axmode", Icon::AxisMode, b, g_vp && g_vp->axisMode, g_vp != nullptr, "Activar Eje [L]",
-                   "Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.") ==
+    iconButton("texmode", Icon::TextureMode, b, false, false, tr("Usar Modo Textura\n(todavía no implementado)"), tr("Modo Textura: todavía no implementado."));
+    if (iconButton("axmode", Icon::AxisMode, b, g_vp && g_vp->axisMode, g_vp != nullptr, tr("Activar Eje [L]"),
+                   tr("Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.")) ==
             BtnResult::Click &&
         g_vp)
         g_vp->axisMode = !g_vp->axisMode;
     toolbarSeparator(false, b);
-    if (iconButton("pts", Icon::Points, b, cm == 1, true, "Usar Modo Puntos",
-                   "Modo Puntos: elige y mueve puntos de un objeto editable (C para hacerlo editable).") == BtnResult::Click && g_vp)
+    if (iconButton("pts", Icon::Points, b, cm == 1, true, tr("Usar Modo Puntos"),
+                   tr("Modo Puntos: elige y mueve puntos de un objeto editable (C para hacerlo editable).")) == BtnResult::Click && g_vp)
         g_vp->compMode = 1;
-    if (iconButton("edg", Icon::Edges, b, cm == 2, true, "Usar Modo Aristas",
-                   "Modo Aristas: elige y mueve aristas de un objeto editable.") == BtnResult::Click && g_vp)
+    if (iconButton("edg", Icon::Edges, b, cm == 2, true, tr("Usar Modo Aristas"),
+                   tr("Modo Aristas: elige y mueve aristas de un objeto editable.")) == BtnResult::Click && g_vp)
         g_vp->compMode = 2;
-    if (iconButton("pol", Icon::Polygons, b, cm == 3, true, "Usar Modo Polígonos",
-                   "Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.") == BtnResult::Click && g_vp)
+    if (iconButton("pol", Icon::Polygons, b, cm == 3, true, tr("Usar Modo Polígonos"),
+                   tr("Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.")) == BtnResult::Click && g_vp)
         g_vp->compMode = 3;
     toolbarSeparator(false, b);
-    iconButton("tweak", Icon::Tweak, b, false, false, "Modo Ajuste\n(todavía no implementado)", "Modo Ajuste: todavía no implementado.");
-    iconButton("solo", Icon::Solo, b, false, false, "Vista Solo\n(todavía no implementado)", "Vista Solo: todavía no implementado.");
+    iconButton("tweak", Icon::Tweak, b, false, false, tr("Modo Ajuste\n(todavía no implementado)"), tr("Modo Ajuste: todavía no implementado."));
+    iconButton("solo", Icon::Solo, b, false, false, tr("Vista Solo\n(todavía no implementado)"), tr("Vista Solo: todavía no implementado."));
     toolbarSeparator(false, b);
-    iconButton("snap", Icon::Snap, b, false, false, "Activar Fijación [Mayús+S]\n(todavía no implementado)", "Fijación: todavía no implementado.");
-    iconButton("wplane", Icon::Workplane, b, false, false, "Plano de Trabajo\n(todavía no implementado)", "Plano de Trabajo: todavía no implementado.");
-    iconButton("wlock", Icon::Locked, b, false, false, "Bloquear Plano de Trabajo\n(todavía no implementado)", "Bloquear Plano de Trabajo: todavía no implementado.");
+    iconButton("snap", Icon::Snap, b, false, false, tr("Activar Fijación [Mayús+S]\n(todavía no implementado)"), tr("Fijación: todavía no implementado."));
+    iconButton("wplane", Icon::Workplane, b, false, false, tr("Plano de Trabajo\n(todavía no implementado)"), tr("Plano de Trabajo: todavía no implementado."));
+    iconButton("wlock", Icon::Locked, b, false, false, tr("Bloquear Plano de Trabajo\n(todavía no implementado)"), tr("Bloquear Plano de Trabajo: todavía no implementado."));
     ImGui::End();
     ImGui::PopStyleVar(2);
 }
@@ -2827,96 +2828,96 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
                         ImVec2 pos, ImVec2 size) {
     beginPanel("##vpheader", pos, size, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar);
     if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("Vista")) {
-            ImGui::MenuItem("Usar como Cámara de Render", nullptr, false, false);
+        if (ImGui::BeginMenu(tr("Vista"))) {
+            ImGui::MenuItem(tr("Usar como Cámara de Render"), nullptr, false, false);
             ImGui::Separator();
-            disabledItems({{"Deshacer Vista", "Ctrl+Mayús+Z"}, {"Rehacer Vista", "Ctrl+Mayús+Y"}, {nullptr, nullptr}});
-            if (ImGui::MenuItem("Encuadrar Todo", "Alt+H")) frameNodes(camera, root, false);
-            if (ImGui::MenuItem("Encuadrar Geometría", "H")) frameNodes(camera, root, false);
-            if (ImGui::MenuItem("Encuadrar Elementos Activos", "O", false, selected != nullptr))
+            disabledItems({{tr("Deshacer Vista"), tr("Ctrl+Mayús+Z")}, {tr("Rehacer Vista"), tr("Ctrl+Mayús+Y")}, {nullptr, nullptr}});
+            if (ImGui::MenuItem(tr("Encuadrar Todo"), tr("Alt+H"))) frameNodes(camera, root, false);
+            if (ImGui::MenuItem(tr("Encuadrar Geometría"), "H")) frameNodes(camera, root, false);
+            if (ImGui::MenuItem(tr("Encuadrar Elementos Activos"), "O", false, selected != nullptr))
                 frameNodes(camera, *selected, true);
-            if (ImGui::MenuItem("Encuadre por Defecto", "Mayús+H")) camera.resetView();
+            if (ImGui::MenuItem(tr("Encuadre por Defecto"), tr("Mayús+H"))) camera.resetView();
             ImGui::Separator();
-            ImGui::MenuItem("Redibujar", "A", false, false);
+            ImGui::MenuItem(tr("Redibujar"), "A", false, false);
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Cámaras")) {
-            ImGui::BeginMenu("Navegación", false);
-            if (ImGui::BeginMenu("Usar Cámara")) {
-                ImGui::MenuItem("Cámara del Editor", nullptr, true);
+        if (ImGui::BeginMenu(tr("Cámaras"))) {
+            ImGui::BeginMenu(tr("Navegación"), false);
+            if (ImGui::BeginMenu(tr("Usar Cámara"))) {
+                ImGui::MenuItem(tr("Cámara del Editor"), nullptr, true);
                 ImGui::EndMenu();
             }
             ImGui::Separator();
             using CV = OrbitalCamera::View;
             const CV cv = camera.view();
-            if (ImGui::MenuItem("Perspectiva", nullptr, cv == CV::Perspective)) selectView(camera, CV::Perspective);
-            ImGui::MenuItem("Paralela", nullptr, false, false);
-            if (ImGui::MenuItem("Izquierda", nullptr, cv == CV::Left)) selectView(camera, CV::Left);
-            if (ImGui::MenuItem("Derecha", nullptr, cv == CV::Right)) selectView(camera, CV::Right);
-            if (ImGui::MenuItem("Frontal", nullptr, cv == CV::Front)) selectView(camera, CV::Front);
-            if (ImGui::MenuItem("Trasera", nullptr, cv == CV::Back)) selectView(camera, CV::Back);
-            if (ImGui::MenuItem("Superior", nullptr, cv == CV::Top)) selectView(camera, CV::Top);
-            if (ImGui::MenuItem("Inferior", nullptr, cv == CV::Bottom)) selectView(camera, CV::Bottom);
-            disabledItems({{nullptr, nullptr}, {"Axonométrica", ""}});
+            if (ImGui::MenuItem(tr("Perspectiva"), nullptr, cv == CV::Perspective)) selectView(camera, CV::Perspective);
+            ImGui::MenuItem(tr("Paralela"), nullptr, false, false);
+            if (ImGui::MenuItem(tr("Izquierda"), nullptr, cv == CV::Left)) selectView(camera, CV::Left);
+            if (ImGui::MenuItem(tr("Derecha"), nullptr, cv == CV::Right)) selectView(camera, CV::Right);
+            if (ImGui::MenuItem(tr("Frontal"), nullptr, cv == CV::Front)) selectView(camera, CV::Front);
+            if (ImGui::MenuItem(tr("Trasera"), nullptr, cv == CV::Back)) selectView(camera, CV::Back);
+            if (ImGui::MenuItem(tr("Superior"), nullptr, cv == CV::Top)) selectView(camera, CV::Top);
+            if (ImGui::MenuItem(tr("Inferior"), nullptr, cv == CV::Bottom)) selectView(camera, CV::Bottom);
+            disabledItems({{nullptr, nullptr}, {tr("Axonométrica"), ""}});
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Mostrar")) {
-            ImGui::MenuItem("Sombreado Gouraud", "N~A", true);
-            disabledItems({{"Sombreado Gouraud (Líneas)", "N~B"}, {"Sombreado Rápido", "N~C"},
-                           {"Sombreado Rápido (Líneas)", "N~D"}, {"Sombreado Constante", "N~E"},
-                           {"Sombreado Constante (Líneas)", "N~F"}, {"Líneas Ocultas", "N~G"}, {"Líneas", "N~H"},
-                           {nullptr, nullptr}, {"Alambre", "N~I"}, {"Isoparms", "N~J"}, {"Caja", "N~K"},
-                           {"Esqueleto", "N~L"}});
+        if (ImGui::BeginMenu(tr("Mostrar"))) {
+            ImGui::MenuItem(tr("Sombreado Gouraud"), "N~A", true);
+            disabledItems({{tr("Sombreado Gouraud (Líneas)"), "N~B"}, {tr("Sombreado Rápido"), "N~C"},
+                           {tr("Sombreado Rápido (Líneas)"), "N~D"}, {tr("Sombreado Constante"), "N~E"},
+                           {tr("Sombreado Constante (Líneas)"), "N~F"}, {tr("Líneas Ocultas"), "N~G"}, {tr("Líneas"), "N~H"},
+                           {nullptr, nullptr}, {tr("Alambre"), "N~I"}, {tr("Isoparms"), "N~J"}, {tr("Caja"), "N~K"},
+                           {tr("Esqueleto"), "N~L"}});
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Opciones")) {
-            ImGui::BeginMenu("Nivel de Detalle", false);
-            disabledItems({{nullptr, nullptr}, {"Estereoscópico", ""}, {"Sombreado de Flujo de Trabajo Lineal", ""},
-                           {nullptr, nullptr}, {"OpenGL Mejorado", ""}, {"Ruidos", ""}, {"Post Efectos", ""},
-                           {"Sombras", ""}, {"Transparencia", ""}, {"Reflexiones", ""}, {"SSAO", ""},
-                           {"Teselación", ""}, {"Profundidad de Campo", ""}, {nullptr, nullptr},
-                           {"Ocultar Caras Posteriores", "N~P"}, {"Usar Edición de Isolíneas", "Alt+A"},
-                           {"Color de Capa", ""}, {"Normales de Polígonos", ""}, {"Normales de Vértices", ""},
-                           {nullptr, nullptr}, {"Etiquetas", "N~O"}, {"Texturas", "N~Q"}, {"Rayos X", "N~R"},
-                           {nullptr, nullptr}, {"Luz por Defecto...", ""}, {"Configurar...", "Mayús+V"},
-                           {"Configurar Todo...", "Alt+V"}});
+        if (ImGui::BeginMenu(tr("Opciones"))) {
+            ImGui::BeginMenu(tr("Nivel de Detalle"), false);
+            disabledItems({{nullptr, nullptr}, {tr("Estereoscópico"), ""}, {tr("Sombreado de Flujo de Trabajo Lineal"), ""},
+                           {nullptr, nullptr}, {tr("OpenGL Mejorado"), ""}, {tr("Ruidos"), ""}, {tr("Post Efectos"), ""},
+                           {tr("Sombras"), ""}, {tr("Transparencia"), ""}, {tr("Reflexiones"), ""}, {tr("SSAO"), ""},
+                           {tr("Teselación"), ""}, {tr("Profundidad de Campo"), ""}, {nullptr, nullptr},
+                           {tr("Ocultar Caras Posteriores"), "N~P"}, {tr("Usar Edición de Isolíneas"), tr("Alt+A")},
+                           {tr("Color de Capa"), ""}, {tr("Normales de Polígonos"), ""}, {tr("Normales de Vértices"), ""},
+                           {nullptr, nullptr}, {tr("Etiquetas"), "N~O"}, {tr("Texturas"), "N~Q"}, {tr("Rayos X"), "N~R"},
+                           {nullptr, nullptr}, {tr("Luz por Defecto..."), ""}, {tr("Configurar..."), tr("Mayús+V")},
+                           {tr("Configurar Todo..."), tr("Alt+V")}});
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Filtrar")) {
-            ImGui::MenuItem("Cuadrícula", nullptr, &vp.showGrid);
+        if (ImGui::BeginMenu(tr("Filtrar"))) {
+            ImGui::MenuItem(tr("Cuadrícula"), nullptr, &vp.showGrid);
             ImGui::Separator();
             // El resto de filtros todavia no tienen efecto: se ven activos
             // (como en C4D por defecto) pero no se pueden cambiar.
-            for (const char* f : {"Nulo", "Polígono", "Spline", "Generador", "Subdivisión Superficie", "Deformador",
-                                  "Cámara", "Luz", "Entorno", "Partícula", "Otro"})
+            for (const char* f : {tr("Nulo"), tr("Polígono"), tr("Spline"), tr("Generador"), tr("Subdivisión Superficie"), tr("Deformador"),
+                                  tr("Cámara"), tr("Luz"), tr("Entorno"), tr("Partícula"), tr("Otro")})
                 ImGui::MenuItem(f, nullptr, true, false);
             ImGui::Separator();
-            for (const char* f : {"Horizonte", "Ejes Globales", "Cajas Delimitadoras", "HUD", "Resaltar Componente",
-                                  "Ejes", "Guías", "Resaltar Objeto", "Cruz Navegación"})
+            for (const char* f : {tr("Horizonte"), tr("Ejes Globales"), tr("Cajas Delimitadoras"), tr("HUD"), tr("Resaltar Componente"),
+                                  tr("Ejes"), tr("Guías"), tr("Resaltar Objeto"), tr("Cruz Navegación")})
                 ImGui::MenuItem(f, nullptr, true, false);
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Paneles")) {
-            if (ImGui::BeginMenu("Disposición")) {
-                if (ImGui::MenuItem("Vista Simple", nullptr, !vp.quad) && vp.quad)
+        if (ImGui::BeginMenu(tr("Paneles"))) {
+            if (ImGui::BeginMenu(tr("Disposición"))) {
+                if (ImGui::MenuItem(tr("Vista Simple"), nullptr, !vp.quad) && vp.quad)
                     exitQuad(camera, vp, camera.view());
-                disabledItems({{"2 Vistas Apiladas", ""}, {"2 Vistas Lado a Lado", ""}});
-                if (ImGui::MenuItem("4 Vistas", nullptr, vp.quad) && !vp.quad) enterQuad(camera, vp);
+                disabledItems({{tr("2 Vistas Apiladas"), ""}, {tr("2 Vistas Lado a Lado"), ""}});
+                if (ImGui::MenuItem(tr("4 Vistas"), nullptr, vp.quad) && !vp.quad) enterQuad(camera, vp);
                 ImGui::EndMenu();
             }
             ImGui::Separator();
             {
                 using CV = OrbitalCamera::View;
                 const CV cv = camera.view();
-                if (ImGui::MenuItem("Vista 1 (Perspectiva)", "F1", cv == CV::Perspective)) selectView(camera, CV::Perspective);
-                if (ImGui::MenuItem("Vista 2 (Superior)", "F2", cv == CV::Top)) camera.setView(CV::Top);
-                if (ImGui::MenuItem("Vista 3 (Derecha)", "F3", cv == CV::Right)) camera.setView(CV::Right);
-                if (ImGui::MenuItem("Vista 4 (Frontal)", "F4", cv == CV::Front)) selectView(camera, CV::Front);
-                if (ImGui::MenuItem("Todas las Vistas", "F5", vp.quad)) toggleQuad(camera);
+                if (ImGui::MenuItem(tr("Vista 1 (Perspectiva)"), "F1", cv == CV::Perspective)) selectView(camera, CV::Perspective);
+                if (ImGui::MenuItem(tr("Vista 2 (Superior)"), "F2", cv == CV::Top)) camera.setView(CV::Top);
+                if (ImGui::MenuItem(tr("Vista 3 (Derecha)"), "F3", cv == CV::Right)) camera.setView(CV::Right);
+                if (ImGui::MenuItem(tr("Vista 4 (Frontal)"), "F4", cv == CV::Front)) selectView(camera, CV::Front);
+                if (ImGui::MenuItem(tr("Todas las Vistas"), "F5", vp.quad)) toggleQuad(camera);
             }
             ImGui::EndMenu();
         }
-        ImGui::BeginMenu("ProRender", false);
+        ImGui::BeginMenu(tr("ProRender"), false);
 
         // Iconos de navegacion de la esquina: arrastrar sobre ellos mueve la
         // camara igual que Alt+clic (como en C4D).
@@ -2925,13 +2926,13 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
         ImGuiIO& io = ImGui::GetIO();
         struct NavDef { const char* id; Icon icon; int op; const char* tip; };
         const NavDef navs[] = {
-            {"npan", Icon::NavPan, 0, "Mover Cámara (arrastrar)"},
-            {"nzoom", Icon::NavZoom, 1, "Zoom de Cámara (arrastrar)"},
-            {"nrot", Icon::NavRotate, 2, "Rotar Cámara (arrastrar)"},
-            {"nlay", Icon::NavLayout, 3, "Cambiar Vista (todavía no implementado)"},
+            {"npan", Icon::NavPan, 0, tr("Mover Cámara (arrastrar)")},
+            {"nzoom", Icon::NavZoom, 1, tr("Zoom de Cámara (arrastrar)")},
+            {"nrot", Icon::NavRotate, 2, tr("Rotar Cámara (arrastrar)")},
+            {"nlay", Icon::NavLayout, 3, tr("Cambiar Vista (todavía no implementado)")},
         };
         for (const auto& n : navs) {
-            iconButton(n.id, n.icon, ib, false, n.op != 3, n.tip, n.op == 3 ? "Multi-vista: todavía no implementado." : "Arrastre sobre el icono para navegar por la vista.");
+            iconButton(n.id, n.icon, ib, false, n.op != 3, n.tip, n.op == 3 ? tr("Multi-vista: todavía no implementado.") : tr("Arrastre sobre el icono para navegar por la vista."));
             if (ImGui::IsItemActive() && n.op != 3) {
                 if (n.op == 0) camera.pan(io.MouseDelta.x, io.MouseDelta.y);
                 if (n.op == 1) camera.dolly(io.MouseDelta.y - io.MouseDelta.x);
@@ -3062,7 +3063,7 @@ void drawViewportOverlay(const OrbitalCamera& camera, const ViewportState& vp, c
     const ImVec2 a(vp.x, vp.y), b(vp.x + vp.w, vp.y + vp.h);
     dl->PushClipRect(a, b, true);
     if (!vp.renderView) outlineSelected(dl, root, camera, vp);
-    const char* viewName = viewLabel(camera.view(), names().viewport);
+    const char* viewName = viewLabel(camera.view(), tr(names().viewport));
     dl->AddText(ImVec2(a.x + 8, a.y + 5), IM_COL32(230, 230, 230, 255), viewName);
 
     // Triedro de ejes (esquina inf-izq, seccion 12): rotacion de la vista sin traslacion.
@@ -3079,7 +3080,7 @@ void drawViewportOverlay(const OrbitalCamera& camera, const ViewportState& vp, c
         dl->AddText(ImVec2(e.x + (ax.d.x >= 0 ? 3 : -11), e.y - 8), ax.col, ax.lbl);
     }
 
-    const char* gridTxt = "Espaciado Cuadrícula : 100 cm";
+    const char* gridTxt = tr("Espaciado Cuadrícula : 100 cm");
     const ImVec2 ts = ImGui::CalcTextSize(gridTxt);
     if (vp.showGrid && !vp.renderView)
         dl->AddText(ImVec2(b.x - ts.x - 10, b.y - ts.y - 6), IM_COL32(220, 220, 220, 255), gridTxt);
@@ -3218,7 +3219,7 @@ void drawOffscreenArrow(OrbitalCamera& camera, const ViewportState& vp, SceneNod
         clicked = ImGui::InvisibleButton("##go", ImVec2(hit, hit));
         hovered = ImGui::IsItemHovered();
         if (hovered) {
-            const std::string tipTxt = sel->name() + "\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.";
+            const std::string tipTxt = sel->name() + tr("\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.");
             richTooltip(tipTxt.c_str());
         }
     }
@@ -3265,9 +3266,9 @@ void addChildMenu(SceneNode& root, SceneNode* parent, SceneNode*& selected, Scen
             g.focus = AttrFocus::Object;
         }
     }
-    if (ImGui::MenuItem("Luz")) {
+    if (ImGui::MenuItem(tr("Luz"))) {
         history.commitBefore(root);
-        selected = parent->addChild("Luz", PrimitiveType::Light);
+        selected = parent->addChild(tr("Luz"), PrimitiveType::Light);
         g.collapsed.erase(parent->id());
     }
 }
@@ -3276,40 +3277,40 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
                        std::vector<Material>& materials, ImVec2 pos, ImVec2 size) {
     beginPanel("##objmgr", pos, size, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar);
     if (ImGui::BeginMenuBar()) {
-        panelGrip(names().objects);
-        if (ImGui::BeginMenu("Archivo")) {
-            disabledItems({{"Fusionar Objetos...", ""}});
-            if (ImGui::MenuItem("Guardar Objetos Seleccionados como...", nullptr, false,
+        panelGrip(tr(names().objects));
+        if (ImGui::BeginMenu(tr("Archivo"))) {
+            disabledItems({{tr("Fusionar Objetos..."), ""}});
+            if (ImGui::MenuItem(tr("Guardar Objetos Seleccionados como..."), nullptr, false,
                                 selected != nullptr && cinewareAvailable()))
                 exportSelectedC4D(root, selected, materials);
-            if (ImGui::MenuItem("Guardar como Preestablecido...", nullptr, false,
+            if (ImGui::MenuItem(tr("Guardar como Preestablecido..."), nullptr, false,
                                 selected != nullptr && cinewareAvailable()))
                 beginSavePreset(*selected, materials);
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Editar")) {
-            if (ImGui::MenuItem("Eliminar", "Supr", false, selected != nullptr)) deleteSelected(root, selected, history);
-            if (ImGui::MenuItem("Expandir Todo")) g.collapsed.clear();
+        if (ImGui::BeginMenu(tr("Editar"))) {
+            if (ImGui::MenuItem(tr("Eliminar"), tr("Supr"), false, selected != nullptr)) deleteSelected(root, selected, history);
+            if (ImGui::MenuItem(tr("Expandir Todo"))) g.collapsed.clear();
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Ver")) {
-            disabledItems({{"Modo Árbol", ""}, {"Modo Lista", ""}, {nullptr, nullptr}, {"Mostrar Etiquetas", ""}});
+        if (ImGui::BeginMenu(tr("Ver"))) {
+            disabledItems({{tr("Modo Árbol"), ""}, {tr("Modo Lista"), ""}, {nullptr, nullptr}, {tr("Mostrar Etiquetas"), ""}});
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Objetos")) {
-            if (ImGui::BeginMenu("Añadir")) {
+        if (ImGui::BeginMenu(tr("Objetos"))) {
+            if (ImGui::BeginMenu(tr("Añadir"))) {
                 addChildMenu(root, &root, selected, history);
                 ImGui::EndMenu();
             }
-            if (ImGui::MenuItem("Duplicar", nullptr, false, selected != nullptr)) {
+            if (ImGui::MenuItem(tr("Duplicar"), nullptr, false, selected != nullptr)) {
                 history.commitBefore(root);
                 selected = duplicateSubtree(*selected->parent(), *selected);
             }
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Etiquetas")) {
+        if (ImGui::BeginMenu(tr("Etiquetas"))) {
             const bool canTag = selected && hasGeometry(selected->primitive) && !materials.empty();
-            if (ImGui::BeginMenu("Etiqueta de Textura", canTag)) {
+            if (ImGui::BeginMenu(tr("Etiqueta de Textura"), canTag)) {
                 for (size_t i = 0; i < materials.size(); ++i)
                     if (ImGui::MenuItem(materials[i].name.c_str())) {
                         history.commitBefore(root);
@@ -3319,12 +3320,12 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
             }
             ImGui::EndMenu();
         }
-        ImGui::BeginMenu("Favoritos", false);
+        ImGui::BeginMenu(tr("Favoritos"), false);
         const float ib = ImGui::GetFrameHeight() - 4.0f;
         ImGui::SameLine(ImGui::GetWindowWidth() - 2 * (ib + 4) - 8);
-        iconButton("omsearch", Icon::Search, ib, false, false, "Buscar (todavía no implementado)", nullptr);
+        iconButton("omsearch", Icon::Search, ib, false, false, tr("Buscar (todavía no implementado)"), nullptr);
         ImGui::SameLine(0, 4);
-        iconButton("omfilter", Icon::Filter, ib, false, false, "Filtrar (todavía no implementado)", nullptr);
+        iconButton("omfilter", Icon::Filter, ib, false, false, tr("Filtrar (todavía no implementado)"), nullptr);
         ImGui::EndMenuBar();
     }
 
@@ -3374,7 +3375,7 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
             std::snprintf(g.renameBuf, sizeof(g.renameBuf), "%s", node->name().c_str());
             g.renameFocus = true;
         }
-        if (rowHovered) g.hint = "Clic: seleccionar. Ctrl+Clic: anadir o quitar de la seleccion. Doble clic: renombrar. Clic derecho: menú contextual. Arrastre un material aquí para asignarlo.";
+        if (rowHovered) g.hint = tr("Clic: seleccionar. Ctrl+Clic: anadir o quitar de la seleccion. Doble clic: renombrar. Clic derecho: menú contextual. Arrastre un material aquí para asignarlo.");
         if (ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("IRON3D_MAT")) {
                 const int mi = *(const int*)pl->Data;
@@ -3389,9 +3390,9 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
         // orden); lo que Iron3D todavia no tiene sale deshabilitado.
         if (ImGui::BeginPopupContextItem("##ctx")) {
             // Etiquetas: solo hay Etiqueta de Textura (el material asignado).
-            if (ImGui::BeginMenu("CINEMA 4D Etiquetas")) {
+            if (ImGui::BeginMenu(tr("CINEMA 4D Etiquetas"))) {
                 const bool canTag = hasGeometry(node->primitive) && !materials.empty();
-                if (ImGui::BeginMenu("Etiqueta de Textura", canTag)) {
+                if (ImGui::BeginMenu(tr("Etiqueta de Textura"), canTag)) {
                     for (size_t i = 0; i < materials.size(); ++i)
                         if (ImGui::MenuItem(materials[i].name.c_str(), nullptr, node->materialIndex == (int)i)) {
                             history.commitBefore(root);
@@ -3399,77 +3400,77 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
                         }
                     ImGui::EndMenu();
                 }
-                if (ImGui::MenuItem("Eliminar Etiqueta de Textura", nullptr, false, node->materialIndex >= 0)) {
+                if (ImGui::MenuItem(tr("Eliminar Etiqueta de Textura"), nullptr, false, node->materialIndex >= 0)) {
                     history.commitBefore(root);
                     node->materialIndex = -1;
                 }
                 ImGui::Separator();
-                disabledItems({{"Fong", ""}, {"Compositing", ""}, {"Protección", ""}, {"Mostrar", ""},
-                               {"Objetivo", ""}, {"Restricción", ""}});
+                disabledItems({{tr("Fong"), ""}, {tr("Compositing"), ""}, {tr("Protección"), ""}, {tr("Mostrar"), ""},
+                               {tr("Objetivo"), ""}, {tr("Restricción"), ""}});
                 ImGui::EndMenu();
             }
-            for (const char* fam : {"Character Etiquetas", "Cineman Etiquetas", "Etiqueta UVW", "Hair Etiquetas",
-                                    "MoGraph Etiquetas", "Motion Tracker Etiquetas", "Scripting Etiquetas",
-                                    "Simulación Etiquetas", "Sketch Etiquetas", "Videocámara Etiquetas"})
+            for (const char* fam : {tr("Character Etiquetas"), tr("Cineman Etiquetas"), tr("Etiqueta UVW"), tr("Hair Etiquetas"),
+                                    tr("MoGraph Etiquetas"), tr("Motion Tracker Etiquetas"), tr("Scripting Etiquetas"),
+                                    tr("Simulación Etiquetas"), tr("Sketch Etiquetas"), tr("Videocámara Etiquetas")})
                 if (ImGui::BeginMenu(fam, false)) ImGui::EndMenu();
             ImGui::Separator();
-            if (ImGui::BeginMenu("Cargar Etiqueta Preestablecida", false)) ImGui::EndMenu();
-            if (ImGui::BeginMenu("Restaurar Selección", false)) ImGui::EndMenu();
+            if (ImGui::BeginMenu(tr("Cargar Etiqueta Preestablecida"), false)) ImGui::EndMenu();
+            if (ImGui::BeginMenu(tr("Restaurar Selección"), false)) ImGui::EndMenu();
             ImGui::Separator();
-            iconMenuItem(Icon::MnuLayers, "Añadir a una Capa Nueva", nullptr, false, false);
-            iconMenuItem(Icon::MnuLayers, "Gestor de Capas...", "Mayús+F4", false, false);
+            iconMenuItem(Icon::MnuLayers, tr("Añadir a una Capa Nueva"), nullptr, false, false);
+            iconMenuItem(Icon::MnuLayers, tr("Gestor de Capas..."), tr("Mayús+F4"), false, false);
             ImGui::Separator();
-            disabledItems({{"Eliminar de Todas las Tomas", ""}, {"Gestor de Tomas...", ""}});
+            disabledItems({{tr("Eliminar de Todas las Tomas"), ""}, {tr("Gestor de Tomas..."), ""}});
             ImGui::Separator();
-            if (ImGui::MenuItem("Seleccionar Hijos", nullptr, false, !node->children().empty())) {
+            if (ImGui::MenuItem(tr("Seleccionar Hijos"), nullptr, false, !node->children().empty())) {
                 forSubtree(*node, [](SceneNode& n) { g.selIds.insert(n.id()); });
                 selected = node;
                 g.lastSelectedId = node->id();
                 g.focus = AttrFocus::Object;
             }
-            ImGui::MenuItem("Establecer como Raíz", nullptr, false, false);
+            ImGui::MenuItem(tr("Establecer como Raíz"), nullptr, false, false);
             ImGui::Separator();
-            if (ImGui::MenuItem("Expandir Todo", nullptr, false, !node->children().empty()))
+            if (ImGui::MenuItem(tr("Expandir Todo"), nullptr, false, !node->children().empty()))
                 forSubtree(*node, [](SceneNode& n) { g.collapsed.erase(n.id()); });
-            if (ImGui::MenuItem("Contraer Todo", nullptr, false, !node->children().empty()))
+            if (ImGui::MenuItem(tr("Contraer Todo"), nullptr, false, !node->children().empty()))
                 forSubtree(*node, [](SceneNode& n) {
                     if (!n.children().empty()) g.collapsed.insert(n.id());
                 });
             ImGui::Separator();
-            if (iconMenuItem(Icon::MakeEditable, "Hacer Editable", "C", false, canMakeEditable(root, selected, node))) {
+            if (iconMenuItem(Icon::MakeEditable, tr("Hacer Editable"), "C", false, canMakeEditable(root, selected, node))) {
                 const int n = makeEditable(root, selected, history, node);
-                if (n > 0) flashStatus("Hacer Editable: " + std::to_string(n) + (n == 1 ? " objeto convertido." : " objetos convertidos."));
+                if (n > 0) flashStatus(tr("Hacer Editable: ") + std::to_string(n) + (n == 1 ? tr(" objeto convertido.") : tr(" objetos convertidos.")));
             }
-            if (ImGui::MenuItem("Estado Actual del Objeto")) { if (!g.selIds.count(node->id())) selectOnly(selected, node); g.pendingCmd = UiCmd::CurrentState; }
-            if (ImGui::MenuItem("Conectar Objetos")) { if (!g.selIds.count(node->id())) selectOnly(selected, node); g.pendingCmd = UiCmd::Connect; }
-            if (ImGui::MenuItem("Conectar+Eliminar")) { if (!g.selIds.count(node->id())) selectOnly(selected, node); g.pendingCmd = UiCmd::ConnectDelete; }
+            if (ImGui::MenuItem(tr("Estado Actual del Objeto"))) { if (!g.selIds.count(node->id())) selectOnly(selected, node); g.pendingCmd = UiCmd::CurrentState; }
+            if (ImGui::MenuItem(tr("Conectar Objetos"))) { if (!g.selIds.count(node->id())) selectOnly(selected, node); g.pendingCmd = UiCmd::Connect; }
+            if (ImGui::MenuItem(tr("Conectar+Eliminar"))) { if (!g.selIds.count(node->id())) selectOnly(selected, node); g.pendingCmd = UiCmd::ConnectDelete; }
             ImGui::Separator();
-            if (iconMenuItem(Icon::Null, "Agrupar Objetos", "Alt+G")) pendingGroup = node;
-            if (ImGui::MenuItem("Expandir Grupo de Objetos", "Mayús+G", false, !node->children().empty()))
+            if (iconMenuItem(Icon::Null, tr("Agrupar Objetos"), tr("Alt+G"))) pendingGroup = node;
+            if (ImGui::MenuItem(tr("Expandir Grupo de Objetos"), tr("Mayús+G"), false, !node->children().empty()))
                 pendingDissolve = node;
-            if (ImGui::MenuItem("Eliminar Sin Hijos", nullptr, false, true)) pendingDissolve = node;
-            ImGui::MenuItem("Convertir Selección de Objetos a XRef", nullptr, false, false);
+            if (ImGui::MenuItem(tr("Eliminar Sin Hijos"), nullptr, false, true)) pendingDissolve = node;
+            ImGui::MenuItem(tr("Convertir Selección de Objetos a XRef"), nullptr, false, false);
             ImGui::Separator();
-            disabledItems({{"Mostrar Pistas...", ""}, {"Mostrar F-Curves...", ""}, {"Mostrar Movimientos...", ""}});
+            disabledItems({{tr("Mostrar Pistas..."), ""}, {tr("Mostrar F-Curves..."), ""}, {tr("Mostrar Movimientos..."), ""}});
             ImGui::Separator();
-            ImGui::MenuItem("Información del Objeto...", nullptr, false, false);
-            if (iconMenuItem(Icon::MnuProject, "Información del Proyecto", "Ctrl+I")) g.focus = AttrFocus::Project;
+            ImGui::MenuItem(tr("Información del Objeto..."), nullptr, false, false);
+            if (iconMenuItem(Icon::MnuProject, tr("Información del Proyecto"), tr("Ctrl+I"))) g.focus = AttrFocus::Project;
             ImGui::Separator();
-            iconMenuItem(Icon::MnuHelp, "Mostrar Ayuda...", "Ctrl+F1", false, false);
+            iconMenuItem(Icon::MnuHelp, tr("Mostrar Ayuda..."), tr("Ctrl+F1"), false, false);
             // Lo propio de Iron3D (en C4D vive en otros menus), al final.
             ImGui::Separator();
-            if (ImGui::BeginMenu("Añadir Hijo")) {
+            if (ImGui::BeginMenu(tr("Añadir Hijo"))) {
                 addChildMenu(root, node, selected, history);
                 ImGui::EndMenu();
             }
-            if (ImGui::MenuItem("Renombrar")) {
+            if (ImGui::MenuItem(tr("Renombrar"))) {
                 g.renamingNodeId = node->id();
                 std::snprintf(g.renameBuf, sizeof(g.renameBuf), "%s", node->name().c_str());
                 g.renameFocus = true;
             }
-            if (ImGui::MenuItem("Duplicar")) pendingDuplicate = node;
-            if (iconMenuItem(Icon::MnuDelete, "Eliminar", "Supr")) pendingDelete = node;
-            if (ImGui::MenuItem("Guardar como Preestablecido...", nullptr, false, cinewareAvailable()))
+            if (ImGui::MenuItem(tr("Duplicar"))) pendingDuplicate = node;
+            if (iconMenuItem(Icon::MnuDelete, tr("Eliminar"), tr("Supr"))) pendingDelete = node;
+            if (ImGui::MenuItem(tr("Guardar como Preestablecido..."), nullptr, false, cinewareAvailable()))
                 beginSavePreset(*node, materials);
             ImGui::EndPopup();
         }
@@ -3537,18 +3538,18 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
                 history.commitBefore(root);
                 mode = (VisMode)(((int)mode + 1) % 3);
             }
-            static const char* kNames[] = {"Por Defecto", "Activado", "Apagado"};
+            static const char* kNames[] = {tr("Por Defecto"), tr("Activado"), tr("Apagado")};
             if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("Visible en %s: %s\n(clic para cambiar)", what, kNames[(int)mode]);
-                g.hint = "Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.";
+                ImGui::SetTooltip(tr("Visible en %s: %s\n(clic para cambiar)"), what, kNames[(int)mode]);
+                g.hint = tr("Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.");
             }
             const ImU32 col = mode == VisMode::On    ? IM_COL32(70, 200, 80, 255)
                               : mode == VisMode::Off ? IM_COL32(220, 60, 50, 255)
                                                      : IM_COL32(150, 150, 150, 255);
             dl->AddCircleFilled(ImVec2(dotC.x, dotC.y + yOff), 3.0f, col);
         };
-        visDot("##visEd", node->editorVis, -4.0f, "Editor");
-        visDot("##visRd", node->renderVis, 4.0f, "Render");
+        visDot("##visEd", node->editorVis, -4.0f, tr("Editor"));
+        visDot("##visRd", node->renderVis, 4.0f, tr("Render"));
         icons::draw(dl, Icon::Check, ImVec2(flagsX + 17, p.y + 3), 14, true);
 
         // Etiquetas: Phong (todas las primitivas con geometria) + Textura.
@@ -3565,7 +3566,7 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
                 selected = node;
                 g.focus = AttrFocus::Tag;
             }
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Etiqueta de Textura [%s]", m.name.c_str());
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip(tr("Etiqueta de Textura [%s]"), m.name.c_str());
             const bool tagSel = g.focus == AttrFocus::Tag && node == selected;
             if (tagSel) dl->AddRect(ImVec2(tx - 1, p.y + 1), ImVec2(tx + 17, p.y + rowH - 1), kAmber, 2.0f);
             float previewSpec, previewShin;
@@ -3584,7 +3585,7 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
         ImGui::InvisibleButton("##empty", ImVec2(fullW, rest.y), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) selected = nullptr;
         if (ImGui::BeginPopupContextItem("##emptyctx")) {
-            if (ImGui::BeginMenu("Añadir")) {
+            if (ImGui::BeginMenu(tr("Añadir"))) {
                 addChildMenu(root, &root, selected, history);
                 ImGui::EndMenu();
             }
@@ -3614,22 +3615,22 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
 int drawVerticalTabs(ImVec2 pos, ImVec2 size, const char* const* names, int count, int active,
                      unsigned enabledMask = 1u) {
     int clickedTab = -1;
-    beginPanel(names[0], pos, size, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    beginPanel(tr(names[0]), pos, size, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImDrawList* dl = ImGui::GetWindowDrawList();
     float y = pos.y + 4;
     for (int i = 0; i < count; ++i) {
-        const float len = icons::textVerticalLength(names[i]) + 14.0f;
+        const float len = icons::textVerticalLength(tr(names[i])) + 14.0f;
         const ImVec2 a(pos.x + 1, y), b(pos.x + size.x - 1, y + len);
         ImGui::SetCursorScreenPos(a);
         ImGui::PushID(i);
         if (ImGui::InvisibleButton("##vt", ImVec2(b.x - a.x, len)) && (enabledMask & (1u << i))) clickedTab = i;
         const bool hov = ImGui::IsItemHovered();
         if (hov && i != active && !(enabledMask & (1u << i)))
-            ImGui::SetTooltip("%s (todavía no implementado)", names[i]);
+            ImGui::SetTooltip(tr("%s (todavía no implementado)"), tr(names[i]));
         ImGui::PopID();
         dl->AddRectFilled(a, b, i == active ? kTabOn : kTabOff);
         dl->AddRect(a, b, kBorderDark);
-        icons::textVertical(dl, ImVec2(b.x - 3, a.y + 7), i == active ? kTextCol : kTextDim, names[i]);
+        icons::textVertical(dl, ImVec2(b.x - 3, a.y + 7), i == active ? kTextCol : kTextDim, tr(names[i]));
         y += len + 2;
     }
     ImGui::End();
@@ -3641,15 +3642,15 @@ int drawVerticalTabs(ImVec2 pos, ImVec2 size, const char* const* names, int coun
 void attrHeaderNav() {
     const float ib = ImGui::GetFrameHeight() - 4.0f;
     ImGui::SameLine(ImGui::GetWindowWidth() - 5 * (ib + 3) - 8);
-    iconButton("anback", Icon::Back, ib, false, false, "Atrás", nullptr);
+    iconButton("anback", Icon::Back, ib, false, false, tr("Atrás"), nullptr);
     ImGui::SameLine(0, 3);
-    iconButton("anfwd", Icon::Forward, ib, false, false, "Adelante", nullptr);
+    iconButton("anfwd", Icon::Forward, ib, false, false, tr("Adelante"), nullptr);
     ImGui::SameLine(0, 3);
-    iconButton("anup", Icon::Up, ib, false, false, "Subir", nullptr);
+    iconButton("anup", Icon::Up, ib, false, false, tr("Subir"), nullptr);
     ImGui::SameLine(0, 3);
-    iconButton("anlock", Icon::Lock, ib, false, false, "Bloquear Elemento", nullptr);
+    iconButton("anlock", Icon::Lock, ib, false, false, tr("Bloquear Elemento"), nullptr);
     ImGui::SameLine(0, 3);
-    iconButton("annew", Icon::NewPanel, ib, false, false, "Nuevo Gestor de Atributos", nullptr);
+    iconButton("annew", Icon::NewPanel, ib, false, false, tr("Nuevo Gestor de Atributos"), nullptr);
 }
 
 void titleLine(Icon icon, const char* title) {
@@ -3663,13 +3664,13 @@ void titleLine(Icon icon, const char* title) {
 }
 
 void drawProjectSettings() {
-    titleLine(Icon::Gear, "Proyecto");
+    titleLine(Icon::Gear, tr("Proyecto"));
     static unsigned mask = 1u;
-    const char* tabs[] = {"Configuración del Proyecto", "Información", "Dinámicas", "Referenciar", "A Realizar",
-                          "Interpolación de Claves"};
+    const char* tabs[] = {tr("Configuración del Proyecto"), tr("Información"), tr("Dinámicas"), tr("Referenciar"), tr("A Realizar"),
+                          tr("Interpolación de Claves")};
     attrTabRow(tabs, IM_ARRAYSIZE(tabs), mask);
     if (tabOn(mask, 0)) {
-        sectionHeader("Configuración del Proyecto");
+        sectionHeader(tr("Configuración del Proyecto"));
         const float savedLabelW = g_labelW;
         const float fullW = ImGui::GetContentRegionAvail().x;
         // Dos columnas como en C4D (pares FPS | Tiempo del Proyecto, Min | Max...);
@@ -3684,43 +3685,43 @@ void drawProjectSettings() {
         const float numW = std::min(80.0f, colW - g_labelW - 10.0f);
 
         g_labelW = std::floor(colW * 0.58f);
-        propLabel("Escala del Proyecto", false);
+        propLabel(tr("Escala del Proyecto"), false);
         ImGui::BeginDisabled();
         ImGui::SetNextItemWidth(50);
         float one = 1.0f;
         ImGui::DragFloat("##scale", &one, 1, 0, 0, "%.0f");
         ImGui::SameLine();
         ImGui::SetNextItemWidth(std::min(110.0f, ImGui::GetContentRegionAvail().x - 4.0f));
-        if (ImGui::BeginCombo("##unit", "Centímetros")) ImGui::EndCombo();
-        ImGui::Button("Escalar Proyecto...", ImVec2(std::min(fullW - 8.0f, 260.0f), 0));
+        if (ImGui::BeginCombo("##unit", tr("Centímetros"))) ImGui::EndCombo();
+        ImGui::Button(tr("Escalar Proyecto..."), ImVec2(std::min(fullW - 8.0f, 260.0f), 0));
         ImGui::EndDisabled();
-        setHint("Escalar Proyecto: todavía no implementado en Iron3D.");
+        setHint(tr("Escalar Proyecto: todavía no implementado en Iron3D."));
         ImGui::Separator();
 
         col(0);
-        propLabel("FPS", false);
+        propLabel(tr("FPS"), false);
         ImGui::SetNextItemWidth(numW);
         if (ImGui::DragInt("##fps", &g.fps, 0.2f, 1, 240)) g.fps = std::clamp(g.fps, 1, 240);
-        setHint("Fotogramas por segundo: velocidad de reproducción de la Línea de Tiempo.");
+        setHint(tr("Fotogramas por segundo: velocidad de reproducción de la Línea de Tiempo."));
         col(1);
-        propLabel("Tiempo del Proyecto", false);
+        propLabel(tr("Tiempo del Proyecto"), false);
         int cur = (int)std::lround(g.frame);
         ImGui::SetNextItemWidth(numW);
         if (ImGui::DragInt("##cur", &cur, 0.2f, g.minFrame, g.maxFrame, "%d F")) g.frame = (float)cur;
         col(0);
-        propLabel("Tiempo Mínimo", false);
+        propLabel(tr("Tiempo Mínimo"), false);
         ImGui::SetNextItemWidth(numW);
         if (ImGui::DragInt("##min", &g.minFrame, 0.2f, -100000, g.maxFrame - 1, "%d F")) g.previewMin = std::max(g.previewMin, g.minFrame);
         col(1);
-        propLabel("Tiempo Máximo", false);
+        propLabel(tr("Tiempo Máximo"), false);
         ImGui::SetNextItemWidth(numW);
         if (ImGui::DragInt("##max", &g.maxFrame, 0.2f, g.minFrame + 1, 100000, "%d F")) g.previewMax = std::min(g.previewMax, g.maxFrame);
         col(0);
-        propLabel("Tiempo Mínimo de Previo", false);
+        propLabel(tr("Tiempo Mínimo de Previo"), false);
         ImGui::SetNextItemWidth(numW);
         ImGui::DragInt("##pmin", &g.previewMin, 0.2f, g.minFrame, g.previewMax, "%d F");
         col(1);
-        propLabel("Tiempo Máximo de Previo", false);
+        propLabel(tr("Tiempo Máximo de Previo"), false);
         ImGui::SetNextItemWidth(numW);
         ImGui::DragInt("##pmax", &g.previewMax, 0.2f, g.previewMin, g.maxFrame, "%d F");
         ImGui::Separator();
@@ -3733,37 +3734,37 @@ void drawProjectSettings() {
             ImGui::DragFloat("##v", &v, 1.0f, 0.0f, 0.0f, fmt);
             ImGui::PopID();
             ImGui::EndDisabled();
-            setHint("Parámetro todavía no implementado en Iron3D");
+            setHint(tr("Parámetro todavía no implementado en Iron3D"));
         };
-        col(0); roFloatN("Nivel de Detalle", 100.0f, "%.0f %%");
-        col(1); roCheck("Nivel de Detalle del Render en el Editor", false, false);
+        col(0); roFloatN(tr("Nivel de Detalle"), 100.0f, "%.0f %%");
+        col(1); roCheck(tr("Nivel de Detalle del Render en el Editor"), false, false);
         ImGui::Separator();
-        col(0); roCheck("Usar Animación", true, false);
-        col(1); roCheck("Usar Expresiones", true, false);
-        col(0); roCheck("Usar Generadores", true, false);
-        col(1); roCheck("Usar Deformadores", true, false);
-        col(0); roCheck("Usar Sistema de Movimiento", true, false);
+        col(0); roCheck(tr("Usar Animación"), true, false);
+        col(1); roCheck(tr("Usar Expresiones"), true, false);
+        col(0); roCheck(tr("Usar Generadores"), true, false);
+        col(1); roCheck(tr("Usar Deformadores"), true, false);
+        col(0); roCheck(tr("Usar Sistema de Movimiento"), true, false);
         ImGui::Separator();
 
         g_labelW = std::floor(fullW * 0.45f);
-        roCombo("Color Objetos por Defecto", "Gris-Azul");
-        roCombo("Recortar Vista", "Medio");
-        roCheck("Flujo de Trabajo Lineal", true, false);
-        roCombo("Introducir Perfil de Color", "sRGB");
+        roCombo(tr("Color Objetos por Defecto"), tr("Gris-Azul"));
+        roCombo(tr("Recortar Vista"), tr("Medio"));
+        roCheck(tr("Flujo de Trabajo Lineal"), true, false);
+        roCombo(tr("Introducir Perfil de Color"), tr("sRGB"));
         g_labelW = savedLabelW;
 
         ImGui::Spacing();
         ImGui::BeginDisabled();
         const float bw = std::floor((fullW - 12.0f) * 0.5f);
-        ImGui::Button("Cargar Preestablecido...", ImVec2(bw, 0));
+        ImGui::Button(tr("Cargar Preestablecido..."), ImVec2(bw, 0));
         ImGui::SameLine();
-        ImGui::Button("Guardar Preestablecido...", ImVec2(bw, 0));
+        ImGui::Button(tr("Guardar Preestablecido..."), ImVec2(bw, 0));
         ImGui::EndDisabled();
-        setHint("Preestablecidos de proyecto: todavía no implementados en Iron3D.");
+        setHint(tr("Preestablecidos de proyecto: todavía no implementados en Iron3D."));
     }
     if (mask & ~1u) {
-        sectionHeader("Página no disponible");
-        ImGui::TextDisabled("  Todavía no implementado en Iron3D.");
+        sectionHeader(tr("Página no disponible"));
+        ImGui::TextDisabled(tr("  Todavía no implementado en Iron3D."));
     }
 }
 
@@ -3774,27 +3775,27 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
     unsigned& mask = g.objMask[kind];
 
     char title[200];
-    std::snprintf(title, sizeof(title), "Objeto %s [%s]", defaultNameFor(node.primitive), node.name().c_str());
+    std::snprintf(title, sizeof(title), tr("Objeto %s [%s]"), defaultNameFor(node.primitive), node.name().c_str());
     titleLine(iconFor(node.primitive), title);
 
-    static const char* geoTabs[] = {"Básico", "Coord.", "Objeto", "Phong"};
-    static const char* lightTabs[] = {"Básico", "Coord.", "General", "Detalles", "Visibilidad", "Sombra",
-                                      "Fotométrico", "Cáusticas", "Ruido", "Lentes", "Proyecto"};
-    static const char* nullTabs[] = {"Básico", "Coord.", "Objeto"};
+    static const char* geoTabs[] = {tr("Básico"), tr("Coord."), tr("Objeto"), tr("Phong")};
+    static const char* lightTabs[] = {tr("Básico"), tr("Coord."), tr("General"), tr("Detalles"), tr("Visibilidad"), tr("Sombra"),
+                                      tr("Fotométrico"), tr("Cáusticas"), tr("Ruido"), tr("Lentes"), tr("Proyecto")};
+    static const char* nullTabs[] = {tr("Básico"), tr("Coord."), tr("Objeto")};
     if (isLight) attrTabRow(lightTabs, IM_ARRAYSIZE(lightTabs), mask);
     else if (isNull) attrTabRow(nullTabs, IM_ARRAYSIZE(nullTabs), mask);
     else attrTabRow(geoTabs, IM_ARRAYSIZE(geoTabs), mask);
 
     if (tabOn(mask, 0)) {
-        sectionHeader("Propiedades Básicas");
-        propLabel("Nombre", false);
+        sectionHeader(tr("Propiedades Básicas"));
+        propLabel(tr("Nombre"), false);
         char nameBuf[128];
         std::snprintf(nameBuf, sizeof(nameBuf), "%s", node.name().c_str());
         ImGui::SetNextItemWidth(fieldWidth(220));
         if (ImGui::InputText("##name", nameBuf, sizeof(nameBuf)) && nameBuf[0]) node.setName(nameBuf);
         trackEdit(history, root);
-        roCombo("Capa", "");
-        const char* visItems[] = {"Por Defecto", "Activado", "Apagado"};
+        roCombo(tr("Capa"), "");
+        const char* visItems[] = {tr("Por Defecto"), tr("Activado"), tr("Apagado")};
         auto visCombo = [&](const char* label, const char* id, VisMode& mode, const char* hint) {
             propLabel(label);
             int v = (int)mode;
@@ -3805,16 +3806,16 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
             }
             setHint(hint);
         };
-        visCombo("Visible en Editor", "##vised", node.editorVis,
-                 "Visible en Editor (punto superior): Por Defecto hereda del padre, Activado lo muestra siempre, Apagado lo oculta en el visor.");
-        visCombo("Visible en Render", "##visrd", node.renderVis,
-                 "Visible en Render (punto inferior): Iron3D todavía no tiene render final; el valor se guarda en la escena.");
-        roCombo("Usar Color", "Desactivado");
-        roCheck("Activado", true);
-        roCheck("Rayos X", false);
+        visCombo(tr("Visible en Editor"), "##vised", node.editorVis,
+                 tr("Visible en Editor (punto superior): Por Defecto hereda del padre, Activado lo muestra siempre, Apagado lo oculta en el visor."));
+        visCombo(tr("Visible en Render"), "##visrd", node.renderVis,
+                 tr("Visible en Render (punto inferior): Iron3D todavía no tiene render final; el valor se guarda en la escena."));
+        roCombo(tr("Usar Color"), tr("Desactivado"));
+        roCheck(tr("Activado"), true);
+        roCheck(tr("Rayos X"), false);
     }
     if (tabOn(mask, 1)) {
-        sectionHeader("Coordenadas");
+        sectionHeader(tr("Coordenadas"));
         if (ImGui::BeginTable("##coord", 3, ImGuiTableFlags_SizingStretchSame)) {
             const char* pl[] = {"P . X", "P . Y", "P . Z"};
             const char* sl[] = {"S . X", "S . Y", "S . Z"};
@@ -3829,7 +3830,7 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                 ImGui::SameLine(44);
                 float cm = node.position[i] * kCmPerUnit;
                 ImGui::SetNextItemWidth(-1);
-                if (ImGui::DragFloat("##p", &cm, 1.0f, 0, 0, "%.0f cm")) node.position[i] = cm / kCmPerUnit;
+                if (ImGui::DragFloat("##p", &cm, 1.0f, 0, 0, tr("%.0f cm"))) node.position[i] = cm / kCmPerUnit;
                 trackEdit(history, root);
                 ImGui::TableNextColumn();
                 ImGui::TextUnformatted(sl[i]);
@@ -3847,45 +3848,45 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
             }
             ImGui::EndTable();
         }
-        roCombo("Orden", "HPB");
-        sectionHeader("Congelar Transformación");
-        ImGui::TextDisabled("  Todavía no implementado en Iron3D.");
+        roCombo(tr("Orden"), tr("HPB"));
+        sectionHeader(tr("Congelar Transformación"));
+        ImGui::TextDisabled(tr("  Todavía no implementado en Iron3D."));
     }
     if (tabOn(mask, 2)) {
         if (isLight) {
             // Pestana General de la Luz de C4D (2026-11-10): antes todo era de
             // solo lectura y cualquier luz iluminaba igual.
             LightData& l = node.light;
-            sectionHeader("General");
-            propLabel("Color");
+            sectionHeader(tr("General"));
+            propLabel(tr("Color"));
             ImGui::SetNextItemWidth(fieldWidth(240));
             ImGui::ColorEdit3("##lc", &l.color.x, ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_PickerHueBar);
             trackEdit(history, root);
-            propLabel("Intensidad");
+            propLabel(tr("Intensidad"));
             float pct = l.intensity * 100.0f;
             ImGui::SetNextItemWidth(fieldWidth());
             if (ImGui::DragFloat("##li", &pct, 1.0f, 0.0f, 100000.0f, "%.0f %%")) l.intensity = std::max(pct, 0.0f) / 100.0f;
             trackEdit(history, root);
-            static const char* kinds[] = {"Omni", "Foco", "Foco Cuadrado", "Infinita", "Paralela", "Foco Paralelo",
-                                          "Foco Paralelo Cuadrado", "Tubo", "Área", "IES"};
-            propLabel("Tipo", false);
+            static const char* kinds[] = {tr("Omni"), tr("Foco"), tr("Foco Cuadrado"), tr("Infinita"), tr("Paralela"), tr("Foco Paralelo"),
+                                          tr("Foco Paralelo Cuadrado"), tr("Tubo"), tr("Área"), tr("IES")};
+            propLabel(tr("Tipo"), false);
             int lkind = (int)l.kind;
             ImGui::SetNextItemWidth(fieldWidth());
             if (ImGui::Combo("##lkind", &lkind, kinds, IM_ARRAYSIZE(kinds))) {
                 history.commitBefore(root);
                 l.kind = (LightKind)lkind;
             }
-            setHint("Tipo de luz. En el visor, Tubo, Área e IES iluminan como una Omni; Paralela y Foco Paralelo como una Infinita.");
-            static const char* shadows[] = {"Ninguno", "Mapeado (Suave)", "Trazado (Duro)", "Área"};
-            propLabel("Sombra", false);
+            setHint(tr("Tipo de luz. En el visor, Tubo, Área e IES iluminan como una Omni; Paralela y Foco Paralelo como una Infinita."));
+            static const char* shadows[] = {tr("Ninguno"), tr("Mapeado (Suave)"), tr("Trazado (Duro)"), tr("Área")};
+            propLabel(tr("Sombra"), false);
             int sh = std::clamp(l.shadow, 0, 3);
             ImGui::SetNextItemWidth(fieldWidth());
             if (ImGui::Combo("##lshadow", &sh, shadows, IM_ARRAYSIZE(shadows))) {
                 history.commitBefore(root);
                 l.shadow = sh;
             }
-            setHint("Con sombra activada, la primera luz de la escena que la tenga proyecta sombras en el visor.");
-            roCombo("Luz Visible", "Ninguno");
+            setHint(tr("Con sombra activada, la primera luz de la escena que la tenga proyecta sombras en el visor."));
+            roCombo(tr("Luz Visible"), tr("Ninguno"));
             auto check = [&](const char* label, const char* id, bool& v) {
                 propLabel(label);
                 bool b = v;
@@ -3894,86 +3895,86 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                     v = b;
                 }
             };
-            check("No Ilumina", "##lnoillum", l.noIllumination);
-            roCheck("Mostrar Iluminación", true, false);
-            check("Difusión", "##ldiff", l.diffuse);
-            roCheck("Mostrar Luz Visible", false, false);
-            check("Especular", "##lspec", l.specular);
-            roCheck("Iluminación de IG", true);
+            check(tr("No Ilumina"), "##lnoillum", l.noIllumination);
+            roCheck(tr("Mostrar Iluminación"), true, false);
+            check(tr("Difusión"), "##ldiff", l.diffuse);
+            roCheck(tr("Mostrar Luz Visible"), false, false);
+            check(tr("Especular"), "##lspec", l.specular);
+            roCheck(tr("Iluminación de IG"), true);
         } else if (node.symmetry.present) {
-            sectionHeader("Propiedades del Objeto");
-            propLabel("Plano de Simetría");
+            sectionHeader(tr("Propiedades del Objeto"));
+            propLabel(tr("Plano de Simetría"));
             int ax = node.symmetry.axis;
-            const char* planes[] = {"ZY (refleja X)", "XZ (refleja Y)", "XY (refleja Z)"};
+            const char* planes[] = {tr("ZY (refleja X)"), tr("XZ (refleja Y)"), tr("XY (refleja Z)")};
             ImGui::SetNextItemWidth(-1);
             if (ImGui::Combo("##symplane", &ax, planes, 3)) {
                 history.commitBefore(root);
                 node.symmetry.axis = ax;
             }
-            propLabel("Tolerancia");
+            propLabel(tr("Tolerancia"));
             float tol = node.symmetry.tolCm;
             ImGui::SetNextItemWidth(-1);
-            if (ImGui::DragFloat("##symtol", &tol, 0.05f, 0.0f, 50.0f, "%.2f cm")) {
+            if (ImGui::DragFloat("##symtol", &tol, 0.05f, 0.0f, 50.0f, tr("%.2f cm"))) {
                 if (ImGui::IsItemActivated()) history.commitBefore(root);
                 node.symmetry.tolCm = tol;
             }
-            ImGui::TextDisabled("  Refleja al primer hijo con malla; el hijo se edita aparte.");
+            ImGui::TextDisabled(tr("  Refleja al primer hijo con malla; el hijo se edita aparte."));
         } else if (isNull) {
-            sectionHeader("Propiedades del Objeto");
-            roCombo("Mostrar", "Punto");
-            roFloat("Radio", 10.0f, "%.0f cm");
-            roFloat("Relación de Aspecto", 1.0f, "%.2f");
-            roCombo("Orientación", "Cámara");
+            sectionHeader(tr("Propiedades del Objeto"));
+            roCombo(tr("Mostrar"), tr("Punto"));
+            roFloat(tr("Radio"), 10.0f, tr("%.0f cm"));
+            roFloat(tr("Relación de Aspecto"), 1.0f, "%.2f");
+            roCombo(tr("Orientación"), tr("Cámara"));
         } else {
-            sectionHeader("Propiedades del Objeto");
+            sectionHeader(tr("Propiedades del Objeto"));
             if (node.primitive == PrimitiveType::Cube) {
-                roFloat("Tamaño . X", 200, "%.0f cm");
-                roFloat("Tamaño . Y", 200, "%.0f cm");
-                roFloat("Tamaño . Z", 200, "%.0f cm");
-                roFloat("Segmentos en X", 1, "%.0f");
-                roFloat("Segmentos en Y", 1, "%.0f");
-                roFloat("Segmentos en Z", 1, "%.0f");
-                roCheck("Superficies Separadas", false);
-                roCheck("Canto", false);
+                roFloat(tr("Tamaño . X"), 200, tr("%.0f cm"));
+                roFloat(tr("Tamaño . Y"), 200, tr("%.0f cm"));
+                roFloat(tr("Tamaño . Z"), 200, tr("%.0f cm"));
+                roFloat(tr("Segmentos en X"), 1, "%.0f");
+                roFloat(tr("Segmentos en Y"), 1, "%.0f");
+                roFloat(tr("Segmentos en Z"), 1, "%.0f");
+                roCheck(tr("Superficies Separadas"), false);
+                roCheck(tr("Canto"), false);
             } else if (node.primitive == PrimitiveType::Mesh) {
                 const MeshData* m = node.mesh.get();
-                roFloat("Vértices", m ? (float)m->vertices.size() : 0.0f, "%.0f");
-                roFloat("Triángulos", m ? (float)(m->indices.size() / 3) : 0.0f, "%.0f");
-                ImGui::TextDisabled("  Objeto Poligonal (importado o hecho editable con C).");
-                ImGui::TextDisabled("  Puntos, aristas y polígonos: botones de la barra izquierda (Supr borra).");
+                roFloat(tr("Vértices"), m ? (float)m->vertices.size() : 0.0f, "%.0f");
+                roFloat(tr("Triángulos"), m ? (float)(m->indices.size() / 3) : 0.0f, "%.0f");
+                ImGui::TextDisabled(tr("  Objeto Poligonal (importado o hecho editable con C)."));
+                ImGui::TextDisabled(tr("  Puntos, aristas y polígonos: botones de la barra izquierda (Supr borra)."));
             } else if (node.primitive == PrimitiveType::Sphere) {
-                roFloat("Radio", 100, "%.0f cm");
-                roFloat("Segmentos", 24, "%.0f");
-                roCombo("Tipo", "Estándar");
-                roCheck("Perfectos de Render", true);
+                roFloat(tr("Radio"), 100, tr("%.0f cm"));
+                roFloat(tr("Segmentos"), 24, "%.0f");
+                roCombo(tr("Tipo"), tr("Estándar"));
+                roCheck(tr("Perfectos de Render"), true);
             } else {
-                roFloat("Anchura", 200, "%.0f cm");
-                roFloat("Altura", 200, "%.0f cm");
-                roFloat("Segmentos en la Anchura", 1, "%.0f");
-                roFloat("Segmentos en la Altura", 1, "%.0f");
-                roCombo("Orientación", "+Y");
+                roFloat(tr("Anchura"), 200, tr("%.0f cm"));
+                roFloat(tr("Altura"), 200, tr("%.0f cm"));
+                roFloat(tr("Segmentos en la Anchura"), 1, "%.0f");
+                roFloat(tr("Segmentos en la Altura"), 1, "%.0f");
+                roCombo(tr("Orientación"), "+Y");
             }
-            ImGui::TextDisabled("  Para cambiar el tamaño use Escala (Coord.) o el Gestor de Coordenadas.");
+            ImGui::TextDisabled(tr("  Para cambiar el tamaño use Escala (Coord.) o el Gestor de Coordenadas."));
         }
     }
     if (!isNull && !isLight && tabOn(mask, 3)) {
-        sectionHeader("Etiqueta Phong");
-        roCheck("Limitar Ángulo", true);
-        roFloat("Ángulo de Phong", 80.0f, "%.0f °");
-        roCheck("Usar Bordes", false);
+        sectionHeader(tr("Etiqueta Phong"));
+        roCheck(tr("Limitar Ángulo"), true);
+        roFloat(tr("Ángulo de Phong"), 80.0f, "%.0f °");
+        roCheck(tr("Usar Bordes"), false);
     }
     if (isLight && tabOn(mask, 3)) {
         LightData& l = node.light;
-        sectionHeader("Detalles");
+        sectionHeader(tr("Detalles"));
         const bool spot = l.kind == LightKind::Spot || l.kind == LightKind::SpotSquare ||
                           l.kind == LightKind::ParallelSpot || l.kind == LightKind::ParallelSpotSquare;
         ImGui::BeginDisabled(!spot);
-        propLabel("Ángulo Interior");
+        propLabel(tr("Ángulo Interior"));
         ImGui::SetNextItemWidth(fieldWidth());
         if (ImGui::DragFloat("##linner", &l.innerAngleDeg, 0.5f, 0.0f, 175.0f, "%.1f °"))
             l.innerAngleDeg = std::clamp(l.innerAngleDeg, 0.0f, l.outerAngleDeg);
         trackEdit(history, root);
-        propLabel("Ángulo Exterior");
+        propLabel(tr("Ángulo Exterior"));
         ImGui::SetNextItemWidth(fieldWidth());
         if (ImGui::DragFloat("##louter", &l.outerAngleDeg, 0.5f, 0.1f, 175.0f, "%.1f °")) {
             l.outerAngleDeg = std::clamp(l.outerAngleDeg, 0.1f, 175.0f);
@@ -3983,40 +3984,40 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
         ImGui::EndDisabled();
         // Mismo orden que el desplegable de C4D; el valor guardado es el de
         // LIGHT_DETAILS_FALLOFF.
-        static const char* falloffNames[] = {"Ninguno", "Inverso Cuadrado (Físicamente Exacto)", "Lineal", "Escalón",
-                                             "Inverso Cuadrado Limitado", "Inverso Limitado", "Inverso"};
+        static const char* falloffNames[] = {tr("Ninguno"), tr("Inverso Cuadrado (Físicamente Exacto)"), tr("Lineal"), tr("Escalón"),
+                                             tr("Inverso Cuadrado Limitado"), tr("Inverso Limitado"), tr("Inverso")};
         static const int falloffIds[] = {0, 10, 8, 5, 7, 6, 9};
         int fi = 0;
         for (int i = 0; i < IM_ARRAYSIZE(falloffIds); ++i)
             if (falloffIds[i] == l.falloff) fi = i;
-        propLabel("Decaimiento", false);
+        propLabel(tr("Decaimiento"), false);
         ImGui::SetNextItemWidth(fieldWidth(240));
         if (ImGui::Combo("##lfalloff", &fi, falloffNames, IM_ARRAYSIZE(falloffNames))) {
             history.commitBefore(root);
             l.falloff = falloffIds[fi];
         }
-        setHint("Cómo pierde fuerza la luz con la distancia. En las inversas, el Radio es la distancia a la que da el 100 %.");
+        setHint(tr("Cómo pierde fuerza la luz con la distancia. En las inversas, el Radio es la distancia a la que da el 100 %."));
         ImGui::BeginDisabled(l.falloff == 0);
-        propLabel("Radio Interior");
+        propLabel(tr("Radio Interior"));
         float innerCm = l.innerRadius * kCmPerUnit;
         ImGui::SetNextItemWidth(fieldWidth());
-        if (ImGui::DragFloat("##lir", &innerCm, 1.0f, 0.0f, 1e7f, "%.0f cm")) l.innerRadius = std::max(innerCm, 0.0f) / kCmPerUnit;
+        if (ImGui::DragFloat("##lir", &innerCm, 1.0f, 0.0f, 1e7f, tr("%.0f cm"))) l.innerRadius = std::max(innerCm, 0.0f) / kCmPerUnit;
         trackEdit(history, root);
-        propLabel("Radio/Decaimiento");
+        propLabel(tr("Radio/Decaimiento"));
         float radCm = l.falloffRadius * kCmPerUnit;
         ImGui::SetNextItemWidth(fieldWidth());
-        if (ImGui::DragFloat("##lr", &radCm, 1.0f, 0.1f, 1e7f, "%.0f cm")) l.falloffRadius = std::max(radCm, 0.1f) / kCmPerUnit;
+        if (ImGui::DragFloat("##lr", &radCm, 1.0f, 0.1f, 1e7f, tr("%.0f cm"))) l.falloffRadius = std::max(radCm, 0.1f) / kCmPerUnit;
         trackEdit(history, root);
         ImGui::EndDisabled();
         if (l.kind == LightKind::Area) {
-            sectionHeader("Área");
-            const char* axes[] = {"Tamaño Horizontal", "Tamaño Vertical", "Tamaño en Profundidad"};
+            sectionHeader(tr("Área"));
+            const char* axes[] = {tr("Tamaño Horizontal"), tr("Tamaño Vertical"), tr("Tamaño en Profundidad")};
             for (int i = 0; i < 3; ++i) {
                 ImGui::PushID(i);
                 propLabel(axes[i]);
                 float cm = l.areaSize[i] * kCmPerUnit;
                 ImGui::SetNextItemWidth(fieldWidth());
-                if (ImGui::DragFloat("##as", &cm, 1.0f, 0.1f, 1e7f, "%.0f cm")) l.areaSize[i] = std::max(cm, 0.1f) / kCmPerUnit;
+                if (ImGui::DragFloat("##as", &cm, 1.0f, 0.1f, 1e7f, tr("%.0f cm"))) l.areaSize[i] = std::max(cm, 0.1f) / kCmPerUnit;
                 trackEdit(history, root);
                 ImGui::PopID();
             }
@@ -4024,33 +4025,33 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
     }
     if (isLight && tabOn(mask, 5)) {
         LightData& l = node.light;
-        sectionHeader("Sombra");
-        static const char* shadows[] = {"Ninguno", "Mapeado (Suave)", "Trazado (Duro)", "Área"};
-        propLabel("Sombra", false);
+        sectionHeader(tr("Sombra"));
+        static const char* shadows[] = {tr("Ninguno"), tr("Mapeado (Suave)"), tr("Trazado (Duro)"), tr("Área")};
+        propLabel(tr("Sombra"), false);
         int sh = std::clamp(l.shadow, 0, 3);
         ImGui::SetNextItemWidth(fieldWidth());
         if (ImGui::Combo("##lshadow2", &sh, shadows, IM_ARRAYSIZE(shadows))) {
             history.commitBefore(root);
             l.shadow = sh;
         }
-        ImGui::TextDisabled("  En el visor, las sombras son siempre mapeadas y de una sola luz.");
+        ImGui::TextDisabled(tr("  En el visor, las sombras son siempre mapeadas y de una sola luz."));
     }
     if (isLight && (mask & ~0x2Fu)) {
-        sectionHeader("Página no disponible");
-        ImGui::TextDisabled("  Todavía no implementado en Iron3D.");
+        sectionHeader(tr("Página no disponible"));
+        ImGui::TextDisabled(tr("  Todavía no implementado en Iron3D."));
     }
 }
 
 // --- Ajustes de material como el editor de R19 (2026-11-11) -----------------------
 
-const char* kTexMixNames[] = {"Normal", "Añadir", "Restar", "Multiplicar"};
-const char* kSamplingNames[] = {"Ninguno", "Circular", "Cuadrado", "Alias 1", "Alias 2", "Alias 3", "MIP", "SAT"};
+const char* kTexMixNames[] = {tr("Normal"), tr("Añadir"), tr("Restar"), tr("Multiplicar")};
+const char* kSamplingNames[] = {tr("Ninguno"), tr("Circular"), tr("Cuadrado"), tr("Alias 1"), tr("Alias 2"), tr("Alias 3"), tr("MIP"), tr("SAT")};
 // REFLECTION_DISTRIBUTION_* en el orden de sus valores.
-const char* kReflDistNames[] = {"Especular - Blinn (Heredado)", "Especular - Phong (Heredado)", "Beckmann", "GGX",
-                                "Phong", "Ward", "Lambertiano (Difuso)", "Oren-Nayar (Difuso)", "Irawan (Tejido)"};
+const char* kReflDistNames[] = {tr("Especular - Blinn (Heredado)"), tr("Especular - Phong (Heredado)"), tr("Beckmann"), tr("GGX"),
+                                tr("Phong"), tr("Ward"), tr("Lambertiano (Difuso)"), tr("Oren-Nayar (Difuso)"), tr("Irawan (Tejido)")};
 // REFLECTION_ADDITIVE_MODE_* en el orden de sus valores.
-const char* kReflAttNames[] = {"Promedio", "Mínimo", "Máximo", "Añadir", "Metal"};
-const char* kReflFresnelNames[] = {"Ninguno", "Dieléctrico", "Conductor"};
+const char* kReflAttNames[] = {tr("Promedio"), tr("Mínimo"), tr("Máximo"), tr("Añadir"), tr("Metal")};
+const char* kReflFresnelNames[] = {tr("Ninguno"), tr("Dieléctrico"), tr("Conductor")};
 
 // Porcentaje que solo se aplica al soltar el control (los que cambian la imagen
 // horneada del canal: arrastrar no crea una textura nueva en cada frame).
@@ -4151,15 +4152,15 @@ void shaderTreeLines(const ShaderNode& n, int depth) {
         case ShaderKind::Bitmap: extra = leafName(n.path); break;
         case ShaderKind::Filter: {
             char b[200];
-            std::snprintf(b, sizeof(b), "Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f", n.hue,
+            std::snprintf(b, sizeof(b), tr("Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f"), n.hue,
                           n.saturation * 100, n.lightness * 100, n.fBrightness * 100, n.contrast * 100, n.gamma);
             extra = b;
             break;
         }
         case ShaderKind::Colorizer:
-        case ShaderKind::Gradient: extra = std::to_string(n.gradient.size()) + " nudos"; break;
-        case ShaderKind::Layer: extra = std::to_string(n.layers.size()) + " capas"; break;
-        case ShaderKind::Other: extra = "no se evalúa en el visor"; break;
+        case ShaderKind::Gradient: extra = std::to_string(n.gradient.size()) + tr(" nudos"); break;
+        case ShaderKind::Layer: extra = std::to_string(n.layers.size()) + tr(" capas"); break;
+        case ShaderKind::Other: extra = tr("no se evalúa en el visor"); break;
         default: break;
     }
     std::snprintf(line, sizeof(line), "%*s%s \"%s\"%s%s", depth * 3, "", shaderKindName(n.kind), n.name.c_str(),
@@ -4175,15 +4176,15 @@ void textureField(Material& m, TexSlot s, SceneHistory& history, SceneNode& root
     std::string shown;
     if (eff && !eff->isPlainBitmap()) shown = std::string(shaderKindName(eff->kind)) + " (" + leafName(m.texture(s)) + ")";
     else shown = leafName(m.texture(s));
-    propLabel("Textura", false);
+    propLabel(tr("Textura"), false);
     ImGui::SetNextItemWidth(std::max(60.0f, fieldWidth(240) - 56.0f));
     char buf[260];
     std::snprintf(buf, sizeof(buf), "%s", shown.c_str());
     ImGui::InputText("##tex", buf, sizeof(buf), ImGuiInputTextFlags_ReadOnly);
     if (ImGui::IsItemHovered() && !m.texture(s).empty()) ImGui::SetTooltip("%s", m.texture(s).c_str());
     ImGui::SameLine(0, 2);
-    if (ImGui::Button("...##texpick") && nativeFileDialogAvailable()) {
-        if (auto p = openFileDialog("Elegir imagen", {{"Imágenes", "*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.psd"}})) {
+    if (ImGui::Button(tr("...##texpick")) && nativeFileDialogAvailable()) {
+        if (auto p = openFileDialog(tr("Elegir imagen"), {{tr("Imágenes"), "*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.psd"}})) {
             history.commitBefore(root);
             const std::u8string u = p->u8string();
             m.texture(s) = std::string(u.begin(), u.end());
@@ -4191,17 +4192,17 @@ void textureField(Material& m, TexSlot s, SceneHistory& history, SceneNode& root
             if (bool* on = channelFlag(m, s)) *on = true;
         }
     }
-    setHint("Elegir la imagen del canal (sustituye al shader importado).");
+    setHint(tr("Elegir la imagen del canal (sustituye al shader importado)."));
     ImGui::SameLine(0, 2);
-    if (ImGui::Button("x##texclear")) {
+    if (ImGui::Button(tr("x##texclear"))) {
         history.commitBefore(root);
         m.texture(s).clear();
         c.shader = {};
     }
-    setHint("Quitar la textura del canal.");
+    setHint(tr("Quitar la textura del canal."));
     if (eff && !eff->isPlainBitmap()) {
         shaderTreeLines(*eff, 0);
-        if (eff->hasUnsupported()) ImGui::TextColored(ImVec4(0.95f, 0.7f, 0.3f, 1), "  Hay shaders que el visor todavía no evalúa.");
+        if (eff->hasUnsupported()) ImGui::TextColored(ImVec4(0.95f, 0.7f, 0.3f, 1), tr("  Hay shaders que el visor todavía no evalúa."));
     }
 }
 
@@ -4209,62 +4210,62 @@ void textureField(Material& m, TexSlot s, SceneHistory& history, SceneNode& root
 void colorChannelBlock(Material& m, TexSlot s, SceneHistory& history, SceneNode& root) {
     ChannelSettings& c = m.channel(s);
     ImGui::PushID((int)s);
-    propLabel("Color");
+    propLabel(tr("Color"));
     ImGui::SetNextItemWidth(fieldWidth(240));
     if (ImGui::ColorEdit3("##ccol", &c.color.x, ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_PickerHueBar))
         syncMaterialChannels(m);
     trackEdit(history, root);
-    if (pctDeferred("Brillo", "##cbr", c.brightness, 1000.0f, history, root)) syncMaterialChannels(m);
+    if (pctDeferred(tr("Brillo"), "##cbr", c.brightness, 1000.0f, history, root)) syncMaterialChannels(m);
     textureField(m, s, history, root);
-    comboField("Muestreo", "##csamp", c.sampling, kSamplingNames, IM_ARRAYSIZE(kSamplingNames), history, root, 140);
-    pctField("Desenfoque Desfase", "##cboff", c.blurOffset, -100.0f, 100.0f, history, root);
-    pctField("Desenfoque Escala", "##cbsc", c.blurScale, -100.0f, 100.0f, history, root);
-    comboField("Modo de Mezcla", "##cmix", c.mixMode, kTexMixNames, IM_ARRAYSIZE(kTexMixNames), history, root, 140);
-    pctDeferred("Fuerza de Mezcla", "##cstr", c.mixStrength, 100.0f, history, root);
+    comboField(tr("Muestreo"), "##csamp", c.sampling, kSamplingNames, IM_ARRAYSIZE(kSamplingNames), history, root, 140);
+    pctField(tr("Desenfoque Desfase"), "##cboff", c.blurOffset, -100.0f, 100.0f, history, root);
+    pctField(tr("Desenfoque Escala"), "##cbsc", c.blurScale, -100.0f, 100.0f, history, root);
+    comboField(tr("Modo de Mezcla"), "##cmix", c.mixMode, kTexMixNames, IM_ARRAYSIZE(kTexMixNames), history, root, 140);
+    pctDeferred(tr("Fuerza de Mezcla"), "##cstr", c.mixStrength, 100.0f, history, root);
     ImGui::PopID();
 }
 
 // Canal sin color (Relieve, Normal, Alfa).
 void plainChannelBlock(Material& m, TexSlot s, SceneHistory& history, SceneNode& root) {
     ImGui::PushID((int)s);
-    if (s == TexSlot::Bump) pctField("Fuerza", "##bstr", m.bumpStrength, -1000.0f, 1000.0f, history, root);
-    if (s == TexSlot::Normal) pctField("Fuerza", "##nstr", m.normalStrength, -1000.0f, 1000.0f, history, root);
+    if (s == TexSlot::Bump) pctField(tr("Fuerza"), "##bstr", m.bumpStrength, -1000.0f, 1000.0f, history, root);
+    if (s == TexSlot::Normal) pctField(tr("Fuerza"), "##nstr", m.normalStrength, -1000.0f, 1000.0f, history, root);
     if (s == TexSlot::Alpha) {
-        propLabel("Color");
+        propLabel(tr("Color"));
         ImGui::SetNextItemWidth(fieldWidth(240));
         ImGui::ColorEdit3("##acol", &m.alphaColor.x, ImGuiColorEditFlags_DisplayHSV);
         trackEdit(history, root);
-        pctField("Delta", "##adelta", m.alphaDelta, 0.0f, 100.0f, history, root);
-        propLabel("Invertir", false);
+        pctField(tr("Delta"), "##adelta", m.alphaDelta, 0.0f, 100.0f, history, root);
+        propLabel(tr("Invertir"), false);
         bool b = m.alphaInvert;
         if (ImGui::Checkbox("##ainv", &b)) { history.commitBefore(root); m.alphaInvert = b; }
-        propLabel("Alfa Suave", false);
+        propLabel(tr("Alfa Suave"), false);
         b = m.alphaSoft;
         if (ImGui::Checkbox("##asoft", &b)) { history.commitBefore(root); m.alphaSoft = b; }
-        propLabel("Alfa de Imagen", false);
+        propLabel(tr("Alfa de Imagen"), false);
         b = m.alphaImage;
         if (ImGui::Checkbox("##aimg", &b)) { history.commitBefore(root); m.alphaImage = b; }
     }
     textureField(m, s, history, root);
-    comboField("Muestreo", "##psamp", m.channel(s).sampling, kSamplingNames, IM_ARRAYSIZE(kSamplingNames), history, root, 140);
+    comboField(tr("Muestreo"), "##psamp", m.channel(s).sampling, kSamplingNames, IM_ARRAYSIZE(kSamplingNames), history, root, 140);
     ImGui::PopID();
 }
 
 void colorTabExtras(Material& m, SceneHistory& history, SceneNode& root) {
-    static const char* models[] = {"Lambertiano", "Oren-Nayar"};
-    comboField("Modelo", "##dmodel", m.diffuseModel, models, IM_ARRAYSIZE(models), history, root, 140);
-    pctField("Caída Difusa", "##dfall", m.diffuseFalloff, -100.0f, 100.0f, history, root);
-    pctField("Nivel Difuso", "##dlevel", m.diffuseLevel, 0.0f, 1000.0f, history, root);
+    static const char* models[] = {tr("Lambertiano"), tr("Oren-Nayar")};
+    comboField(tr("Modelo"), "##dmodel", m.diffuseModel, models, IM_ARRAYSIZE(models), history, root, 140);
+    pctField(tr("Caída Difusa"), "##dfall", m.diffuseFalloff, -100.0f, 100.0f, history, root);
+    pctField(tr("Nivel Difuso"), "##dlevel", m.diffuseLevel, 0.0f, 1000.0f, history, root);
     ImGui::BeginDisabled(m.diffuseModel != 1);
-    pctField("Rugosidad", "##drough", m.diffuseRoughness, 0.0f, 100.0f, history, root);
+    pctField(tr("Rugosidad"), "##drough", m.diffuseRoughness, 0.0f, 100.0f, history, root);
     ImGui::EndDisabled();
 }
 
 void reflectancePanel(Material& m, SceneHistory& history, SceneNode& root) {
-    sectionHeader("Global");
-    pctField("Brillo Reflexión Global", "##grefl", m.reflectionBrightness, 0.0f, 1000.0f, history, root);
-    pctField("Brillo Especular Global", "##gspec", m.specularBrightness, 0.0f, 1000.0f, history, root);
-    propLabel("Pase Separado", false);
+    sectionHeader(tr("Global"));
+    pctField(tr("Brillo Reflexión Global"), "##grefl", m.reflectionBrightness, 0.0f, 1000.0f, history, root);
+    pctField(tr("Brillo Especular Global"), "##gspec", m.specularBrightness, 0.0f, 1000.0f, history, root);
+    propLabel(tr("Pase Separado"), false);
     bool sep = m.separatePass;
     if (ImGui::Checkbox("##gsep", &sep)) { history.commitBefore(root); m.separatePass = sep; }
     bool layersChanged = false;
@@ -4272,40 +4273,40 @@ void reflectancePanel(Material& m, SceneHistory& history, SceneNode& root) {
         ReflectLayer& l = m.layers[i];
         ImGui::PushID((int)i);
         char head[200];
-        std::snprintf(head, sizeof(head), "%s  (%s)###lay", l.name.empty() ? "Capa" : l.name.c_str(),
-                      l.blendMode == 1 ? "Añadir" : "Normal");
+        std::snprintf(head, sizeof(head), "%s  (%s)###lay", l.name.empty() ? tr("Capa") : l.name.c_str(),
+                      l.blendMode == 1 ? tr("Añadir") : tr("Normal"));
         if (ImGui::CollapsingHeader(head, ImGuiTreeNodeFlags_DefaultOpen)) {
             int dist = std::clamp(l.distribution, 0, IM_ARRAYSIZE(kReflDistNames) - 1);
-            if (comboField("Tipo", "##ldist", dist, kReflDistNames, IM_ARRAYSIZE(kReflDistNames), history, root, 220)) {
+            if (comboField(tr("Tipo"), "##ldist", dist, kReflDistNames, IM_ARRAYSIZE(kReflDistNames), history, root, 220)) {
                 l.distribution = dist;
                 layersChanged = true;
             }
-            comboField("Atenuación", "##latt", l.attenuation, kReflAttNames, IM_ARRAYSIZE(kReflAttNames), history, root, 140);
-            layersChanged |= pctField("Rugosidad", "##lrough", l.roughness, 0.0f, 100.0f, history, root);
-            layersChanged |= pctField("Fuerza Reflexión", "##lrefl", l.strength, 0.0f, 1000.0f, history, root);
-            layersChanged |= pctField("Fuerza Especular", "##lspec", l.specular, 0.0f, 1000.0f, history, root);
-            pctField("Fuerza Relieve", "##lbump", l.bumpStrength, -1000.0f, 1000.0f, history, root);
-            sectionHeader("Color de Capa");
-            propLabel("Color");
+            comboField(tr("Atenuación"), "##latt", l.attenuation, kReflAttNames, IM_ARRAYSIZE(kReflAttNames), history, root, 140);
+            layersChanged |= pctField(tr("Rugosidad"), "##lrough", l.roughness, 0.0f, 100.0f, history, root);
+            layersChanged |= pctField(tr("Fuerza Reflexión"), "##lrefl", l.strength, 0.0f, 1000.0f, history, root);
+            layersChanged |= pctField(tr("Fuerza Especular"), "##lspec", l.specular, 0.0f, 1000.0f, history, root);
+            pctField(tr("Fuerza Relieve"), "##lbump", l.bumpStrength, -1000.0f, 1000.0f, history, root);
+            sectionHeader(tr("Color de Capa"));
+            propLabel(tr("Color"));
             ImGui::SetNextItemWidth(fieldWidth(240));
             if (ImGui::ColorEdit3("##lcol", &l.colorRaw.x, ImGuiColorEditFlags_DisplayHSV)) {
                 l.color = l.colorRaw * l.colorBrightness;
                 layersChanged = true;
             }
             trackEdit(history, root);
-            if (pctField("Brillo", "##lcbr", l.colorBrightness, 0.0f, 1000.0f, history, root)) {
+            if (pctField(tr("Brillo"), "##lcbr", l.colorBrightness, 0.0f, 1000.0f, history, root)) {
                 l.color = l.colorRaw * l.colorBrightness;
                 layersChanged = true;
             }
-            propLabel("Textura", false);
-            ImGui::TextDisabled("%s", l.colorTex.empty() ? "(ninguna)" : leafName(l.colorTex).c_str());
-            comboField("Modo de Mezcla", "##lcmix", l.colorMixMode, kTexMixNames, IM_ARRAYSIZE(kTexMixNames), history, root, 140);
-            pctField("Fuerza de Mezcla", "##lcstr", l.colorMixStrength, 0.0f, 100.0f, history, root);
-            sectionHeader("Fresnel de Capa");
-            if (comboField("Fresnel", "##lfres", l.fresnel, kReflFresnelNames, IM_ARRAYSIZE(kReflFresnelNames), history, root, 140))
+            propLabel(tr("Textura"), false);
+            ImGui::TextDisabled("%s", l.colorTex.empty() ? tr("(ninguna)") : leafName(l.colorTex).c_str());
+            comboField(tr("Modo de Mezcla"), "##lcmix", l.colorMixMode, kTexMixNames, IM_ARRAYSIZE(kTexMixNames), history, root, 140);
+            pctField(tr("Fuerza de Mezcla"), "##lcstr", l.colorMixStrength, 0.0f, 100.0f, history, root);
+            sectionHeader(tr("Fresnel de Capa"));
+            if (comboField(tr("Fresnel"), "##lfres", l.fresnel, kReflFresnelNames, IM_ARRAYSIZE(kReflFresnelNames), history, root, 140))
                 layersChanged = true;
             ImGui::BeginDisabled(l.fresnel == 0);
-            propLabel("IOR");
+            propLabel(tr("IOR"));
             ImGui::SetNextItemWidth(fieldWidth());
             if (ImGui::DragFloat("##lior", &l.ior, 0.01f, 1.0f, 10.0f, "%.3f")) layersChanged = true;
             trackEdit(history, root);
@@ -4313,7 +4314,7 @@ void reflectancePanel(Material& m, SceneHistory& history, SceneNode& root) {
         }
         ImGui::PopID();
     }
-    if (m.layers.empty()) ImGui::TextDisabled("  Sin capas importadas: el visor usa Metálico/Rugosidad.");
+    if (m.layers.empty()) ImGui::TextDisabled(tr("  Sin capas importadas: el visor usa Metálico/Rugosidad."));
     if (layersChanged) {
         glm::vec3 c = m.baseColor;
         float metal = m.metallic, rough = m.roughness;
@@ -4323,26 +4324,26 @@ void reflectancePanel(Material& m, SceneHistory& history, SceneNode& root) {
             m.roughness = rough;
         }
     }
-    sectionHeader("Visor (PBR equivalente)");
-    propLabel("Metálico");
+    sectionHeader(tr("Visor (PBR equivalente)"));
+    propLabel(tr("Metálico"));
     float metallicPct = m.metallic * 100.0f;
     ImGui::SetNextItemWidth(fieldWidth());
     if (ImGui::SliderFloat("##metallic", &metallicPct, 0.0f, 100.0f, "%.0f %%")) m.metallic = metallicPct / 100.0f;
     trackEdit(history, root);
-    propLabel("Rugosidad");
+    propLabel(tr("Rugosidad"));
     float roughnessPct = m.roughness * 100.0f;
     ImGui::SetNextItemWidth(fieldWidth());
     if (ImGui::SliderFloat("##roughness", &roughnessPct, 0.0f, 100.0f, "%.0f %%")) m.roughness = roughnessPct / 100.0f;
     trackEdit(history, root);
-    ImGui::TextDisabled("  El visor todavía no pinta cada capa por separado (brillos de color, Atenuación).");
+    ImGui::TextDisabled(tr("  El visor todavía no pinta cada capa por separado (brillos de color, Atenuación)."));
 }
 
 void channelChecks(Material& m, SceneHistory& history, SceneNode& root) {
-    struct Row { const char* name; bool* flag; };
-    const Row rows[] = {{"Color", &m.useColor},          {"Difusión", nullptr},          {"Luminancia", &m.useLuminance},
-                        {"Transparencia", &m.useTransparency}, {"Reflectancia", &m.useReflectance}, {"Entorno", nullptr},
-                        {"Niebla", nullptr},          {"Relieve", &m.useBump},        {"Normal", &m.useNormal},
-                        {"Alfa", &m.useAlpha},        {"Fosforescencia", nullptr},    {"Desplazamiento", nullptr}};
+    struct Row { Tr name; bool* flag; };
+    const Row rows[] = {{tr("Color"), &m.useColor},          {tr("Difusión"), nullptr},          {tr("Luminancia"), &m.useLuminance},
+                        {"Transparencia", &m.useTransparency}, {tr("Reflectancia"), &m.useReflectance}, {tr("Entorno"), nullptr},
+                        {"Niebla", nullptr},          {tr("Relieve"), &m.useBump},        {tr("Normal"), &m.useNormal},
+                        {"Alfa", &m.useAlpha},        {tr("Fosforescencia"), nullptr},    {tr("Desplazamiento"), nullptr}};
     for (const Row& r : rows) {
         if (!r.flag) {
             roCheck(r.name, false, false);
@@ -4362,7 +4363,7 @@ void channelChecks(Material& m, SceneHistory& history, SceneNode& root) {
 
 void drawMaterialAttributes(Material& m, int index, SceneNode& root, SceneHistory& history) {
     char title[200];
-    std::snprintf(title, sizeof(title), "Material [%s]", m.name.c_str());
+    std::snprintf(title, sizeof(title), tr("Material [%s]"), m.name.c_str());
     {
         ImDrawList* dl = ImGui::GetWindowDrawList();
         const ImVec2 p = ImGui::GetCursorScreenPos();
@@ -4374,60 +4375,60 @@ void drawMaterialAttributes(Material& m, int index, SceneNode& root, SceneHistor
         if (g_fontBold) ImGui::PopFont();
         ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 22));
     }
-    static const char* tabs[] = {"Básico", "Color", "Luminancia", "Transparencia", "Reflectancia", "Relieve",
-                                 "Normal", "Alfa", "Iluminación", "Editor", "Asignar"};
+    static const char* tabs[] = {tr("Básico"), tr("Color"), tr("Luminancia"), tr("Transparencia"), tr("Reflectancia"), tr("Relieve"),
+                                 tr("Normal"), tr("Alfa"), tr("Iluminación"), tr("Editor"), tr("Asignar")};
     attrTabRow(tabs, IM_ARRAYSIZE(tabs), g.matMask);
 
     if (tabOn(g.matMask, 0)) {
-        sectionHeader("Propiedades Básicas");
-        propLabel("Nombre", false);
+        sectionHeader(tr("Propiedades Básicas"));
+        propLabel(tr("Nombre"), false);
         char nameBuf[128];
         std::snprintf(nameBuf, sizeof(nameBuf), "%s", m.name.c_str());
         ImGui::SetNextItemWidth(fieldWidth(220));
         if (ImGui::InputText("##mname", nameBuf, sizeof(nameBuf)) && nameBuf[0]) m.name = nameBuf;
         trackEdit(history, root);
-        roCombo("Capa", "");
+        roCombo(tr("Capa"), "");
         channelChecks(m, history, root);
     }
     if (tabOn(g.matMask, 1)) {
-        sectionHeader("Color");
+        sectionHeader(tr("Color"));
         colorChannelBlock(m, TexSlot::Color, history, root);
         colorTabExtras(m, history, root);
     }
     if (tabOn(g.matMask, 2)) {
-        sectionHeader("Luminancia");
+        sectionHeader(tr("Luminancia"));
         colorChannelBlock(m, TexSlot::Emission, history, root);
     }
     if (tabOn(g.matMask, 3)) {
-        sectionHeader("Transparencia");
+        sectionHeader(tr("Transparencia"));
         colorChannelBlock(m, TexSlot::Transparency, history, root);
-        propLabel("Refracción");
+        propLabel(tr("Refracción"));
         ImGui::SetNextItemWidth(fieldWidth());
         ImGui::DragFloat("##tior", &m.ior, 0.01f, 0.25f, 4.0f, "%.3f");
         trackEdit(history, root);
     }
     if (tabOn(g.matMask, 4)) reflectancePanel(m, history, root);
     if (tabOn(g.matMask, 5)) {
-        sectionHeader("Relieve");
+        sectionHeader(tr("Relieve"));
         plainChannelBlock(m, TexSlot::Bump, history, root);
     }
     if (tabOn(g.matMask, 6)) {
-        sectionHeader("Normal");
+        sectionHeader(tr("Normal"));
         plainChannelBlock(m, TexSlot::Normal, history, root);
     }
     if (tabOn(g.matMask, 7)) {
-        sectionHeader("Alfa");
+        sectionHeader(tr("Alfa"));
         plainChannelBlock(m, TexSlot::Alpha, history, root);
     }
     if (tabOn(g.matMask, 8) || tabOn(g.matMask, 9)) {
-        sectionHeader(tabOn(g.matMask, 8) ? "Iluminación" : "Editor");
-        ImGui::TextDisabled("  Todavía no implementado en Iron3D.");
+        sectionHeader(tabOn(g.matMask, 8) ? tr("Iluminación") : tr("Editor"));
+        ImGui::TextDisabled(tr("  Todavía no implementado en Iron3D."));
     }
     if (tabOn(g.matMask, 10)) {
-        sectionHeader("Asignar");
+        sectionHeader(tr("Asignar"));
         std::vector<SceneNode*> users;
         collectUsers(root, index, users);
-        if (users.empty()) ImGui::TextDisabled("  Ningún objeto usa este material. Arrástrelo al Gestor de Objetos.");
+        if (users.empty()) ImGui::TextDisabled(tr("  Ningún objeto usa este material. Arrástrelo al Gestor de Objetos."));
         for (SceneNode* u : users) {
             ImGui::PushID(u->id());
             icons::draw(ImGui::GetWindowDrawList(), iconFor(u->primitive), ImGui::GetCursorScreenPos(), 16, true);
@@ -4440,16 +4441,16 @@ void drawMaterialAttributes(Material& m, int index, SceneNode& root, SceneHistor
 }
 
 void drawTagAttributes(SceneNode& node, std::vector<Material>& materials, SceneNode& root, SceneHistory& history) {
-    titleLine(Icon::Sphere, "Etiqueta de Textura [Textura]");
-    static const char* tabs[] = {"Básico", "Etiqueta", "Coordenadas"};
+    titleLine(Icon::Sphere, tr("Etiqueta de Textura [Textura]"));
+    static const char* tabs[] = {tr("Básico"), tr("Etiqueta"), tr("Coordenadas")};
     attrTabRow(tabs, IM_ARRAYSIZE(tabs), g.tagMask);
     if (tabOn(g.tagMask, 0)) {
-        sectionHeader("Propiedades Básicas");
-        roCombo("Nombre", "Textura");
+        sectionHeader(tr("Propiedades Básicas"));
+        roCombo(tr("Nombre"), tr("Textura"));
     }
     if (tabOn(g.tagMask, 1)) {
-        sectionHeader("Propiedades de Etiqueta");
-        propLabel("Material", false);
+        sectionHeader(tr("Propiedades de Etiqueta"));
+        propLabel(tr("Material"), false);
         const char* cur = node.materialIndex >= 0 && (size_t)node.materialIndex < materials.size()
                               ? materials[(size_t)node.materialIndex].name.c_str()
                               : "";
@@ -4462,23 +4463,23 @@ void drawTagAttributes(SceneNode& node, std::vector<Material>& materials, SceneN
                 }
             ImGui::EndCombo();
         }
-        roCombo("Selección", "");
-        roCombo("Proyección", "Mapeado UVW");
-        roCombo("Lado", "Ambos");
-        roCheck("Mezclar Texturas", false);
-        roCheck("Repetición", true);
-        roCheck("Sin Costuras", false);
-        roCheck("Usar UVW para Relieve", true);
-        roFloat("Desfase U", 0, "%.0f %%");
-        roFloat("Desfase V", 0, "%.0f %%");
-        roFloat("Longitud U", 100, "%.0f %%");
-        roFloat("Longitud V", 100, "%.0f %%");
-        roFloat("Repeticiones U", 1, "%.0f");
-        roFloat("Repeticiones V", 1, "%.0f");
+        roCombo(tr("Selección"), "");
+        roCombo(tr("Proyección"), tr("Mapeado UVW"));
+        roCombo(tr("Lado"), tr("Ambos"));
+        roCheck(tr("Mezclar Texturas"), false);
+        roCheck(tr("Repetición"), true);
+        roCheck(tr("Sin Costuras"), false);
+        roCheck(tr("Usar UVW para Relieve"), true);
+        roFloat(tr("Desfase U"), 0, "%.0f %%");
+        roFloat(tr("Desfase V"), 0, "%.0f %%");
+        roFloat(tr("Longitud U"), 100, "%.0f %%");
+        roFloat(tr("Longitud V"), 100, "%.0f %%");
+        roFloat(tr("Repeticiones U"), 1, "%.0f");
+        roFloat(tr("Repeticiones V"), 1, "%.0f");
     }
     if (tabOn(g.tagMask, 2)) {
-        sectionHeader("Coordenadas");
-        ImGui::TextDisabled("  Todavía no implementado en Iron3D.");
+        sectionHeader(tr("Coordenadas"));
+        ImGui::TextDisabled(tr("  Todavía no implementado en Iron3D."));
     }
 }
 
@@ -4486,24 +4487,24 @@ void drawAttributesManager(SceneNode& root, SceneNode* selected, SceneHistory& h
                            std::vector<Material>& materials, ImVec2 pos, ImVec2 size) {
     beginPanel("##attrmgr", pos, size, ImGuiWindowFlags_MenuBar);
     if (ImGui::BeginMenuBar()) {
-        panelGrip(names().attributes);
-        if (ImGui::BeginMenu("Modo")) {
-            if (ImGui::MenuItem("Objeto", nullptr, g.focus == AttrFocus::Object)) g.focus = AttrFocus::Object;
-            if (ImGui::MenuItem("Etiqueta", nullptr, g.focus == AttrFocus::Tag, selected && selected->materialIndex >= 0))
+        panelGrip(tr(names().attributes));
+        if (ImGui::BeginMenu(tr("Modo"))) {
+            if (ImGui::MenuItem(tr("Objeto"), nullptr, g.focus == AttrFocus::Object)) g.focus = AttrFocus::Object;
+            if (ImGui::MenuItem(tr("Etiqueta"), nullptr, g.focus == AttrFocus::Tag, selected && selected->materialIndex >= 0))
                 g.focus = AttrFocus::Tag;
-            if (ImGui::MenuItem("Material", nullptr, g.focus == AttrFocus::Material, g.selectedMat >= 0))
+            if (ImGui::MenuItem(tr("Material"), nullptr, g.focus == AttrFocus::Material, g.selectedMat >= 0))
                 g.focus = AttrFocus::Material;
             ImGui::Separator();
-            if (ImGui::MenuItem("Proyecto", "Ctrl+D", g.focus == AttrFocus::Project)) g.focus = AttrFocus::Project;
+            if (ImGui::MenuItem(tr("Proyecto"), tr("Ctrl+D"), g.focus == AttrFocus::Project)) g.focus = AttrFocus::Project;
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Editar")) {
-            disabledItems({{"Copiar", ""}, {"Pegar", ""}, {nullptr, nullptr}, {"Seleccionar Todo", ""},
-                           {"Mostrar Subcanales", ""}});
+        if (ImGui::BeginMenu(tr("Editar"))) {
+            disabledItems({{tr("Copiar"), ""}, {tr("Pegar"), ""}, {nullptr, nullptr}, {tr("Seleccionar Todo"), ""},
+                           {tr("Mostrar Subcanales"), ""}});
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Datos de Usuario")) {
-            disabledItems({{"Añadir Datos de Usuario...", ""}, {"Gestionar Datos de Usuario...", ""}});
+        if (ImGui::BeginMenu(tr("Datos de Usuario"))) {
+            disabledItems({{tr("Añadir Datos de Usuario..."), ""}, {tr("Gestionar Datos de Usuario..."), ""}});
             ImGui::EndMenu();
         }
         attrHeaderNav();
@@ -4543,7 +4544,7 @@ void drawAttributesManager(SceneNode& root, SceneNode* selected, SceneHistory& h
 void drawKeyMenuItems() {
     using KR = UiState::KeyReq;
     const bool any = !g.keySel.empty();
-    ImGui::TextDisabled("%zu clave%s seleccionada%s", g.keySel.size(), g.keySel.size() == 1 ? "" : "s",
+    ImGui::TextDisabled(tr("%zu clave%s seleccionada%s"), g.keySel.size(), g.keySel.size() == 1 ? "" : "s",
                         g.keySel.size() == 1 ? "" : "s");
     ImGui::Separator();
     auto interp = [&](const char* label, KeyInterp ki) {
@@ -4552,11 +4553,11 @@ void drawKeyMenuItems() {
             g.keyReqInterp = ki;
         }
     };
-    interp("Interpolación Spline", KeyInterp::Spline);
-    interp("Interpolación Lineal", KeyInterp::Linear);
-    interp("Interpolación Escalón", KeyInterp::Step);
+    interp(tr("Interpolación Spline"), KeyInterp::Spline);
+    interp(tr("Interpolación Lineal"), KeyInterp::Linear);
+    interp(tr("Interpolación Escalón"), KeyInterp::Step);
     ImGui::Separator();
-    if (ImGui::MenuItem("Eliminar Claves", "Supr", false, any)) g.keyReq = KR::Delete;
+    if (ImGui::MenuItem(tr("Eliminar Claves"), tr("Supr"), false, any)) g.keyReq = KR::Delete;
 }
 
 void applyKeyRequest(SceneNode& root, SceneNode* selected, SceneHistory& history) {
@@ -4572,16 +4573,16 @@ void applyKeyRequest(SceneNode& root, SceneNode* selected, SceneHistory& history
         std::set<int> moved;
         for (int f : g.keySel) moved.insert(f + g.keyReqDelta);
         g.keySel = moved;
-        flashStatus("Claves movidas " + std::to_string(g.keyReqDelta) + " F (" + std::to_string(n) + ").");
+        flashStatus(tr("Claves movidas ") + std::to_string(g.keyReqDelta) + " F (" + std::to_string(n) + ").");
     } else if (req == KR::Delete) {
         n = deleteKeys(*selected, frames);
         g.keySel.clear();
-        flashStatus("Eliminadas " + std::to_string(n) + (n == 1 ? " clave." : " claves."));
+        flashStatus(tr("Eliminadas ") + std::to_string(n) + (n == 1 ? tr(" clave.") : tr(" claves.")));
     } else {
         n = setKeyInterp(*selected, frames, g.keyReqInterp);
-        const char* names[] = {"Spline", "Lineal", "Escalón"};
-        flashStatus(std::string("Interpolación ") + names[(int)g.keyReqInterp] + " en " + std::to_string(n) +
-                    (n == 1 ? " clave." : " claves."));
+        const char* names[] = {tr("Spline"), tr("Lineal"), tr("Escalón")};
+        flashStatus(std::string(tr("Interpolación ")) + names[(int)g.keyReqInterp] + tr(" en ") + std::to_string(n) +
+                    (n == 1 ? tr(" clave.") : tr(" claves.")));
     }
     g.lastEvalFrame = -1e9f;  // que la escena tome ya los valores nuevos
     g.selKeys = keyFrames(*selected);
@@ -4597,13 +4598,13 @@ void drawCurveEditor(SceneNode* selected) {
     ImGui::SetNextWindowSize(ImVec2(760, 340), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowPos(ImVec2(300, 300), ImGuiCond_FirstUseEver);
     bool open = true;
-    if (!ImGui::Begin("Editor de Curvas###curves", &open, ImGuiWindowFlags_NoCollapse)) {
+    if (!ImGui::Begin(tr("Editor de Curvas###curves"), &open, ImGuiWindowFlags_NoCollapse)) {
         ImGui::End();
         if (!open) g.showCurves = false;
         return;
     }
     g.curvesHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
-    static const char* kChan[9] = {"Pos. X", "Pos. Y", "Pos. Z", "Rot. H", "Rot. P", "Rot. B", "Esc. X", "Esc. Y", "Esc. Z"};
+    static const char* kChan[9] = {tr("Pos. X"), tr("Pos. Y"), tr("Pos. Z"), tr("Rot. H"), tr("Rot. P"), tr("Rot. B"), tr("Esc. X"), tr("Esc. Y"), tr("Esc. Z")};
     static const ImU32 kCol[9] = {IM_COL32(230, 80, 80, 255), IM_COL32(110, 210, 90, 255), IM_COL32(90, 140, 240, 255),
                                   IM_COL32(240, 160, 70, 255), IM_COL32(200, 110, 220, 255), IM_COL32(80, 210, 210, 255),
                                   IM_COL32(230, 130, 130, 255), IM_COL32(150, 220, 130, 255), IM_COL32(130, 170, 240, 255)};
@@ -4623,16 +4624,16 @@ void drawCurveEditor(SceneNode* selected) {
         ImGui::PopStyleColor();
     }
     ImGui::BeginDisabled(g.keySel.empty());
-    if (ImGui::Button("Spline")) { g.keyReq = UiState::KeyReq::Interp; g.keyReqInterp = KeyInterp::Spline; }
+    if (ImGui::Button(tr("Spline"))) { g.keyReq = UiState::KeyReq::Interp; g.keyReqInterp = KeyInterp::Spline; }
     ImGui::SameLine();
-    if (ImGui::Button("Lineal")) { g.keyReq = UiState::KeyReq::Interp; g.keyReqInterp = KeyInterp::Linear; }
+    if (ImGui::Button(tr("Lineal"))) { g.keyReq = UiState::KeyReq::Interp; g.keyReqInterp = KeyInterp::Linear; }
     ImGui::SameLine();
-    if (ImGui::Button("Escalón")) { g.keyReq = UiState::KeyReq::Interp; g.keyReqInterp = KeyInterp::Step; }
+    if (ImGui::Button(tr("Escalón"))) { g.keyReq = UiState::KeyReq::Interp; g.keyReqInterp = KeyInterp::Step; }
     ImGui::SameLine();
-    if (ImGui::Button("Eliminar")) g.keyReq = UiState::KeyReq::Delete;
+    if (ImGui::Button(tr("Eliminar"))) g.keyReq = UiState::KeyReq::Delete;
     ImGui::EndDisabled();
     ImGui::SameLine();
-    ImGui::TextDisabled(selected ? (g.selKeys.empty() ? "%s: sin claves (F9 graba)" : "%s") : "Sin objeto activo",
+    ImGui::TextDisabled(selected ? (g.selKeys.empty() ? tr("%s: sin claves (F9 graba)") : "%s") : tr("Sin objeto activo"),
                         selected ? selected->name().c_str() : "");
 
     const ImVec2 c0 = ImGui::GetCursorScreenPos();
@@ -4778,7 +4779,7 @@ void drawTimeline(ImVec2 pos, ImVec2 size) {
         g.frame = std::round(std::clamp((float)g.minFrame + t * (float)span, (float)g.minFrame, (float)g.maxFrame));
         g.playDir = 0;
     }
-    if (ImGui::IsItemHovered()) g.hint = "Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.";
+    if (ImGui::IsItemHovered()) g.hint = tr("Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.");
 
     // Claves del objeto activo: cuadraditos sobre la regla, como en C4D. Clic
     // selecciona (Mayus anade/quita), arrastrar mueve las seleccionadas, clic
@@ -4796,7 +4797,7 @@ void drawTimeline(ImVec2 pos, ImVec2 size) {
         ImGui::SetCursorScreenPos(ImVec2(fx((float)k) - hw - 1, r1.y - 11));
         ImGui::InvisibleButton("##key", ImVec2(2 * hw + 2, 11));
         if (ImGui::IsItemHovered())
-            g.hint = "Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.";
+            g.hint = tr("Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.");
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
             if (ImGui::GetIO().KeyShift) {
                 if (!g.keySel.erase(k)) g.keySel.insert(k);
@@ -4844,7 +4845,7 @@ void drawTimeline(ImVec2 pos, ImVec2 size) {
     const float b = std::min(size.y, 56.0f) - rulerH - 12.0f; // alto fijo aunque el panel crezca (SFM)
     ImGui::SetNextItemWidth(56);
     ImGui::DragInt("##tmin", &g.minFrame, 0.2f, -100000, g.maxFrame - 1, "%d F");
-    setHint("Tiempo Mínimo del proyecto.");
+    setHint(tr("Tiempo Mínimo del proyecto."));
     ImGui::SameLine();
     {
         const ImVec2 p = ImGui::GetCursorScreenPos();
@@ -4854,16 +4855,16 @@ void drawTimeline(ImVec2 pos, ImVec2 size) {
         const float a0 = p.x + (float)(g.previewMin - g.minFrame) / (float)span * w;
         const float a1 = p.x + (float)(g.previewMax - g.minFrame) / (float)span * w;
         dl->AddRectFilled(ImVec2(a0, p.y + b * 0.3f), ImVec2(a1, p.y + b * 0.7f), IM_COL32(120, 120, 120, 255), 2);
-        setHint("Rango de previo (Tiempo Mínimo/Máximo de Previo).");
+        setHint(tr("Rango de previo (Tiempo Mínimo/Máximo de Previo)."));
     }
     ImGui::SameLine();
     ImGui::SetNextItemWidth(56);
     ImGui::DragInt("##tmax", &g.maxFrame, 0.2f, g.minFrame + 1, 100000, "%d F");
-    setHint("Tiempo Máximo del proyecto (editable, la regla se reescala).");
+    setHint(tr("Tiempo Máximo del proyecto (editable, la regla se reescala)."));
     ImGui::SameLine();
     ImGui::SetNextItemWidth(56);
     ImGui::DragInt("##pmax2", &g.previewMax, 0.2f, g.previewMin, g.maxFrame, "%d F");
-    setHint("Tiempo Máximo de Previo.");
+    setHint(tr("Tiempo Máximo de Previo."));
     ImGui::SameLine(0, 14);
 
     auto tbtn = [&](const char* id, Icon icon, bool active, bool enabled, const char* tip) {
@@ -4871,31 +4872,31 @@ void drawTimeline(ImVec2 pos, ImVec2 size) {
         ImGui::SameLine();
         return clicked;
     };
-    if (tbtn("tstart", Icon::ToStart, false, true, "Ir al Inicio [Mayús+F]")) g.frame = (float)g.minFrame;
-    if (tbtn("tprevk", Icon::PrevKey, false, !g.selKeys.empty(), "Ir a la Clave Anterior [Ctrl+F]")) jumpToKey(-1);
-    if (tbtn("tprev", Icon::StepBack, false, true, "Ir al Fotograma Anterior [F]")) g.frame = std::max((float)g.minFrame, std::ceil(g.frame) - 1);
-    if (tbtn("tplayb", Icon::PlayBack, g.playDir == -1, true, "Reproducir Hacia Atrás [F6]")) g.playDir = g.playDir == -1 ? 0 : -1;
-    if (tbtn("tplay", g.playDir == 1 ? Icon::Pause : Icon::Play, g.playDir == 1, true, "Reproducir Hacia Delante [F8]")) g.playDir = g.playDir == 1 ? 0 : 1;
-    if (tbtn("tnext", Icon::StepFwd, false, true, "Ir al Fotograma Siguiente [G]")) g.frame = std::min((float)g.maxFrame, std::floor(g.frame) + 1);
-    if (tbtn("tnextk", Icon::NextKey, false, !g.selKeys.empty(), "Ir a la Clave Siguiente [Ctrl+G]")) jumpToKey(1);
-    if (tbtn("tend", Icon::ToEnd, false, true, "Ir al Final [Mayús+G]")) g.frame = (float)g.maxFrame;
+    if (tbtn("tstart", Icon::ToStart, false, true, tr("Ir al Inicio [Mayús+F]"))) g.frame = (float)g.minFrame;
+    if (tbtn("tprevk", Icon::PrevKey, false, !g.selKeys.empty(), tr("Ir a la Clave Anterior [Ctrl+F]"))) jumpToKey(-1);
+    if (tbtn("tprev", Icon::StepBack, false, true, tr("Ir al Fotograma Anterior [F]"))) g.frame = std::max((float)g.minFrame, std::ceil(g.frame) - 1);
+    if (tbtn("tplayb", Icon::PlayBack, g.playDir == -1, true, tr("Reproducir Hacia Atrás [F6]"))) g.playDir = g.playDir == -1 ? 0 : -1;
+    if (tbtn("tplay", g.playDir == 1 ? Icon::Pause : Icon::Play, g.playDir == 1, true, tr("Reproducir Hacia Delante [F8]"))) g.playDir = g.playDir == 1 ? 0 : 1;
+    if (tbtn("tnext", Icon::StepFwd, false, true, tr("Ir al Fotograma Siguiente [G]"))) g.frame = std::min((float)g.maxFrame, std::floor(g.frame) + 1);
+    if (tbtn("tnextk", Icon::NextKey, false, !g.selKeys.empty(), tr("Ir a la Clave Siguiente [Ctrl+G]"))) jumpToKey(1);
+    if (tbtn("tend", Icon::ToEnd, false, true, tr("Ir al Final [Mayús+G]"))) g.frame = (float)g.maxFrame;
     toolbarSeparator(true, b);
     ImGui::SameLine();
-    if (tbtn("trec", Icon::Record, false, true, "Grabar Objetos Activos [F9]")) g.recordRequested = true;
-    if (tbtn("tauto", Icon::AutoKey, g.autoKey, true, "Fotogramas Clave Automáticos [Ctrl+F9]")) g.autoKey = !g.autoKey;
-    tbtn("tksel", Icon::KeySel, false, false, "Selección de Claves (todavía no implementado)");
+    if (tbtn("trec", Icon::Record, false, true, tr("Grabar Objetos Activos [F9]"))) g.recordRequested = true;
+    if (tbtn("tauto", Icon::AutoKey, g.autoKey, true, tr("Fotogramas Clave Automáticos [Ctrl+F9]"))) g.autoKey = !g.autoKey;
+    tbtn("tksel", Icon::KeySel, false, false, tr("Selección de Claves (todavía no implementado)"));
     toolbarSeparator(true, b);
     ImGui::SameLine();
-    if (tbtn("tkpos", Icon::KeyPos, g.keyPos, true, "Grabar Posición")) g.keyPos = !g.keyPos;
-    if (tbtn("tkscl", Icon::KeyScale, g.keyScl, true, "Grabar Escala")) g.keyScl = !g.keyScl;
-    if (tbtn("tkrot", Icon::KeyRot, g.keyRot, true, "Grabar Rotación")) g.keyRot = !g.keyRot;
-    tbtn("tkpar", Icon::KeyParam, false, false, "Grabar Parámetro (todavía no implementado)");
-    tbtn("tkpla", Icon::KeyPLA, false, false, "Grabar Nivel de Puntos (todavía no implementado)");
+    if (tbtn("tkpos", Icon::KeyPos, g.keyPos, true, tr("Grabar Posición"))) g.keyPos = !g.keyPos;
+    if (tbtn("tkscl", Icon::KeyScale, g.keyScl, true, tr("Grabar Escala"))) g.keyScl = !g.keyScl;
+    if (tbtn("tkrot", Icon::KeyRot, g.keyRot, true, tr("Grabar Rotación"))) g.keyRot = !g.keyRot;
+    tbtn("tkpar", Icon::KeyParam, false, false, tr("Grabar Parámetro (todavía no implementado)"));
+    tbtn("tkpla", Icon::KeyPLA, false, false, tr("Grabar Nivel de Puntos (todavía no implementado)"));
     ImGui::PopStyleVar();
     // Panel mas alto que la tira de transporte (SFM): el resto es donde ira
     // el editor de curvas; de momento se dice tal cual.
     if (size.y > 110.0f) {
-        const char* msg = "Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D";
+        const char* msg = tr("Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D");
         const ImVec2 ts = ImGui::CalcTextSize(msg);
         ImDrawList* tdl = ImGui::GetWindowDrawList();
         const float top = pos.y + 60.0f;
@@ -4911,25 +4912,25 @@ void drawMaterialManager(SceneNode& root, SceneNode*& selected, SceneHistory& hi
                          std::vector<Material>& materials, ImVec2 pos, ImVec2 size) {
     beginPanel("##matmgr", pos, size, ImGuiWindowFlags_MenuBar);
     if (ImGui::BeginMenuBar()) {
-        panelGrip(names().materials);
-        if (ImGui::BeginMenu("Crear")) {
-            ImGui::MenuItem("Nuevo Material PBR", "Ctrl+Mayús+N", false, false);
-            if (ImGui::MenuItem("Nuevo Material", "Ctrl+N")) {
+        panelGrip(tr(names().materials));
+        if (ImGui::BeginMenu(tr("Crear"))) {
+            ImGui::MenuItem(tr("Nuevo Material PBR"), tr("Ctrl+Mayús+N"), false, false);
+            if (ImGui::MenuItem(tr("Nuevo Material"), tr("Ctrl+N"))) {
                 history.commitBefore(root);
                 newMaterial(materials);
             }
-            ImGui::BeginMenu("Shader", false);
+            ImGui::BeginMenu(tr("Shader"), false);
             ImGui::Separator();
-            disabledItems({{"Cargar Materiales...", "Ctrl+Mayús+O"}, {"Guardar Materiales como...", ""},
-                           {"Guardar Todos los Materiales como...", ""}, {nullptr, nullptr},
-                           {"Cargar Material Preestablecido", ""}, {"Guardar Material Preestablecido...", ""}});
+            disabledItems({{tr("Cargar Materiales..."), tr("Ctrl+Mayús+O")}, {tr("Guardar Materiales como..."), ""},
+                           {tr("Guardar Todos los Materiales como..."), ""}, {nullptr, nullptr},
+                           {tr("Cargar Material Preestablecido"), ""}, {tr("Guardar Material Preestablecido..."), ""}});
             ImGui::EndMenu();
         }
         const bool hasSel = g.selectedMat >= 0 && (size_t)g.selectedMat < materials.size();
-        if (ImGui::BeginMenu("Edición")) {
-            ImGui::MenuItem("Deshacer", "Ctrl+Z", false, false);
+        if (ImGui::BeginMenu(tr("Edición"))) {
+            ImGui::MenuItem(tr("Deshacer"), tr("Ctrl+Z"), false, false);
             ImGui::Separator();
-            if (ImGui::MenuItem("Eliminar", "Supr", false, hasSel)) {
+            if (ImGui::MenuItem(tr("Eliminar"), tr("Supr"), false, hasSel)) {
                 history.commitBefore(root);
                 fixupMaterialIndicesAfterRemoval(root, g.selectedMat);
                 materials.erase(materials.begin() + g.selectedMat);
@@ -4937,19 +4938,19 @@ void drawMaterialManager(SceneNode& root, SceneNode*& selected, SceneHistory& hi
             }
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Función")) {
-            if (ImGui::MenuItem("Editar...", nullptr, false, hasSel)) g.showMatEditor = true;
-            if (ImGui::MenuItem("Renombrar", nullptr, false, hasSel)) {
+        if (ImGui::BeginMenu(tr("Función"))) {
+            if (ImGui::MenuItem(tr("Editar..."), nullptr, false, hasSel)) g.showMatEditor = true;
+            if (ImGui::MenuItem(tr("Renombrar"), nullptr, false, hasSel)) {
                 g.renamingMat = g.selectedMat;
                 std::snprintf(g.renameBuf, sizeof(g.renameBuf), "%s", materials[(size_t)g.selectedMat].name.c_str());
                 g.renameFocus = true;
             }
-            if (ImGui::MenuItem("Aplicar", nullptr, false, hasSel && selected && hasGeometry(selected->primitive))) {
+            if (ImGui::MenuItem(tr("Aplicar"), nullptr, false, hasSel && selected && hasGeometry(selected->primitive))) {
                 history.commitBefore(root);
                 selected->materialIndex = g.selectedMat;
             }
             ImGui::Separator();
-            if (ImGui::MenuItem("Eliminar Materiales sin Usar", nullptr, false, !materials.empty())) {
+            if (ImGui::MenuItem(tr("Eliminar Materiales sin Usar"), nullptr, false, !materials.empty())) {
                 history.commitBefore(root);
                 for (int i = (int)materials.size() - 1; i >= 0; --i) {
                     if (materialUsed(root, i)) continue;
@@ -4960,8 +4961,8 @@ void drawMaterialManager(SceneNode& root, SceneNode*& selected, SceneHistory& hi
             }
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Textura")) {
-            disabledItems({{"Cargar Textura...", ""}, {"Editar Textura...", ""}});
+        if (ImGui::BeginMenu(tr("Textura"))) {
+            disabledItems({{tr("Cargar Textura..."), ""}, {tr("Editar Textura..."), ""}});
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
@@ -4995,7 +4996,7 @@ void drawMaterialManager(SceneNode& root, SceneNode*& selected, SceneHistory& hi
                 g.showMatEditor = true;
             }
         }
-        if (hov) g.hint = "Clic: seleccionar material. Doble clic: Editor de Material (en el nombre: renombrar). Arrastre a un objeto para asignarlo.";
+        if (hov) g.hint = tr("Clic: seleccionar material. Doble clic: Editor de Material (en el nombre: renombrar). Arrastre a un objeto para asignarlo.");
         if (ImGui::BeginDragDropSource()) {
             ImGui::SetDragDropPayload("IRON3D_MAT", &i, sizeof(int));
             float previewSpec, previewShin;
@@ -5006,17 +5007,17 @@ void drawMaterialManager(SceneNode& root, SceneNode*& selected, SceneHistory& hi
             ImGui::EndDragDropSource();
         }
         if (ImGui::BeginPopupContextItem("##mctx")) {
-            if (ImGui::MenuItem("Editar...")) g.showMatEditor = true;
-            if (ImGui::MenuItem("Aplicar", nullptr, false, selected && hasGeometry(selected->primitive))) {
+            if (ImGui::MenuItem(tr("Editar..."))) g.showMatEditor = true;
+            if (ImGui::MenuItem(tr("Aplicar"), nullptr, false, selected && hasGeometry(selected->primitive))) {
                 history.commitBefore(root);
                 selected->materialIndex = i;
             }
-            if (ImGui::MenuItem("Renombrar")) {
+            if (ImGui::MenuItem(tr("Renombrar"))) {
                 g.renamingMat = i;
                 std::snprintf(g.renameBuf, sizeof(g.renameBuf), "%s", m.name.c_str());
                 g.renameFocus = true;
             }
-            if (ImGui::MenuItem("Eliminar", "Supr")) pendingDelete = i;
+            if (ImGui::MenuItem(tr("Eliminar"), tr("Supr"))) pendingDelete = i;
             ImGui::EndPopup();
         }
 
@@ -5067,9 +5068,9 @@ void drawMaterialManager(SceneNode& root, SceneNode*& selected, SceneHistory& hi
             history.commitBefore(root);
             newMaterial(materials);
         }
-        if (ImGui::IsItemHovered()) g.hint = "Doble clic en un espacio vacío del Gestor de Materiales para crear un material nuevo.";
+        if (ImGui::IsItemHovered()) g.hint = tr("Doble clic en un espacio vacío del Gestor de Materiales para crear un material nuevo.");
         if (materials.empty()) {
-            const char* t = "Doble clic aquí para crear un material";
+            const char* t = tr("Doble clic aquí para crear un material");
             const ImVec2 ts = ImGui::CalcTextSize(t);
             const ImVec2 c(ImGui::GetItemRectMin().x + (rest.x - ts.x) * 0.5f, ImGui::GetItemRectMin().y + (rest.y - ts.y) * 0.5f);
             dl->AddText(c, IM_COL32(110, 110, 110, 255), t);
@@ -5094,10 +5095,10 @@ void drawCoordinatesManager(SceneNode& root, SceneNode* selected, SceneHistory& 
     // linea y las cabeceras debajo, para no desplazar las columnas.
     const bool chipLine = !isC4DArrangement();
     const float startX = ImGui::GetCursorPosX();
-    panelGrip(chipLine ? names().coords : nullptr);
+    panelGrip(chipLine ? tr(names().coords) : nullptr);
     const float colW = (ImGui::GetContentRegionAvail().x - 6) / 3.0f;
-    const char* headers[] = {"Posición", "Tamaño", "Rotación"};
-    if (g.coordSizeMode == 1) headers[1] = "Escala";
+    const char* headers[] = {tr("Posición"), tr("Tamaño"), tr("Rotación")};
+    if (g.coordSizeMode == 1) headers[1] = tr("Escala");
     if (!chipLine) ImGui::SameLine();
     const float baseX = startX + 12.0f + ImGui::GetStyle().ItemSpacing.x - 14.0f;
     for (int c = 0; c < 3; ++c) {
@@ -5134,15 +5135,15 @@ void drawCoordinatesManager(SceneNode& root, SceneNode* selected, SceneHistory& 
                 ImGui::DragFloat("##v", &none, 1.0f, 0, 0, "--");
             } else if (c == 0) {
                 float cm = posRef[i] * kCmPerUnit;
-                if (ImGui::DragFloat("##v", &cm, 1.0f, 0, 0, "%.0f cm")) posRef[i] = cm / kCmPerUnit;
+                if (ImGui::DragFloat("##v", &cm, 1.0f, 0, 0, tr("%.0f cm"))) posRef[i] = cm / kCmPerUnit;
             } else if (c == 1) {
                 if (g.coordSizeMode == 0 && base[i] > 0.0f) {
                     float sz = sclRef[i] * base[i];
-                    if (ImGui::DragFloat("##v", &sz, 1.0f, 0.1f, 1.0e6f, "%.0f cm")) sclRef[i] = std::max(0.0005f, sz / base[i]);
+                    if (ImGui::DragFloat("##v", &sz, 1.0f, 0.1f, 1.0e6f, tr("%.0f cm"))) sclRef[i] = std::max(0.0005f, sz / base[i]);
                 } else if (g.coordSizeMode == 0) {
                     float zero = 0.0f;
                     ImGui::BeginDisabled();
-                    ImGui::DragFloat("##v", &zero, 1.0f, 0, 0, "%.0f cm");
+                    ImGui::DragFloat("##v", &zero, 1.0f, 0, 0, tr("%.0f cm"));
                     ImGui::EndDisabled();
                 } else {
                     ImGui::DragFloat("##v", &sclRef[i], 0.01f, 0.001f, 1000.0f, "%.3f");
@@ -5160,7 +5161,7 @@ void drawCoordinatesManager(SceneNode& root, SceneNode* selected, SceneHistory& 
     ImGui::Dummy(ImVec2(1, 2));
     ImGui::SetCursorPosX(baseX + 14);
     ImGui::SetNextItemWidth(colW - 14);
-    const char* spaces[] = {"Objeto (Rel)", "Objeto (Abs)", "Mundo"};
+    const char* spaces[] = {tr("Objeto (Rel)"), tr("Objeto (Abs)"), tr("Mundo")};
     if (ImGui::BeginCombo("##space", spaces[g.coordSpace])) {
         for (int i = 0; i < 3; ++i) {
             if (i > 0) ImGui::BeginDisabled();
@@ -5169,17 +5170,17 @@ void drawCoordinatesManager(SceneNode& root, SceneNode* selected, SceneHistory& 
         }
         ImGui::EndCombo();
     }
-    setHint("Sistema de coordenadas de los campos (solo Objeto (Rel) disponible por ahora).");
+    setHint(tr("Sistema de coordenadas de los campos (solo Objeto (Rel) disponible por ahora)."));
     ImGui::SameLine(baseX + colW + 14);
     ImGui::SetNextItemWidth(colW - 14);
-    const char* sizeModes[] = {"Tamaño", "Escala"};
+    const char* sizeModes[] = {tr("Tamaño"), tr("Escala")};
     ImGui::Combo("##sizemode", &g.coordSizeMode, sizeModes, 2);
-    setHint("Tamaño: medidas en cm. Escala: multiplicador del objeto.");
+    setHint(tr("Tamaño: medidas en cm. Escala: multiplicador del objeto."));
     ImGui::SameLine(baseX + 2 * colW + 14);
     if (!selected) ImGui::BeginDisabled();
-    if (ImGui::Button("Aplicar", ImVec2(colW - 14, 0)) && selected) history.commitBefore(root);
+    if (ImGui::Button(tr("Aplicar"), ImVec2(colW - 14, 0)) && selected) history.commitBefore(root);
     if (!selected) ImGui::EndDisabled();
-    setHint("Aplicar los valores de los campos al objeto seleccionado.");
+    setHint(tr("Aplicar los valores de los campos al objeto seleccionado."));
     ImGui::End();
 }
 
@@ -5194,16 +5195,16 @@ void drawStatusBar(float framerate, GizmoMode mode, const ViewportState& vp, Ren
     if (text.empty() && ImGui::GetTime() < g.statusUntil) text = g.status;
     if (text.empty()) {
         if (vp.selectTool && vp.selectShape == 1)
-            text = "Selección Rectangular: arrastre para seleccionar los objetos que toque el rectángulo. MAYÚSCULAS añade, CTRL quita.";
+            text = tr("Selección Rectangular: arrastre para seleccionar los objetos que toque el rectángulo. MAYÚSCULAS añade, CTRL quita.");
         else if (vp.selectTool && vp.selectShape == 2)
-            text = "Selección con Lazo: dibuje una zona para seleccionar los objetos que queden dentro. MAYÚSCULAS añade, CTRL quita.";
-        else if (vp.selectTool) text = "Selección en Vivo: Haga clic para seleccionar elementos.";
+            text = tr("Selección con Lazo: dibuje una zona para seleccionar los objetos que queden dentro. MAYÚSCULAS añade, CTRL quita.");
+        else if (vp.selectTool) text = tr("Selección en Vivo: Haga clic para seleccionar elementos.");
         else if (mode == GizmoMode::Translate)
-            text = "Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.";
+            text = tr("Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.");
         else if (mode == GizmoMode::Rotate)
-            text = "Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.";
+            text = tr("Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.");
         else
-            text = "Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.";
+            text = tr("Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.");
     }
     ImGui::TextColored(ImVec4(0.78f, 0.78f, 0.78f, 1), "%s", text.c_str());
     char right[64];
@@ -5226,39 +5227,39 @@ void drawSceneDialog(SceneNode& root, SceneNode*& selected, const std::filesyste
     static bool statusIsError = false;
     ImGui::SetNextWindowSize(ImVec2(420, 0), ImGuiCond_Appearing);
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    if (ImGui::Begin(g.sceneLoadMode ? "Abrir###scenedlg" : "Guardar como###scenedlg", &g.showScene,
+    if (ImGui::Begin(g.sceneLoadMode ? tr("Abrir###scenedlg") : tr("Guardar como###scenedlg"), &g.showScene,
                      ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::TextUnformatted("Nombre de archivo:");
+        ImGui::TextUnformatted(tr("Nombre de archivo:"));
         ImGui::SetNextItemWidth(300);
         ImGui::InputText("##fn", filenameBuf, sizeof(filenameBuf));
         ImGui::SameLine();
         ImGui::TextDisabled(".iron");
-        ImGui::TextDisabled("Carpeta: %s", scenesDir.string().c_str());
+        ImGui::TextDisabled(tr("Carpeta: %s"), scenesDir.string().c_str());
         ImGui::Separator();
         const std::filesystem::path path = scenesDir / (std::string(filenameBuf) + ".iron");
-        if (ImGui::Button(g.sceneLoadMode ? "Abrir" : "Guardar", ImVec2(120, 0))) {
+        if (ImGui::Button(g.sceneLoadMode ? tr("Abrir") : tr("Guardar"), ImVec2(120, 0))) {
             std::string err;
             if (g.sceneLoadMode) {
                 if (loadScene(path, root, materials, &err)) {
                     selected = nullptr;
                     history.reset();
                     g.selectedMat = -1;
-                    statusMsg = "Cargado: " + path.filename().string();
+                    statusMsg = tr("Cargado: ") + path.filename().string();
                     statusIsError = false;
                 } else {
-                    statusMsg = "Error al cargar: " + err;
+                    statusMsg = tr("Error al cargar: ") + err;
                     statusIsError = true;
                 }
             } else if (saveScene(path, root, materials, &err)) {
-                statusMsg = "Guardado: " + path.filename().string();
+                statusMsg = tr("Guardado: ") + path.filename().string();
                 statusIsError = false;
             } else {
-                statusMsg = "Error al guardar: " + err;
+                statusMsg = tr("Error al guardar: ") + err;
                 statusIsError = true;
             }
         }
         ImGui::SameLine();
-        if (ImGui::Button("Cancelar", ImVec2(120, 0))) g.showScene = false;
+        if (ImGui::Button(tr("Cancelar"), ImVec2(120, 0))) g.showScene = false;
         if (!statusMsg.empty())
             ImGui::TextColored(statusIsError ? ImVec4(0.95f, 0.35f, 0.35f, 1) : ImVec4(0.4f, 0.9f, 0.4f, 1), "%s", statusMsg.c_str());
     }
@@ -5335,7 +5336,7 @@ bool presetCard(const char* id, const UiPreset& p, bool active, float w) {
     dl->AddText(ImVec2(a.x + std::max(4.0f, (w - ts.x) * 0.5f), a.y + thumbH + 4), active ? kAmber : kTextCol, p.name.c_str());
     dl->PopClipRect();
     if (active) dl->AddRect(a, ImVec2(a.x + w, a.y + h), kAmber, 3.0f, 0, 2.0f);
-    if (hov) ImGui::SetTooltip("%s\nDisposición: %s", p.name.c_str(), arrangementName(p.layout.arrangement));
+    if (hov) ImGui::SetTooltip(tr("%s\nDisposición: %s"), p.name.c_str(), arrangementName(p.layout.arrangement));
     ImGui::PopID();
     return clicked;
 }
@@ -5349,13 +5350,34 @@ void drawInterfacePage(Preferences& prefs, const std::filesystem::path& prefsPat
         userPresets = loadUserPresets(presetsDir);
         userLoaded = true;
     }
+    {
+        // Idioma de la interfaz (como Cinema 4D): se guarda al elegirlo y se aplica al reiniciar.
+        const std::string active = i18n::currentLanguage();
+        const std::string chosen = prefs.language.empty() ? active : prefs.language;
+        const LanguageInfo* ci = i18n::findLanguage(chosen);
+        ImGui::TextUnformatted(tr("Idioma"));
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(220);
+        if (ImGui::BeginCombo("##uilang", ci ? ci->nativeName : chosen.c_str())) {
+            for (const LanguageInfo& li : i18n::languages()) {
+                if (ImGui::Selectable(li.nativeName, chosen == li.code)) {
+                    prefs.language = li.code;
+                    statusMsg = savePreferences(prefsPath, prefs) ? tr("Idioma guardado. Reinicie Iron3D Studio para aplicarlo.")
+                                                                  : tr("Error al guardar las preferencias.");
+                }
+            }
+            ImGui::EndCombo();
+        }
+        if (chosen != active) ImGui::TextDisabled("%s", tr("Se aplicará al reiniciar Iron3D Studio."));
+        ImGui::Separator();
+    }
     auto choose = [&](const UiPreset& p) {
         cur = p;
         applyPreset(cur);
         statusMsg.clear();
     };
 
-    ImGui::TextDisabled("Colores y disposición de los paneles como en cada programa. Se aplica al momento.");
+    ImGui::TextDisabled(tr("Colores y disposición de los paneles como en cada programa. Se aplica al momento."));
     ImGui::Dummy(ImVec2(0, 2));
 
     // Galeria: integrados y, debajo, los del usuario.
@@ -5376,7 +5398,7 @@ void drawInterfacePage(Preferences& prefs, const std::filesystem::path& prefsPat
     }
     if (!userPresets.empty()) {
         ImGui::Dummy(ImVec2(0, 4));
-        ImGui::TextDisabled("Mis presets");
+        ImGui::TextDisabled(tr("Mis presets"));
         col = 0;
         for (const UiPreset& p : userPresets) {
             place();
@@ -5385,14 +5407,14 @@ void drawInterfacePage(Preferences& prefs, const std::filesystem::path& prefsPat
     }
 
     ImGui::Dummy(ImVec2(0, 6));
-    sectionHeader("Personalizar");
+    sectionHeader(tr("Personalizar"));
     bool changed = false;
     // Disposicion base: cambiarla trae la colocacion y las metricas de ese
     // programa, pero conserva los colores que haya.
     int arr = (int)cur.layout.arrangement;
-    const char* arrNames[] = {"Cinema 4D", "Blender", "Maya", "3ds Max", "Source Filmmaker"};
+    const char* arrNames[] = {tr("Cinema 4D"), tr("Blender"), tr("Maya"), tr("3ds Max"), tr("Source Filmmaker")};
     ImGui::SetNextItemWidth(220);
-    if (ImGui::Combo("Disposición", &arr, arrNames, IM_ARRAYSIZE(arrNames))) {
+    if (ImGui::Combo(tr("Disposición"), &arr, arrNames, IM_ARRAYSIZE(arrNames))) {
         const UiPreset& base = builtinForArrangement((Arrangement)arr);
         cur.layout = base.layout;
         cur.style = base.style;
@@ -5400,40 +5422,40 @@ void drawInterfacePage(Preferences& prefs, const std::filesystem::path& prefsPat
     }
     if (ImGui::BeginTable("##cust", 2, ImGuiTableFlags_SizingStretchSame)) {
         ImGui::TableNextColumn();
-        ImGui::TextDisabled("Colores");
-        changed |= ImGui::ColorEdit3("Fondo de paneles", &cur.theme.panelBg.x, ImGuiColorEditFlags_NoInputs);
-        changed |= ImGui::ColorEdit3("Fondo de campos", &cur.theme.fieldBg.x, ImGuiColorEditFlags_NoInputs);
-        changed |= ImGui::ColorEdit3("Acento", &cur.theme.accent.x, ImGuiColorEditFlags_NoInputs);
-        changed |= ImGui::ColorEdit3("Azul de herramientas", &cur.theme.toolBlue.x, ImGuiColorEditFlags_NoInputs);
-        changed |= ImGui::ColorEdit3("Texto", &cur.theme.text.x, ImGuiColorEditFlags_NoInputs);
-        changed |= ImGui::ColorEdit3("Selección", &cur.theme.selection.x, ImGuiColorEditFlags_NoInputs);
-        changed |= ImGui::ColorEdit3("Fondo del visor", &cur.theme.viewportBg.x, ImGuiColorEditFlags_NoInputs);
+        ImGui::TextDisabled(tr("Colores"));
+        changed |= ImGui::ColorEdit3(tr("Fondo de paneles"), &cur.theme.panelBg.x, ImGuiColorEditFlags_NoInputs);
+        changed |= ImGui::ColorEdit3(tr("Fondo de campos"), &cur.theme.fieldBg.x, ImGuiColorEditFlags_NoInputs);
+        changed |= ImGui::ColorEdit3(tr("Acento"), &cur.theme.accent.x, ImGuiColorEditFlags_NoInputs);
+        changed |= ImGui::ColorEdit3(tr("Azul de herramientas"), &cur.theme.toolBlue.x, ImGuiColorEditFlags_NoInputs);
+        changed |= ImGui::ColorEdit3(tr("Texto"), &cur.theme.text.x, ImGuiColorEditFlags_NoInputs);
+        changed |= ImGui::ColorEdit3(tr("Selección"), &cur.theme.selection.x, ImGuiColorEditFlags_NoInputs);
+        changed |= ImGui::ColorEdit3(tr("Fondo del visor"), &cur.theme.viewportBg.x, ImGuiColorEditFlags_NoInputs);
         ImGui::TableNextColumn();
-        ImGui::TextDisabled("Paneles");
+        ImGui::TextDisabled(tr("Paneles"));
         LayoutSpec& l = cur.layout;
         const float sw = std::max(80.0f, ImGui::GetContentRegionAvail().x - 150.0f);
         ImGui::SetNextItemWidth(sw);
-        changed |= ImGui::SliderFloat("Barra superior", &l.toolbarH, 26.0f, 48.0f, "%.0f px");
+        changed |= ImGui::SliderFloat(tr("Barra superior"), &l.toolbarH, 26.0f, 48.0f, tr("%.0f px"));
         ImGui::SetNextItemWidth(sw);
-        if (ImGui::SliderFloat("Columna lateral", &l.sideFrac, 0.15f, 0.40f, "%.2f")) {
+        if (ImGui::SliderFloat(tr("Columna lateral"), &l.sideFrac, 0.15f, 0.40f, "%.2f")) {
             l.sideMin = std::min(l.sideMin, 220.0f); // que el minimo no anule el deslizador
             changed = true;
         }
         if (l.arrangement == Arrangement::Maya || l.arrangement == Arrangement::Max) {
             ImGui::SetNextItemWidth(sw);
-            changed |= ImGui::SliderFloat("Columna de objetos", &l.outlinerW, 150.0f, 360.0f, "%.0f px");
+            changed |= ImGui::SliderFloat(tr("Columna de objetos"), &l.outlinerW, 150.0f, 360.0f, tr("%.0f px"));
         } else {
             ImGui::SetNextItemWidth(sw);
-            changed |= ImGui::SliderFloat("Objetos / Atributos", &l.objFrac, 0.20f, 0.80f, "%.2f");
+            changed |= ImGui::SliderFloat(tr("Objetos / Atributos"), &l.objFrac, 0.20f, 0.80f, "%.2f");
         }
         ImGui::SetNextItemWidth(sw);
-        changed |= ImGui::SliderFloat("Fila inferior", &l.shelfFrac, 0.08f, 0.25f, "%.2f");
+        changed |= ImGui::SliderFloat(tr("Fila inferior"), &l.shelfFrac, 0.08f, 0.25f, "%.2f");
         ImGui::SetNextItemWidth(sw);
-        if (l.timelineFrac > 0.0f) changed |= ImGui::SliderFloat("Línea de tiempo", &l.timelineFrac, 0.12f, 0.50f, "%.2f");
-        else changed |= ImGui::SliderFloat("Línea de tiempo", &l.timelineH, 36.0f, 96.0f, "%.0f px");
-        changed |= ImGui::Checkbox("Pestañas verticales", &l.verticalTabs);
+        if (l.timelineFrac > 0.0f) changed |= ImGui::SliderFloat(tr("Línea de tiempo"), &l.timelineFrac, 0.12f, 0.50f, "%.2f");
+        else changed |= ImGui::SliderFloat(tr("Línea de tiempo"), &l.timelineH, 36.0f, 96.0f, tr("%.0f px"));
+        changed |= ImGui::Checkbox(tr("Pestañas verticales"), &l.verticalTabs);
         ImGui::SetNextItemWidth(sw);
-        changed |= ImGui::SliderFloat("Redondeo", &cur.style.frameRounding, 0.0f, 8.0f, "%.0f px");
+        changed |= ImGui::SliderFloat(tr("Redondeo"), &cur.style.frameRounding, 0.0f, 8.0f, tr("%.0f px"));
         if (changed) {
             cur.style.grabRounding = cur.style.frameRounding;
             cur.style.popupRounding = std::max(cur.style.popupRounding, 0.0f);
@@ -5443,7 +5465,7 @@ void drawInterfacePage(Preferences& prefs, const std::filesystem::path& prefsPat
     if (changed) {
         // Tocar un preset lo convierte en uno propio sin guardar.
         cur.id = "custom";
-        cur.name = "Personalizado (sin guardar)";
+        cur.name = tr("Personalizado (sin guardar)");
         applyPreset(cur);
         statusMsg.clear();
     }
@@ -5451,44 +5473,44 @@ void drawInterfacePage(Preferences& prefs, const std::filesystem::path& prefsPat
     ImGui::Dummy(ImVec2(0, 4));
     static char newName[64] = "";
     ImGui::SetNextItemWidth(200);
-    ImGui::InputTextWithHint("##pname", "Nombre del preset", newName, sizeof(newName));
+    ImGui::InputTextWithHint("##pname", tr("Nombre del preset"), newName, sizeof(newName));
     ImGui::SameLine();
-    if (ImGui::Button("Guardar como preset")) {
+    if (ImGui::Button(tr("Guardar como preset"))) {
         UiPreset p = cur;
         p.name = newName;
         if (saveUserPreset(presetsDir, p)) {
             userPresets = loadUserPresets(presetsDir);
             for (const UiPreset& u : userPresets)
                 if (u.name == p.name || u.id == "user:" + std::string(newName)) cur = u;
-            statusMsg = "Preset guardado en presets/.";
+            statusMsg = tr("Preset guardado en presets/.");
             newName[0] = 0;
         } else {
-            statusMsg = "Escriba un nombre válido (letras, números, espacios, - o _).";
+            statusMsg = tr("Escriba un nombre válido (letras, números, espacios, - o _).");
         }
     }
     const bool isUser = cur.id.rfind("user:", 0) == 0;
     ImGui::SameLine();
     if (!isUser) ImGui::BeginDisabled();
-    if (ImGui::Button("Eliminar")) {
+    if (ImGui::Button(tr("Eliminar"))) {
         if (deleteUserPreset(presetsDir, cur.name)) {
             userPresets = loadUserPresets(presetsDir);
             choose(resetTargetFor(cur));
-            statusMsg = "Preset eliminado.";
+            statusMsg = tr("Preset eliminado.");
         }
     }
     if (!isUser) ImGui::EndDisabled();
     ImGui::SameLine();
-    if (ImGui::Button("Restablecer")) choose(resetTargetFor(cur));
+    if (ImGui::Button(tr("Restablecer"))) choose(resetTargetFor(cur));
     if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("Vuelve al preset integrado «%s».", resetTargetFor(cur).name.c_str());
+        ImGui::SetTooltip(tr("Vuelve al preset integrado «%s»."), resetTargetFor(cur).name.c_str());
 
     ImGui::Dummy(ImVec2(0, 4));
-    if (ImGui::Button("Guardar##prefsui", ImVec2(120, 0))) {
-        statusMsg = savePreferences(prefsPath, prefs) ? "Guardado. Se usará al abrir Iron3D."
-                                                      : "Error al guardar las preferencias.";
+    if (ImGui::Button(tr("Guardar##prefsui"), ImVec2(120, 0))) {
+        statusMsg = savePreferences(prefsPath, prefs) ? tr("Guardado. Se usará al abrir Iron3D.")
+                                                      : tr("Error al guardar las preferencias.");
     }
     ImGui::SameLine();
-    ImGui::TextDisabled("Preset activo: %s", cur.name.c_str());
+    ImGui::TextDisabled(tr("Preset activo: %s"), cur.name.c_str());
     if (!statusMsg.empty()) ImGui::TextUnformatted(statusMsg.c_str());
 }
 
@@ -5497,9 +5519,9 @@ void drawPreferencesDialog(RendererBackend activeBackend, Preferences& prefs, co
     static std::string statusMsg;
     ImGui::SetNextWindowSize(ImVec2(900, 640), ImGuiCond_Appearing);
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    if (ImGui::Begin("Preferencias", &g.showPrefs, ImGuiWindowFlags_NoCollapse)) {
+    if (ImGui::Begin(tr("Preferencias"), &g.showPrefs, ImGuiWindowFlags_NoCollapse)) {
         static int page = 0;
-        const char* pages[] = {"Interfaz", "Visor", "Archivos", "Unidades", "Memoria", "Renderizador"};
+        const char* pages[] = {tr("Interfaz"), tr("Visor"), tr("Archivos"), tr("Unidades"), tr("Memoria"), tr("Renderizador")};
         ImGui::BeginChild("##pages", ImVec2(150, 0), ImGuiChildFlags_Border);
         for (int i = 0; i < IM_ARRAYSIZE(pages); ++i) {
             if (i != 0 && i != 1 && i != 5) ImGui::BeginDisabled();
@@ -5514,15 +5536,15 @@ void drawPreferencesDialog(RendererBackend activeBackend, Preferences& prefs, co
             drawInterfacePage(prefs, prefsPath, statusMsg);
         } else if (page == 1 || page == 5) {
 
-            ImGui::Text("Backend activo en esta sesión: %s", activeBackend == RendererBackend::Vulkan ? "Vulkan" : "OpenGL");
-            ImGui::TextUnformatted("Backend de render (se aplica al reiniciar):");
+            ImGui::Text(tr("Backend activo en esta sesión: %s"), activeBackend == RendererBackend::Vulkan ? tr("Vulkan") : tr("OpenGL"));
+            ImGui::TextUnformatted(tr("Backend de render (se aplica al reiniciar):"));
             int idx = prefs.renderBackend == RendererBackend::Vulkan ? 0 : 1;
-            if (ImGui::RadioButton("Vulkan", idx == 0)) prefs.renderBackend = RendererBackend::Vulkan;
+            if (ImGui::RadioButton(tr("Vulkan"), idx == 0)) prefs.renderBackend = RendererBackend::Vulkan;
             ImGui::SameLine();
-            if (ImGui::RadioButton("OpenGL", idx == 1)) prefs.renderBackend = RendererBackend::OpenGL;
-            if (ImGui::Button("Guardar")) {
-                statusMsg = savePreferences(prefsPath, prefs) ? "Guardado. Reinicie Iron3D Studio para aplicarlo."
-                                                              : "Error al guardar las preferencias.";
+            if (ImGui::RadioButton(tr("OpenGL"), idx == 1)) prefs.renderBackend = RendererBackend::OpenGL;
+            if (ImGui::Button(tr("Guardar"))) {
+                statusMsg = savePreferences(prefsPath, prefs) ? tr("Guardado. Reinicie Iron3D Studio para aplicarlo.")
+                                                              : tr("Error al guardar las preferencias.");
             }
             if (!statusMsg.empty()) ImGui::TextUnformatted(statusMsg.c_str());
         }
@@ -5541,7 +5563,7 @@ void drawMaterialEditor(SceneNode& root, SceneHistory& history, std::vector<Mate
     ImGui::SetNextWindowSize(ImVec2(640, 460), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
     char title[160];
-    std::snprintf(title, sizeof(title), "Editor de Material  [%s]###mateditor", m.name.c_str());
+    std::snprintf(title, sizeof(title), tr("Editor de Material  [%s]###mateditor"), m.name.c_str());
     if (ImGui::Begin(title, &g.showMatEditor, ImGuiWindowFlags_NoCollapse)) {
         ImGui::BeginChild("##left", ImVec2(190, 0), ImGuiChildFlags_Border);
         const ImVec2 p = ImGui::GetCursorScreenPos();
@@ -5557,15 +5579,15 @@ void drawMaterialEditor(SceneNode& root, SceneHistory& history, std::vector<Mate
         if (ImGui::InputText("##mename", nameBuf, sizeof(nameBuf)) && nameBuf[0]) m.name = nameBuf;
         trackEdit(history, root);
         ImGui::Separator();
-        struct Ch { const char* name; bool* flag; bool usable; };
-        const Ch channels[] = {{"Color", &m.useColor, true},       {"Difusión", nullptr, false},
-                               {"Luminancia", &m.useLuminance, true}, {"Transparencia", &m.useTransparency, true},
-                               {"Reflectancia", &m.useReflectance, true}, {"Entorno", nullptr, false},
-                               {"Niebla", nullptr, false},        {"Relieve", &m.useBump, true},
-                               {"Normales", &m.useNormal, true},  {"Alfa", &m.useAlpha, true},
-                               {"Fosforescencia", nullptr, false}, {"Desplazamiento", nullptr, false},
-                               {nullptr, nullptr, false},         {"Editor", nullptr, false},
-                               {"Iluminación", nullptr, false},   {"Asignación", nullptr, true}};
+        struct Ch { Tr name; bool* flag; bool usable; };
+        const Ch channels[] = {{tr("Color"), &m.useColor, true},       {tr("Difusión"), nullptr, false},
+                               {"Luminancia", &m.useLuminance, true}, {tr("Transparencia"), &m.useTransparency, true},
+                               {"Reflectancia", &m.useReflectance, true}, {tr("Entorno"), nullptr, false},
+                               {"Niebla", nullptr, false},        {tr("Relieve"), &m.useBump, true},
+                               {"Normales", &m.useNormal, true},  {tr("Alfa"), &m.useAlpha, true},
+                               {"Fosforescencia", nullptr, false}, {tr("Desplazamiento"), nullptr, false},
+                               {nullptr, nullptr, false},         {tr("Editor"), nullptr, false},
+                               {"Iluminación", nullptr, false},   {tr("Asignación"), nullptr, true}};
         for (int i = 0; i < IM_ARRAYSIZE(channels); ++i) {
             if (!channels[i].name) {
                 ImGui::Separator();
@@ -5594,31 +5616,31 @@ void drawMaterialEditor(SceneNode& root, SceneHistory& history, std::vector<Mate
         ImGui::BeginChild("##right");
         g_labelW = 150.0f;
         if (g.matEditorChannel == 0) {
-            sectionHeader("Color");
+            sectionHeader(tr("Color"));
             colorChannelBlock(m, TexSlot::Color, history, root);
             colorTabExtras(m, history, root);
         } else if (g.matEditorChannel == 2) {
-            sectionHeader("Luminancia");
+            sectionHeader(tr("Luminancia"));
             colorChannelBlock(m, TexSlot::Emission, history, root);
         } else if (g.matEditorChannel == 3) {
-            sectionHeader("Transparencia");
+            sectionHeader(tr("Transparencia"));
             colorChannelBlock(m, TexSlot::Transparency, history, root);
         } else if (g.matEditorChannel == 4) {
             reflectancePanel(m, history, root);
         } else if (g.matEditorChannel == 7) {
-            sectionHeader("Relieve");
+            sectionHeader(tr("Relieve"));
             plainChannelBlock(m, TexSlot::Bump, history, root);
         } else if (g.matEditorChannel == 8) {
-            sectionHeader("Normales");
+            sectionHeader(tr("Normales"));
             plainChannelBlock(m, TexSlot::Normal, history, root);
         } else if (g.matEditorChannel == 9) {
-            sectionHeader("Alfa");
+            sectionHeader(tr("Alfa"));
             plainChannelBlock(m, TexSlot::Alpha, history, root);
         } else {
-            sectionHeader("Asignación");
+            sectionHeader(tr("Asignación"));
             std::vector<SceneNode*> users;
             collectUsers(root, g.selectedMat, users);
-            if (users.empty()) ImGui::TextDisabled("  Ningún objeto usa este material.");
+            if (users.empty()) ImGui::TextDisabled(tr("  Ningún objeto usa este material."));
             for (SceneNode* u : users) ImGui::BulletText("%s", u->name().c_str());
         }
         ImGui::EndChild();
@@ -5629,18 +5651,18 @@ void drawMaterialEditor(SceneNode& root, SceneHistory& history, std::vector<Mate
 void drawAboutDialog() {
     if (!g.showAbout) return;
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    if (ImGui::Begin("Acerca de Iron3D Studio", &g.showAbout, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
+    if (ImGui::Begin(tr("Acerca de Iron3D Studio"), &g.showAbout, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
         if (g_fontBold) ImGui::PushFont(g_fontBold);
-        ImGui::TextUnformatted("Iron3D Studio");
+        ImGui::TextUnformatted(tr("Iron3D Studio"));
         if (g_fontBold) ImGui::PopFont();
-        ImGui::TextUnformatted("Static Forge");
+        ImGui::TextUnformatted(tr("Static Forge"));
         ImGui::Separator();
-        ImGui::TextDisabled("Interfaz inspirada en el flujo de trabajo de Cinema 4D R19.");
-        ImGui::TextDisabled("Cinema 4D es una marca de Maxon; Iron3D no está afiliado a Maxon.");
+        ImGui::TextDisabled(tr("Interfaz inspirada en el flujo de trabajo de Cinema 4D R19."));
+        ImGui::TextDisabled(tr("Cinema 4D es una marca de Maxon; Iron3D no está afiliado a Maxon."));
         if (cinewareAvailable()) {
             ImGui::Separator();
-            ImGui::TextDisabled("La importación de archivos .c4d usa el Cineware SDK");
-            ImGui::TextDisabled("de MAXON Computer GmbH, integrado según su licencia.");
+            ImGui::TextDisabled(tr("La importación de archivos .c4d usa el Cineware SDK"));
+            ImGui::TextDisabled(tr("de MAXON Computer GmbH, integrado según su licencia."));
         }
     }
     ImGui::End();
@@ -5652,7 +5674,7 @@ void drawImportReport() {
     if (std::getenv("IRON3D_NO_IMPORT_REPORT")) { g.showImport = false; return; }
     const C4DImportReport& r = g.importReport;
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    const std::string titleStr = (g.importError.empty() ? g.importTitle : std::string("No se pudo abrir")) + "###importrep";
+    const std::string titleStr = (g.importError.empty() ? g.importTitle : std::string(tr("No se pudo abrir"))) + "###importrep";
     const char* title = titleStr.c_str();
     if (ImGui::Begin(title, &g.showImport, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
         // Al abrir Iron3D con un .c4d el informe sale en el primer frame y las
@@ -5671,24 +5693,24 @@ void drawImportReport() {
         if (!g.importError.empty()) {
             ImGui::TextColored(ImVec4(0.95f, 0.45f, 0.40f, 1.0f), "%s", g.importError.c_str());
         } else {
-            ImGui::Text("%d objetos, %d con malla, %d materiales, %d luces", r.objects, r.meshes, r.materials,
+            ImGui::Text(tr("%d objetos, %d con malla, %d materiales, %d luces"), r.objects, r.meshes, r.materials,
                         r.lights);
-            ImGui::Text("%lld puntos, %lld polígonos", r.points, r.polygons);
+            ImGui::Text(tr("%lld puntos, %lld polígonos"), r.points, r.polygons);
             if (r.generatorsFromCache > 0)
-                ImGui::Text("%d generadores con la geometría guardada por Cinema 4D", r.generatorsFromCache);
+                ImGui::Text(tr("%d generadores con la geometría guardada por Cinema 4D"), r.generatorsFromCache);
             if (r.primitivesRebuilt > 0)
-                ImGui::Text("%d primitivas reconstruidas desde sus parámetros", r.primitivesRebuilt);
+                ImGui::Text(tr("%d primitivas reconstruidas desde sus parámetros"), r.primitivesRebuilt);
             ImGui::Separator();
             if (r.warnings.empty()) {
-                ImGui::TextColored(ImVec4(0.45f, 0.85f, 0.45f, 1.0f), "Importado sin avisos.");
+                ImGui::TextColored(ImVec4(0.45f, 0.85f, 0.45f, 1.0f), tr("Importado sin avisos."));
             } else {
-                ImGui::TextUnformatted("Revisa:");
+                ImGui::TextUnformatted(tr("Revisa:"));
                 for (const std::string& w : r.warnings) ImGui::BulletText("%s", w.c_str());
             }
         }
         ImGui::PopTextWrapPos();
         ImGui::Spacing();
-        if (ImGui::Button("Cerrar", ImVec2(120, 0))) g.showImport = false;
+        if (ImGui::Button(tr("Cerrar"), ImVec2(120, 0))) g.showImport = false;
     }
     ImGui::End();
 }
@@ -5697,25 +5719,25 @@ void drawExportReport() {
     if (!g.showExport) return;
     const C4DExportReport& r = g.exportReport;
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    if (ImGui::Begin("Exportado a Cinema 4D###exportrep", &g.showExport,
+    if (ImGui::Begin(tr("Exportado a Cinema 4D###exportrep"), &g.showExport,
                      ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 34.0f);
         if (g_fontBold) ImGui::PushFont(g_fontBold);
         ImGui::TextUnformatted(r.fileName.c_str());
         if (g_fontBold) ImGui::PopFont();
         ImGui::TextDisabled("%s", g.exportPath.c_str());
-        ImGui::Text("%d objetos: %d mallas, %d primitivas, %d luces", r.objects, r.meshes, r.primitives, r.lights);
-        ImGui::Text("%d materiales, %lld puntos, %lld polígonos", r.materials, r.points, r.polygons);
+        ImGui::Text(tr("%d objetos: %d mallas, %d primitivas, %d luces"), r.objects, r.meshes, r.primitives, r.lights);
+        ImGui::Text(tr("%d materiales, %lld puntos, %lld polígonos"), r.materials, r.points, r.polygons);
         ImGui::Separator();
         if (r.warnings.empty()) {
-            ImGui::TextColored(ImVec4(0.45f, 0.85f, 0.45f, 1.0f), "Exportado sin avisos.");
+            ImGui::TextColored(ImVec4(0.45f, 0.85f, 0.45f, 1.0f), tr("Exportado sin avisos."));
         } else {
-            ImGui::TextUnformatted("Revisa:");
+            ImGui::TextUnformatted(tr("Revisa:"));
             for (const std::string& w : r.warnings) ImGui::BulletText("%s", w.c_str());
         }
         ImGui::PopTextWrapPos();
         ImGui::Spacing();
-        if (ImGui::Button("Cerrar", ImVec2(120, 0))) g.showExport = false;
+        if (ImGui::Button(tr("Cerrar"), ImVec2(120, 0))) g.showExport = false;
     }
     ImGui::End();
 }
@@ -5829,17 +5851,54 @@ void loadC4DFonts() {
                              "/usr/share/fonts/TTF/DejaVuSans.ttf"};
     const char* bold[] = {"C:/Windows/Fonts/segoeuib.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
                           "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf"};
+
+    // Glifos segun el idioma (core/I18n.h): latino con tildes + extendido (polaco, checo), puntuacion y
+    // flechas, y cirilico para ruso. Los idiomas CJK mezclan ademas una fuente del sistema.
+    const std::string lang = i18n::currentLanguage();
+    static const ImWchar kLatin[] = {0x0020, 0x017F, 0x2000, 0x206F, 0x20A0, 0x20CF, 0x2190, 0x21FF, 0x2260, 0x226F, 0};
+    static ImVector<ImWchar> ranges;
+    ImFontGlyphRangesBuilder builder;
+    builder.AddRanges(kLatin);
+    if (lang == "ru") builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic());
+    builder.BuildRanges(&ranges);
+
+    const ImWchar* cjkRanges = nullptr;
+    std::vector<const char*> cjkFonts;
+    if (lang == "ja") {
+        cjkRanges = io.Fonts->GetGlyphRangesJapanese();
+        cjkFonts = {"C:/Windows/Fonts/YuGothM.ttc", "C:/Windows/Fonts/meiryo.ttc", "C:/Windows/Fonts/msgothic.ttc"};
+    } else if (lang == "ko") {
+        cjkRanges = io.Fonts->GetGlyphRangesKorean();
+        cjkFonts = {"C:/Windows/Fonts/malgun.ttf"};
+    } else if (lang == "zh") {
+        cjkRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+        cjkFonts = {"C:/Windows/Fonts/msyh.ttc", "C:/Windows/Fonts/simsun.ttc"};
+    }
+    auto mergeCjk = [&]() {
+        if (!cjkRanges) return;
+        for (const char* f : cjkFonts) {
+            std::error_code ec;
+            if (!std::filesystem::exists(f, ec)) continue;
+            ImFontConfig cfg;
+            cfg.MergeMode = true;
+            io.Fonts->AddFontFromFileTTF(f, 15.0f, &cfg, cjkRanges);
+            break;
+        }
+    };
+
     for (const char* f : regular) {
         std::error_code ec;
-        if (std::filesystem::exists(f, ec) && io.Fonts->AddFontFromFileTTF(f, 15.0f)) break;
+        if (std::filesystem::exists(f, ec) && io.Fonts->AddFontFromFileTTF(f, 15.0f, nullptr, ranges.Data)) break;
     }
+    mergeCjk();
     for (const char* f : bold) {
         std::error_code ec;
         if (std::filesystem::exists(f, ec)) {
-            g_fontBold = io.Fonts->AddFontFromFileTTF(f, 15.0f);
+            g_fontBold = io.Fonts->AddFontFromFileTTF(f, 15.0f, nullptr, ranges.Data);
             break;
         }
     }
+    mergeCjk();
     if (io.Fonts->Fonts.empty()) io.Fonts->AddFontDefault();
 }
 
@@ -5971,27 +6030,27 @@ void applyPreset(const UiPreset& preset) {
 // --- Opciones de herramienta (rueda dentada de los menus) ------------------------------
 void drawToolOptions() {
     if (g.optWin == UiState::OptWin::None) return;
-    const char* title = g.optWin == UiState::OptWin::RectSel   ? "Selección Rectangular###toolopts"
-                        : g.optWin == UiState::OptWin::LassoSel ? "Selección con Lazo###toolopts"
-                                                                : "Conectar Objetos###toolopts";
+    const char* title = g.optWin == UiState::OptWin::RectSel   ? tr("Selección Rectangular###toolopts")
+                        : g.optWin == UiState::OptWin::LassoSel ? tr("Selección con Lazo###toolopts")
+                                                                : tr("Conectar Objetos###toolopts");
     ImGui::SetNextWindowPos(g.optPos, ImGuiCond_Appearing);
     bool open = true;
     if (ImGui::Begin(title, &open, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
         if (g.optWin == UiState::OptWin::Connect) {
-            ImGui::Checkbox("Soldar", &g.connectWeld);
+            ImGui::Checkbox(tr("Soldar"), &g.connectWeld);
             ImGui::BeginDisabled(!g.connectWeld);
             ImGui::SetNextItemWidth(120.0f);
-            ImGui::InputFloat("Tolerancia (cm)", &g.connectWeldCm, 0.01f, 0.1f, "%.3f");
+            ImGui::InputFloat(tr("Tolerancia (cm)"), &g.connectWeldCm, 0.01f, 0.1f, "%.3f");
             g.connectWeldCm = std::clamp(g.connectWeldCm, 0.0f, 1000.0f);
             ImGui::EndDisabled();
-            ImGui::TextDisabled("Une los puntos que coinciden (misma posición,\nnormal y color) al conectar.");
+            ImGui::TextDisabled(tr("Une los puntos que coinciden (misma posición,\nnormal y color) al conectar."));
         } else {
-            ImGui::Checkbox("Tolerante", &g.selTolerant);
-            ImGui::TextDisabled(g.selTolerant ? "Se elige todo lo que toque la zona."
-                                              : "Solo se elige lo que queda dentro entero.");
-            ImGui::Checkbox("Solo Seleccionar Visibles", &g.selVisibleOnly);
-            ImGui::TextDisabled(g.selVisibleOnly ? "Puntos, aristas y polígonos tapados por la malla no se eligen."
-                                                 : "También se eligen los tapados (a través de la malla).");
+            ImGui::Checkbox(tr("Tolerante"), &g.selTolerant);
+            ImGui::TextDisabled(g.selTolerant ? tr("Se elige todo lo que toque la zona.")
+                                              : tr("Solo se elige lo que queda dentro entero."));
+            ImGui::Checkbox(tr("Solo Seleccionar Visibles"), &g.selVisibleOnly);
+            ImGui::TextDisabled(g.selVisibleOnly ? tr("Puntos, aristas y polígonos tapados por la malla no se eligen.")
+                                                 : tr("También se eligen los tapados (a través de la malla)."));
         }
     }
     ImGui::End();
@@ -6015,13 +6074,13 @@ void renderToPictureViewer(const SceneNode& root, const std::vector<Material>& m
     auto& pv = g.pv;
     pv.seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
     pv.aa = rs.antialias;
-    pv.viewName = viewLabel(camera.view(), "Perspectiva");
+    pv.viewName = viewLabel(camera.view(), tr("Perspectiva"));
     freeUiTexture(pv.tex);
     pv.image = std::move(img);
     pv.tex = makeUiTexture(pv.image.rgba.data(), pv.image.width, pv.image.height);
     g.showPictureViewer = true;
     char buf[160];
-    std::snprintf(buf, sizeof(buf), "Render: %d x %d en %.2f s", pv.image.width, pv.image.height, pv.seconds);
+    std::snprintf(buf, sizeof(buf), tr("Render: %d x %d en %.2f s"), pv.image.width, pv.image.height, pv.seconds);
     flashStatus(buf);
 }
 
@@ -6039,13 +6098,13 @@ void drawPictureViewer(const SceneNode& root, const std::vector<Material>& mater
     if (!g.showPictureViewer) return;
     auto& pv = g.pv;
     ImGui::SetNextWindowSize(ImVec2(860, 640), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Visor de Imágenes", &g.showPictureViewer, ImGuiWindowFlags_MenuBar)) {
+    if (!ImGui::Begin(tr("Visor de Imágenes"), &g.showPictureViewer, ImGuiWindowFlags_MenuBar)) {
         ImGui::End();
         return;
     }
     if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("Archivo")) {
-            if (ImGui::MenuItem("Guardar como...", nullptr, false, !pv.image.rgba.empty())) {
+        if (ImGui::BeginMenu(tr("Archivo"))) {
+            if (ImGui::MenuItem(tr("Guardar como..."), nullptr, false, !pv.image.rgba.empty())) {
                 std::time_t now = std::time(nullptr);
                 std::tm tmNow{};
 #ifdef _WIN32
@@ -6054,16 +6113,16 @@ void drawPictureViewer(const SceneNode& root, const std::vector<Material>& mater
                 localtime_r(&now, &tmNow);
 #endif
                 char name[64];
-                std::strftime(name, sizeof(name), "render_%Y%m%d_%H%M%S.png", &tmNow);
-                if (auto path = saveFileDialog("Guardar render", {{"Imagen PNG", "*.png"}}, name, "png")) {
-                    flashStatus(savePng(*path, pv.image) ? "Render guardado: " + path->filename().string()
-                                                         : std::string("No se pudo guardar el render."));
+                std::strftime(name, sizeof(name), tr("render_%Y%m%d_%H%M%S.png"), &tmNow);
+                if (auto path = saveFileDialog(tr("Guardar render"), {{tr("Imagen PNG"), "*.png"}}, name, "png")) {
+                    flashStatus(savePng(*path, pv.image) ? tr("Render guardado: ") + path->filename().string()
+                                                         : std::string(tr("No se pudo guardar el render.")));
                 }
             }
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Ver")) {
-            if (ImGui::MenuItem("Ajustar a la Ventana", nullptr, pv.zoom == 0.0f)) pv.zoom = 0.0f;
+        if (ImGui::BeginMenu(tr("Ver"))) {
+            if (ImGui::MenuItem(tr("Ajustar a la Ventana"), nullptr, pv.zoom == 0.0f)) pv.zoom = 0.0f;
             if (ImGui::MenuItem("50 %", nullptr, pv.zoom == 0.5f)) pv.zoom = 0.5f;
             if (ImGui::MenuItem("100 %", nullptr, pv.zoom == 1.0f)) pv.zoom = 1.0f;
             if (ImGui::MenuItem("200 %", nullptr, pv.zoom == 2.0f)) pv.zoom = 2.0f;
@@ -6071,13 +6130,13 @@ void drawPictureViewer(const SceneNode& root, const std::vector<Material>& mater
         }
         ImGui::EndMenuBar();
     }
-    if (ImGui::Button("Renderizar")) renderToPictureViewer(root, materials, camera, vp);
+    if (ImGui::Button(tr("Renderizar"))) renderToPictureViewer(root, materials, camera, vp);
     ImGui::SameLine();
-    if (ImGui::Button("Configuración...")) g.showRenderSettings = true;
+    if (ImGui::Button(tr("Configuración..."))) g.showRenderSettings = true;
     ImGui::SameLine();
-    if (pv.image.rgba.empty()) ImGui::TextDisabled("Todavía no hay ningún render (Mayús+R).");
+    if (pv.image.rgba.empty()) ImGui::TextDisabled(tr("Todavía no hay ningún render (Mayús+R)."));
     else
-        ImGui::TextDisabled("%s · %d x %d · antialiasing %dx%d · %.2f s · %d triángulos", pv.viewName.c_str(),
+        ImGui::TextDisabled(tr("%s · %d x %d · antialiasing %dx%d · %.2f s · %d triángulos"), pv.viewName.c_str(),
                             pv.image.width, pv.image.height, pv.aa, pv.aa, pv.seconds, pv.image.triangles);
     ImGui::Separator();
     ImGui::BeginChild("##pvimg", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
@@ -6101,37 +6160,37 @@ void drawRenderSettings() {
     if (!g.showRenderSettings) return;
     auto& rs = g.render;
     ImGui::SetNextWindowSize(ImVec2(440, 400), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Configuración de Render", &g.showRenderSettings)) {
+    if (!ImGui::Begin(tr("Configuración de Render"), &g.showRenderSettings)) {
         ImGui::End();
         return;
     }
-    ImGui::SeparatorText("Salida");
-    struct Preset { const char* name; int w, h; };
-    static const Preset kPresets[] = {{"800 x 600", 800, 600},   {"640 x 480 (VGA)", 640, 480},
-                                      {"1280 x 720 (HD 720)", 1280, 720}, {"1920 x 1080 (HD 1080)", 1920, 1080},
-                                      {"3840 x 2160 (UHD 4K)", 3840, 2160}, {"1080 x 1080 (cuadrado)", 1080, 1080}};
-    if (ImGui::BeginCombo("Preestablecido", "Elegir...")) {
+    ImGui::SeparatorText(tr("Salida"));
+    struct Preset { Tr name; int w, h; };
+    static const Preset kPresets[] = {{"800 x 600", 800, 600},   {tr("640 x 480 (VGA)"), 640, 480},
+                                      {"1280 x 720 (HD 720)", 1280, 720}, {tr("1920 x 1080 (HD 1080)"), 1920, 1080},
+                                      {"3840 x 2160 (UHD 4K)", 3840, 2160}, {tr("1080 x 1080 (cuadrado)"), 1080, 1080}};
+    if (ImGui::BeginCombo(tr("Preestablecido"), tr("Elegir..."))) {
         for (const Preset& p : kPresets)
             if (ImGui::Selectable(p.name)) { rs.width = p.w; rs.height = p.h; rs.useViewportSize = false; }
         ImGui::EndCombo();
     }
-    ImGui::Checkbox("Usar el tamaño del visor", &rs.useViewportSize);
+    ImGui::Checkbox(tr("Usar el tamaño del visor"), &rs.useViewportSize);
     ImGui::BeginDisabled(rs.useViewportSize);
-    ImGui::InputInt("Anchura (px)", &rs.width, 10, 100);
-    ImGui::InputInt("Altura (px)", &rs.height, 10, 100);
+    ImGui::InputInt(tr("Anchura (px)"), &rs.width, 10, 100);
+    ImGui::InputInt(tr("Altura (px)"), &rs.height, 10, 100);
     rs.width = std::clamp(rs.width, 16, 8192);
     rs.height = std::clamp(rs.height, 16, 8192);
     ImGui::EndDisabled();
-    ImGui::SeparatorText("Antialiasing");
-    const char* aaNames[] = {"Ninguno (1x1)", "Geometría (2x2)", "3x3", "Mejor (4x4)"};
+    ImGui::SeparatorText(tr("Antialiasing"));
+    const char* aaNames[] = {tr("Ninguno (1x1)"), tr("Geometría (2x2)"), "3x3", tr("Mejor (4x4)")};
     int aaIdx = std::clamp(rs.antialias, 1, 4) - 1;
-    if (ImGui::Combo("Antialiasing", &aaIdx, aaNames, 4)) rs.antialias = aaIdx + 1;
-    ImGui::SeparatorText("Fondo");
-    ImGui::ColorEdit3("Arriba", rs.bgTop);
-    ImGui::ColorEdit3("Abajo", rs.bgBottom);
+    if (ImGui::Combo(tr("Antialiasing"), &aaIdx, aaNames, 4)) rs.antialias = aaIdx + 1;
+    ImGui::SeparatorText(tr("Fondo"));
+    ImGui::ColorEdit3(tr("Arriba"), rs.bgTop);
+    ImGui::ColorEdit3(tr("Abajo"), rs.bgBottom);
     ImGui::Spacing();
-    ImGui::TextDisabled("Render por CPU con el sombreado de las miniaturas:\nsin sombras ni texturas todavía.");
-    if (ImGui::Button("Renderizar en Visor de Imágenes")) g.renderRequested = true;
+    ImGui::TextDisabled(tr("Render por CPU con el sombreado de las miniaturas:\nsin sombras ni texturas todavía."));
+    if (ImGui::Button(tr("Renderizar en Visor de Imágenes"))) g.renderRequested = true;
     ImGui::End();
 }
 
@@ -6262,7 +6321,7 @@ void drawComponentOverlay(const SceneNode* selected, const OrbitalCamera& camera
     const CompProjector proj = compProjector(*selected, camera, vp);
     const ImU32 wire = IM_COL32(150, 170, 200, 150), sel = IM_COL32(255, 140, 30, 255), pt = IM_COL32(110, 160, 255, 255);
     if (t.edges.size() > kMaxCompDraw || t.points.size() > kMaxCompDraw) {
-        dl->AddText(ImVec2(vp.x + 8, vp.y + 24), IM_COL32(255, 200, 120, 255), "Malla demasiado grande para dibujar sus componentes.");
+        dl->AddText(ImVec2(vp.x + 8, vp.y + 24), IM_COL32(255, 200, 120, 255), tr("Malla demasiado grande para dibujar sus componentes."));
         dl->PopClipRect();
         return;
     }
@@ -6306,7 +6365,7 @@ void drawComponentOverlay(const SceneNode* selected, const OrbitalCamera& camera
             const float r = s ? 3.5f : 2.5f;
             dl->AddRectFilled(ImVec2(sp[i].x - r, sp[i].y - r), ImVec2(sp[i].x + r, sp[i].y + r), s ? sel : pt);
         }
-    const char* names[] = {"", "Puntos", "Aristas", "Polígonos"};
+    const char* names[] = {"", tr("Puntos"), tr("Aristas"), tr("Polígonos")};
     char buf[128];
     std::snprintf(buf, sizeof(buf), "%s: %zu de %zu seleccionados", names[c.mode], c.sel.size(), componentCount());
     dl->AddText(ImVec2(vp.x + 8, vp.y + 24), IM_COL32(230, 230, 230, 220), buf);
@@ -6429,67 +6488,67 @@ int componentModeFor(const SceneNode* n) { return syncComponents(n) ? g.comp.mod
 // componentes); las de malla si.
 bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, const std::string& op) {
     if (!syncComponents(selected)) {
-        flashStatus("Selecciona un objeto editable y entra en modo Puntos, Aristas o Polígonos.");
+        flashStatus(tr("Selecciona un objeto editable y entra en modo Puntos, Aristas o Polígonos."));
         return false;
     }
     auto& c = g.comp;
     const MeshTopology& t = c.topo;
     const int mode = c.mode;
     auto done = [&](const char* what) {
-        flashStatus(std::string(what) + ": " + std::to_string(c.sel.size()) + " seleccionados.");
+        flashStatus(std::string(what) + ": " + std::to_string(c.sel.size()) + tr(" seleccionados."));
         return true;
     };
     if (op == "loop" || op == "ring") {
-        if (mode != 2) { flashStatus("Bucle y Anillo funcionan en modo Aristas."); return false; }
+        if (mode != 2) { flashStatus(tr("Bucle y Anillo funcionan en modo Aristas.")); return false; }
         std::set<int> out;
         for (int e : c.sel) {
             const std::set<int> part = op == "loop" ? edgeLoop(t, e) : edgeRing(t, e);
             out.insert(part.begin(), part.end());
         }
         c.sel = out;
-        return done(op == "loop" ? "Selección de Bucle" : "Selección de Anillo");
+        return done(op == "loop" ? tr("Selección de Bucle") : tr("Selección de Anillo"));
     }
-    if (op == "grow") { c.sel = growSelection(t, mode, c.sel); return done("Aumentar Selección"); }
-    if (op == "shrink") { c.sel = shrinkSelection(t, mode, c.sel); return done("Reducir Selección"); }
-    if (op == "connected") { c.sel = connectedSelection(t, mode, c.sel); return done("Seleccionar Conectados"); }
+    if (op == "grow") { c.sel = growSelection(t, mode, c.sel); return done(tr("Aumentar Selección")); }
+    if (op == "shrink") { c.sel = shrinkSelection(t, mode, c.sel); return done(tr("Reducir Selección")); }
+    if (op == "connected") { c.sel = connectedSelection(t, mode, c.sel); return done(tr("Seleccionar Conectados")); }
     if (op == "invert") {
         std::set<int> out;
         for (int i = 0; i < (int)componentCount(); ++i)
             if (!c.sel.count(i)) out.insert(i);
         c.sel = out;
-        return done("Invertir Selección");
+        return done(tr("Invertir Selección"));
     }
 
     if (op == "check") {
         const MeshCheck chk = checkMesh(t);
-        if (chk.clean()) { flashStatus("Comprobar Malla: sin problemas."); return true; }
+        if (chk.clean()) { flashStatus(tr("Comprobar Malla: sin problemas.")); return true; }
         // Selecciona lo malo del modo actual: puntos sueltos, aristas abiertas/no manifold, poligonos sin area.
         if (mode == 1) c.sel = chk.loosePointSet;
         else if (mode == 2) { c.sel = chk.openEdgeSet; c.sel.insert(chk.nonManifoldEdgeSet.begin(), chk.nonManifoldEdgeSet.end()); }
         else c.sel = chk.degeneratePolySet;
-        flashStatus("Comprobar Malla: " + std::to_string(chk.openEdges) + " aristas abiertas, " +
-                    std::to_string(chk.nonManifoldEdges) + " no manifold, " + std::to_string(chk.loosePoints) +
-                    " puntos sueltos, " + std::to_string(chk.degeneratePolys) + " polígonos sin área.");
+        flashStatus(tr("Comprobar Malla: ") + std::to_string(chk.openEdges) + tr(" aristas abiertas, ") +
+                    std::to_string(chk.nonManifoldEdges) + tr(" no manifold, ") + std::to_string(chk.loosePoints) +
+                    tr(" puntos sueltos, ") + std::to_string(chk.degeneratePolys) + tr(" polígonos sin área."));
         return true;
     }
 
     MeshEditResult r;
     const char* name = "";
     if (op == "bridge") {
-        name = "Puente";
-        if (mode != 3 || c.sel.size() != 2) { flashStatus("Puente: selecciona exactamente 2 polígonos (modo Polígonos)."); return false; }
+        name = tr("Puente");
+        if (mode != 3 || c.sel.size() != 2) { flashStatus(tr("Puente: selecciona exactamente 2 polígonos (modo Polígonos).")); return false; }
         r = bridgePolygons(*c.mesh, t, *c.sel.begin(), *c.sel.rbegin());
-        if (!r.changed) { flashStatus("Puente: los dos polígonos deben tener el mismo número de lados."); return false; }
+        if (!r.changed) { flashStatus(tr("Puente: los dos polígonos deben tener el mismo número de lados.")); return false; }
     } else if (op == "weld") {
-        name = "Soldar";
+        name = tr("Soldar");
         r = weldPoints(*c.mesh, t, selectedPoints());
-        if (!r.changed) { flashStatus("Soldar: selecciona al menos 2 puntos."); return false; }
+        if (!r.changed) { flashStatus(tr("Soldar: selecciona al menos 2 puntos.")); return false; }
     } else if (op == "close") {
-        name = "Cerrar Agujero Poligonal";
+        name = tr("Cerrar Agujero Poligonal");
         r = closeHoles(*c.mesh, t, selectedPoints());
-        if (!r.changed) { flashStatus("Cerrar Agujero: no hay bordes abiertos que toquen la selección."); return false; }
+        if (!r.changed) { flashStatus(tr("Cerrar Agujero: no hay bordes abiertos que toquen la selección.")); return false; }
     } else if (op == "subdiv" || op == "flip" || op == "align" || op == "triang") {
-        name = op == "subdiv" ? "Subdividir" : op == "flip" ? "Invertir Normales" : op == "align" ? "Alinear Normales" : "Triangular";
+        name = op == "subdiv" ? tr("Subdividir") : op == "flip" ? tr("Invertir Normales") : op == "align" ? tr("Alinear Normales") : tr("Triangular");
         std::set<int> polys;
         if (mode == 3) polys = c.sel;
         if (polys.empty())
@@ -6498,13 +6557,13 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
         else if (op == "flip") r = flipPolygons(*c.mesh, t, polys);
         else if (op == "align") {
             r = alignNormals(*c.mesh, t, polys);
-            if (!r.changed) { flashStatus("Alinear Normales: ya están todas alineadas."); return false; }
+            if (!r.changed) { flashStatus(tr("Alinear Normales: ya están todas alineadas.")); return false; }
         } else {
             r = triangulatePolygons(*c.mesh, t, polys);
-            if (!r.changed) { flashStatus("Triangular: no hay polígonos de más de 3 lados."); return false; }
+            if (!r.changed) { flashStatus(tr("Triangular: no hay polígonos de más de 3 lados.")); return false; }
         }
     } else {
-        flashStatus("Operación desconocida: " + op);
+        flashStatus(tr("Operación desconocida: ") + op);
         return false;
     }
     if (!r.changed) return false;
@@ -6513,7 +6572,7 @@ bool runCompOp(SceneNode& root, SceneNode* selected, SceneHistory& history, cons
     selected->mesh = std::make_shared<const MeshData>(std::move(r.mesh));
     if (!selTris.empty() && g_vp) g_vp->compMode = 3;
     if (syncComponents(selected)) c.sel = selTris.empty() ? std::set<int>{} : polysFromTris(c.topo, selTris);
-    flashStatus(std::string(name) + ": " + std::to_string(r.changed) + (r.changed == 1 ? " elemento." : " elementos."));
+    flashStatus(std::string(name) + ": " + std::to_string(r.changed) + (r.changed == 1 ? tr(" elemento.") : tr(" elementos.")));
     return true;
 }
 
@@ -6542,7 +6601,7 @@ bool deleteComponents(SceneNode& root, SceneNode* selected, SceneHistory& histor
     history.commitBefore(root);
     selected->mesh = std::make_shared<const MeshData>(keepPolygons(*selected->mesh, t, keep));
     c.sel.clear();
-    flashStatus("Eliminados " + std::to_string(removed) + (removed == 1 ? " polígono." : " polígonos."));
+    flashStatus(tr("Eliminados ") + std::to_string(removed) + (removed == 1 ? tr(" polígono.") : tr(" polígonos.")));
     return true;
 }
 
@@ -6700,7 +6759,7 @@ float& toolValue() {
 // Aplicar con los valores de la ventana sobre la seleccion actual.
 bool applyToolNow(SceneNode& root, SceneNode* selected, SceneHistory& history) {
     if (!syncComponents(selected) || g.comp.mode != 3 || g.comp.sel.empty()) {
-        flashStatus(std::string(modelToolName(g.modelTool)) + ": selecciona polígonos de un objeto editable.");
+        flashStatus(std::string(modelToolName(g.modelTool)) + tr(": selecciona polígonos de un objeto editable."));
         return false;
     }
     const std::shared_ptr<const MeshData> start = selected->mesh;
@@ -6716,7 +6775,7 @@ bool applyToolNow(SceneNode& root, SceneNode* selected, SceneHistory& history) {
 int knifeLine(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, const ViewportState& vp,
               SceneHistory& history, ImVec2 s0, ImVec2 s1) {
     if (!editableMesh(selected)) {
-        flashStatus("Cuchillo: selecciona un objeto editable (C).");
+        flashStatus(tr("Cuchillo: selecciona un objeto editable (C)."));
         return 0;
     }
     const float len2 = (s1.x - s0.x) * (s1.x - s0.x) + (s1.y - s0.y) * (s1.y - s0.y);
@@ -6752,13 +6811,13 @@ int knifeLine(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera,
     };
     MeshEditResult r = knifeCut(*selected->mesh, topo, pL, nL, allowed, inRange);
     if (!r.changed) {
-        flashStatus("Cuchillo: la línea no corta ningún polígono.");
+        flashStatus(tr("Cuchillo: la línea no corta ningún polígono."));
         return 0;
     }
     history.commitBefore(root);
     selected->mesh = std::make_shared<const MeshData>(std::move(r.mesh));
     if (g_vp) g.comp.sel.clear();
-    flashStatus("Cuchillo: " + std::to_string(r.changed) + (r.changed == 1 ? " polígono cortado." : " polígonos cortados."));
+    flashStatus(tr("Cuchillo: ") + std::to_string(r.changed) + (r.changed == 1 ? tr(" polígono cortado.") : tr(" polígonos cortados.")));
     return r.changed;
 }
 
@@ -6772,11 +6831,11 @@ void modelToolMouse(SceneNode& root, SceneNode* selected, const OrbitalCamera& c
         d.startY = d.curY = my;
         if (g.modelTool == UiState::ModelTool::Knife) {
             d.active = editableMesh(selected) != nullptr;
-            if (!d.active) flashStatus("Cuchillo: selecciona un objeto editable (C).");
+            if (!d.active) flashStatus(tr("Cuchillo: selecciona un objeto editable (C)."));
             return;
         }
         if (!syncComponents(selected) || g.comp.mode != 3 || g.comp.sel.empty()) {
-            flashStatus(std::string(modelToolName(g.modelTool)) + ": selecciona polígonos de un objeto editable.");
+            flashStatus(std::string(modelToolName(g.modelTool)) + tr(": selecciona polígonos de un objeto editable."));
             return;
         }
         d.active = true;
@@ -6833,21 +6892,21 @@ void drawModelToolUi(SceneNode* selected, const ViewportState& vp) {
                      ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings)) {
         ImGui::SetNextItemWidth(120.0f);
         if (g.modelTool == MT::Extrude) {
-            ImGui::DragFloat("Desplazamiento (cm)", &g.extrudeCm, 0.5f, -10000.0f, 10000.0f, "%.1f");
+            ImGui::DragFloat(tr("Desplazamiento (cm)"), &g.extrudeCm, 0.5f, -10000.0f, 10000.0f, "%.1f");
         } else if (g.modelTool == MT::InnerExtrude) {
-            ImGui::DragFloat("Desplazamiento (cm)", &g.innerInsetCm, 0.5f, 0.0f, 10000.0f, "%.1f");
+            ImGui::DragFloat(tr("Desplazamiento (cm)"), &g.innerInsetCm, 0.5f, 0.0f, 10000.0f, "%.1f");
         } else if (g.modelTool == MT::Bevel) {
-            ImGui::DragFloat("Desplazamiento de Inserción (cm)", &g.bevelInsetCm, 0.5f, 0.0f, 10000.0f, "%.1f");
+            ImGui::DragFloat(tr("Desplazamiento de Inserción (cm)"), &g.bevelInsetCm, 0.5f, 0.0f, 10000.0f, "%.1f");
             ImGui::SetNextItemWidth(120.0f);
-            ImGui::DragFloat("Extrusión (cm)", &g.bevelExtrudeCm, 0.5f, -10000.0f, 10000.0f, "%.1f");
+            ImGui::DragFloat(tr("Extrusión (cm)"), &g.bevelExtrudeCm, 0.5f, -10000.0f, 10000.0f, "%.1f");
         } else {
-            ImGui::Checkbox("Solo Visibles", &g.knifeVisibleOnly);
-            ImGui::TextDisabled("Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos.");
+            ImGui::Checkbox(tr("Solo Visibles"), &g.knifeVisibleOnly);
+            ImGui::TextDisabled(tr("Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos."));
         }
         if (g.modelTool != MT::Knife) {
-            if (ImGui::Button("Aplicar")) g.toolApplyRequested = true;
+            if (ImGui::Button(tr("Aplicar"))) g.toolApplyRequested = true;
             ImGui::SameLine();
-            ImGui::TextDisabled(editableMesh(selected) ? "o arrastra en el visor" : "(objeto editable)");
+            ImGui::TextDisabled(editableMesh(selected) ? tr("o arrastra en el visor") : tr("(objeto editable)"));
         }
     }
     ImGui::End();
@@ -6983,13 +7042,13 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
                     std::fclose(f);
                 }
             }
-            flashStatus("comp-move: " + std::to_string(asym) + " vertices sin espejo.");
+            flashStatus(tr("comp-move: ") + std::to_string(asym) + tr(" vertices sin espejo."));
         }
     }
     if (g.symObjRequested && !g.compMoveRequested && !g.pendingCompMode && g.cmdQueue.empty() && ImGui::GetFrameCount() > 12) {
         g.symObjRequested = false;
         viewport.compMode = 0;
-        const PaletteItem it{"Simetría", Icon::ModSymmetry, PrimitiveType::None, true};
+        const PaletteItem it{tr("Simetría"), Icon::ModSymmetry, PrimitiveType::None, true};
         createPaletteItem(root, selected, history, it);
     }
     if (g.compSelectAllRequested && !g.pendingCompMode && viewport.w > 64.0f && ImGui::GetFrameCount() > 5) {
@@ -7125,7 +7184,7 @@ void drawIconSheet(ViewportState& viewport) {
     ImGui::SetNextWindowSize(mv->Size);
     ImGui::Begin("##iconsheet", nullptr, kPanelFlags);
     const int total = (int)Icon::Count_;
-    ImGui::Text("Iron3D Studio - hoja de iconos (%d)", total);
+    ImGui::Text(tr("Iron3D Studio - hoja de iconos (%d)"), total);
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const float cellW = 132.0f, cellH = 30.0f, iconS = 20.0f;
     const int cols = std::max(1, (int)(ImGui::GetContentRegionAvail().x / cellW));

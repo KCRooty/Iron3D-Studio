@@ -1,0 +1,479 @@
+# Iron3D Studio - cs (clave = texto en espanol; valor = traduccion)
+Extrusión	Vytažení
+Bisel	Zkosení
+Superior	Vrchní
+Derecha	Vpravo
+Frontal	Přední
+Izquierda	Vlevo
+Inferior	Spodní
+Cubo	Krychle
+Esfera	Koule
+Plano	Rovina
+Luz	Světlo
+Cámara	Kamera
+Polígono	Polygon
+Nulo	Osy
+Abrir	Otevřít
+Fusionar	Sloučit
+Exportar	Export
+Simetría	Symetrie
+Supr	Del
+Deshacer	Zpět
+Encuadrar Seleccionados	Zobrazit vybrané
+Encuadrar Geometría	Přizpůsobit geometrii
+Hacer Editable	Převést na polygony
+Conectar Objetos	Spojit objekty
+Agrupar Objetos	Seskupit objekty
+Nueva Etiqueta	Nová vlastnost
+Restaurar Selección	Obnovit výběr
+Seleccionar Hijos	Vybrat podřízené
+Mostrar Pistas...	Zobrazit stopy...
+Mostrar F-Curves...	Zobrazit funkční křivky...
+Mostrar Movimientos...	Zobrazit pohyb...
+Mover	Posun
+Escalar	Velikost
+Rotar	Rotace
+Selección Rectangular	Výběr do obdélníku
+Archivo	Soubor
+Nuevo	Nový projekt
+Abrir...	Otevřít...
+Fusionar...	Sloučit s projektem...
+Volver a Archivo Guardado...	Zpět k uloženému projektu...
+Cerrar Todos	Zavřít všechny projekty
+Guardar	Uložit
+Guardar como...	Uložit projekt jako...
+Guardar Todo	Uložit všechny projekty
+Guardar Objetos Seleccionados como...	Uložit vybrané objekty jako...
+Salir	Konec
+Edición	Úpravy
+Rehacer	Opakovat
+Cortar	Vyjmout
+Copiar	Kopírovat
+Pegar	Vložit
+Eliminar	Odstranit
+Seleccionar Todo	Vybrat vše
+Deseleccionar Todo	Odznačit vše
+Configuración del Proyecto...	Nastavení projektu...
+Escalar Proyecto...	Měřítko projektu...
+Preferencias...	Přednastavení...
+Crear	Vytvořit
+Objeto	Objekt
+Spline	Křivka
+Generadores	Generátory
+Modelado	Modelování
+Deformador	Deformátor
+Escena	Scéna
+Materiales	Materiály
+Nuevo Material	Nový standardní materiál
+Nuevo Material PBR	Nový PBR materiál
+Cargar Materiales...	Načíst materiály...
+Etiqueta	Vlastnost
+Sonido	Zvuk
+Selección	Výběr
+Filtro de Selección	Výběrový filtr
+Rellenar Selección	Vyplnit výběr
+Herramientas	Nástroje
+Desplazamiento	Deformační mapa
+Centrar	Centrovat
+Malla	Mesh
+Conectar Objetos + Eliminar	Spojit objekty + smazat
+Soldar	Svařit
+Puente	Přemostit
+Pincel	Štětec
+Planchar	Vyžehlení
+Triangular	Převést na trojúhelníky
+Fijación	Přichytávání
+Activar Fijación	Zapnout přichytávání
+Fijación 2D	2D přichytávání
+Fijación 3D	3D přichytávání
+Plano de Trabajo	Pracovní plocha
+Animación	Animace
+Grabar Objetos Activos	Záznam aktivních objektů
+Fotogramas Clave Automáticos	Auto klíčování
+Reproducir Hacia Delante	Dopředu
+Reproducir Hacia Atrás	Zpátky
+Parar	Stop
+Ir al Inicio	Na začátek
+Ir al Final	Na konec
+Personaje	Postava
+Piel	Potažení povrchem
+Restricción	Omezení
+Simulación	Simulace
+Partículas	Částice
+Dinámicas	Dynamika
+Cloth	Oděv
+Renderizar Región	Renderovat oblast
+Región de Render Interactivo	Oblast interaktivního renderu
+Cola de Render...	Dávkový rendering...
+Visor de Imágenes...	Prohlížeč obrázků...
+Esculpir	Skulpt
+Reducir	Snížit
+Suavizar	Vyhladit
+Aplanar	Zploštit
+Pellizcar	Stáhnout
+Ocultar Seleccionado	Skrýt výběr
+Selección MoGraph	MoGraph výběr
+Clonador	Klonování
+Matriz	Matice
+Fractura Voronoi	Fraktura Voronoi
+PolyFX	PolyFx
+Character	Postava
+Junta	Kloub
+Herramienta de Junta	Kloub - nástroj
+Línea de Trabajo	Pipeline
+Plugins	Pluginy
+Script	Skript
+Gestor de Scripts...	Správce skriptu...
+Consola...	Konzole...
+Ventana	Okno
+Editor de Material...	Správce materiálů...
+Gestor de Capas	Správce vrstev
+Ayuda	Pomoc
+Mostrar Ayuda...	Zobrazit nápovědu...
+Animar	Animovaný
+Vista	Pohled
+Deshacer Vista	Zpět pohled
+Rehacer Vista	Opakovat pohled
+Encuadrar Todo	Všechny snímky
+Encuadre por Defecto	Základní pohled
+Redibujar	Překreslit
+Cámaras	Kamery
+Navegación	Navigace
+Usar Cámara	Bez kamer
+Perspectiva	Perspektiva
+Paralela	Paralelní pohled
+Mostrar	Zobrazení
+Sombreado Gouraud	Gouraudovo stínování
+Sombreado Gouraud (Líneas)	Gouraudovo stínování (hrany)
+Sombreado Rápido	Rychlé stínování
+Sombreado Constante	Konstantní stínování
+Líneas Ocultas	Skryté hrany
+Líneas	Hrany
+Alambre	Drátěný režim
+Caja	Box
+Opciones	Volby
+Nivel de Detalle	Úroveň detailů
+Estereoscópico	Stereoskopie
+Sombreado de Flujo de Trabajo Lineal	Stínování s lineárním workflow
+Post Efectos	Post efekty
+Transparencia	Průhlednost
+Reflexiones	Odrazy
+Profundidad de Campo	Hloubka ostrosti
+Usar Edición de Isolíneas	Použít editaci izočar
+Normales de Polígonos	Normály polygonů
+Normales de Vértices	Normály vertexů
+Etiquetas	Vlastnosti
+Texturas	Textury
+Rayos X	Rentgen
+Luz por Defecto...	Výchozí světlo...
+Configurar...	Konfigurovat...
+Filtrar	Filtr zobrazení
+Cuadrícula	Mřížka
+Generador	Generátor
+Subdivisión Superficie	Segmentovaný povrch
+Entorno	Prostředí
+Partícula	Částice
+Otro	Ostatní
+Horizonte	Horizont
+Ejes	Osy
+Guías	Vodítka
+Paneles	Rozdělení okna
+4 Vistas	4 pohledy
+Todas las Vistas	Všechny pohledy
+Fusionar Objetos...	Sloučit objekty...
+Guardar como Preestablecido...	Uložit do před....
+Editar	Upravit
+Expandir Todo	Rozbalit vše
+Ver	Zobrazení
+Mostrar Etiquetas	Zobrazit vlastnosti
+Objetos	Objekty
+Añadir	Přidat
+Duplicar	Duplikovat
+Favoritos	Záložky
+Protección	Ochrana
+Hair Etiquetas	Vlasy vlastnosti
+MoGraph Etiquetas	MoGraph vlastnosti
+Motion Tracker Etiquetas	Vlastnosti tracker
+Scripting Etiquetas	Vlastnosti programování
+Añadir a una Capa Nueva	Přidat do nové vrstvy
+Gestor de Capas...	Správce vrstev...
+Eliminar de Todas las Tomas	Odstranit ze všech záběrů
+Gestor de Tomas...	Správce záběru...
+Establecer como Raíz	Nastavit jako kořen
+Contraer Todo	Sbalit vše
+Estado Actual del Objeto	Současný stav do objektu
+Expandir Grupo de Objetos	Rozbalit objekty
+Eliminar Sin Hijos	Odstranit nadřazený
+Convertir Selección de Objetos a XRef	Konvertovat výběr objektů na XRef
+Información del Objeto...	Informace o objektu...
+Información del Proyecto	Informace o projektu...
+Renombrar	Přejmenovat
+Por Defecto	Výchozí
+Activado	Zapnuto
+Atrás	Zpět
+Subir	Načíst
+Bloquear Elemento	Uzamknout element
+Proyecto	Projekt
+Información	Informace
+Referenciar	XRefy
+A Realizar	Diář
+Interpolación de Claves	Animace
+Centímetros	centimetr
+Usar Animación	Zobrazovat animace
+Usar Expresiones	Používat chování (expressions)
+Usar Generadores	Zobrazovat generátory
+Usar Deformadores	Zobrazovat deformace
+Usar Sistema de Movimiento	Použít systém pohybu
+Medio	Střední
+Cargar Preestablecido...	Načíst předvolbu...
+Guardar Preestablecido...	Uložit předvolbu...
+Básico	Základní
+Phong	Phong vyhlazení
+General	Hlavní
+Detalles	Detaily
+Visibilidad	Viditelnost
+Sombra	Stín
+Cáusticas	Kaustika
+Ruido	Šum
+Propiedades Básicas	Základní vlastnosti
+Nombre	Název
+Capa	Vrstva
+Desactivado	Vypnuto
+Coordenadas	Souřadnice
+Orden	Pořadí
+Color	Barva
+Intensidad	Intenzita
+Tubo	Trubka
+Tipo	Typ
+Ninguno	Žádný
+Difusión	Povrchová úprava
+Especular	Odlesk
+Tolerancia	Tolerance
+Punto	Bod
+Radio	Poloměr
+Orientación	Orientace
+Vértices	Vertexy
+Triángulos	Trojúhelníky
+Segmentos	Segmenty
+Estándar	Standardní
+Anchura	Šířka
+Lineal	Lineární
+Inverso	Inverze
+Decaimiento	Úbytek
+Normal	Normální
+Restar	Odečíst
+Multiplicar	Násobit
+Circular	Kruhová
+Cuadrado	Kvadratický
+Lambertiano (Difuso)	Lambertian (difuze)
+Oren-Nayar (Difuso)	Oren-Nayar (difuze)
+Promedio	průměrný
+Mínimo	minimální
+Máximo	maximální
+Metal	kov
+Dieléctrico	dielektrický
+Conductor	konduktor
+Imágenes	Obrázky
+Brillo	Jas
+Muestreo	Interpolace
+Desenfoque Desfase	Odsazení při rozostření
+Desenfoque Escala	Síla rozostření
+Fuerza	Intenzita
+Invertir	Inverze
+Rugosidad	Drsnost
+Global	Globální
+Brillo Reflexión Global	Celkový jas odrazivosti
+Brillo Especular Global	Celkový jas odlesku
+Pase Separado	Separátní pass
+Atenuación	Zeslabení
+Fuerza Reflexión	Intenzita odrazu
+Fuerza Especular	Intenzita odlesku
+Fuerza Relieve	Intenzita nerovnosti
+Color de Capa	Barva vrstvy
+Fresnel de Capa	Fresnel vrstvy
+Reflectancia	Odrazivost
+Relieve	Hrbolatost
+Fosforescencia	Záře (AR)
+Iluminación	Osvětlení
+Asignar	Přiřadit
+Material	Materiál
+Proyección	Projekce
+Ambos	Oba
+Sin Costuras	Bezešvý
+Desfase U	Posun U
+Desfase V	Posun V
+Modo	Režim
+Datos de Usuario	Uživatelská data
+Añadir Datos de Usuario...	Přidat uživatelská data...
+Gestionar Datos de Usuario...	Upravit uživatelská data...
+Interpolación 	Interpolace 
+Guardar Materiales como...	Uložit materiál jako...
+Función	Funkce
+Editar...	Upravit...
+Aplicar	Použít
+Posición	Pozice
+Tamaño	Velikost
+Rotación	Rotace
+Escala	Velikost
+Objeto (Rel)	Objekt (rel)
+Objeto (Abs)	Objekt (abs)
+Cancelar	Zrušit
+Personalizar	Uživatelský
+Colores	Barvy
+Texto	Text
+Preferencias	Nastavení
+Interfaz	Rozhraní
+Visor	Pohled
+Archivos	Soubory
+Unidades	Jednotky
+Memoria	Paměť
+Renderizador	Renderer
+OpenGL	Hardware pohledu
+Normales	Normály
+Cerrar	Zavřít
+Visor de Imágenes	Prohlížeč obrázků
+Configuración...	Nastavení...
+Configuración de Render	Nastavení renderingu
+Salida	Výstup
+Preestablecido	Přednastavení
+Antialiasing	Vyhlazování
+Fondo	Pozadí
+Arriba	Nahoru
+Abajo	Dolů
+Puntos	Body
+Aristas	Hrany
+Polígonos	Polygony
+Invertir Selección	Inverzní výběr
+Preestablecidos	Přednastavené
+Elementos Recientes	Poslední objekty
+Ya existe 	již existuje 
+Nombre:	Jméno:
+Nueva Carpeta...	Nový adresář...
+Nuevo Catálogo...	Nový katalog...
+Nueva Librería de Preestablecidos...	Nová knihovna před. objektů...
+Borrar	Odstranit
+Renombrar...	Přejmenovat...
+Iconos Pequeños	Malé ikony
+Iconos Medianos	Střední ikony
+Iconos Grandes	Velké ikony
+Buscar...	Vyhledat...
+Añadir Archivos...	Vyberte soubory pro načtení...
+Catálogos	Katalogy
+Ordenador	Počítač
+Red	Síť
+Resultado de la Búsqueda	Výsledky vyhledávání
+Carpeta	Adresář
+Idioma	Jazyk
+Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	Jazyk uložen. Pro použití restartujte Iron3D Studio.
+Se aplicará al reiniciar Iron3D Studio.	Projeví se po restartu Iron3D Studio.
+Polígono Vacío	Prázdný polygon
+Guía	Vodítko
+Cono	Kužel
+Cilindro	Válec
+Disco	Kruh
+Toroide	Anuloid
+Cápsula	Kapsle
+Pirámide	Jehlan
+Platónico	N-stěn
+Figura	Postava
+Lápiz	Pero křivky
+Dibujo	Kreslení
+Suavizado Spline	Vyhlazení křivky
+Arco	Oblouk
+Círculo	Kruh
+Hélice	Spirála
+n-Lados	N-stěn
+Rectángulo	Obdélník
+Estrella	Hvězda
+4-Lados	Čtyřstěn
+Cisoide	Cisoida
+Rueda Dentada	Ozubené kolo
+Cicloide	Cykloida
+Fórmula	Vzorec
+Flor	Květina
+Perfil	Profil
+Sustraer Spline	Odečtení křivky
+Spline Y	Průnik křivky
+Spline O	Sjednocení křivky
+Torno	Rotace
+Forro	Potažení
+Recorrido	Protažení
+Bezier	Beziér
+Formación de Átomos	Atomová mřížka
+Booleano	Boole
+Máscara de Spline	Maska křivky
+Conector	Konektor
+Generador Python	Python generátor
+Reducción de Polígonos	Polygonová redukce
+Instancia	Instance
+Fractura	Fraktura
+Trazador	Vykreslení
+MoExtrude	Vytažení
+Doblar	Ohnutí
+Hinchar	Vydutí
+Sesgar	Zkosení
+Afilar	Zúžení
+Enroscar	Zkroucení
+FFD	VPD
+Aplastar y Estirar	ZmáčknoutNatáhnout
+Explosión	Exploze
+FX Explosión	Exploze FX
+Romper	Rozbití
+Corrección	Korekce
+Jiggle	Houpání
+Morph	Morf
+Cubrir	Obalení - deformátor
+Esferizar	Zakulacení
+Superficie	Povrch
+Rail de Splines	Deformace křivkami
+Envolver Spline	Křivka
+Colisión	Kolize
+Desplazador	Deformace
+Viento	Vítr
+Suavizado	Vyhlazení
+Suelo	Podlaha
+Cielo	Obloha
+Primer Plano	Popředí
+Escenario	Klapka
+Cielo Físico	Fyzikální obloha
+Unir Nubes	Spojit mraky
+Césped	Trávník
+Cámara Estéreo	Stereo kamera
+Morph de Cámara	Morf kamery
+Grúa	Jeřáb
+Luz Infinita	Vzdálené světlo
+Luz de Área	Plošné světlo
+Luz Solar	Slunce
+Luz PBR	PBR světlo
+Activar Eje	Osy objektu
+Nuevo Proyecto	Nový projekt
+Gestor de Objetos	Správce objektů
+Detener	Zastavit
+Guardar Proyecto con su Contenido...	Uložit projekt se součástmi...
+Inflar	Vzdout
+Pincel Pesos MoGraph	Štětec mapy vlivu MoGraph
+Ejecutar Script...	Spustit skript...
+Sombreado Rápido (Líneas)	Rychlé stínování (hrany)
+Sombreado Constante (Líneas)	Konstantní stínování (hrany)
+Esqueleto	Kostra
+Sombras	Stíny
+Teselación	Teselace
+Ocultar Caras Posteriores	Zobrazit neviditelné
+Configurar Todo...	Nastavit vše...
+Objetivo	Cíl
+Niebla	Mlha
+Mostrar Subcanales	Zobrazit podkanály
+Guardar Todos los Materiales como...	Uložit všechny materiály jako...
+Todos los archivos	Všechny soubory
+Nueva Librería	Nová knihovna
+Nueva Carpeta	Nový adresář
+Atributos	Nastavení
+Línea de Tiempo	Časová osa
+Gestor de Materiales	Správce materiálů
+Entorno:	Rozhraní:
+Tomas	Záběry
+Estructura	Struktura
+Capas	Vrstvy
+Propiedades	Vlastnosti
+Transformar	Transformovat
+Vista 3D	3D pohled

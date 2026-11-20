@@ -20,6 +20,9 @@ struct Preferences {
     // el id) para que un preset tocado y sin guardar sobreviva al reinicio.
     // Por defecto es el preset Iron3D (la paleta de la web); el C4D de siempre sigue en la lista.
     UiPreset uiPreset = defaultUiPreset();
+    // Idioma de la interfaz (codigo de i18n::languages()). Vacio = sin elegir: lo decide
+    // language.cfg (lo escribe el instalador) y, si no existe, el ingles. Se aplica al reiniciar.
+    std::string language;
 };
 
 // Si el archivo no existe o no parsea, devuelve Preferences{} (default

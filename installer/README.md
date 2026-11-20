@@ -5,6 +5,16 @@ Iron3D Studio en un instalador de Windows con el mismo flujo de pantallas
 que el instalador real de Cinema 4D R19 (9 capturas de referencia dadas por
 Core), **excepto la pagina de registro/serial, excluida a proposito**.
 
+## Idioma
+
+Al arrancar, el instalador pregunta el idioma (English, Español, Deutsch,
+Français, Italiano, Polski, Čeština, Русский, 日本語, 한국어; el chino no
+está porque Inno Setup no trae su `.isl`). La elección se guarda en
+`language.cfg` junto al exe y Iron3D Studio arranca en ese idioma; después se
+cambia en Preferencias > Interfaz > Idioma (se aplica al reiniciar). Si no se
+elige nada, el idioma es inglés. Las cadenas propias del asistente están en
+`[CustomMessages]` de `iron3d_setup.iss`.
+
 ## Pasos del asistente
 
 1. Bienvenida.

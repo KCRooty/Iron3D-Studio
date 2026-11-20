@@ -34,6 +34,7 @@ Preferences loadPreferences(const std::filesystem::path& path) {
         const std::string key = line.substr(0, eq);
         const std::string val = line.substr(eq + 1);
         if (key == "renderBackend") prefs.renderBackend = backendFromCode(val);
+        else if (key == "language") prefs.language = val;
         else readPresetKey(prefs.uiPreset, key, val);
     }
     return prefs;
@@ -44,6 +45,7 @@ bool savePreferences(const std::filesystem::path& path, const Preferences& prefs
     if (!file) return false;
     file << "IRON3D_PREFS " << kFormatVersion << "\n";
     file << "renderBackend=" << backendCode(prefs.renderBackend) << "\n";
+    if (!prefs.language.empty()) file << "language=" << prefs.language << "\n";
     writePresetKeys(file, prefs.uiPreset);
     return (bool)file;
 }

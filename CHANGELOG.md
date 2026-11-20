@@ -6,6 +6,24 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (3): Interfaz en inglés por defecto y multilenguaje
+
+**Nuevo**
+- Iron3D arranca **en inglés** (es contra lo que se compara con Cinema 4D) y es multilenguaje como C4D: English, Español, Deutsch, Français, Italiano, Polski, Čeština, Русский, 日本語, 한국어 y 中文. El idioma se elige en **Preferencias > Interfaz > Idioma** (se guarda y se aplica al reiniciar) y en el **instalador** (diálogo de idioma al arrancar; lo deja en `language.cfg`). Orden de resolución: preferencias → `language.cfg` → inglés. `--lang=xx` lo fuerza sin guardarlo.
+- Los textos viven en `resources/lang/<código>.txt` (se copian junto al exe). Los nombres de comandos salen de los `strings_*` oficiales de Cinema 4D (532 textos, p. ej. «Reproducir Hacia Delante» = «Play Forwards»); el resto del inglés está escrito a mano. Texto sin traducción → inglés → español.
+- CJK: la fuente de sistema (Yu Gothic/Malgun/Microsoft YaHei) se fusiona con la de la interfaz; cirílico con rangos propios.
+- Instalador de 10 idiomas (sin chino: Inno Setup no trae su `.isl`; el chino se elige dentro de la app).
+
+**Probado**
+- Compila (Debug y Release) y los tests de `iron3d_tests` pasan.
+- Capturas de la ventana (sin input) en inglés, alemán, español y japonés: menús y barras traducidos; el japonés se dibuja bien.
+- El instalador compila con ISCC.
+
+**Sin probar / límites**
+- Ejecutar el instalador (el diálogo de idioma y que escriba `language.cfg`) y comprobar cada panel con cada idioma.
+- Alemán, francés, italiano, polaco, checo, ruso, japonés, coreano y chino traducen solo lo que trae C4D oficial (~480 textos cada uno); lo demás cae al inglés. El español es la clave original.
+- Fragmentos de frase que se concatenan (« objetos convertidos.») siguen el orden del español/inglés.
+
 ### 2026-11-20 (2): Malla > Triangular y Alinear Normales
 
 **Nuevo**

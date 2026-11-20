@@ -1,4 +1,5 @@
 #include "ContentBrowser.h"
+#include "core/I18n.h"
 
 #include "C4DIcons.h"
 #include "FileDialog.h"
@@ -271,12 +272,12 @@ std::vector<Entry> currentEntries() {
 
 std::string locationLabel() {
     switch (s.loc.node) {
-        case Node::Presets: return "Preestablecidos";
-        case Node::Recent: return "Elementos Recientes";
-        case Node::Search: return "Resultado de la Búsqueda: \"" + s.searchDone + "\"";
+        case Node::Presets: return tr("Preestablecidos");
+        case Node::Recent: return tr("Elementos Recientes");
+        case Node::Search: return tr("Resultado de la Búsqueda: \"") + s.searchDone + "\"";
         case Node::Library:
             if (Mounted* m = findLib(s.loc.lib)) {
-                std::string l = "Preestablecidos > " + m->lib.title();
+                std::string l = tr("Preestablecidos > ") + m->lib.title();
                 if (!s.loc.folder.empty()) {
                     std::string f = s.loc.folder;
                     for (size_t p = 0; (p = f.find('/', p)) != std::string::npos; p += 3) f.replace(p, 1, " > ");
@@ -284,7 +285,7 @@ std::string locationLabel() {
                 }
                 return l;
             }
-            return "Preestablecidos";
+            return tr("Preestablecidos");
         default: return "";
     }
 }
@@ -332,7 +333,7 @@ void makePermanent(Mounted& m) {
     std::filesystem::create_directories(dir, ec);
     const auto dst = dir / m.lib.file().filename();
     if (std::filesystem::exists(dst, ec)) {
-        s.message = "Ya hay una librería con ese nombre en library/browser.";
+        s.message = tr("Ya hay una librería con ese nombre en library/browser.");
         return;
     }
     std::string err;
@@ -344,7 +345,7 @@ void makePermanent(Mounted& m) {
             return;
         }
     } else if (!std::filesystem::copy_file(m.lib.file(), dst, ec) || ec) {
-        s.message = "No se pudo copiar la librería a library/browser: " + ec.message();
+        s.message = tr("No se pudo copiar la librería a library/browser: ") + ec.message();
         return;
     }
     PresetLibrary copy;
@@ -355,7 +356,7 @@ void makePermanent(Mounted& m) {
     dropThumbsOf(m.serial);
     m.lib = std::move(copy);
     m.temporary = false;
-    s.message = "\"" + m.lib.title() + "\" es ahora permanente (" + pathUtf8(dst) + ").";
+    s.message = "\"" + m.lib.title() + tr("\" es ahora permanente (") + pathUtf8(dst) + ").";
 }
 
 // --- Escribir en librerias (Nueva Libreria, Nueva Carpeta, Anadir Archivos) -----------
@@ -412,7 +413,7 @@ void createLibrary(const std::string& name) {
     const int serial = m->serial;
     g_libs.push_back(std::move(m));
     navigate(libraryLocation(serial));
-    s.message = "Librería \"" + name + "\" creada en library/browser.";
+    s.message = tr("Librería \"") + name + tr("\" creada en library/browser.");
 }
 
 void addFolder(Mounted& m, const std::string& parent, const std::string& name) {
@@ -421,7 +422,7 @@ void addFolder(Mounted& m, const std::string& parent, const std::string& name) {
         s.message = err;
         return;
     }
-    if (reloadLib(m)) s.message = "Carpeta \"" + name + "\" creada.";
+    if (reloadLib(m)) s.message = tr("Carpeta \"") + name + tr("\" creada.");
 }
 
 // Miniatura de un .c4d que se anade a una libreria: se importa con el
@@ -450,13 +451,13 @@ void addFiles(Mounted& m, const std::string& folder, const std::vector<std::file
     for (const auto& f : files) {
         std::ifstream in(f, std::ios::binary);
         if (!in) {
-            s.message = "No se puede leer " + pathUtf8(f);
+            s.message = tr("No se puede leer ") + pathUtf8(f);
             return;
         }
         lib4d::NewEntry e;
         e.data.assign(std::istreambuf_iterator<char>(in), {});
         if (e.data.empty()) continue;
-        const bool isC4d = e.data.size() >= 4 && std::memcmp(e.data.data(), "QC4D", 4) == 0;
+        const bool isC4d = e.data.size() >= 4 && std::memcmp(e.data.data(), tr("QC4D"), 4) == 0;
         e.path = joinPath(folder, pathUtf8(isC4d ? f.stem() : f.filename()));
         if (isC4d) thumbnailFromC4D(f, e);
         (isC4d ? models : others)++;
@@ -469,15 +470,15 @@ void addFiles(Mounted& m, const std::string& folder, const std::vector<std::file
         return;
     }
     if (reloadLib(m))
-        s.message = std::to_string(models) + " modelos y " + std::to_string(others) + " archivos añadidos a \"" +
+        s.message = std::to_string(models) + tr(" modelos y ") + std::to_string(others) + tr(" archivos añadidos a \"") +
                     m.lib.title() + "\".";
 }
 
 void addFilesDialog(Mounted& m, const std::string& folder) {
     const auto files = openFilesDialog(
-        "Añadir a la librería",
-        {{"Modelos y texturas", "*.c4d;*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.exr;*.hdr;*.psd;*.bmp;*.tga"},
-         {"Todos los archivos", "*.*"}});
+        tr("Añadir a la librería"),
+        {{tr("Modelos y texturas"), "*.c4d;*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.exr;*.hdr;*.psd;*.bmp;*.tga"},
+         {tr("Todos los archivos"), "*.*"}});
     if (!files.empty()) addFiles(m, folder, files);
 }
 
@@ -522,7 +523,7 @@ void deleteItem(Mounted& m, const std::string& path) {
         return;
     }
     followEdit(m.serial, path, nullptr);
-    if (reloadLib(m)) s.message = "\"" + leafName(path) + "\" eliminado de \"" + m.lib.title() + "\".";
+    if (reloadLib(m)) s.message = "\"" + leafName(path) + tr("\" eliminado de \"") + m.lib.title() + "\".";
 }
 
 // Corrige la url raiz de una libreria renombrada a mano: la original queda
@@ -533,12 +534,12 @@ void fixRootUrl(Mounted& m) {
     bak += ".bak";
     std::error_code ec;
     if (std::filesystem::exists(bak, ec)) {
-        s.message = "Ya existe " + pathUtf8(bak) + "; muévela antes de corregir.";
+        s.message = tr("Ya existe ") + pathUtf8(bak) + tr("; muévela antes de corregir.");
         return;
     }
     std::filesystem::rename(file, bak, ec);
     if (ec) {
-        s.message = "No se pudo renombrar la librería: " + ec.message();
+        s.message = tr("No se pudo renombrar la librería: ") + ec.message();
         return;
     }
     std::string err;
@@ -547,7 +548,7 @@ void fixRootUrl(Mounted& m) {
         s.message = err;
         return;
     }
-    if (reloadLib(m)) s.message = "Url interna corregida (copia de seguridad en " + pathUtf8(bak) + ").";
+    if (reloadLib(m)) s.message = tr("Url interna corregida (copia de seguridad en ") + pathUtf8(bak) + ").";
 }
 
 void askEdit(State::Ask what, int lib, const std::string& path) {
@@ -567,19 +568,19 @@ void askDelete(int lib, const std::string& path) {
 
 void drawAskDelete() {
     if (s.delOpen) {
-        ImGui::OpenPopup("Eliminar de la Librería###cbdel");
+        ImGui::OpenPopup(tr("Eliminar de la Librería###cbdel"));
         s.delOpen = false;
     }
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    if (!ImGui::BeginPopupModal("Eliminar de la Librería###cbdel", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
+    if (!ImGui::BeginPopupModal(tr("Eliminar de la Librería###cbdel"), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
     Mounted* m = findLib(s.delLib);
     const int idx = m ? m->lib.find(s.delPath) : -1;
     const bool folder = idx >= 0 && m->lib.items()[idx].kind == PresetKind::Folder;
-    ImGui::Text("¿Eliminar \"%s\"%s?", leafName(s.delPath).c_str(), folder ? " y todo su contenido" : "");
-    ImGui::TextDisabled("Se borra de la librería (%s).", m ? m->lib.title().c_str() : "");
-    const bool yes = ImGui::Button("Eliminar", ImVec2(110, 0));
+    ImGui::Text(tr("¿Eliminar \"%s\"%s?"), leafName(s.delPath).c_str(), folder ? tr(" y todo su contenido") : "");
+    ImGui::TextDisabled(tr("Se borra de la librería (%s)."), m ? m->lib.title().c_str() : "");
+    const bool yes = ImGui::Button(tr("Eliminar"), ImVec2(110, 0));
     ImGui::SameLine();
-    const bool no = ImGui::Button("Cancelar", ImVec2(110, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape);
+    const bool no = ImGui::Button(tr("Cancelar"), ImVec2(110, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape);
     if (yes && m && idx >= 0) deleteItem(*m, s.delPath);
     if (yes || no) ImGui::CloseCurrentPopup();
     ImGui::EndPopup();
@@ -590,7 +591,7 @@ void askName(State::Ask what, int lib, const std::string& folder) {
     s.askOpen = true;
     s.askLib = lib;
     s.askFolder = folder;
-    std::snprintf(s.askBuf, sizeof(s.askBuf), "%s", what == State::Ask::Library ? "Nueva Librería" : "Nueva Carpeta");
+    std::snprintf(s.askBuf, sizeof(s.askBuf), "%s", what == State::Ask::Library ? tr("Nueva Librería") : tr("Nueva Carpeta"));
 }
 
 void drawAskName() {
@@ -598,14 +599,14 @@ void drawAskName() {
         ImGui::OpenPopup("###cbask");
         s.askOpen = false;
     }
-    const char* title = s.ask == State::Ask::Library  ? "Nueva Librería de Preestablecidos###cbask"
-                        : s.ask == State::Ask::Rename ? "Renombrar###cbask"
-                        : s.ask == State::Ask::Move   ? "Mover a###cbask"
-                                                      : "Nueva Carpeta###cbask";
+    const char* title = s.ask == State::Ask::Library  ? tr("Nueva Librería de Preestablecidos###cbask")
+                        : s.ask == State::Ask::Rename ? tr("Renombrar###cbask")
+                        : s.ask == State::Ask::Move   ? tr("Mover a###cbask")
+                                                      : tr("Nueva Carpeta###cbask");
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if (!ImGui::BeginPopupModal(title, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
     const bool move = s.ask == State::Ask::Move;
-    ImGui::TextUnformatted(move ? "Carpeta de destino (vacío = raíz, \"a/b\" = subcarpetas):" : "Nombre:");
+    ImGui::TextUnformatted(move ? tr("Carpeta de destino (vacío = raíz, \"a/b\" = subcarpetas):") : tr("Nombre:"));
     if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
     const bool enter = ImGui::InputText("##askname", s.askBuf, sizeof(s.askBuf),
                                         ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
@@ -623,15 +624,15 @@ void drawAskName() {
         }
         if (ok && insidePath(name, s.askFolder)) ok = false;
     }
-    if (!ok) ImGui::TextDisabled(move ? "Ruta no válida (o dentro de sí misma)." : "Sin  / \\ : * ? \" < > |");
-    if (s.ask == State::Ask::Library) ImGui::TextDisabled("Se guarda en library/browser: sale siempre.");
+    if (!ok) ImGui::TextDisabled(move ? tr("Ruta no válida (o dentro de sí misma).") : tr("Sin  / \\ : * ? \" < > |"));
+    if (s.ask == State::Ask::Library) ImGui::TextDisabled(tr("Se guarda en library/browser: sale siempre."));
     ImGui::BeginDisabled(!ok);
     const bool create =
-        ImGui::Button(s.ask == State::Ask::Rename ? "Renombrar" : move ? "Mover" : "Crear", ImVec2(110, 0)) ||
+        ImGui::Button(s.ask == State::Ask::Rename ? tr("Renombrar") : move ? tr("Mover") : tr("Crear"), ImVec2(110, 0)) ||
         (enter && ok);
     ImGui::EndDisabled();
     ImGui::SameLine();
-    const bool cancel = ImGui::Button("Cancelar", ImVec2(110, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape);
+    const bool cancel = ImGui::Button(tr("Cancelar"), ImVec2(110, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape);
     if (create && ok) {
         Mounted* m = findLib(s.askLib);
         if (s.ask == State::Ask::Library) createLibrary(name);
@@ -701,7 +702,7 @@ const PresetItem* selectedModel() {
 
 // --- Dibujo ---------------------------------------------------------------------------
 
-constexpr const char* kTodo = "Todavía no implementado";
+constexpr Tr kTodo = "Todavía no implementado";
 
 void notYet(const char* label, const char* shortcut = nullptr) {
     ImGui::MenuItem(label, shortcut, false, false);
@@ -713,57 +714,57 @@ void drawMenuBar(const ContentBrowserCallbacks& cb) {
     Mounted* curLib = s.loc.node == Node::Library ? findLib(s.loc.lib) : nullptr;
     if (!curLib && s.selItem == -1) curLib = findLib(s.selLib);
     int unmountSerial = 0;
-    if (ImGui::BeginMenu("Archivo")) {
+    if (ImGui::BeginMenu(tr("Archivo"))) {
         Mounted* here = s.loc.node == Node::Library ? findLib(s.loc.lib) : nullptr;
-        notYet("Nuevo Navegador", "Ctrl+N");
-        if (ImGui::MenuItem("Nueva Carpeta...", nullptr, false, here != nullptr))
+        notYet(tr("Nuevo Navegador"), tr("Ctrl+N"));
+        if (ImGui::MenuItem(tr("Nueva Carpeta..."), nullptr, false, here != nullptr))
             askName(State::Ask::Folder, here->serial, s.loc.folder);
         if (!here && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-            ImGui::SetTooltip("Abre antes una librería (o una carpeta suya)");
-        notYet("Nuevo Catálogo...");
-        if (ImGui::MenuItem("Nueva Librería de Preestablecidos...")) askName(State::Ask::Library, 0, {});
-        if (ImGui::MenuItem("Añadir Archivos a la Librería...", nullptr, false,
+            ImGui::SetTooltip(tr("Abre antes una librería (o una carpeta suya)"));
+        notYet(tr("Nuevo Catálogo..."));
+        if (ImGui::MenuItem(tr("Nueva Librería de Preestablecidos..."))) askName(State::Ask::Library, 0, {});
+        if (ImGui::MenuItem(tr("Añadir Archivos a la Librería..."), nullptr, false,
                             here != nullptr && nativeFileDialogAvailable()))
             addFilesDialog(*here, s.loc.folder);
         ImGui::Separator();
-        if (ImGui::MenuItem("Abrir Librería de Preestablecidos...", nullptr, false, (bool)cb.openLibrary))
+        if (ImGui::MenuItem(tr("Abrir Librería de Preestablecidos..."), nullptr, false, (bool)cb.openLibrary))
             cb.openLibrary();
-        if (ImGui::MenuItem("Hacer Permanente (copiar a library/browser)", nullptr, false,
+        if (ImGui::MenuItem(tr("Hacer Permanente (copiar a library/browser)"), nullptr, false,
                             curLib && curLib->temporary))
             makePermanent(*curLib);
-        if (ImGui::MenuItem("Quitar Librería del Navegador", nullptr, false, curLib && curLib->temporary))
+        if (ImGui::MenuItem(tr("Quitar Librería del Navegador"), nullptr, false, curLib && curLib->temporary))
             unmountSerial = curLib->serial;
         ImGui::Separator();
-        if (ImGui::MenuItem("Cerrar", nullptr, false, (bool)cb.close)) cb.close();
+        if (ImGui::MenuItem(tr("Cerrar"), nullptr, false, (bool)cb.close)) cb.close();
         ImGui::EndMenu();
     }
-    if (ImGui::BeginMenu("Edición")) {
+    if (ImGui::BeginMenu(tr("Edición"))) {
         const PresetItem* model = selectedModel();
-        if (ImGui::MenuItem("Cargar en la Escena", "Intro", false, model && cb.load))
+        if (ImGui::MenuItem(tr("Cargar en la Escena"), tr("Intro"), false, model && cb.load))
             cb.load(findLib(s.selLib)->lib, *model);
         ImGui::Separator();
-        notYet("Cortar", "Ctrl+X");
-        notYet("Copiar", "Ctrl+C");
-        notYet("Pegar", "Ctrl+V");
-        notYet("Borrar", "Supr");
-        notYet("Renombrar...");
+        notYet(tr("Cortar"), tr("Ctrl+X"));
+        notYet(tr("Copiar"), tr("Ctrl+C"));
+        notYet(tr("Pegar"), tr("Ctrl+V"));
+        notYet(tr("Borrar"), tr("Supr"));
+        notYet(tr("Renombrar..."));
         ImGui::EndMenu();
     }
-    if (ImGui::BeginMenu("Ver")) {
-        if (ImGui::MenuItem("Iconos Pequeños", nullptr, s.iconSize == 0)) s.iconSize = 0;
-        if (ImGui::MenuItem("Iconos Medianos", nullptr, s.iconSize == 1)) s.iconSize = 1;
-        if (ImGui::MenuItem("Iconos Grandes", nullptr, s.iconSize == 2)) s.iconSize = 2;
+    if (ImGui::BeginMenu(tr("Ver"))) {
+        if (ImGui::MenuItem(tr("Iconos Pequeños"), nullptr, s.iconSize == 0)) s.iconSize = 0;
+        if (ImGui::MenuItem(tr("Iconos Medianos"), nullptr, s.iconSize == 1)) s.iconSize = 1;
+        if (ImGui::MenuItem(tr("Iconos Grandes"), nullptr, s.iconSize == 2)) s.iconSize = 2;
         ImGui::Separator();
-        ImGui::MenuItem("Mostrar Texturas y Archivos", nullptr, &s.showFiles);
+        ImGui::MenuItem(tr("Mostrar Texturas y Archivos"), nullptr, &s.showFiles);
         ImGui::EndMenu();
     }
-    if (ImGui::BeginMenu("Ir a")) {
-        if (ImGui::MenuItem("Atrás", nullptr, false, !s.back.empty())) goBack();
-        if (ImGui::MenuItem("Adelante", nullptr, false, !s.fwd.empty())) goForward();
-        if (ImGui::MenuItem("Subir", nullptr, false, s.loc.node != Node::Presets)) goUp();
+    if (ImGui::BeginMenu(tr("Ir a"))) {
+        if (ImGui::MenuItem(tr("Atrás"), nullptr, false, !s.back.empty())) goBack();
+        if (ImGui::MenuItem(tr("Adelante"), nullptr, false, !s.fwd.empty())) goForward();
+        if (ImGui::MenuItem(tr("Subir"), nullptr, false, s.loc.node != Node::Presets)) goUp();
         ImGui::Separator();
-        if (ImGui::MenuItem("Preestablecidos")) navigate(Location{});
-        if (ImGui::MenuItem("Elementos Recientes")) navigate(rootLocation(Node::Recent));
+        if (ImGui::MenuItem(tr("Preestablecidos"))) navigate(Location{});
+        if (ImGui::MenuItem(tr("Elementos Recientes"))) navigate(rootLocation(Node::Recent));
         ImGui::EndMenu();
     }
     ImGui::EndMenuBar();
@@ -785,11 +786,11 @@ bool smallIconButton(const char* id, Icon icon, bool enabled, const char* tip) {
 }
 
 void drawToolbar() {
-    if (smallIconButton("##cbback", Icon::Back, !s.back.empty(), "Atrás")) goBack();
+    if (smallIconButton("##cbback", Icon::Back, !s.back.empty(), tr("Atrás"))) goBack();
     ImGui::SameLine(0, 2);
-    if (smallIconButton("##cbfwd", Icon::Forward, !s.fwd.empty(), "Adelante")) goForward();
+    if (smallIconButton("##cbfwd", Icon::Forward, !s.fwd.empty(), tr("Adelante"))) goForward();
     ImGui::SameLine(0, 2);
-    if (smallIconButton("##cbup", Icon::Up, s.loc.node != Node::Presets, "Subir")) goUp();
+    if (smallIconButton("##cbup", Icon::Up, s.loc.node != Node::Presets, tr("Subir"))) goUp();
     ImGui::SameLine(0, 6);
     const float searchW = std::clamp(ImGui::GetContentRegionAvail().x * 0.38f, 90.0f, 220.0f);
     const float pathW = ImGui::GetContentRegionAvail().x - searchW - 8;
@@ -797,10 +798,10 @@ void drawToolbar() {
     ImGui::TextUnformatted(fitText(locationLabel(), pathW).c_str());
     ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - searchW);
     ImGui::SetNextItemWidth(searchW);
-    if (ImGui::InputTextWithHint("##cbsearch", "Buscar...", s.search, sizeof(s.search),
+    if (ImGui::InputTextWithHint("##cbsearch", tr("Buscar..."), s.search, sizeof(s.search),
                                  ImGuiInputTextFlags_EnterReturnsTrue))
         runSearch();
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Busca por nombre en todas las librerías (Intro)");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip(tr("Busca por nombre en todas las librerías (Intro)"));
 }
 
 // Fila del arbol con icono propio. Devuelve si esta abierta (y hay que hacer TreePop).
@@ -854,18 +855,18 @@ void drawFolderTree(Mounted& m, const std::string& folder) {
 int libraryContextMenu(Mounted& m) {
     int unmountSerial = 0;
     if (!ImGui::BeginPopupContextItem("##libctx")) return 0;
-    ImGui::TextDisabled("%s", m.temporary ? "Librería temporal (solo esta sesión)" : "Librería permanente");
+    ImGui::TextDisabled("%s", m.temporary ? tr("Librería temporal (solo esta sesión)") : tr("Librería permanente"));
     ImGui::Separator();
-    if (ImGui::MenuItem("Nueva Carpeta...")) askName(State::Ask::Folder, m.serial, {});
-    if (ImGui::MenuItem("Añadir Archivos...", nullptr, false, nativeFileDialogAvailable())) addFilesDialog(m, {});
+    if (ImGui::MenuItem(tr("Nueva Carpeta..."))) askName(State::Ask::Folder, m.serial, {});
+    if (ImGui::MenuItem(tr("Añadir Archivos..."), nullptr, false, nativeFileDialogAvailable())) addFilesDialog(m, {});
     ImGui::Separator();
-    if (ImGui::MenuItem("Hacer Permanente (copiar a library/browser)", nullptr, false, m.temporary)) makePermanent(m);
-    if (ImGui::MenuItem("Quitar del Navegador", nullptr, false, m.temporary)) unmountSerial = m.serial;
+    if (ImGui::MenuItem(tr("Hacer Permanente (copiar a library/browser)"), nullptr, false, m.temporary)) makePermanent(m);
+    if (ImGui::MenuItem(tr("Quitar del Navegador"), nullptr, false, m.temporary)) unmountSerial = m.serial;
     if (!m.lib.rootUrlMatchesFile()) {
         ImGui::Separator();
-        if (ImGui::MenuItem("Corregir Url Interna (archivo renombrado)")) fixRootUrl(m);
+        if (ImGui::MenuItem(tr("Corregir Url Interna (archivo renombrado)"))) fixRootUrl(m);
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Dentro pone \"%s\": Cinema 4D no la monta si no coincide con el nombre del archivo.",
+            ImGui::SetTooltip(tr("Dentro pone \"%s\": Cinema 4D no la monta si no coincide con el nombre del archivo."),
                               m.lib.rootUrl().c_str());
     }
     ImGui::EndPopup();
@@ -873,8 +874,8 @@ int libraryContextMenu(Mounted& m) {
 }
 
 void drawTree() {
-    static const char* kRoot[] = {"Catálogos", "Elementos Recientes", "Favoritos", "Ordenador",
-                                  "Preestablecidos", "Red", "Resultado de la Búsqueda"};
+    static const char* kRoot[] = {tr("Catálogos"), tr("Elementos Recientes"), tr("Favoritos"), tr("Ordenador"),
+                                  tr("Preestablecidos"), tr("Red"), tr("Resultado de la Búsqueda")};
     static const Icon kIcon[] = {Icon::CbCatalog, Icon::CbRecent,  Icon::CbFavorites,    Icon::CbComputer,
                                  Icon::CbPresets, Icon::CbNetwork, Icon::CbSearchResults};
     static const Node kNode[] = {Node::Catalogs, Node::Recent,  Node::Favorites, Node::Computer,
@@ -892,12 +893,12 @@ void drawTree() {
             Mounted& m = *mp;
             const bool sel = s.loc.node == Node::Library && s.loc.lib == m.serial && s.loc.folder.empty();
             bool libClicked = false;
-            const std::string label = m.temporary ? m.lib.title() + "  (temporal)" : m.lib.title();
+            const std::string label = m.temporary ? m.lib.title() + tr("  (temporal)") : m.lib.title();
             ImGui::PushID(m.serial);
             const bool libOpen = treeRow(&m, Icon::CbLibrary, label, sel, !hasSubfolders(m, ""), true, &libClicked);
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("%s\n%s", pathUtf8(m.lib.file()).c_str(),
-                                  m.temporary ? "Temporal: solo en esta sesión" : "Permanente (library/browser)");
+                                  m.temporary ? tr("Temporal: solo en esta sesión") : tr("Permanente (library/browser)"));
             if (int u = libraryContextMenu(m)) unmountSerial = u;
             ImGui::PopID();
             if (libClicked) navigate(libraryLocation(m.serial));
@@ -906,7 +907,7 @@ void drawTree() {
                 ImGui::TreePop();
             }
         }
-        if (g_libs.empty()) ImGui::TextDisabled("   (ninguna librería)");
+        if (g_libs.empty()) ImGui::TextDisabled(tr("   (ninguna librería)"));
         ImGui::TreePop();
     }
     if (unmountSerial) unmount(unmountSerial);
@@ -926,10 +927,10 @@ void drawGrid(const ContentBrowserCallbacks& cb) {
 
     if (entries.empty()) {
         const char* msg = s.loc.node == Node::Presets
-                              ? "No hay librerías. Abre un .lib4d (Archivo > Abrir) o cópialo a library/browser."
-                          : s.loc.node == Node::Recent ? "Aún no has cargado ningún preestablecido en esta sesión."
-                          : s.loc.node == Node::Search ? "Sin resultados."
-                                                        : "Carpeta vacía.";
+                              ? tr("No hay librerías. Abre un .lib4d (Archivo > Abrir) o cópialo a library/browser.")
+                          : s.loc.node == Node::Recent ? tr("Aún no has cargado ningún preestablecido en esta sesión.")
+                          : s.loc.node == Node::Search ? tr("Sin resultados.")
+                                                        : tr("Carpeta vacía.");
         ImGui::PushTextWrapPos(0.0f);
         ImGui::TextDisabled("%s", msg);
         ImGui::PopTextWrapPos();
@@ -965,20 +966,20 @@ void drawGrid(const ContentBrowserCallbacks& cb) {
                     const int payload[2] = {e.lib->serial, e.item};
                     ImGui::SetDragDropPayload(kPresetPayloadType, payload, sizeof(payload));
                     ImGui::Text("%s", it->name.c_str());
-                    ImGui::TextDisabled("Suéltalo en el visor para añadirlo a la escena");
+                    ImGui::TextDisabled(tr("Suéltalo en el visor para añadirlo a la escena"));
                     ImGui::EndDragDropSource();
                 }
                 if (it) {
                     if (ImGui::BeginPopupContextItem("##cellctx")) {
-                        if (ImGui::MenuItem("Cargar en la Escena", nullptr, false,
+                        if (ImGui::MenuItem(tr("Cargar en la Escena"), nullptr, false,
                                             it->kind == PresetKind::Model && cb.load))
                             cb.load(e.lib->lib, *it);
-                        if (ImGui::MenuItem("Abrir", nullptr, false, it->kind == PresetKind::Folder))
+                        if (ImGui::MenuItem(tr("Abrir"), nullptr, false, it->kind == PresetKind::Folder))
                             openEntry(e, cb);
                         ImGui::Separator();
-                        if (ImGui::MenuItem("Renombrar...")) askEdit(State::Ask::Rename, e.lib->serial, it->path);
-                        if (ImGui::MenuItem("Mover a...")) askEdit(State::Ask::Move, e.lib->serial, it->path);
-                        if (ImGui::MenuItem("Eliminar")) askDelete(e.lib->serial, it->path);
+                        if (ImGui::MenuItem(tr("Renombrar..."))) askEdit(State::Ask::Rename, e.lib->serial, it->path);
+                        if (ImGui::MenuItem(tr("Mover a..."))) askEdit(State::Ask::Move, e.lib->serial, it->path);
+                        if (ImGui::MenuItem(tr("Eliminar"))) askDelete(e.lib->serial, it->path);
                         ImGui::Separator();
                         ImGui::TextDisabled("%s", it->path.c_str());
                         ImGui::EndPopup();
@@ -987,16 +988,16 @@ void drawGrid(const ContentBrowserCallbacks& cb) {
                     unmountSerial = u;
                 }
                 if (hov && it) {
-                    const char* kind = it->kind == PresetKind::Model    ? "Modelo / escena de Cinema 4D"
-                                       : it->kind == PresetKind::Folder ? "Carpeta"
-                                                                        : "Archivo (textura, imagen...)";
-                    const char* how = it->kind == PresetKind::Model    ? "\nDoble clic o arrastrar al visor: cargar"
-                                      : it->kind == PresetKind::Folder ? "\nDoble clic: abrir"
+                    const char* kind = it->kind == PresetKind::Model    ? tr("Modelo / escena de Cinema 4D")
+                                       : it->kind == PresetKind::Folder ? tr("Carpeta")
+                                                                        : tr("Archivo (textura, imagen...)");
+                    const char* how = it->kind == PresetKind::Model    ? tr("\nDoble clic o arrastrar al visor: cargar")
+                                      : it->kind == PresetKind::Folder ? tr("\nDoble clic: abrir")
                                                                        : "";
                     ImGui::SetTooltip("%s\n%s%s", it->name.c_str(), kind, how);
                 } else if (hov) {
-                    ImGui::SetTooltip("%s\n%d modelos  ·  %s", e.lib->lib.title().c_str(), e.lib->lib.modelCount(),
-                                      e.lib->temporary ? "temporal (solo esta sesión)" : "permanente");
+                    ImGui::SetTooltip(tr("%s\n%d modelos  ·  %s"), e.lib->lib.title().c_str(), e.lib->lib.modelCount(),
+                                      e.lib->temporary ? tr("temporal (solo esta sesión)") : "permanente");
                 }
 
                 const ImVec2 b(p.x + cell.x, p.y + cell.y);
@@ -1043,7 +1044,7 @@ std::string statusText(const std::vector<Entry>& entries) {
     std::string out = buf;
     if (s.loc.node == Node::Library)
         if (Mounted* m = findLib(s.loc.lib))
-            out += m->temporary ? "  ·  librería temporal (solo esta sesión)" : "  ·  librería permanente";
+            out += m->temporary ? tr("  ·  librería temporal (solo esta sesión)") : tr("  ·  librería permanente");
     return out;
 }
 
@@ -1111,8 +1112,8 @@ bool mountTemporaryLibrary(const std::filesystem::path& file, std::string* outEr
     g_libs.push_back(std::move(m));
     navigate(libraryLocation(serial));
     s.message = urlOk ? std::string()
-                      : "Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. "
-                        "Clic derecho > Corregir Url Interna.";
+                      : tr("Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. "
+                        "Clic derecho > Corregir Url Interna.");
     return true;
 }
 
@@ -1164,7 +1165,7 @@ void drawContentBrowser(ImVec2 pos, ImVec2 size, const ContentBrowserCallbacks& 
                                    ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings |
                                    ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar |
                                    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
-    if (!ImGui::Begin("Navegador de Contenido###contentbrowser", nullptr, flags)) {
+    if (!ImGui::Begin(tr("Navegador de Contenido###contentbrowser"), nullptr, flags)) {
         ImGui::End();
         return;
     }
@@ -1195,7 +1196,7 @@ void drawContentBrowser(ImVec2 pos, ImVec2 size, const ContentBrowserCallbacks& 
 
     const std::string st = s.message.empty() ? statusText(currentEntries()) : s.message;
     ImGui::TextDisabled("%s", fitText(st, ImGui::GetContentRegionAvail().x).c_str());
-    if (!s.message.empty() && ImGui::IsItemHovered()) ImGui::SetTooltip("%s\n(clic para quitar el aviso)", s.message.c_str());
+    if (!s.message.empty() && ImGui::IsItemHovered()) ImGui::SetTooltip(tr("%s\n(clic para quitar el aviso)"), s.message.c_str());
     if (!s.message.empty() && ImGui::IsItemClicked()) s.message.clear();
     trimThumbs();
     ImGui::End();
@@ -1260,7 +1261,7 @@ void drawSavePresetDialog() {
     if (!g_save.open) return;
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     bool keep = true;
-    if (!ImGui::Begin("Guardar como Preestablecido###savepreset", &keep,
+    if (!ImGui::Begin(tr("Guardar como Preestablecido###savepreset"), &keep,
                       ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings)) {
         ImGui::End();
         if (!keep) closeSavePreset();
@@ -1273,7 +1274,7 @@ void drawSavePresetDialog() {
         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
         ImGui::TextColored(ImVec4(0.95f, 0.45f, 0.40f, 1.0f), "%s", g_save.error.c_str());
         ImGui::PopTextWrapPos();
-        if (ImGui::Button("Cerrar", ImVec2(120, 0))) done = true;
+        if (ImGui::Button(tr("Cerrar"), ImVec2(120, 0))) done = true;
         ImGui::End();
         if (done) closeSavePreset();
         return;
@@ -1290,17 +1291,17 @@ void drawSavePresetDialog() {
 
     Mounted* lib = findLib(g_save.lib);
     if (g_libs.empty()) {
-        ImGui::TextUnformatted("No hay ninguna librería de preestablecidos.");
-        if (ImGui::Button("Crear \"Mis Preestablecidos\"")) {
-            createLibrary("Mis Preestablecidos");
+        ImGui::TextUnformatted(tr("No hay ninguna librería de preestablecidos."));
+        if (ImGui::Button(tr("Crear \"Mis Preestablecidos\""))) {
+            createLibrary(tr("Mis Preestablecidos"));
             if (s.loc.node == Node::Library) g_save.lib = s.loc.lib;
         }
     } else {
-        ImGui::TextUnformatted("Librería");
+        ImGui::TextUnformatted(tr("Librería"));
         ImGui::SetNextItemWidth(fieldW);
-        if (ImGui::BeginCombo("##splib", lib ? lib->lib.title().c_str() : "(elige una)")) {
+        if (ImGui::BeginCombo("##splib", lib ? lib->lib.title().c_str() : tr("(elige una)"))) {
             for (auto& m : g_libs) {
-                std::string label = m->lib.title() + (m->temporary ? "  (temporal)" : "");
+                std::string label = m->lib.title() + (m->temporary ? tr("  (temporal)") : "");
                 label += "##" + std::to_string(m->serial);
                 if (ImGui::Selectable(label.c_str(), m->serial == g_save.lib)) {
                     g_save.lib = m->serial;
@@ -1310,11 +1311,11 @@ void drawSavePresetDialog() {
             }
             ImGui::EndCombo();
         }
-        ImGui::TextUnformatted("Carpeta");
+        ImGui::TextUnformatted(tr("Carpeta"));
         ImGui::SetNextItemWidth(fieldW);
         ImGui::BeginDisabled(!lib);
-        if (ImGui::BeginCombo("##spfolder", g_save.folder.empty() ? "(raíz de la librería)" : g_save.folder.c_str())) {
-            if (ImGui::Selectable("(raíz de la librería)", g_save.folder.empty())) g_save.folder.clear();
+        if (ImGui::BeginCombo("##spfolder", g_save.folder.empty() ? tr("(raíz de la librería)") : g_save.folder.c_str())) {
+            if (ImGui::Selectable(tr("(raíz de la librería)"), g_save.folder.empty())) g_save.folder.clear();
             if (lib)
                 for (const std::string& f : foldersOf(*lib))
                     if (ImGui::Selectable(f.c_str(), f == g_save.folder)) {
@@ -1325,7 +1326,7 @@ void drawSavePresetDialog() {
         }
         ImGui::EndDisabled();
     }
-    ImGui::TextUnformatted("Nombre");
+    ImGui::TextUnformatted(tr("Nombre"));
     ImGui::SetNextItemWidth(fieldW);
     if (g_save.focusName) {
         ImGui::SetKeyboardFocusHere();
@@ -1336,13 +1337,13 @@ void drawSavePresetDialog() {
     if (ImGui::IsItemEdited()) g_save.writeError.clear();
     const std::string name = trimmed(g_save.name);
     const bool nameOk = validName(name);
-    if (!nameOk) ImGui::TextDisabled("Sin  / \\ : * ? \" < > |");
+    if (!nameOk) ImGui::TextDisabled(tr("Sin  / \\ : * ? \" < > |"));
     const C4DExportReport& r = g_save.report;
     // Las primitivas van como primitivas de C4D (sin malla): sus poligonos no cuentan.
-    std::string info = std::to_string(r.objects) + " objetos";
-    if (r.polygons > 0) info += ", " + std::to_string(r.polygons) + " polígonos";
-    info += ", " + std::to_string(r.materials) + (r.materials == 1 ? " material" : " materiales");
-    info += "  (" + std::to_string((g_save.c4d.size() + 1023) / 1024) + " KB)";
+    std::string info = std::to_string(r.objects) + tr(" objetos");
+    if (r.polygons > 0) info += ", " + std::to_string(r.polygons) + tr(" polígonos");
+    info += ", " + std::to_string(r.materials) + (r.materials == 1 ? tr(" material") : tr(" materiales"));
+    info += "  (" + std::to_string((g_save.c4d.size() + 1023) / 1024) + tr(" KB)");
     ImGui::TextDisabled("%s", info.c_str());
     ImGui::EndGroup();
 
@@ -1352,10 +1353,10 @@ void drawSavePresetDialog() {
 
     const bool canSave = lib && nameOk;
     ImGui::BeginDisabled(!canSave);
-    const bool save = ImGui::Button("Guardar", ImVec2(120, 0)) || (enter && canSave);
+    const bool save = ImGui::Button(tr("Guardar"), ImVec2(120, 0)) || (enter && canSave);
     ImGui::EndDisabled();
     ImGui::SameLine();
-    if (ImGui::Button("Cancelar", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) done = true;
+    if (ImGui::Button(tr("Cancelar"), ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) done = true;
 
     if (save && canSave) {
         lib4d::NewEntry e;
@@ -1370,7 +1371,7 @@ void drawSavePresetDialog() {
         if (!appendToPresetLibrary(lib->lib.file(), {e}, &err)) {
             g_save.writeError = err;
         } else if (reloadLib(*lib)) {
-            s.message = "\"" + name + "\" guardado en \"" + lib->lib.title() + "\".";
+            s.message = "\"" + name + tr("\" guardado en \"") + lib->lib.title() + "\".";
             s.selLib = lib->serial;
             navigate(libraryLocation(lib->serial, g_save.folder));
             done = true;

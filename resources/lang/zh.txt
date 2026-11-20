@@ -1,0 +1,492 @@
+# Iron3D Studio - zh (clave = texto en espanol; valor = traduccion)
+Extrusión	挤压
+Bisel	倒角
+Superior	顶视图
+Derecha	右
+Frontal	正视图
+Izquierda	左
+Inferior	底视图
+Cubo	立方体
+Esfera	球体
+Plano	平面
+Luz	灯光
+Cámara	摄像机
+Polígono	多边形
+Nulo	空对象
+Abrir	打开
+Fusionar	合并
+Exportar	导出
+Mat	材质
+Simetría	对称
+Supr	Del
+Deshacer	撤销
+Encuadrar Seleccionados	框显所选
+Encuadrar Geometría	框显几何体
+Hacer Editable	转为可编辑对象
+Conectar Objetos	连接对象
+Agrupar Objetos	群组对象
+Nueva Etiqueta	新增标签
+Restaurar Selección	恢复选集
+Seleccionar Hijos	选择子级
+Mostrar Pistas...	显示时间线窗口...
+Mostrar F-Curves...	显示函数曲线...
+Mostrar Movimientos...	显示运动...
+Mover	移动
+Escalar	缩放
+Rotar	旋转
+Selección Rectangular	框选
+Archivo	文件
+Nuevo	新建项目
+Abrir...	打开...
+Fusionar...	合并项目...
+Volver a Archivo Guardado...	恢复保存的项目...
+Cerrar Todos	关闭所有项目
+Guardar	保存
+Guardar como...	另存项目为...
+Guardar Todo	保存全部项目
+Guardar Objetos Seleccionados como...	保存所选对象为...
+Salir	退出
+Edición	编辑
+Rehacer	重做
+Cortar	剪切
+Copiar	复制
+Pegar	粘贴
+Eliminar	删除
+Seleccionar Todo	全部选择
+Deseleccionar Todo	取消选择
+Configuración del Proyecto...	工程设置...
+Escalar Proyecto...	缩放工程...
+Preferencias...	参数...
+Crear	创建
+Objeto	对象
+Spline	样条
+Generadores	生成器
+Modelado	造型
+Deformador	变形器
+Escena	场景
+Materiales	材质
+Nuevo Material	新标准材质
+Nuevo Material PBR	新PBR材质
+Cargar Materiales...	加载材质...
+Etiqueta	标签
+Sonido	声音
+Selección	选择
+Filtro de Selección	选择过滤
+Rellenar Selección	填充选择
+Herramientas	工具
+Desplazamiento	置换
+Centrar	中对齐
+Malla	网格
+Conectar Objetos + Eliminar	连接对象+删除
+Soldar	焊接
+Puente	桥接
+Pincel	笔刷
+Planchar	熨烫
+Triangular	三角化
+Fijación	捕捉
+Activar Fijación	启用捕捉
+Fijación 2D	2D捕捉
+Fijación 3D	3D捕捉
+Plano de Trabajo	工作平面
+Animación	动画
+Grabar Objetos Activos	记录活动对象
+Fotogramas Clave Automáticos	自动关键帧
+Reproducir Hacia Delante	向前播放
+Reproducir Hacia Atrás	向后播放
+Parar	停止
+Ir al Inicio	转到开始
+Ir al Final	转到结束
+Personaje	角色
+Piel	蒙皮
+Restricción	限制
+Simulación	模拟
+Partículas	粒子
+Dinámicas	动力学
+Cloth	布料
+Render	渲染
+Renderizar Región	区域渲染
+Región de Render Interactivo	交互式区域渲染(IRR)
+Cola de Render...	渲染队列...
+Visor de Imágenes...	图像查看器...
+Esculpir	雕刻
+Reducir	减少
+Suavizar	平滑
+Aplanar	展平
+Pellizcar	挤捏
+Motion Tracker	运动跟踪
+Ocultar Seleccionado	隐藏选择
+Selección MoGraph	运动图形选集
+Clonador	克隆
+Matriz	矩阵
+Fractura Voronoi	破碎（Voronoi）
+PolyFX	多边形FX
+Character	角色
+Junta	关节
+Herramienta de Junta	关节工具
+Línea de Trabajo	流水线
+Sketch and Toon	素描卡通
+Plugins	插件
+Script	脚本
+Gestor de Scripts...	脚本管理器...
+Consola...	控制台窗口....
+Ventana	窗口
+Editor de Material...	材质编辑器...
+Gestor de Capas	图层管理器
+Ayuda	帮助
+Mostrar Ayuda...	显示帮助……...
+Animar	动画
+Vista	查看
+Deshacer Vista	撤销视图
+Rehacer Vista	重做视图
+Encuadrar Todo	框显全部
+Encuadre por Defecto	恢复默认场景
+Redibujar	重绘
+Cámaras	摄像机
+Navegación	导航
+Usar Cámara	使用摄像机
+Perspectiva	透视视图
+Paralela	平行视图
+Mostrar	显示
+Sombreado Gouraud	光影着色
+Sombreado Gouraud (Líneas)	光影着色 (线条)
+Sombreado Rápido	快速着色
+Sombreado Constante	常量着色
+Líneas Ocultas	隐藏线条
+Líneas	线条
+Alambre	线框
+Caja	方形
+Opciones	选项
+Nivel de Detalle	细节级别
+Estereoscópico	立体
+Sombreado de Flujo de Trabajo Lineal	线性工作流程着色
+Post Efectos	后期效果
+Transparencia	透明
+Reflexiones	反射
+Profundidad de Campo	景深
+Usar Edición de Isolíneas	等参线编辑
+Normales de Polígonos	多边形法线
+Normales de Vértices	顶点法线
+Etiquetas	标签
+Texturas	纹理
+Rayos X	透显
+Luz por Defecto...	默认灯光...
+Configurar...	配置视图...
+Filtrar	过滤
+Cuadrícula	网格
+Generador	生成器
+Subdivisión Superficie	细分曲面
+Entorno	环境
+Partícula	粒子
+Otro	其他
+Horizonte	地平线
+Ejes	轴向
+Guías	引导线
+Paneles	面板
+4 Vistas	四视图
+Todas las Vistas	全部视图
+Fusionar Objetos...	合并对象...
+Guardar como Preestablecido...	保存预置...
+Editar	编辑
+Expandir Todo	全部展开
+Ver	查看
+Mostrar Etiquetas	显示标签
+Objetos	对象
+Añadir	添加
+Duplicar	复制
+Favoritos	书签
+Protección	保护
+Hair Etiquetas	毛发标签
+MoGraph Etiquetas	MoGraph 标签
+Motion Tracker Etiquetas	跟踪标签
+Scripting Etiquetas	编程标签
+Añadir a una Capa Nueva	加入新层
+Gestor de Capas...	层管理器...
+Eliminar de Todas las Tomas	从所有场次中移除
+Gestor de Tomas...	场次管理器...
+Establecer como Raíz	设为根部
+Contraer Todo	全部折叠
+Estado Actual del Objeto	当前状态转对象
+Expandir Grupo de Objetos	解组对象
+Eliminar Sin Hijos	删除(不包含子级)
+Convertir Selección de Objetos a XRef	将所选对象转换为XRef
+Información del Objeto...	对象信息...
+Información del Proyecto	工程信息...
+Renombrar	重新命名
+Por Defecto	默认
+Activado	启用
+Editor	编辑器
+Atrás	返回
+Subir	上传
+Bloquear Elemento	锁定元素
+Proyecto	工程
+Información	信息
+Referenciar	XRefs
+A Realizar	待办事项
+Interpolación de Claves	动画
+Centímetros	厘米
+FPS	帧率
+Usar Animación	使用动画
+Usar Expresiones	使用表达式
+Usar Generadores	使用生成器
+Usar Deformadores	使用变形器
+Usar Sistema de Movimiento	使用运动剪辑系统
+Medio	中等
+Cargar Preestablecido...	载入预置...
+Guardar Preestablecido...	保存预置...
+Básico	基本
+Phong	平滑着色(Phong)
+General	常规
+Detalles	细节
+Visibilidad	可见
+Sombra	投影
+Cáusticas	焦散
+Ruido	噪波
+Propiedades Básicas	基本属性
+Nombre	名称
+Capa	层
+Desactivado	禁用
+Coordenadas	坐标
+Orden	顺序
+Color	颜色
+Intensidad	强度
+Tubo	管道
+Tipo	类型
+Ninguno	无
+Difusión	漫射
+Especular	高光
+Tolerancia	容差
+Punto	点
+Radio	半径
+Orientación	方向
+Vértices	顶点
+Triángulos	三角形
+Segmentos	分段
+Estándar	标准
+Anchura	宽度
+Lineal	线性
+Inverso	倒数
+Decaimiento	衰减
+Normal	法线
+Restar	减
+Multiplicar	正片叠底
+Circular	圆环
+Cuadrado	平方
+Lambertiano (Difuso)	Lambertian（漫射）
+Oren-Nayar (Difuso)	Oren-Nayar（漫射）
+Promedio	平均
+Mínimo	最小
+Máximo	最大
+Metal	金属
+Dieléctrico	绝缘体
+Conductor	导体
+Textura	纹理
+Imágenes	图像
+Brillo	亮度
+Muestreo	采样
+Desenfoque Desfase	模糊偏移
+Desenfoque Escala	模糊程度
+Fuerza	强度
+Invertir	反向
+Rugosidad	粗糙度
+Global	世界
+Brillo Reflexión Global	全局反射亮度
+Brillo Especular Global	全局高光亮度
+Pase Separado	分离通道
+Atenuación	衰减
+Fuerza Reflexión	反射强度
+Fuerza Especular	高光强度
+Fuerza Relieve	凹凸强度
+Color de Capa	层颜色
+Fresnel de Capa	层菲涅耳
+Fresnel	菲涅耳
+IOR	折射率（IOR）
+Reflectancia	反射率
+Relieve	凹凸
+Fosforescencia	辉光
+Alfa	Alpha
+Iluminación	光照
+Asignar	指定
+Material	材质
+Proyección	投射
+Ambos	双声道
+Sin Costuras	连续
+Desfase U	偏移 U
+Desfase V	偏移 V
+Modo	模式
+Datos de Usuario	用户数据
+Añadir Datos de Usuario...	增加用户数据...
+Gestionar Datos de Usuario...	管理用户数据...
+Interpolación 	插值 
+Shader	着色器
+Guardar Materiales como...	另存材质...
+Función	功能
+Editar...	编辑...
+Aplicar	应用
+Posición	位置
+Tamaño	尺寸
+Rotación	旋转
+Escala	缩放
+Objeto (Rel)	对象（相对）
+Objeto (Abs)	对象（绝对）
+Cancelar	取消
+Personalizar	自定义
+Colores	颜色
+Texto	文本
+Preferencias	设置
+Interfaz	用户界面
+Visor	查看
+Archivos	文件
+Unidades	单位
+Memoria	内存
+Renderizador	渲染器
+OpenGL	视窗硬件
+Normales	法线
+Cerrar	关闭
+Visor de Imágenes	图像查看器
+Configuración...	设置...
+Configuración de Render	渲染设置
+Salida	输出
+Preestablecido	预置
+Antialiasing	抗锯齿
+Fondo	背景
+Arriba	向上
+Abajo	向下
+Puntos	点
+Aristas	边缘
+Polígonos	多边形
+Invertir Selección	反选
+Preestablecidos	预置
+Elementos Recientes	最近项目
+Ya existe 	已经存在 
+Nombre:	文件名称：
+Nueva Carpeta...	新文件夹...
+Nuevo Catálogo...	新建分类...
+Nueva Librería de Preestablecidos...	新建预置库...
+Borrar	删除
+Renombrar...	重命名...
+Iconos Pequeños	小图标
+Iconos Medianos	中图标
+Iconos Grandes	大图标
+Buscar...	查找 ...
+Añadir Archivos...	选择文件上传...
+Catálogos	目录
+Ordenador	我的电脑
+Red	网络
+Resultado de la Búsqueda	搜索结果
+Carpeta	文件夹
+Idioma	语言
+Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	语言已保存。请重新启动 Iron3D Studio 以应用。
+Se aplicará al reiniciar Iron3D Studio.	重新启动 Iron3D Studio 后生效。
+Polígono Vacío	空白多边形
+Guía	引导线
+Cono	圆锥
+Cilindro	圆柱
+Disco	圆盘
+Toroide	圆环
+Cápsula	胶囊
+Pirámide	金字塔
+Platónico	宝石体
+Figura	人形素体
+Lápiz	样条画笔
+Dibujo	草绘
+Suavizado Spline	平滑样条
+Arco	弧线
+Círculo	圆环
+Hélice	螺旋线
+n-Lados	多边
+Rectángulo	矩形
+Estrella	星形
+4-Lados	四边
+Cisoide	蔓叶线
+Rueda Dentada	齿轮
+Cicloide	摆线
+Fórmula	公式
+Flor	花瓣
+Perfil	截面
+Sustraer Spline	样条差集
+Spline Y	样条合集
+Spline O	样条或集
+Torno	旋转
+Forro	放样
+Recorrido	扫描
+Bezier	贝赛尔
+Formación de Átomos	晶格
+Booleano	布尔
+Máscara de Spline	样条布尔
+Conector	连接器
+Generador Python	Python 生成器
+Reducción de Polígonos	减面
+Instancia	实例
+Metaball	融球
+Fractura	分裂
+MoInstance	实例
+Trazador	追踪对象
+MoSpline	运动样条
+MoExtrude	运动挤压
+Doblar	弯曲
+Hinchar	膨胀
+Sesgar	斜切
+Afilar	锥化
+Enroscar	扭曲
+Aplastar y Estirar	挤压伸展
+Explosión	爆炸
+FX Explosión	爆炸FX
+Romper	碎片
+Corrección	修正
+Jiggle	颤动
+Morph	变形
+Cubrir	收缩包裹
+Esferizar	球化
+Superficie	表面
+Rail de Splines	导轨
+Envolver Spline	样条约束
+Colisión	碰撞
+Desplazador	置换
+Viento	风力
+Suavizado	平滑
+Suelo	地面
+Cielo	天空
+Primer Plano	前景
+Escenario	舞台
+Cielo Físico	物理天空
+Unir Nubes	连接云
+Césped	草坪
+Cámara Estéreo	立体摄像机
+Morph de Cámara	摄像机变换
+Grúa	摇臂
+Luz Infinita	无限光
+Luz de Área	区域光
+Luz Solar	日光
+Luz PBR	PBR 灯光
+Activar Eje	启用轴心
+Nuevo Proyecto	新项目
+Gestor de Objetos	对象管理器
+Detener	停止
+Guardar Proyecto con su Contenido...	保存工程（包含资源）...
+Inflar	膨胀
+Pincel Pesos MoGraph	MoGraph权重绘制画笔
+Ejecutar Script...	运行脚本...
+Sombreado Rápido (Líneas)	快速着色 (线条)
+Sombreado Constante (Líneas)	常量着色 (线条)
+Esqueleto	骨架
+Sombras	阴影
+Teselación	实时置换
+Ocultar Caras Posteriores	背面忽略
+Configurar Todo...	配置全部...
+Objetivo	目标
+Niebla	烟雾
+Mostrar Subcanales	显示子通道
+Guardar Todos los Materiales como...	另存全部材质...
+Todos los archivos	全部文件
+Nueva Librería	新库
+Nueva Carpeta	新文件夹
+Atributos	属性
+Línea de Tiempo	时间线
+Gestor de Materiales	材质管理器
+Entorno:	界面:
+Tomas	场次
+Estructura	构造
+Capas	层
+Propiedades	属性
+Transformar	变换
+Vista 3D	3D查看

@@ -26,6 +26,7 @@ extern "C" __declspec(dllimport) int __stdcall MessageBoxW(void* hWnd, const wch
 #include "core/SceneNode.h"
 #include "core/SceneHistory.h"
 #include "core/TransformGizmo.h"
+#include "core/I18n.h"
 #include "core/Paths.h"
 #include "core/Preferences.h"
 #include "core/ChannelBake.h"
@@ -478,6 +479,7 @@ int main(int argc, char** argv) {
     // "--frame=<nombre>" encuadra ese objeto y "--select=<nombre>" lo deja
     // seleccionado (verificacion de la flecha de objeto fuera de vista).
     std::string frameArg, selectArg;
+    std::string langArg; // "--lang=<codigo>": idioma de esta sesion sin tocar preferencias
     std::vector<std::string> uiCmdArgs; // "--ui-cmd=make-editable|frame-selected|commander[:texto]|vp-menu"
     bool travelArg = false; // "--travel": como pulsar la flecha (viaje hacia el seleccionado)
     bool dumpSceneArg = false; // "--dump-scene": lista los objetos cargados por stderr (verificacion)
@@ -513,6 +515,8 @@ int main(int argc, char** argv) {
             selectArg = a.substr(9);
         } else if (a.rfind("--ui-cmd=", 0) == 0) {
             uiCmdArgs.push_back(a.substr(9));
+        } else if (a.rfind("--lang=", 0) == 0) {
+            langArg = a.substr(7); // idioma solo para esta sesion (verificacion); no se guarda
         } else if (a.rfind("--ui-preset=", 0) == 0) {
             if (const UiPreset* p = findBuiltinPreset(a.substr(12))) prefs.uiPreset = *p;
             else std::fprintf(stderr, "[Iron3D] Preset de interfaz desconocido: %s\n", a.c_str());
@@ -520,6 +524,9 @@ int main(int argc, char** argv) {
             sceneArg = argv[i];
         }
     }
+
+    // Idioma de la interfaz (ver core/I18n.h): preferencia > language.cfg del instalador > ingles.
+    i18n::setLanguage(langArg.empty() ? i18n::resolveStartupLanguage(prefs.language) : langArg);
 
     glfwSetErrorCallback(glfwErrorCallback);
     if (!glfwInit()) {

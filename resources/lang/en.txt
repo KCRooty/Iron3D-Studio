@@ -1,0 +1,1129 @@
+# Iron3D Studio - en (clave = texto en espanol; valor = traduccion)
+Importar Cinema 4D	Import Cinema 4D
+Grabar Objetos Activos: no hay ningún objeto seleccionado.	Record Active Objects: no object is selected.
+Grabar Objetos Activos: Posición, Escala y Rotación están desactivadas.	Record Active Objects: Position, Scale and Rotation are disabled.
+Clave grabada en el fotograma 	Key recorded at frame 
+ objeto).	 object).
+ objetos).	 objects).
+Extrusión	Extrude
+Extrusión Interna	Inner Extrude
+Bisel	Bevel
+Cuchillo	Knife
+: arrastra en el visor para dibujar la línea de corte.	: drag in the viewport to draw the cut line.
+: arrastra en horizontal en el visor (o usa Aplicar).	: drag horizontally in the viewport (or use Apply).
+Superior	Top
+Derecha	Right
+Frontal	Front
+Izquierda	Left
+Trasera	Back
+Inferior	Bottom
+Cubo	Cube
+Esfera	Sphere
+Plano	Plane
+Luz	Light
+Cámara	Camera
+Polígono	Polygon
+Nulo	Null
+Parámetro todavía no implementado en Iron3D	Parameter not yet implemented in Iron3D
+Clic: mostrar esta página. Mayús+Clic: mostrar varias a la vez.	Click: show this page. Shift+Click: show several at once.
+Abrir librería	Open Library
+Abrir una librería necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe. Cópiala a library/browser.	Opening a library needs the system file dialog, which does not exist on this platform yet. Copy it to library/browser.
+Abrir librería de preestablecidos	Open Preset Library
+Librerías de preestablecidos de Cinema 4D	Cinema 4D Preset Libraries
+Este preestablecido no es un modelo de Cinema 4D.	This preset is not a Cinema 4D model.
+No se pudo escribir el archivo temporal en 	Could not write the temporary file in 
+Textura que no está en ninguna librería montada: 	Texture not in any mounted library: 
+Importar OBJ	Import OBJ
+Importar glTF	Import glTF
+Abrir	Open
+Escenas y librerías (iron, c4d, obj, glb, lib4d)	Scenes and libraries (iron, c4d, obj, glb, lib4d)
+Fusionar	Merge
+Fusionar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	Merge needs the system file dialog, which does not exist on this platform yet.
+Escenas de Cinema 4D, OBJ, glTF e Iron3D	Cinema 4D, OBJ, glTF and Iron3D scenes
+Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	Export needs the system file dialog, which does not exist on this platform yet.
+Exportar	Export
+La escena está vacía.	The scene is empty.
+Exportar a Wavefront	Export to Wavefront
+Escena.obj	Scene.obj
+Exportar OBJ	Export OBJ
+Exportar a glTF	Export to glTF
+glTF binario	Binary glTF
+Escena.glb	Scene.glb
+Exportar glTF	Export glTF
+Exportar a Cinema 4D	Export to Cinema 4D
+Escena.c4d	Scene.c4d
+Guardar Objetos Seleccionados como	Save Selected Objects As
+Objetos.c4d	Objects.c4d
+Simetría	Symmetry
+%s\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)	%s\nAdd Object %s  (Alt+Click: as child of the selection)
+%s\nTodavía no implementado en Iron3D	%s\nNot yet implemented in Iron3D
+Sistema de coordenadas: Mundo	Coordinate system: World
+Sistema de coordenadas: Objeto	Coordinate system: Object
+Activar Eje: se mueve el eje, no el objeto	Enable Axis: the axis moves, not the object
+Activar Eje: desactivado	Enable Axis: off
+Fotogramas Clave Automáticos: activados	Auto Keyframing: on
+Fotogramas Clave Automáticos: desactivados	Auto Keyframing: off
+Hacer Editable: selecciona un Cubo, Esfera o Plano (los demás ya son editables o no tienen malla).	Make Editable: select a Cube, Sphere or Plane (the others are already editable or have no mesh).
+Hacer Editable: 1 objeto convertido a Objeto Poligonal.	Make Editable: 1 object converted to Polygon Object.
+Hacer Editable: 	Make Editable: 
+ objetos convertidos a Objeto Poligonal.	 objects converted to Polygon Object.
+Animación eliminada.	Animation deleted.
+Estado Actual a Objeto: 	Current State to Object: 
+ copia poligonal creada.	 polygon copy created.
+ copias poligonales creadas.	 polygon copies created.
+Estado Actual a Objeto: la selección no tiene geometría.	Current State to Object: the selection has no geometry.
+Conectar Objetos: 	Connect Objects: 
+ mallas unidas en un Objeto Polígono.	 meshes joined into one Polygon Object.
+Conectar Objetos: la selección no tiene geometría.	Connect Objects: the selection has no geometry.
+Mayús+H	Shift+H
+Mayús+R	Shift+R
+Supr	Del
+Ctrl+Mayús+O	Ctrl+Shift+O
+Mayús+F8	Shift+F8
+Mayús+F1	Shift+F1
+Mayús+F	Shift+F
+Mayús+G	Shift+G
+Buscar orden...	Search commands...
+Ninguna orden coincide.	No command matches.
+Deshacer	Undo
+Encuadrar Seleccionados	Frame Selected
+Encuadrar Geometría	Frame Geometry
+Hacer Editable	Make Editable
+Estado Actual a Objeto	Current State to Object
+Conectar Objetos	Connect Objects
+Conectar+Eliminar	Connect Objects + Delete
+Agrupar Objetos	Group Objects
+Nueva Etiqueta	New Tag
+Restaurar Selección	Restore Selection
+Seleccionar Hijos	Select Children
+Mostrar Pistas...	Show Tracks...
+Mostrar F-Curves...	Show FCurves...
+Mostrar Movimientos...	Show Motions...
+Mover	Move
+Escalar	Scale
+Rotar	Rotate
+Selección en Vivo	Live Selection
+Selección Rectangular	Rectangle Selection
+Selección con Lazo	Lasso Selection
+Archivo	File
+Nuevo	New
+Abrir...	Open...
+Fusionar...	Merge...
+Volver a Archivo Guardado...	Revert to Saved...
+Cerrar Todos	Close All
+Ctrl+Mayús+F4	Ctrl+Shift+F4
+Guardar	Save
+Guardar como...	Save as...
+Ctrl+Mayús+S	Ctrl+Shift+S
+Guardar incrementalmente...	Save Incrementally...
+Guardar Todo	Save All
+Guardar Objetos Seleccionados como...	Save Selected Objects as...
+Esta compilación no lleva el Cineware SDK de MAXON	This build does not include MAXON's Cineware SDK
+glTF binario (*.glb)...	Binary glTF (*.glb)...
+Archivos recientes	Recent Files
+Salir	Quit
+Edición	Edit
+Rehacer	Redo
+Cortar	Cut
+Copiar	Copy
+Pegar	Paste
+Eliminar	Remove
+Seleccionar Todo	Select All
+Deseleccionar Todo	Deselect All
+Configuración del Proyecto...	Project Settings...
+Escalar Proyecto...	Scale Project...
+Preferencias...	Preferences...
+Crear	Create
+Objeto	Object
+Generadores	Generators
+Modelado	Modeling
+Deformador	Deformer
+Escena	Scene
+Física	Physics
+Materiales	Materials
+Nuevo Material	New Material
+Nuevo Material PBR	New PBR Material
+Cargar Materiales...	Load Materials...
+Etiqueta	Tag
+Sonido	Sound
+Selección	Selection
+Filtro de Selección	Selection Filter
+Selección de Polígono	Polygon Selection
+Selección de Bucle	Loop Selection
+Selección de Anillo	Ring Selection
+Rellenar Selección	Fill Selection
+Seleccionar Conectados	Select Connected
+Reducir Selección	Shrink Selection
+Herramientas	Tools
+Eje X / Encabezado	X Axis / Heading
+Eje Y / Inclinación	Y Axis / Pitch
+Eje Z / Alabeo	Z Axis / Bank
+Sistema de Coordenadas de Mundo	World Coordinate System
+Medir y Construir	Measure & Construction
+Desplazamiento	Displacement
+Organizar Objetos	Arrange Objects
+Centrar	Center
+Malla	Mesh
+Conectar Objetos + Eliminar	Connect Objects + Delete
+Simetría de edición	Edit Symmetry
+Apagada	Off
+Plano X (izquierda/derecha)	X Plane (left/right)
+Plano Y (arriba/abajo)	Y Plane (up/down)
+Plano Z (delante/detrás)	Z Plane (front/back)
+Tolerancia (cm)	Tolerance (cm)
+Cerrar Agujero Poligonal	Close Polygon Hole
+Soldar	Weld
+Subdividir	Subdivide
+Puente	Bridge
+Comprobar Malla	Check Mesh
+Pincel	Brush
+Planchar	Iron
+Invertir Normales	Reverse Normals
+Alinear Normales	Align Normals
+Triangular	Triangulate
+Fijación	Snap
+Activar Fijación	Enable Snap
+Mayús+S	Shift+S
+Fijación 2D	2D Snapping
+Fijación 3D	3D Snapping
+Plano de Trabajo	Workplane
+Animación	Animation
+Grabar Objetos Activos	Record Active Objects
+Fotogramas Clave Automáticos	Autokeying
+Ir a la Clave Anterior	Go to Previous Key
+Ir a la Clave Siguiente	Go to Next Key
+Editor de Curvas...	Curve Editor...
+Claves Seleccionadas	Selected Keys
+Eliminar Animación del Objeto	Delete Object Animation
+Reproducir Hacia Delante	Play Forwards
+Reproducir Hacia Atrás	Play Backwards
+Parar	Stop
+Ir al Inicio	Go to Start
+Ir al Final	Go to End
+Fotograma Siguiente	Next Frame
+Fotograma Anterior	Previous Frame
+Repetir (Loop)	Repeat (Loop)
+Personaje	Character
+Resolver IK (experimental)	Solve IK (experimental)
+ cadenas resueltas.	 chains solved.
+IK: ninguna etiqueta IK activa con Punta y Objetivo alcanzables.	IK: no active IK tag with reachable Tip and Goal.
+Mueve las articulaciones de cada etiqueta IK para que la punta llegue a su objetivo	Moves the joints of each IK tag so the tip reaches its goal
+Articulación	Joint
+Piel	Skin
+Pesos	Weights
+Restricción	Restriction
+Simulación	Simulate
+Partículas	Particles
+Dinámicas	Dynamics
+Renderizar Vista Activa	Render Active View
+Renderizar Región	Render Region
+Renderizar Seleccionados en Visor de Imágenes	Render Selected in Picture Viewer
+Renderizar en Visor de Imágenes	Render to Picture Viewer
+Región de Render Interactivo	Interactive Render Region
+Crear Previsualización...	Create Preview...
+Añadir a la Cola de Render...	Add to Render Queue...
+Cola de Render...	Render Queue...
+Editar Configuración de Render...	Edit Render Settings...
+Visor de Imágenes...	Picture Viewer...
+Esculpir	Sculpt
+Reducir	Decrease
+Tirar	Pull
+Suavizar	Smooth
+Aplanar	Flatten
+Pellizcar	Pinch
+Amasar	Knead
+Rastreador de Objetos	Object Tracker
+Ocultar Seleccionado	Hide Selected
+Intercambiar Clonador-Matriz	Swap Cloner-Matrix
+Selección MoGraph	MoGraph Selection
+Clonador	Cloner
+Matriz	Matrix
+Fractura Voronoi	Voronoi Fracture
+Junta	Joint
+Herramienta de Junta	Joint Tool
+Pintar Pesos	Paint Weights
+Etiqueta IK	IK Tag
+Línea de Trabajo	Pipeline
+Ningún plugin cargado	No plugin loaded
+Buscar Plugins...	Find Plugins...
+Gestor de Scripts...	Script Manager...
+Consola...	Console...
+Mayús+F10	Shift+F10
+Ventana	Window
+Mayús+F2	Shift+F2
+Mayús+F3	Shift+F3
+Mayús+F5	Shift+F5
+Mayús+F7	Shift+F7
+Editor de Material...	Material Editor...
+Navegador de Contenido	Content Browser
+Gestor de Capas	Layer Manager
+Mayús+F4	Shift+F4
+Ayuda	Help
+Mostrar Ayuda...	Show Help...
+Acerca de Iron3D Studio...	About Iron3D Studio...
+Arranque	Startup
+Animar	Animate
+Visualizar	Visualize
+Deshacer [Ctrl+Z]	Undo [Ctrl+Z]
+Deshacer la última acción.	Undo the last action.
+Rehacer [Ctrl+Y]	Redo [Ctrl+Y]
+Rehacer la última acción deshecha.	Redo the last undone action.
+Selección en Vivo [Atajo de Teclado 9]	Live Selection [Keyboard Shortcut 9]
+Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.	Live Selection: Click and drag to select elements. Hold down SHIFT to add to the selection, CTRL to remove.
+Herramienta de Mover [Atajo de Teclado E]	Move Tool [Keyboard Shortcut E]
+Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.	Move: Click and drag to move elements. Hold down SHIFT to quantize movement / add to the selection in Point mode, CTRL to remove.
+Herramienta de Escalar [Atajo de Teclado T]	Scale Tool [Keyboard Shortcut T]
+Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.	Scale: Click and drag to scale elements. Hold down SHIFT to quantize scaling / add to the selection in Point mode, CTRL to remove.
+Herramienta de Rotar [Atajo de Teclado R]	Rotate Tool [Keyboard Shortcut R]
+Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.	Rotate: Click and drag to rotate elements. Hold down SHIFT to quantize rotation / add to the selection in Point mode, CTRL to remove.
+Eje X / Encabezado [X]\n(todavía no implementado)	X Axis / Heading [X]\n(not yet implemented)
+Bloqueo de eje X: todavía no implementado.	X axis lock: not yet implemented.
+Eje Y / Inclinación [Y]\n(todavía no implementado)	Y Axis / Pitch [Y]\n(not yet implemented)
+Bloqueo de eje Y: todavía no implementado.	Y axis lock: not yet implemented.
+Eje Z / Alabeo [Z]\n(todavía no implementado)	Z Axis / Bank [Z]\n(not yet implemented)
+Bloqueo de eje Z: todavía no implementado.	Z axis lock: not yet implemented.
+Usar Sistema de Coordenadas de Objeto [W]\n(ahora: Mundo)	Use Object Coordinate System [W]\n(now: World)
+Usar Sistema de Coordenadas de Mundo [W]\n(ahora: Objeto)	Use World Coordinate System [W]\n(now: Object)
+Cambia los ejes del gizmo entre los del objeto y los del mundo.	Switches the gizmo axes between object and world axes.
+Renderizar Vista Activa\nRenderiza la vista activa en el propio visor.\n[Atajo de Teclado Ctrl+R]	Render Active View\nRenders the active view in the viewport itself.\n[Keyboard Shortcut Ctrl+R]
+Renderiza la vista activa en el propio visor.	Renders the active view in the viewport itself.
+Renderizar en Visor de Imágenes [Mayús+R]\nRenderiza la cámara activa con la Configuración de Render.	Render to Picture Viewer [Shift+R]\nRenders the active camera with the Render Settings.
+Renderiza la cámara activa en el Visor de Imágenes.	Renders the active camera in the Picture Viewer.
+Editar Configuración de Render... [Ctrl+B]	Edit Render Settings... [Ctrl+B]
+Resolución, antialiasing y fondo del render.	Render resolution, antialiasing and background.
+Cubo  (mantener pulsado: más objetos)	Cube  (hold: more objects)
+Lápiz  (mantener pulsado: más splines)	Pen  (hold: more splines)
+Subdivisión Superficie  (mantener pulsado: generadores)	Subdivision Surface  (hold: generators)
+Matriz  (mantener pulsado: modelado)	Array  (hold: modeling)
+Doblar  (mantener pulsado: deformadores)	Bend  (hold: deformers)
+Suelo  (mantener pulsado: escena)	Floor  (hold: scene)
+Cámara  (mantener pulsado: más cámaras)	Camera  (hold: more cameras)
+Luz  (mantener pulsado: más luces)	Light  (hold: more lights)
+Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado.	Click: create the object. Hold or right-click: open the group palette. Alt+Click: create as child of the selection.
+Hacer Editable [C]\nConvierte Cubo, Esfera o Plano en un Objeto Poligonal.	Make Editable [C]\nConverts Cube, Sphere or Plane into a Polygon Object.
+Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.	Make Editable: converts the selected parametric objects into Polygon Objects.
+Usar Modo Modelo	Use Model Mode
+Modo Modelo: se editan objetos enteros.	Model Mode: whole objects are edited.
+Usar Modo Textura\n(todavía no implementado)	Use Texture Mode\n(not yet implemented)
+Modo Textura: todavía no implementado.	Texture Mode: not yet implemented.
+Activar Eje [L]	Enable Axis [L]
+Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.	Axis Mode: moving, rotating or scaling changes only the object's axis; editable geometry and children stay in place.
+Usar Modo Puntos	Use Point Mode
+Modo Puntos: elige y mueve puntos de un objeto editable (C para hacerlo editable).	Point Mode: pick and move points of an editable object (C to make it editable).
+Usar Modo Aristas	Use Edge Mode
+Modo Aristas: elige y mueve aristas de un objeto editable.	Edge Mode: pick and move edges of an editable object.
+Usar Modo Polígonos	Use Polygon Mode
+Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.	Polygon Mode: pick and move polygons (triangles) of an editable object.
+Modo Ajuste\n(todavía no implementado)	Snap Mode\n(not yet implemented)
+Modo Ajuste: todavía no implementado.	Snap Mode: not yet implemented.
+Vista Solo\n(todavía no implementado)	Solo View\n(not yet implemented)
+Vista Solo: todavía no implementado.	Solo View: not yet implemented.
+Activar Fijación [Mayús+S]\n(todavía no implementado)	Enable Snapping [Shift+S]\n(not yet implemented)
+Fijación: todavía no implementado.	Snapping: not yet implemented.
+Plano de Trabajo\n(todavía no implementado)	Workplane\n(not yet implemented)
+Plano de Trabajo: todavía no implementado.	Workplane: not yet implemented.
+Bloquear Plano de Trabajo\n(todavía no implementado)	Lock Workplane\n(not yet implemented)
+Bloquear Plano de Trabajo: todavía no implementado.	Lock Workplane: not yet implemented.
+Vista	View
+Usar como Cámara de Render	Use as Render Camera
+Deshacer Vista	Undo View
+Ctrl+Mayús+Z	Ctrl+Shift+Z
+Rehacer Vista	Redo View
+Ctrl+Mayús+Y	Ctrl+Shift+Y
+Encuadrar Todo	Frame All
+Encuadrar Elementos Activos	Frame Active Elements
+Encuadre por Defecto	Frame Default
+Redibujar	Redraw
+Cámaras	Cameras
+Navegación	Navigation
+Usar Cámara	Use Camera
+Cámara del Editor	Editor Camera
+Perspectiva	Perspective
+Paralela	Parallel
+Axonométrica	Axonometric
+Mostrar	Show
+Sombreado Gouraud	Gouraud Shading
+Sombreado Gouraud (Líneas)	Gouraud Shading (Lines)
+Sombreado Rápido	Quick Shading
+Sombreado Constante	Constant Shading
+Líneas Ocultas	Hidden Line
+Líneas	Lines
+Alambre	Wire
+Caja	Box
+Opciones	Options
+Nivel de Detalle	Level of Detail
+Estereoscópico	Stereoscopic
+Sombreado de Flujo de Trabajo Lineal	Linear Workflow Shading
+OpenGL Mejorado	Enhanced OpenGL
+Ruidos	Noises
+Post Efectos	Post Effects
+Transparencia	Transparency
+Reflexiones	Reflections
+Profundidad de Campo	Depth of Field
+Usar Edición de Isolíneas	Isoline Editing
+Normales de Polígonos	Polygon Normals
+Normales de Vértices	Vertex Normals
+Etiquetas	Tags
+Texturas	Textures
+Rayos X	X-Ray
+Luz por Defecto...	Default Light...
+Configurar...	Configure...
+Mayús+V	Shift+V
+Filtrar	Filter
+Cuadrícula	Grid
+Generador	Generator
+Subdivisión Superficie	Subdivision Surface
+Entorno	Environment
+Partícula	Particle
+Otro	Other
+Horizonte	Horizon
+Ejes Globales	Global Axes
+Cajas Delimitadoras	Bounding Boxes
+Resaltar Componente	Highlight Component
+Ejes	Axis
+Guías	Guides
+Resaltar Objeto	Highlight Object
+Cruz Navegación	Navigation Cross
+Paneles	Panel
+Disposición	Layout
+Vista Simple	Single View
+2 Vistas Apiladas	2 Views Stacked
+2 Vistas Lado a Lado	2 Views Side by Side
+4 Vistas	4 Views
+Vista 1 (Perspectiva)	View 1 (Perspective)
+Vista 2 (Superior)	View 2 (Top)
+Vista 3 (Derecha)	View 3 (Right)
+Vista 4 (Frontal)	View 4 (Front)
+Todas las Vistas	All Views
+Mover Cámara (arrastrar)	Move Camera (drag)
+Zoom de Cámara (arrastrar)	Zoom Camera (drag)
+Rotar Cámara (arrastrar)	Rotate Camera (drag)
+Cambiar Vista (todavía no implementado)	Switch View (not yet implemented)
+Multi-vista: todavía no implementado.	Multi-view: not yet implemented.
+Arrastre sobre el icono para navegar por la vista.	Drag over the icon to navigate the view.
+Espaciado Cuadrícula : 100 cm	Grid Spacing : 100 cm
+\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.	\nThe selected object is out of view. Click: bring the camera to it.
+Fusionar Objetos...	Merge Objects...
+Guardar como Preestablecido...	Save Preset...
+Editar	Edit
+Expandir Todo	Unfold All
+Ver	View
+Modo Árbol	Tree Mode
+Modo Lista	List Mode
+Mostrar Etiquetas	Show Tags
+Objetos	Objects
+Añadir	Add
+Duplicar	Duplicate
+Etiqueta de Textura	Texture Tag
+Favoritos	Bookmarks
+Buscar (todavía no implementado)	Search (not yet implemented)
+Filtrar (todavía no implementado)	Filter (not yet implemented)
+Clic: seleccionar. Ctrl+Clic: anadir o quitar de la seleccion. Doble clic: renombrar. Clic derecho: menú contextual. Arrastre un material aquí para asignarlo.	Click: select. Ctrl+Click: add to or remove from the selection. Double-click: rename. Right-click: context menu. Drag a material here to assign it.
+CINEMA 4D Etiquetas	CINEMA 4D Tags
+Eliminar Etiqueta de Textura	Delete Texture Tag
+Fong	Phong
+Protección	Protection
+Character Etiquetas	Character Tags
+Cineman Etiquetas	Cineman Tags
+Etiqueta UVW	UVW Tag
+Hair Etiquetas	Hair Tags
+MoGraph Etiquetas	MoGraph Tags
+Motion Tracker Etiquetas	Motion Tracker Tags
+Scripting Etiquetas	Scripting Tags
+Simulación Etiquetas	Simulation Tags
+Sketch Etiquetas	Sketch Tags
+Videocámara Etiquetas	Motion Camera Tags
+Cargar Etiqueta Preestablecida	Load Tag Preset
+Añadir a una Capa Nueva	Add to New Layer
+Gestor de Capas...	Layer Manager...
+Eliminar de Todas las Tomas	Remove from All Takes
+Gestor de Tomas...	Take Manager...
+Establecer como Raíz	Set as Root
+Contraer Todo	Fold All
+ objeto convertido.	 object converted.
+ objetos convertidos.	 objects converted.
+Estado Actual del Objeto	Current State to Object
+Expandir Grupo de Objetos	Expand Object Group
+Eliminar Sin Hijos	Delete Without Children
+Convertir Selección de Objetos a XRef	Convert Object Selection to XRef
+Información del Objeto...	Object Information...
+Información del Proyecto	Project Information...
+Añadir Hijo	Add Child
+Renombrar	Rename
+Por Defecto	Default
+Activado	Enabled
+Apagado	Off
+Visible en %s: %s\n(clic para cambiar)	Visible in %s: %s\n(click to change)
+Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.	Top dot: visible in the editor. Bottom dot: visible in render. Gray = Default (inherits from parent), green = On, red = Off.
+Etiqueta de Textura [%s]	Texture Tag [%s]
+%s (todavía no implementado)	%s (not yet implemented)
+Atrás	Back
+Adelante	Forward
+Subir	Upload
+Bloquear Elemento	Lock Element
+Nuevo Gestor de Atributos	New Attribute Manager
+Proyecto	Project
+Configuración del Proyecto	Project Settings
+Información	Info
+Referenciar	Referencing
+A Realizar	To Do
+Interpolación de Claves	Key Interpolation
+Escala del Proyecto	Project Scale
+Centímetros	Centimeters
+Escalar Proyecto: todavía no implementado en Iron3D.	Scale Project: not yet implemented in Iron3D.
+Fotogramas por segundo: velocidad de reproducción de la Línea de Tiempo.	Frames per second: playback speed of the Timeline.
+Tiempo del Proyecto	Project Time
+Tiempo Mínimo	Minimum Time
+Tiempo Máximo	Maximum Time
+Tiempo Mínimo de Previo	Preview Min Time
+Tiempo Máximo de Previo	Preview Max Time
+Nivel de Detalle del Render en el Editor	Level of Detail of Editor Render
+Usar Animación	Use Animation
+Usar Expresiones	Use Expressions
+Usar Generadores	Use Generators
+Usar Deformadores	Use Deformers
+Usar Sistema de Movimiento	Use Motion System
+Color Objetos por Defecto	Default Object Color
+Gris-Azul	Gray-Blue
+Recortar Vista	Clip View
+Medio	Medium
+Flujo de Trabajo Lineal	Linear Workflow
+Introducir Perfil de Color	Input Color Profile
+Cargar Preestablecido...	Load Preset...
+Guardar Preestablecido...	Save Preset...
+Preestablecidos de proyecto: todavía no implementados en Iron3D.	Project presets: not yet implemented in Iron3D.
+Página no disponible	Page not available
+  Todavía no implementado en Iron3D.	  Not yet implemented in Iron3D.
+Básico	Basic
+Detalles	Details
+Visibilidad	Visibility
+Sombra	Shadow
+Fotométrico	Photometric
+Cáusticas	Caustics
+Ruido	Noise
+Lentes	Lenses
+Propiedades Básicas	Basic Properties
+Nombre	Name
+Capa	Layer
+Visible en Editor	Visible in Editor
+Visible en Editor (punto superior): Por Defecto hereda del padre, Activado lo muestra siempre, Apagado lo oculta en el visor.	Visible in Editor (top dot): Default inherits from the parent, On always shows it, Off hides it in the viewport.
+Visible en Render	Visible in Render
+Visible en Render (punto inferior): Iron3D todavía no tiene render final; el valor se guarda en la escena.	Visible in Render (bottom dot): Iron3D has no final render yet; the value is saved in the scene.
+Usar Color	Use Color
+Desactivado	Disabled
+Coordenadas	Coordinates
+Orden	Order
+Congelar Transformación	Freeze Transformation
+Intensidad	Intensity
+Foco	Spot
+Foco Cuadrado	Square Spot
+Infinita	Infinite
+Foco Paralelo	Parallel Spot
+Foco Paralelo Cuadrado	Square Parallel Spot
+Tubo	Tube
+Área	Area
+Tipo	Type
+Tipo de luz. En el visor, Tubo, Área e IES iluminan como una Omni; Paralela y Foco Paralelo como una Infinita.	Light type. In the viewport, Tube, Area and IES light like an Omni; Parallel and Parallel Spot like an Infinite.
+Ninguno	None
+Mapeado (Suave)	Shadow Maps (Soft)
+Trazado (Duro)	Raytraced (Hard)
+Con sombra activada, la primera luz de la escena que la tenga proyecta sombras en el visor.	With shadows on, the first light in the scene that has them casts shadows in the viewport.
+Luz Visible	Visible Light
+No Ilumina	No Illumination
+Mostrar Iluminación	Show Illumination
+Difusión	Diffusion
+Mostrar Luz Visible	Show Visible Light
+Especular	Specular
+Iluminación de IG	GI Illumination
+Propiedades del Objeto	Object Properties
+Plano de Simetría	Symmetry Plane
+ZY (refleja X)	ZY (mirrors X)
+XZ (refleja Y)	XZ (mirrors Y)
+XY (refleja Z)	XY (mirrors Z)
+Tolerancia	Tolerance
+  Refleja al primer hijo con malla; el hijo se edita aparte.	  Mirrors the first child with a mesh; the child is edited separately.
+Punto	Point
+Radio	Radius
+Relación de Aspecto	Aspect Ratio
+Orientación	Orientation
+Tamaño . X	Size . X
+Tamaño . Y	Size . Y
+Tamaño . Z	Size . Z
+Segmentos en X	Segments X
+Segmentos en Y	Segments Y
+Segmentos en Z	Segments Z
+Superficies Separadas	Separate Surfaces
+Canto	Fillet
+Vértices	Vertices
+Triángulos	Triangles
+  Objeto Poligonal (importado o hecho editable con C).	  Polygon Object (imported or made editable with C).
+  Puntos, aristas y polígonos: botones de la barra izquierda (Supr borra).	  Points, edges and polygons: buttons on the left bar (Del deletes).
+Segmentos	Segments
+Estándar	Standard
+Perfectos de Render	Render Perfect
+Anchura	Width
+Altura	Height
+Segmentos en la Anchura	Width Segments
+Segmentos en la Altura	Height Segments
+  Para cambiar el tamaño use Escala (Coord.) o el Gestor de Coordenadas.	  To change the size use Scale (Coord.) or the Coordinate Manager.
+Etiqueta Phong	Phong Tag
+Limitar Ángulo	Angle Limit
+Ángulo de Phong	Phong Angle
+Usar Bordes	Use Edges
+Ángulo Interior	Inner Angle
+Ángulo Exterior	Outer Angle
+Inverso Cuadrado (Físicamente Exacto)	Inverse Square (Physically Accurate)
+Lineal	Linear
+Escalón	Step
+Inverso Cuadrado Limitado	Inverse Square Clamped
+Inverso Limitado	Inverse Clamped
+Inverso	Inverse
+Decaimiento	Falloff
+Cómo pierde fuerza la luz con la distancia. En las inversas, el Radio es la distancia a la que da el 100 %.	How light fades with distance. For the inverse falloffs, the Radius is the distance at which it gives 100 %.
+Radio Interior	Inner Radius
+Radio/Decaimiento	Radius/Decay
+Tamaño Horizontal	Horizontal Size
+Tamaño Vertical	Vertical Size
+Tamaño en Profundidad	Depth Size
+  En el visor, las sombras son siempre mapeadas y de una sola luz.	  In the viewport, shadows are always mapped and from a single light.
+Restar	Subtract
+Multiplicar	Multiply
+Circular	Circle
+Cuadrado	Square
+Especular - Blinn (Heredado)	Specular - Blinn (Legacy)
+Especular - Phong (Heredado)	Specular - Phong (Legacy)
+Lambertiano (Difuso)	Lambertian (Diffuse)
+Oren-Nayar (Difuso)	Oren-Nayar (Diffuse)
+Irawan (Tejido)	Irawan (Woven Cloth)
+Promedio	Average
+Mínimo	Minimum
+Máximo	Maximum
+Dieléctrico	Dielectric
+ nudos	 knots
+ capas	 layers
+no se evalúa en el visor	not evaluated in the viewport
+Textura	Texture
+Elegir imagen	Choose Image
+Imágenes	Images
+Elegir la imagen del canal (sustituye al shader importado).	Choose the channel image (replaces the imported shader).
+Quitar la textura del canal.	Remove the channel texture.
+  Hay shaders que el visor todavía no evalúa.	  Some shaders are not evaluated by the viewport yet.
+Brillo	Brightness
+Muestreo	Sampling
+Desenfoque Desfase	Blur Offset
+Desenfoque Escala	Blur Scale
+Modo de Mezcla	Mix Mode
+Fuerza de Mezcla	Mix Strength
+Fuerza	Strength
+Invertir	Invert
+Alfa Suave	Soft Alpha
+Alfa de Imagen	Image Alpha
+Lambertiano	Lambertian
+Modelo	Model
+Caída Difusa	Diffuse Falloff
+Nivel Difuso	Diffuse Level
+Rugosidad	Roughness
+Global	World
+Brillo Reflexión Global	Global Reflection Brightness
+Brillo Especular Global	Global Specular Brightness
+Pase Separado	Separate Pass
+Atenuación	Attenuation
+Fuerza Reflexión	Reflection Strength
+Fuerza Especular	Specular Strength
+Fuerza Relieve	Bump Strength
+Color de Capa	Layer Color
+(ninguna)	(none)
+Fresnel de Capa	Layer Fresnel
+  Sin capas importadas: el visor usa Metálico/Rugosidad.	  No imported layers: the viewport uses Metallic/Roughness.
+Visor (PBR equivalente)	Viewport (PBR equivalent)
+Metálico	Metallic
+  El visor todavía no pinta cada capa por separado (brillos de color, Atenuación).	  The viewport does not paint each layer separately yet (colored highlights, Attenuation).
+Luminancia	Luminance
+Reflectancia	Reflectance
+Relieve	Bump
+Fosforescencia	Glow
+Alfa	Alpha
+Iluminación	Illumination
+Asignar	Assign
+Refracción	Refraction
+  Ningún objeto usa este material. Arrástrelo al Gestor de Objetos.	  No object uses this material. Drag it to the Object Manager.
+Etiqueta de Textura [Textura]	Texture Tag [Texture]
+Propiedades de Etiqueta	Tag Properties
+Proyección	Projection
+Mapeado UVW	UVW Mapping
+Lado	Side
+Ambos	Both
+Mezclar Texturas	Mix Textures
+Repetición	Tiles
+Sin Costuras	Seamless
+Usar UVW para Relieve	Use UVW for Bump
+Desfase U	Offset U
+Desfase V	Offset V
+Longitud U	Length U
+Longitud V	Length V
+Repeticiones U	Tiles U
+Repeticiones V	Tiles V
+Modo	Mode
+Datos de Usuario	User Data
+Añadir Datos de Usuario...	Add User Data...
+Gestionar Datos de Usuario...	Manage User Data...
+%zu clave%s seleccionada%s	%zu key%s selected%s
+Interpolación Spline	Spline Interpolation
+Interpolación Lineal	Linear Interpolation
+Interpolación Escalón	Step Interpolation
+Eliminar Claves	Delete Keys
+Claves movidas 	Keys moved 
+Eliminadas 	Deleted 
+ clave.	 key.
+ claves.	 keys.
+Interpolación 	Interpolation 
+ en 	 at 
+Editor de Curvas	Curve Editor
+Esc. X	Scl. X
+Esc. Y	Scl. Y
+Esc. Z	Scl. Z
+%s: sin claves (F9 graba)	%s: no keys (F9 records)
+Sin objeto activo	No active object
+Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.	Timeline: click and drag to change the current frame.
+Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.	Key: click to select (Shift adds), drag to move it, right-click for interpolation.
+Tiempo Mínimo del proyecto.	Project Minimum Time.
+Rango de previo (Tiempo Mínimo/Máximo de Previo).	Preview range (Preview Min/Max Time).
+Tiempo Máximo del proyecto (editable, la regla se reescala).	Project Maximum Time (editable, the ruler rescales).
+Tiempo Máximo de Previo.	Preview Maximum Time.
+Ir al Inicio [Mayús+F]	Go to Start [Shift+F]
+Ir a la Clave Anterior [Ctrl+F]	Go to Previous Key [Ctrl+F]
+Ir al Fotograma Anterior [F]	Go to Previous Frame [F]
+Reproducir Hacia Atrás [F6]	Play Backwards [F6]
+Reproducir Hacia Delante [F8]	Play Forwards [F8]
+Ir al Fotograma Siguiente [G]	Go to Next Frame [G]
+Ir a la Clave Siguiente [Ctrl+G]	Go to Next Key [Ctrl+G]
+Ir al Final [Mayús+G]	Go to End [Shift+G]
+Grabar Objetos Activos [F9]	Record Active Objects [F9]
+Fotogramas Clave Automáticos [Ctrl+F9]	Auto Keyframing [Ctrl+F9]
+Selección de Claves (todavía no implementado)	Key Selection (not yet implemented)
+Grabar Posición	Record Position
+Grabar Escala	Record Scale
+Grabar Rotación	Record Rotation
+Grabar Parámetro (todavía no implementado)	Record Parameter (not yet implemented)
+Grabar Nivel de Puntos (todavía no implementado)	Record Point Level Animation (not yet implemented)
+Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D	Graph Editor / Dope Sheet: not yet implemented in Iron3D
+Ctrl+Mayús+N	Ctrl+Shift+N
+Guardar Materiales como...	Save Materials as...
+Guardar Material Preestablecido...	Save Material Preset...
+Función	Function
+Editar...	Edit...
+Aplicar	Apply
+Eliminar Materiales sin Usar	Delete Unused Materials
+Cargar Textura...	Load Texture...
+Editar Textura...	Edit Texture...
+Clic: seleccionar material. Doble clic: Editor de Material (en el nombre: renombrar). Arrastre a un objeto para asignarlo.	Click: select material. Double-click: Material Editor (on the name: rename). Drag onto an object to assign it.
+Doble clic en un espacio vacío del Gestor de Materiales para crear un material nuevo.	Double-click an empty space in the Material Manager to create a new material.
+Doble clic aquí para crear un material	Double-click here to create a material
+Posición	Position
+Tamaño	Size
+Rotación	Rotation
+Escala	Scale
+Objeto (Rel)	Object (Rel)
+Objeto (Abs)	Object (Abs)
+Mundo	World
+Sistema de coordenadas de los campos (solo Objeto (Rel) disponible por ahora).	Coordinate system of the fields (only Object (Rel) is available for now).
+Tamaño: medidas en cm. Escala: multiplicador del objeto.	Size: measurements in cm. Scale: object multiplier.
+Aplicar los valores de los campos al objeto seleccionado.	Apply the field values to the selected object.
+Selección Rectangular: arrastre para seleccionar los objetos que toque el rectángulo. MAYÚSCULAS añade, CTRL quita.	Rectangle Selection: drag to select the objects the rectangle touches. SHIFT adds, CTRL removes.
+Selección con Lazo: dibuje una zona para seleccionar los objetos que queden dentro. MAYÚSCULAS añade, CTRL quita.	Lasso Selection: draw an area to select the objects inside it. SHIFT adds, CTRL removes.
+Selección en Vivo: Haga clic para seleccionar elementos.	Live Selection: Click to select elements.
+Abrir	Open
+Guardar como	Save As
+Nombre de archivo:	File name:
+Carpeta: %s	Folder: %s
+Cargado: 	Loaded: 
+Error al cargar: 	Load error: 
+Guardado: 	Saved: 
+Error al guardar: 	Save error: 
+Cancelar	Cancel
+%s\nDisposición: %s	%s\nLayout: %s
+Colores y disposición de los paneles como en cada programa. Se aplica al momento.	Colors and panel layout as in each program. Applied immediately.
+Mis presets	My presets
+Personalizar	Custom
+Colores	Colors
+Fondo de paneles	Panel background
+Fondo de campos	Field background
+Acento	Accent
+Azul de herramientas	Tool blue
+Texto	Text
+Fondo del visor	Viewport background
+Barra superior	Top bar
+Columna lateral	Side column
+Columna de objetos	Objects column
+Objetos / Atributos	Objects / Attributes
+Fila inferior	Bottom row
+Línea de tiempo	Timeline
+Pestañas verticales	Vertical tabs
+Redondeo	Rounding
+Personalizado (sin guardar)	Custom (unsaved)
+Nombre del preset	Preset name
+Guardar como preset	Save as preset
+Preset guardado en presets/.	Preset saved in presets/.
+Escriba un nombre válido (letras, números, espacios, - o _).	Enter a valid name (letters, numbers, spaces, - or _).
+Preset eliminado.	Preset deleted.
+Restablecer	Reset
+Vuelve al preset integrado «%s».	Returns to the built-in preset "%s".
+Guardar	Save
+Guardado. Se usará al abrir Iron3D.	Saved. It will be used when Iron3D starts.
+Error al guardar las preferencias.	Error saving the preferences.
+Preset activo: %s	Active preset: %s
+Preferencias	Preferences
+Interfaz	Interface
+Visor	View
+Archivos	Files
+Unidades	Units
+Memoria	Memory
+Renderizador	Renderer
+Backend activo en esta sesión: %s	Backend active in this session: %s
+Backend de render (se aplica al reiniciar):	Render backend (applied on restart):
+Guardado. Reinicie Iron3D Studio para aplicarlo.	Saved. Restart Iron3D Studio to apply it.
+Asignación	Assignment
+Normales	Normals
+  Ningún objeto usa este material.	  No object uses this material.
+Acerca de Iron3D Studio	About Iron3D Studio
+Interfaz inspirada en el flujo de trabajo de Cinema 4D R19.	Interface inspired by the Cinema 4D R19 workflow.
+Cinema 4D es una marca de Maxon; Iron3D no está afiliado a Maxon.	Cinema 4D is a trademark of Maxon; Iron3D is not affiliated with Maxon.
+La importación de archivos .c4d usa el Cineware SDK	Importing .c4d files uses the Cineware SDK
+de MAXON Computer GmbH, integrado según su licencia.	from MAXON Computer GmbH, integrated under its license.
+No se pudo abrir	Could not open
+%d objetos, %d con malla, %d materiales, %d luces	%d objects, %d with mesh, %d materials, %d lights
+%lld puntos, %lld polígonos	%lld points, %lld polygons
+%d generadores con la geometría guardada por Cinema 4D	%d generators with the geometry stored by Cinema 4D
+%d primitivas reconstruidas desde sus parámetros	%d primitives rebuilt from their parameters
+Importado sin avisos.	Imported without warnings.
+Revisa:	Check:
+Cerrar	Close
+Exportado a Cinema 4D	Exported to Cinema 4D
+%d objetos: %d mallas, %d primitivas, %d luces	%d objects: %d meshes, %d primitives, %d lights
+%d materiales, %lld puntos, %lld polígonos	%d materials, %lld points, %lld polygons
+Exportado sin avisos.	Exported without warnings.
+Selección Rectangular	Rectangle Selection
+Selección con Lazo	Lasso Selection
+Conectar Objetos	Connect Objects
+Une los puntos que coinciden (misma posición,\nnormal y color) al conectar.	Joins points that coincide (same position,\nnormal and color) when connecting.
+Tolerante	Tolerant
+Se elige todo lo que toque la zona.	Everything the area touches is selected.
+Solo se elige lo que queda dentro entero.	Only what lies entirely inside is selected.
+Solo Seleccionar Visibles	Only Select Visible Elements
+Puntos, aristas y polígonos tapados por la malla no se eligen.	Points, edges and polygons hidden by the mesh are not selected.
+También se eligen los tapados (a través de la malla).	Hidden ones are selected too (through the mesh).
+Visor de Imágenes	Picture Viewer
+Guardar render	Save render
+Imagen PNG	PNG image
+Render guardado: 	Render saved: 
+No se pudo guardar el render.	Could not save the render.
+Ajustar a la Ventana	Fit to Window
+Renderizar	Render
+Configuración...	Settings...
+Todavía no hay ningún render (Mayús+R).	There is no render yet (Shift+R).
+%s · %d x %d · antialiasing %dx%d · %.2f s · %d triángulos	%s · %d x %d · antialiasing %dx%d · %.2f s · %d triangles
+Configuración de Render	Render Settings
+Salida	Output
+1080 x 1080 (cuadrado)	1080 x 1080 (square)
+Preestablecido	Preset
+Elegir...	Choose...
+Usar el tamaño del visor	Use the viewport size
+Anchura (px)	Width (px)
+Altura (px)	Height (px)
+Antialiasing	Anti-Aliasing
+Ninguno (1x1)	None (1x1)
+Geometría (2x2)	Geometry (2x2)
+Mejor (4x4)	Best (4x4)
+Fondo	Background
+Arriba	Up
+Abajo	Down
+Render por CPU con el sombreado de las miniaturas:\nsin sombras ni texturas todavía.	CPU render with the thumbnail shading:\nno shadows or textures yet.
+Malla demasiado grande para dibujar sus componentes.	Mesh too large to draw its components.
+Puntos	Points
+Aristas	Edges
+Polígonos	Polygons
+Selecciona un objeto editable y entra en modo Puntos, Aristas o Polígonos.	Select an editable object and enter Points, Edges or Polygons mode.
+ seleccionados.	 selected.
+Bucle y Anillo funcionan en modo Aristas.	Loop and Ring work in Edge mode.
+Invertir Selección	Invert Selection
+Comprobar Malla: sin problemas.	Check Mesh: no problems.
+Comprobar Malla: 	Check Mesh: 
+ aristas abiertas, 	 open edges, 
+ no manifold, 	 non-manifold, 
+ puntos sueltos, 	 loose points, 
+ polígonos sin área.	 zero-area polygons.
+Puente: selecciona exactamente 2 polígonos (modo Polígonos).	Bridge: select exactly 2 polygons (Polygon mode).
+Puente: los dos polígonos deben tener el mismo número de lados.	Bridge: both polygons must have the same number of sides.
+Soldar: selecciona al menos 2 puntos.	Weld: select at least 2 points.
+Cerrar Agujero: no hay bordes abiertos que toquen la selección.	Close Hole: there are no open borders touching the selection.
+Alinear Normales: ya están todas alineadas.	Align Normals: they are all aligned already.
+Triangular: no hay polígonos de más de 3 lados.	Triangulate: there are no polygons with more than 3 sides.
+Operación desconocida: 	Unknown operation: 
+ elemento.	 element.
+ elementos.	 elements.
+Eliminados 	Deleted 
+ polígono.	 polygon.
+ polígonos.	 polygons.
+: selecciona polígonos de un objeto editable.	: select polygons of an editable object.
+Cuchillo: selecciona un objeto editable (C).	Knife: select an editable object (C).
+Cuchillo: la línea no corta ningún polígono.	Knife: the line does not cut any polygon.
+Cuchillo: 	Knife: 
+ polígono cortado.	 polygon cut.
+ polígonos cortados.	 polygons cut.
+Desplazamiento (cm)	Offset (cm)
+Desplazamiento de Inserción (cm)	Inset Offset (cm)
+Extrusión (cm)	Extrusion (cm)
+Solo Visibles	Visible Only
+Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos.	Line Mode: cuts whatever the line crosses.\nWith polygons selected, only those.
+o arrastra en el visor	or drag in the viewport
+(objeto editable)	(editable object)
+ vertices sin espejo.	 vertices without a mirror.
+Iron3D Studio - hoja de iconos (%d)	Iron3D Studio - icon sheet (%d)
+Preestablecidos	Presets
+Elementos Recientes	Recent Items
+Resultado de la Búsqueda: "	Search Result: "
+Preestablecidos > 	Presets > 
+Ya hay una librería con ese nombre en library/browser.	A library with that name already exists in library/browser.
+No se pudo copiar la librería a library/browser: 	Could not copy the library to library/browser: 
+" es ahora permanente (	" is now permanent (
+Librería "	Library "
+" creada en library/browser.	" created in library/browser.
+Carpeta "	Folder "
+" creada.	" created.
+No se puede leer 	Cannot read 
+ modelos y 	 models and 
+ archivos añadidos a "	 files added to "
+Añadir a la librería	Add to Library
+Modelos y texturas	Models and textures
+" eliminado de "	" removed from "
+Ya existe 	already exists 
+; muévela antes de corregir.	; move it before fixing.
+No se pudo renombrar la librería: 	Could not rename the library: 
+Url interna corregida (copia de seguridad en 	Internal URL fixed (backup in 
+Eliminar de la Librería	Remove from Library
+¿Eliminar "%s"%s?	Delete "%s"%s?
+ y todo su contenido	 and all its contents
+Se borra de la librería (%s).	It is deleted from the library (%s).
+Nueva Librería de Preestablecidos	New Preset Library
+Renombrar	Rename
+Mover a	Move to
+Nueva Carpeta	New Folder
+Carpeta de destino (vacío = raíz, "a/b" = subcarpetas):	Destination folder (empty = root, "a/b" = subfolders):
+Nombre:	Name:
+Ruta no válida (o dentro de sí misma).	Invalid path (or inside itself).
+Sin  / \\ : * ? " < > |	Without  / \ : * ? " < > |
+Se guarda en library/browser: sale siempre.	It is saved in library/browser: it always loads.
+Todavía no implementado	Not yet implemented
+Nuevo Navegador	New Browser
+Nueva Carpeta...	New Folder...
+Abre antes una librería (o una carpeta suya)	Open a library (or one of its folders) first
+Nuevo Catálogo...	New Catalog...
+Nueva Librería de Preestablecidos...	New Preset Library...
+Añadir Archivos a la Librería...	Add Files to Library...
+Abrir Librería de Preestablecidos...	Open Preset Library...
+Hacer Permanente (copiar a library/browser)	Make Permanent (copy to library/browser)
+Quitar Librería del Navegador	Remove Library from Browser
+Cargar en la Escena	Load into Scene
+Intro	Enter
+Borrar	Delete
+Renombrar...	Rename...
+Iconos Pequeños	Small Icons
+Iconos Medianos	Medium Icons
+Iconos Grandes	Large Icons
+Mostrar Texturas y Archivos	Show Textures and Files
+Ir a	Go to
+Buscar...	Search...
+Busca por nombre en todas las librerías (Intro)	Searches by name in all libraries (Enter)
+Librería temporal (solo esta sesión)	Temporary library (this session only)
+Librería permanente	Permanent library
+Añadir Archivos...	Add Files...
+Quitar del Navegador	Remove from Browser
+Corregir Url Interna (archivo renombrado)	Fix Internal URL (renamed file)
+Dentro pone "%s": Cinema 4D no la monta si no coincide con el nombre del archivo.	It says "%s" inside: Cinema 4D does not mount it unless it matches the file name.
+Catálogos	Catalogs
+Ordenador	Computer
+Red	Network
+Resultado de la Búsqueda	Search Results
+  (temporal)	  (temporary)
+Temporal: solo en esta sesión	Temporary: this session only
+Permanente (library/browser)	Permanent (library/browser)
+   (ninguna librería)	   (no libraries)
+No hay librerías. Abre un .lib4d (Archivo > Abrir) o cópialo a library/browser.	There are no libraries. Open a .lib4d (File > Open) or copy it to library/browser.
+Aún no has cargado ningún preestablecido en esta sesión.	You have not loaded any preset in this session yet.
+Sin resultados.	No results.
+Carpeta vacía.	Empty folder.
+Suéltalo en el visor para añadirlo a la escena	Drop it in the viewport to add it to the scene
+Mover a...	Move to...
+Modelo / escena de Cinema 4D	Cinema 4D model / scene
+Carpeta	Folder
+Archivo (textura, imagen...)	File (texture, image...)
+\nDoble clic o arrastrar al visor: cargar	\nDouble-click or drag to the viewport: load
+\nDoble clic: abrir	\nDouble-click: open
+%s\n%d modelos  ·  %s	%s\n%d models  ·  %s
+temporal (solo esta sesión)	temporary (this session only)
+  ·  librería temporal (solo esta sesión)	  ·  temporary library (this session only)
+  ·  librería permanente	  ·  permanent library
+Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. Clic derecho > Corregir Url Interna.	This library was renamed outside Cinema 4D: its internal URL does not match the file. Right-click > Fix Internal URL.
+Navegador de Contenido	Content Browser
+%s\n(clic para quitar el aviso)	%s\n(click to dismiss the warning)
+Guardar como Preestablecido	Save as Preset
+No hay ninguna librería de preestablecidos.	There are no preset libraries.
+Crear "Mis Preestablecidos"	Create "My Presets"
+Mis Preestablecidos	My Presets
+Librería	Library
+(elige una)	(choose one)
+(raíz de la librería)	(library root)
+ objetos	 objects
+ polígonos	 polygons
+ materiales	 materials
+" guardado en "	" saved in "
+Idioma	Language
+Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	Language saved. Restart Iron3D Studio to apply it.
+Se aplicará al reiniciar Iron3D Studio.	Takes effect when Iron3D Studio restarts.
+Polígono Vacío	Empty Polygon
+Guía	Guide
+Cono	Cone
+Cilindro	Cylinder
+Disco	Disc
+Toroide	Torus
+Cápsula	Capsule
+Tanque de Petróleo	Oil Tank
+Pirámide	Pyramid
+Platónico	Platonic
+Figura	Figure
+Terreno Fractal	Landscape
+Lápiz	Pen
+Dibujo	Sketch
+Suavizado Spline	Spline Smooth
+Arco	Arc
+Círculo	Circle
+Hélice	Helix
+n-Lados	n-Side
+Rectángulo	Rectangle
+Estrella	Star
+Vectorizador	Vectorizer
+4-Lados	4-Side
+Cisoide	Cissoid
+Rueda Dentada	Cogwheel
+Cicloide	Cycloid
+Fórmula	Formula
+Flor	Flower
+Perfil	Profile
+Sustraer Spline	Spline Subtract
+Spline Y	Spline And
+Spline O	Spline Or
+Torno	Lathe
+Forro	Loft
+Recorrido	Sweep
+Formación de Átomos	Atom Array
+Booleano	Boole
+Máscara de Spline	Spline Mask
+Conector	Connector
+Generador Python	Python Generator
+Reducción de Polígonos	Polygon Reduction
+Instancia	Instance
+Fractura	Fracture
+Trazador	Tracer
+Doblar	Bend
+Hinchar	Bulge
+Sesgar	Shear
+Afilar	Taper
+Enroscar	Twist
+Aplastar y Estirar	Squash  Stretch
+Derretir	Melt
+Explosión	Explosion
+FX Explosión	Explosion FX
+Romper	Shatter
+Corrección	Correction
+Cubrir	Shrink Wrap
+Esferizar	Spherify
+Superficie	Surface
+Envoltura	Wrap
+Rail de Splines	Spline Rail
+Envolver Spline	Spline Wrap
+Colisión	Collision
+Desplazador	Displacer
+Viento	Wind
+Suavizado	Smoothing
+Suelo	Floor
+Cielo	Sky
+Primer Plano	Foreground
+Escenario	Stage
+Cielo Físico	Physical Sky
+Unir Nubes	Connect Clouds
+Césped	Grass
+Cámara Estéreo	Stereo Camera
+Morph de Cámara	Camera Morph
+Grúa	Crane
+Luz Infinita	Infinite Light
+Luz de Área	Area Light
+Luz Solar	Sun Light
+Luz PBR	PBR Light
+Activar Eje	Enable Axis
+Nuevo Proyecto	New Project
+Gestor de Objetos	Object Manager
+Detener	Stop
+Guardar Proyecto con su Contenido...	Save Project with Assets...
+Inflar	Inflate
+Pincel Pesos MoGraph	MoGraph Weight Paintbrush
+Ejecutar Script...	Run Script...
+Sombreado Rápido (Líneas)	Quick Shading (Lines)
+Sombreado Constante (Líneas)	Constant Shading (Lines)
+Esqueleto	Skeleton
+Sombras	Shadows
+Teselación	Tessellation
+Ocultar Caras Posteriores	Backface Culling
+Configurar Todo...	Configure All...
+Objetivo	Target
+Niebla	Fog
+Mostrar Subcanales	Show Sub-channels
+Guardar Todos los Materiales como...	Save All Materials as...
+Cargar Material Preestablecido	Load Material Preset
+Todos los archivos	All files
+Nueva Librería	New Library
+Nueva Carpeta	New Folder
+Atributos	Attributes
+Línea de Tiempo	Timeline
+Gestor de Materiales	Material Manager
+Entorno:	Layout:
+Tomas	Takes
+Estructura	Structure
+Capas	Layers
+Propiedades	Properties
+Transformar	Transform
+Vista 3D	3D View
+Spline Arco	Arc Spline Tool
+Unión de Splines	Spline Union
+Intersección de Splines	Spline Intersection
+Herramienta de Nubes	Cloud Tool
+Grupo de Nubes	Cloud Group
+Nube	Cloud
+Cámara Objetivo	Target Camera
+Cámara de Movimiento	Motion Camera
+Luz Objetivo	Target Light
+Luz IES	IES Light
+Herramienta de Iluminación	Lighting Tool
+Vista Perspectiva	Perspective View
+Vista Superior	Top View
+Vista Derecha	Right View
+Vista Frontal	Front View
+Vista Izquierda	Left View
+Vista Trasera	Back View
+Vista Inferior	Bottom View
+Guardar Proyecto	Save Project
+Selección Contorno	Outline Selection
+Aumentar Selección	Grow Selection
+Fijación 2.5D	2.5D Snapping
+Construcción de Personaje	Character Builder
+Objeto %s [%s]	Object %s [%s]
+Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f	Hue %.0f°  Sat %.0f%%  Lum %.0f%%  Brightness %.0f%%  Contrast %.0f%%  Gamma %.2f
+Editor de Material  [%s]	Material Editor  [%s]
+Render: %d x %d en %.2f s	Render: %d x %d in %.2f s
+%s: %zu de %zu seleccionados	%s: %zu of %zu selected
+%d elementos	%d items
+Esquema	Outliner
+Espacio de trabajo:	Workspace:
+Librería de preestablecidos de Cinema 4D	Cinema 4D Preset Library
+Objeto poligonal	Polygon object
+Nulo (vacio)	Null (empty)
+Fotométrica	Photometric

@@ -1,0 +1,483 @@
+# Iron3D Studio - pl (clave = texto en espanol; valor = traduccion)
+Extrusión	Ekstrudowanie
+Bisel	Fazuj
+Superior	Z góry
+Derecha	Z prawej
+Frontal	Z przodu
+Izquierda	Z lewej
+Inferior	Z dołu
+Cubo	Sześcian
+Esfera	Sfera
+Plano	Płaszczyzna
+Luz	Światło
+Cámara	Kamera
+Polígono	Wielobok
+Nulo	Brak
+Abrir	Otwórz
+Fusionar	Połącz
+Exportar	Eksport
+Simetría	Symetria
+Supr	Usuwanie
+Deshacer	Cofnij
+Encuadrar Seleccionados	Pokaż wybrane
+Encuadrar Geometría	Pokaż geometrię
+Hacer Editable	Możliwość edycji
+Conectar Objetos	Połącz obiekty
+Agrupar Objetos	Grupuj obiekty
+Nueva Etiqueta	Nowy tag
+Restaurar Selección	Przywróć zestaw wyboru
+Seleccionar Hijos	Wybierz dzieci
+Mostrar Pistas...	Pokaż obiekty...
+Mostrar F-Curves...	Pokaż krzywe F...
+Mostrar Movimientos...	Pokaż ruch...
+Mover	Przesuwanie
+Escalar	Skaluj
+Rotar	Obróć
+Selección Rectangular	Wybór prostokątny
+Archivo	Plik
+Nuevo	Nowy projekt
+Abrir...	Otwórz...
+Fusionar...	Połącz pliki...
+Volver a Archivo Guardado...	Powróć do ostatniego zapisu...
+Cerrar Todos	Zamknij wszystko
+Guardar	Zapisz
+Guardar como...	Zapisz jako...
+Guardar Todo	Zapisz wszystko
+Guardar Objetos Seleccionados como...	Zapisz wybrane obiekty jako...
+Alembic (*.abc)	Alembiczny (*.abc)
+Salir	Zakończ
+Edición	Edycja
+Rehacer	Przywróć
+Cortar	Wytnij
+Copiar	Kopiuj
+Pegar	Wklej
+Eliminar	Usuń
+Seleccionar Todo	Wybierz wszystko
+Deseleccionar Todo	Odznacz wszystko
+Configuración del Proyecto...	Ustawienia projektu...
+Escalar Proyecto...	Skaluj projekt...
+Preferencias...	Preferencje...
+Crear	Utwórz
+Objeto	Obiekt
+Spline	Splajn
+Generadores	Generatory
+Modelado	Modelowanie
+Deformador	Deformery
+Escena	Scena
+Materiales	Materiały
+Nuevo Material	Nowy materiał Standard
+Nuevo Material PBR	Nowy materiał PBR
+Cargar Materiales...	Wczytaj materiały...
+Etiqueta	Tag
+Sonido	Dźwięk
+Selección	Wybór
+Filtro de Selección	Filtr wyboru
+Rellenar Selección	Wybór-wypełnienie
+Herramientas	Narzędzia
+Desplazamiento	Przemieszczenie
+Centrar	Wyrównaj
+Malla	Siatka
+Conectar Objetos + Eliminar	Połącz i usuń
+Soldar	Połącz punkty
+Puente	Połącz
+Pincel	Malowanie
+Planchar	Wygładzanie
+Triangular	Triangulacja
+Fijación	Przyciąganie
+Activar Fijación	Załącz przyciąganie
+Fijación 2D	Przyciąganie 2D
+Fijación 3D	Przyciąganie 3D
+Plano de Trabajo	Płaszczyzna robocza
+Animación	Animacja
+Grabar Objetos Activos	Nagrywaj aktywne obiekty
+Fotogramas Clave Automáticos	Automatyczne klucze
+Reproducir Hacia Delante	Odtwarzaj
+Reproducir Hacia Atrás	Odtwarzaj od końca
+Parar	Zatrzymaj
+Ir al Inicio	Idź do początku
+Ir al Final	Idź do końca
+Personaje	Postać
+Piel	Skórowanie
+Restricción	Ograniczenie
+Simulación	Symulacja
+Partículas	Cząsteczki
+Dinámicas	Dynamika
+Cloth	Ubrania
+Render	Rendering
+Renderizar Región	Renderuj region
+Región de Render Interactivo	Interaktywny obszar renderingu
+Cola de Render...	Kolejka Renderingów...
+Visor de Imágenes...	Podgląd obrazów...
+Esculpir	Rzeźbienie
+Reducir	Zmniejsz
+Suavizar	Wygładzanie
+Aplanar	Spłaszcz
+Pellizcar	Połącz
+Motion Tracker	Śledzenie ruchu
+Ocultar Seleccionado	Ukryj wybrane
+Selección MoGraph	Wybór MoGraph
+Clonador	Kloner
+Matriz	Matryca
+Fractura Voronoi	Pęknięcie Voronoi
+Character	Postać
+Junta	Połączenie
+Herramienta de Junta	Połączenie
+Línea de Trabajo	Pipeline
+Plugins	Pluginy
+Script	Skrypt
+Gestor de Scripts...	Menadżer skryptów...
+Consola...	Konsola...
+Ventana	Okno
+Editor de Material...	Edytor materiałów...
+Gestor de Capas	Menadżer warstw
+Ayuda	Pomoc
+Mostrar Ayuda...	Pokaż pomoc...
+Animar	Animacja
+Vista	Widok
+Deshacer Vista	Cofnij widok
+Rehacer Vista	Przywróć widok
+Encuadrar Todo	Pokaż wszystko
+Encuadre por Defecto	Użyj domyślnego widoku
+Redibujar	Odśwież
+Cámaras	Kamery
+Navegación	Nawigacja
+Usar Cámara	Użyj kamery
+Perspectiva	Perspektywa
+Paralela	Rzutowanie równoległe
+Mostrar	Pokaż
+Sombreado Gouraud	Cieniowanie Gouraud
+Sombreado Gouraud (Líneas)	Cieniowanie Gouraud (linie)
+Sombreado Rápido	Szybkie cieniowanie
+Sombreado Constante	Stałe cieniowanie
+Líneas Ocultas	Ukryte linie
+Líneas	Linie
+Alambre	Linie
+Caja	Box
+Opciones	Opcje
+Nivel de Detalle	Poziom uszczegółowienia
+Estereoscópico	Obraz stereoskopowy
+Sombreado de Flujo de Trabajo Lineal	Cieniowanie liniowe
+Post Efectos	Post-efekty
+Transparencia	Przezroczystość
+Reflexiones	Odbicia
+Profundidad de Campo	Głębia ostrości
+Usar Edición de Isolíneas	Edycja izolinii
+Normales de Polígonos	Normalne wieloboków
+Normales de Vértices	Normalne wierzchołków
+Etiquetas	Tagi
+Texturas	Tekstury
+Rayos X	Rentgen
+Luz por Defecto...	Domyślne światło...
+Configurar...	Konfiguracja...
+Filtrar	Filtr
+Cuadrícula	Siatki
+Generador	Generator
+Subdivisión Superficie	Podziały powierzchni
+Entorno	Środowisko
+Partícula	Cząsteczka
+Otro	Inne
+Horizonte	Horyzont
+Ejes	Oś
+Guías	Linie przewodnie
+Paneles	Okno widokowe
+4 Vistas	4 widoki
+Todas las Vistas	Wszystkie widoki
+Fusionar Objetos...	Połącz obiekty...
+Guardar como Preestablecido...	Zapisz ustawienia...
+Editar	Edycja
+Expandir Todo	Rozwiń wszystko
+Ver	Widok
+Mostrar Etiquetas	Pokaż tagi
+Objetos	Obiekty
+Añadir	Dodaj
+Duplicar	Duplikowanie
+Favoritos	Tagi
+Protección	Ochrona
+Hair Etiquetas	Tagi Włosów
+MoGraph Etiquetas	Tagi MoGraph
+Motion Tracker Etiquetas	Tagi śledzenia ruchu
+Scripting Etiquetas	Tagi Skryptów
+Añadir a una Capa Nueva	Dodaj do nowej warstwy
+Gestor de Capas...	Menadżer warstw...
+Eliminar de Todas las Tomas	Usuń z wszystkich przejęć
+Gestor de Tomas...	Menadżer przejęć...
+Establecer como Raíz	Ustal jako poziom podstawowy
+Contraer Todo	Zwiń wszystko
+Estado Actual del Objeto	Aktualny status jako obiekt
+Expandir Grupo de Objetos	Rozszerz grupę obiektów
+Eliminar Sin Hijos	Usuń bez Dzieci
+Convertir Selección de Objetos a XRef	Konwertuj wybór obiektu na XRef
+Información del Objeto...	Informacja o obiekcie...
+Información del Proyecto	Informacja o projekcie...
+Renombrar	Zmień nazwę
+Por Defecto	Domyślne
+Activado	Załączony
+Editor	Edytor
+Atrás	Do tyłu
+Subir	Upload
+Bloquear Elemento	Zablokuj element
+Proyecto	Projekt
+Información	Info
+Referenciar	XRefy
+A Realizar	Do zrobienia
+Interpolación de Claves	Animacja
+Centímetros	Centymetry
+FPS	Ilość klatek/sek.
+Usar Animación	Użyj animacji
+Usar Expresiones	Użyj wyrażeń
+Usar Generadores	Użyj generatorów
+Usar Deformadores	Użyj deformerów
+Usar Sistema de Movimiento	Użyj systemu ruchu
+Medio	Średnia
+Cargar Preestablecido...	Wczytaj ustawienia...
+Guardar Preestablecido...	Zapisz domyślne...
+Básico	Podstawowe
+General	Ogólne
+Detalles	Szczegóły
+Visibilidad	Widoczność
+Sombra	Cień
+Cáusticas	Kaustyka
+Ruido	Szum
+Propiedades Básicas	Podstawowe własności
+Nombre	Nazwa
+Capa	Warstwa
+Desactivado	Wyłączony
+Coordenadas	Współrzędne
+Orden	Kolejność
+Color	Kolor
+Intensidad	Intensywność
+Tubo	Rura
+Tipo	Typ
+Ninguno	Brak
+Difusión	Rozproszenie
+Especular	Połysk
+Tolerancia	Tolerancja
+Punto	Punkt
+Radio	Promień
+Orientación	Orientacja
+Vértices	Wierzchołki
+Triángulos	Trójkąty
+Segmentos	Segmenty
+Estándar	Standard
+Anchura	Szerokość
+Lineal	Liniowy
+Inverso	Odwrotnie
+Decaimiento	Zanik
+Normal	Normalne
+Restar	Odejmij
+Multiplicar	Mnożenie
+Circular	Okrąg
+Cuadrado	Do kwadratu
+GGX	GSX
+Ward	Obszar
+Lambertiano (Difuso)	Lambertiański (rozproszony)
+Oren-Nayar (Difuso)	Oren-Nayar (rozproszony)
+Promedio	Średnia
+Mínimo	Minimum
+Máximo	Maksimum
+Dieléctrico	Izolator
+Conductor	Przewodnik
+Textura	Tekstura
+Imágenes	Zdjęcia
+Brillo	Jasność
+Muestreo	Próbkowanie
+Desenfoque Desfase	Odsunięcie rozmycia
+Desenfoque Escala	Skala rozmycia
+Fuerza	Siła
+Delta	Różnica
+Invertir	Odwróć
+Rugosidad	Szorstkość
+Global	Globalnie
+Brillo Reflexión Global	Globalna jasność odbić
+Brillo Especular Global	Globalna jasność połysku
+Pase Separado	Oddzielne przejścia
+Atenuación	Tłumienie
+Fuerza Reflexión	Siła odbić
+Fuerza Especular	Siła połysku
+Fuerza Relieve	Siła wypukłości
+Color de Capa	Kolor warstwy
+Fresnel de Capa	Warstwa Fresnel
+Reflectancia	Refleksyjność
+Relieve	Wypukłości
+Fosforescencia	Poświata
+Alfa	Alpha
+Iluminación	Iluminacja
+Asignar	Przypisz
+Material	Materiał
+Proyección	Projekcja
+Ambos	L+R
+Sin Costuras	Bez widocznych połączeń
+Desfase U	Odsunięcie U
+Desfase V	Odsunięcie V
+Modo	Tryb
+Datos de Usuario	Dane użytkownika
+Añadir Datos de Usuario...	Dodaj dane użytkownika...
+Gestionar Datos de Usuario...	Zarządzaj danymi użytkownika...
+Interpolación 	Interpolacja 
+Guardar Materiales como...	Zapisz wybrane materiały jako...
+Función	Funkcja
+Editar...	Edytuj...
+Aplicar	Zastosuj
+Posición	Pozycja
+Tamaño	Wielkość
+Rotación	Obrót
+Escala	Skala
+Objeto (Rel)	Obiekt (Wzgl.)
+Objeto (Abs)	Obiekt (Abs.)
+Cancelar	Anuluj
+Personalizar	Użytkownika
+Colores	Kolory
+Texto	Tekst
+Preferencias	Preferencje
+Interfaz	Interfejs
+Visor	Widok
+Archivos	Pliki
+Unidades	Jednostki
+Memoria	Pamięć
+Renderizador	Renderer
+OpenGL	Okno widokowe - Hardware
+Normales	Normalne
+Cerrar	Zamknij
+Visor de Imágenes	Podgląd obrazów
+Configuración...	Ustawienia...
+Configuración de Render	Ustawienia renderingu
+Salida	Wynik
+Preestablecido	Ustawienie domyślne
+Antialiasing	Antyaliasing
+Fondo	Tło
+Arriba	Góra
+Abajo	Dół
+Puntos	Punkty
+Aristas	Krawędzie
+Polígonos	Wieloboki
+Invertir Selección	Odwróć zestaw wyboru
+Preestablecidos	Ustawienia domyślne
+Elementos Recientes	Ostatnio używane
+Ya existe 	już istnieje 
+Nombre:	Nazwa:
+Nueva Carpeta...	Nowy folder...
+Nuevo Catálogo...	Nowy folder...
+Nueva Librería de Preestablecidos...	Nowa biblioteka ustawień...
+Borrar	Usuń
+Renombrar...	Zmień nazwę...
+Iconos Pequeños	Małe ikony
+Iconos Medianos	Średnie ikony
+Iconos Grandes	Duże ikony
+Buscar...	Szukaj...
+Añadir Archivos...	Wybierz pliki do uploadu...
+Catálogos	Katalogi
+Ordenador	Komputer
+Red	Sieć
+Resultado de la Búsqueda	Wyniki wyszukiwania
+Carpeta	Folder
+Idioma	Język
+Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	Język zapisany. Uruchom ponownie Iron3D Studio, aby go zastosować.
+Se aplicará al reiniciar Iron3D Studio.	Zmiana zadziała po ponownym uruchomieniu Iron3D Studio.
+Polígono Vacío	Pusty wielobok
+Guía	Linia przewodnia
+Cono	Stożek
+Cilindro	Walec
+Disco	Dysk
+Toroide	Torus
+Cápsula	Kapsuła
+Pirámide	Ostrosłup
+Platónico	Obiekt platoniczny
+Figura	Postać
+Lápiz	Pióro
+Dibujo	Szkic
+Suavizado Spline	Wygładzanie splajnów
+Arco	Łuk
+Círculo	Okrąg
+Hélice	Helisa
+n-Lados	Wielobok
+Rectángulo	Prostokąt
+Estrella	Gwiazda
+4-Lados	Czworobok
+Cisoide	Cissoida
+Rueda Dentada	Koło zębate
+Cicloide	Cykloida
+Fórmula	Funkcja
+Flor	Kwiat
+Perfil	Profil
+Sustraer Spline	Odejmowanie splajnów
+Spline Y	Suma splajnów
+Spline O	Alternatywa splajnów
+Torno	Lathe
+Forro	Loft
+Recorrido	Sweep
+Formación de Átomos	Szyk atomów
+Booleano	Operacja Boole'a
+Máscara de Spline	Maska splajnu
+Conector	Łącznik
+Generador Python	Python Generator
+Reducción de Polígonos	Redukcja wieloboków
+Instancia	Klon
+Fractura	Pęknięcie
+Trazador	Tracer
+Doblar	Zginanie
+Hinchar	Wybrzuszanie
+Sesgar	Pochylanie
+Afilar	Zbieżność
+Enroscar	Skręcanie
+Aplastar y Estirar	Sciskanie i rozciąganie
+Explosión	Eksplozja
+FX Explosión	Eksplozja FX
+Romper	Roztrzaskanie
+Corrección	Korekcja
+Jiggle	Drżenie
+Morph	Morfing
+Cubrir	Skurczenie z zawijaniem
+Esferizar	Dopasowanie do sfery
+Superficie	Powierzchnia
+Rail de Splines	Splajn tworzący
+Envolver Spline	Zawijanie splajnu
+Colisión	Zderzenie
+Desplazador	Przemieszczanie
+Viento	Wiatr
+Suavizado	Wygładzanie
+Suelo	Podstawa
+Cielo	Niebo
+Primer Plano	Pierwszy plan
+Escenario	Scena
+Cielo Físico	Niebo fizyczne
+Unir Nubes	Połącz chmury
+Césped	Trawa
+Cámara Estéreo	Kamera stereo
+Morph de Cámara	Kamera - morfing
+Grúa	Żuraw
+Luz Infinita	Światło nieskończone
+Luz de Área	Światło powierzchniowe
+Luz Solar	Słońce
+Luz PBR	Światło PBR
+Activar Eje	Oś obiektu
+Nuevo Proyecto	Nowy projekt
+Gestor de Objetos	Menadżer obiektów
+Detener	Zatrzymaj
+Guardar Proyecto con su Contenido...	Zapisz projekt z teksturami...
+Inflar	Napompuj
+Pincel Pesos MoGraph	Pędzel ważenia MoGraph
+Ejecutar Script...	Uruchom skrypt...
+Sombreado Rápido (Líneas)	Szybkie cieniowanie (linie)
+Sombreado Constante (Líneas)	Stałe cieniowanie (linie)
+Esqueleto	Szkielet
+Sombras	Cienie
+Teselación	Tesselacja
+Ocultar Caras Posteriores	Ukryj tylne powierzchnie
+Configurar Todo...	Konfiguracja - wszystko...
+Objetivo	Cel
+Niebla	Mgła
+Mostrar Subcanales	Pokaż kanały składowe
+Guardar Todos los Materiales como...	Zapisz wszystkie materiały jako...
+Todos los archivos	Wszystkie pliki
+Nueva Librería	Nowa biblioteka
+Nueva Carpeta	Nowy folder
+Atributos	Atrybuty
+Línea de Tiempo	Linia czasu
+Gestor de Materiales	Menadżer materiałów
+Entorno:	Layout:
+Tomas	Przejmowanie
+Estructura	Struktura
+Capas	Warstwy
+Propiedades	Właściwości
+Transformar	Transformacja
+Vista 3D	Widok 3D

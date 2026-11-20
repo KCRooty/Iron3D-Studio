@@ -1,0 +1,485 @@
+# Iron3D Studio - ja (clave = texto en espanol; valor = traduccion)
+Extrusión	押し出し
+Bisel	ベベル
+Superior	上面
+Derecha	右
+Frontal	前面
+Izquierda	左
+Inferior	下面
+Cubo	立方体
+Esfera	球体
+Plano	平面
+Luz	ライト
+Cámara	カメラ
+Polígono	ポリゴン
+Nulo	ヌル
+Abrir	開く
+Fusionar	マージ
+Exportar	エクスポート
+Simetría	対称
+Supr	Del
+Deshacer	取消し
+Encuadrar Seleccionados	選択のみ表示
+Encuadrar Geometría	ジオメトリのみ表示
+Hacer Editable	編集可能にする
+Conectar Objetos	オブジェクトを一体化
+Agrupar Objetos	オブジェクトをグループ化
+Nueva Etiqueta	新規タグ
+Restaurar Selección	選択範囲を復元
+Seleccionar Hijos	子オブジェクトを選択
+Mostrar Pistas...	トラックを表示...
+Mostrar F-Curves...	F カーブを表示...
+Mostrar Movimientos...	モーションを表示...
+Mover	移動
+Escalar	スケール
+Rotar	回転
+Selección Rectangular	長方形選択
+Archivo	ファイル
+Nuevo	新規プロジェクト
+Abrir...	レイヤープリセットをマージ...
+Fusionar...	プロジェクトをマージ...
+Volver a Archivo Guardado...	保存されたプロジェクトに復帰...
+Cerrar Todos	全てのプロジェクトを閉じる
+Guardar	保存
+Guardar como...	プロジェクトを別名で保存...
+Guardar Todo	全てのプロジェクトを保存
+Guardar Objetos Seleccionados como...	選択オブジェクトを別名で保存...
+Salir	終了
+Edición	編集
+Rehacer	再実行
+Cortar	カット
+Copiar	コピー
+Pegar	ペースト
+Eliminar	削除
+Seleccionar Todo	全て選択
+Deseleccionar Todo	全て選択解除
+Configuración del Proyecto...	プロジェクト設定...
+Escalar Proyecto...	プロジェクトをスケール...
+Preferencias...	一般設定...
+Crear	作成
+Objeto	オブジェクト
+Spline	スプライン
+Generadores	ジェネレータ
+Modelado	モデリング
+Deformador	デフォーマ
+Escena	シーン
+Materiales	マテリアル
+Nuevo Material	新規 標準マテリアル
+Nuevo Material PBR	新規 PBR マテリアル
+Cargar Materiales...	マテリアルを読み込む...
+Etiqueta	タグ
+Sonido	サウンド
+Selección	選択範囲
+Filtro de Selección	選択フィルター
+Rellenar Selección	選択範囲を満たす
+Herramientas	ツール
+Desplazamiento	変位
+Centrar	中心を操作
+Malla	メッシュ
+Conectar Objetos + Eliminar	オブジェクトを一体化+消去
+Soldar	結合
+Puente	ブリッジ
+Pincel	ブラシ
+Planchar	アイロン
+Triangular	三角ポリゴン化
+Fijación	スナップ
+Activar Fijación	スナップを有効
+Fijación 2D	2Dスナップ
+Fijación 3D	3Dスナップ
+Plano de Trabajo	作業平面
+Animación	アニメーション
+Grabar Objetos Activos	選択オブジェクトを記録
+Fotogramas Clave Automáticos	自動記録
+Reproducir Hacia Delante	再生
+Reproducir Hacia Atrás	逆再生
+Parar	停止
+Ir al Inicio	最初のラインへ移動
+Ir al Final	終了フレームへ移動
+Personaje	キャラクター
+Piel	スキニング
+Restricción	制限
+Simulación	シミュレート
+Partículas	パーティクル
+Dinámicas	ダイナミクス
+Cloth	クロス
+Render	レンダリング
+Renderizar Región	部分レンダリング
+Región de Render Interactivo	インタラクティブレンダー
+Cola de Render...	レンダーキュー...
+Visor de Imágenes...	画像ビューアー...
+Esculpir	スカルプト
+Reducir	分割数を下げる
+Suavizar	スムーズ
+Aplanar	フラット化
+Pellizcar	つまむ
+Motion Tracker	モーショントラッカー
+Ocultar Seleccionado	選択エレメントを隠す
+Selección MoGraph	MoGraph 選択範囲
+Clonador	クローナー
+Matriz	マトリクス
+Fractura Voronoi	ボロノイ分割
+Character	キャラクター
+Junta	ジョイント
+Herramienta de Junta	ジョイントツール
+Línea de Trabajo	パイプライン
+Plugins	プラグイン
+Script	スクリプト
+Gestor de Scripts...	スクリプトマネージャ...
+Consola...	コンソール...
+Ventana	ウインドウ
+Editor de Material...	マテリアルエディタ...
+Gestor de Capas	レイヤーマネージャ
+Ayuda	ヘルプ
+Mostrar Ayuda...	ヘルプを表示...
+Animar	アニメーション
+Vista	表示
+Deshacer Vista	ビューを取消し
+Rehacer Vista	ビューを再実行
+Encuadrar Todo	全体を表示
+Encuadre por Defecto	初期の表示
+Redibujar	再描画
+Cámaras	カメラ
+Navegación	ナビゲーション
+Usar Cámara	使用カメラ
+Perspectiva	透視
+Paralela	平行
+Mostrar	表示
+Sombreado Gouraud	グーローシェーディング
+Sombreado Gouraud (Líneas)	グーローシェーディング（線）
+Sombreado Rápido	クイックシェーディング
+Sombreado Constante	コンスタントシェーディング
+Líneas Ocultas	隠線
+Líneas	線
+Alambre	ワイヤーフレーム
+Caja	ボックス
+Opciones	オプション
+Nivel de Detalle	詳細レベル
+Estereoscópico	ステレオ3D
+Sombreado de Flujo de Trabajo Lineal	リニアワークフロー シェーディング
+Post Efectos	特殊効果
+Transparencia	透過
+Reflexiones	反射
+Profundidad de Campo	被写界深度
+Usar Edición de Isolíneas	Isoline 編集
+Normales de Polígonos	ポリゴン法線
+Normales de Vértices	頂点法線
+Etiquetas	タグ
+Texturas	テクスチャ
+Rayos X	X 線効果
+Luz por Defecto...	デフォルトライト...
+Configurar...	ビュー設定...
+Filtrar	フィルタ
+Cuadrícula	グリッド
+Generador	ジェネレータ
+Subdivisión Superficie	サブディビジョンサーフェイス
+Entorno	環境
+Partícula	パーティクル
+Otro	その他
+Horizonte	水平線
+Ejes	軸
+Guías	ガイド
+Paneles	パネル
+4 Vistas	4分割
+Todas las Vistas	分割ビュー
+Fusionar Objetos...	オブジェクトをマージする...
+Guardar como Preestablecido...	プリセットを保存...
+Editar	編集
+Expandir Todo	全て展開
+Ver	表示
+Mostrar Etiquetas	タグを表示
+Objetos	オブジェクト
+Añadir	追加
+Duplicar	複製
+Favoritos	ブックマーク
+Protección	ロック
+Hair Etiquetas	ヘアタグ
+MoGraph Etiquetas	MoGraph タグ
+Motion Tracker Etiquetas	トラッカー タグ
+Scripting Etiquetas	プログラミング タグ
+Añadir a una Capa Nueva	新規レイヤーに追加
+Gestor de Capas...	レイヤーマネージャ...
+Eliminar de Todas las Tomas	すべてのオーバーライドを除去
+Gestor de Tomas...	テイクマネージャ...
+Establecer como Raíz	ルートにセット
+Contraer Todo	全てたたむ
+Estado Actual del Objeto	現在の状態をオブジェクト化
+Expandir Grupo de Objetos	オブジェクトのグループを解除
+Eliminar Sin Hijos	子階層は残して消去
+Convertir Selección de Objetos a XRef	選択オブジェクトを外部参照に変換
+Información del Objeto...	オブジェクト情報...
+Información del Proyecto	プロジェクト情報...
+Renombrar	名前を変更
+Por Defecto	デフォルト
+Activado	使う
+Editor	エディタ
+Atrás	戻る
+Subir	アップロード
+Bloquear Elemento	エレメントをロック
+Proyecto	プロジェクト
+Información	情報
+Referenciar	外部参照
+A Realizar	To Do
+Interpolación de Claves	アニメーション
+Centímetros	cm: センチメートル
+Usar Animación	アニメーションを使用
+Usar Expresiones	エクスプレッションを使用
+Usar Generadores	ジェネレータを使用
+Usar Deformadores	デフォーマを使用
+Usar Sistema de Movimiento	モーションシステムを使用
+Medio	中
+Cargar Preestablecido...	プリセットを読み込み...
+Guardar Preestablecido...	プリセットを保存...
+Básico	基本
+General	一般
+Detalles	詳細
+Visibilidad	可視性
+Sombra	影
+Cáusticas	コースティクス
+Ruido	ノイズ
+Propiedades Básicas	基本属性
+Nombre	名前
+Capa	レイヤー
+Desactivado	無効
+Coordenadas	座標
+Orden	順序
+Color	カラー
+Intensidad	強度
+Tubo	チューブ
+Tipo	タイプ
+Ninguno	なし
+Difusión	Diffusion
+Especular	スペキュラ
+Tolerancia	許容値
+Punto	ポイント
+Radio	半径
+Orientación	方向
+Vértices	頂点
+Triángulos	三角
+Segmentos	セグメント
+Estándar	標準
+Anchura	ボケの大きさ
+Lineal	線形
+Inverso	反比例
+Decaimiento	減衰
+Normal	通常
+Restar	減算
+Multiplicar	乗算
+Circular	円形
+Cuadrado	2乗
+Lambertiano (Difuso)	ランバート (拡散)
+Oren-Nayar (Difuso)	オレン・ネイヤー(拡散)
+Promedio	平均
+Mínimo	最小
+Máximo	最大
+Metal	メタル
+Dieléctrico	誘電体
+Conductor	導体
+Textura	テクスチャ
+Imágenes	画像
+Brillo	明るさ
+Muestreo	テクスチャフィルタ
+Desenfoque Desfase	ボケの量
+Desenfoque Escala	ボケの強度
+Fuerza	強度
+Delta	デルタ
+Invertir	反転
+Rugosidad	表面粗さ
+Global	ワールド
+Brillo Reflexión Global	全ての鏡面反射の明るさ
+Brillo Especular Global	全てのスペキュラの明るさ
+Pase Separado	パスを分ける
+Atenuación	減衰
+Fuerza Reflexión	鏡面反射強度
+Fuerza Especular	スペキュラ強度
+Fuerza Relieve	バンプ強度
+Color de Capa	レイヤーカラー
+Fresnel de Capa	レイヤーフレネル
+Fresnel	フレネル
+IOR	屈折率
+Reflectancia	Reflectance
+Relieve	Bump
+Fosforescencia	グロー
+Alfa	アルファ
+Iluminación	照明
+Asignar	設定
+Material	マテリアル
+Proyección	投影法
+Ambos	両方
+Sin Costuras	シームレス
+Desfase U	オフセット U
+Desfase V	オフセット V
+Modo	モード
+Datos de Usuario	ユーザーデータ
+Añadir Datos de Usuario...	ユーザーデータを追加...
+Gestionar Datos de Usuario...	ユーザーデータを管理...
+Interpolación 	補間 
+Shader	シェーダ
+Guardar Materiales como...	マテリアルを別名で保存...
+Función	ファンクション
+Editar...	編集...
+Aplicar	適用
+Posición	位置
+Tamaño	サイズ
+Rotación	角度
+Escala	スケール
+Objeto (Rel)	オブジェクト(相対)
+Objeto (Abs)	オブジェクト(絶対)
+Cancelar	キャンセル
+Personalizar	カスタム
+Colores	カラー
+Texto	テキスト
+Preferencias	一般設定
+Interfaz	インタフェース
+Visor	表示
+Archivos	ファイル
+Unidades	単位
+Memoria	メモリ
+Renderizador	レンダラー
+OpenGL	ビューポートハードウェア
+Normales	法線
+Cerrar	閉じる
+Visor de Imágenes	画像ビューアー
+Configuración...	設定...
+Configuración de Render	レンダリング設定
+Salida	出力
+Preestablecido	プリセット
+Antialiasing	アンチエイリアス
+Fondo	背景
+Arriba	上
+Abajo	下
+Puntos	ポイント
+Aristas	エッジ
+Polígonos	ポリゴン
+Invertir Selección	選択を反転
+Preestablecidos	プリセット
+Elementos Recientes	最新
+Ya existe 	既に存在します。 
+Nombre:	名前:
+Nueva Carpeta...	新規フォルダ...
+Nuevo Catálogo...	新規カタログ...
+Nueva Librería de Preestablecidos...	新規プリセットライブラリ...
+Borrar	削除
+Renombrar...	名前を変更...
+Iconos Pequeños	小アイコン
+Iconos Medianos	中アイコン
+Iconos Grandes	大アイコン
+Buscar...	検索...
+Añadir Archivos...	ファイルを追加...
+Catálogos	カタログ
+Ordenador	コンピュータ
+Red	ネットワーク
+Resultado de la Búsqueda	検索結果
+Carpeta	フォルダ
+Idioma	言語
+Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	言語を保存しました。適用するには Iron3D Studio を再起動してください。
+Se aplicará al reiniciar Iron3D Studio.	Iron3D Studio の再起動後に反映されます。
+Polígono Vacío	空のポリゴン
+Guía	ガイド
+Cono	円錐
+Cilindro	円柱
+Disco	ディスク
+Toroide	トーラス
+Cápsula	カプセル
+Pirámide	ピラミッド
+Platónico	正多面体
+Figura	フィギュア
+Lápiz	スプラインペン
+Dibujo	スケッチ
+Suavizado Spline	スプラインスムーズ
+Arco	弧
+Círculo	円形
+Hélice	らせん
+n-Lados	多角形
+Rectángulo	長
+Estrella	星形
+4-Lados	四辺形
+Cisoide	疾走線
+Rueda Dentada	歯車
+Cicloide	サイクロイド
+Fórmula	数式
+Flor	花形
+Perfil	断面形
+Sustraer Spline	スプライン型抜き
+Spline Y	スプライン交差
+Spline O	スプライン中マド
+Torno	回転
+Forro	ロフト
+Recorrido	スイープ
+Bezier	ベジェ
+Formación de Átomos	アトム
+Booleano	ブール
+Máscara de Spline	スプラインマスク
+Conector	コネクター
+Generador Python	Python ジェネレータ
+Reducción de Polígonos	ポリゴンリダクション
+Instancia	インスタンス
+Metaball	メタボール
+Fractura	破砕
+Trazador	トレーサ
+Doblar	屈曲
+Hinchar	膨張
+Sesgar	シアー
+Afilar	テーパー
+Enroscar	ツイスト
+Aplastar y Estirar	スクワッシュ＆ストレッチ
+Explosión	爆発
+FX Explosión	爆発 FX
+Romper	粉砕
+Corrección	微調整
+Jiggle	ジグル
+Morph	モーフ
+Cubrir	シュリンクラップ
+Esferizar	球状化
+Superficie	サーフェイス
+Rail de Splines	スプラインレール
+Envolver Spline	スプラインラップ
+Colisión	衝突判定
+Desplazador	変位
+Viento	風
+Suavizado	スムージング
+Suelo	床
+Cielo	空
+Primer Plano	前景
+Escenario	ステージ
+Cielo Físico	フィジカルスカイ
+Unir Nubes	雲を接続
+Césped	芝生
+Cámara Estéreo	ステレオカメラ
+Morph de Cámara	カメラモーフ
+Grúa	クレーン
+Luz Infinita	無限遠ライト
+Luz de Área	エリアライト
+Luz Solar	太陽
+Luz PBR	PBR ライト
+Activar Eje	軸を有効
+Nuevo Proyecto	新規プロジェクト
+Gestor de Objetos	オブジェクトマネージャ
+Detener	停止
+Guardar Proyecto con su Contenido...	アセットと一緒にプロジェクト保存...
+Inflar	膨張
+Pincel Pesos MoGraph	MoGraph ウェイトマップ ペイントブラシ
+Ejecutar Script...	スクリプトを起動...
+Sombreado Rápido (Líneas)	クイックシェーディング（線）
+Sombreado Constante (Líneas)	コンスタントシェーディング（線）
+Esqueleto	スケルトン
+Sombras	影
+Teselación	テッセレーション
+Ocultar Caras Posteriores	陰面消去
+Configurar Todo...	すべてのビューを一括設定...
+Objetivo	ターゲット
+Niebla	霧
+Mostrar Subcanales	サブチャンネルを表示
+Guardar Todos los Materiales como...	全マテリアルを別名で保存...
+Todos los archivos	全てのファイル,
+Nueva Librería	新規ライブラリ
+Nueva Carpeta	新規フォルダ
+Atributos	属性
+Línea de Tiempo	タイムライン
+Gestor de Materiales	マテリアルマネージャ
+Entorno:	レイアウト:
+Tomas	テイク
+Estructura	構造
+Capas	レイヤー
+Propiedades	属性
+Transformar	トランスフォーム
+Vista 3D	3D表示

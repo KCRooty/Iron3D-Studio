@@ -1,0 +1,495 @@
+# Iron3D Studio - ko (clave = texto en espanol; valor = traduccion)
+Extrusión	돌출
+Bisel	베벨
+Superior	윗면
+Derecha	오른쪽
+Frontal	정면
+Izquierda	왼쪽
+Inferior	아랫면
+Cubo	큐브
+Esfera	구
+Plano	평면
+Luz	라이트
+Cámara	카메라
+Polígono	폴리곤
+Nulo	널
+Abrir	열기
+Fusionar	병합
+Exportar	내보내기
+Mat	재질
+Simetría	대칭
+Supr	Del
+Deshacer	취소
+Encuadrar Seleccionados	선택된 프레임
+Encuadrar Geometría	카메라와 라이트 제외한 씬 줌
+Hacer Editable	편집가능하게 하기
+Conectar Objetos	오브젝트들 합치기
+Agrupar Objetos	오브젝트 그룹하기
+Nueva Etiqueta	새 태그
+Restaurar Selección	선택 복원
+Seleccionar Hijos	자식 오브젝트 선택
+Mostrar Pistas...	트랙 표시...
+Mostrar F-Curves...	F 커브 표시...
+Mostrar Movimientos...	모션 표시...
+Mover	이동
+Escalar	크기
+Rotar	회전
+Selección Rectangular	사각형 선택
+Archivo	파일
+Nuevo	새 프로젝트
+Abrir...	레이어 프리셋 합치기...
+Fusionar...	프로젝트에 병합...
+Volver a Archivo Guardado...	저장된 프로젝트로 복귀...
+Cerrar Todos	전체 프로젝트 닫기
+Guardar	저장
+Guardar como...	다른 프로젝트 이름으로 저장...
+Guardar Todo	전체 프로젝트 저장
+Guardar Objetos Seleccionados como...	선택된 오브젝트 다른 이름으로 저장...
+Salir	종료하기
+Edición	편집
+Rehacer	재실행
+Cortar	잘라내기
+Copiar	복사
+Pegar	붙여넣기
+Eliminar	삭제
+Seleccionar Todo	모두 선택
+Deseleccionar Todo	선택 해제
+Configuración del Proyecto...	프로젝트 설정...
+Escalar Proyecto...	프로젝트 스케일...
+Preferencias...	설정...
+Crear	생성하기
+Objeto	오브젝트
+Spline	스플라인
+Generadores	제네레이터
+Modelado	모델링
+MoGraph	모그라프
+Deformador	디포머
+Escena	씬
+Materiales	재질
+Nuevo Material	새 기본 재질
+Nuevo Material PBR	새 PBR 재질
+Cargar Materiales...	재질 읽기...
+Etiqueta	태그
+Sonido	사운드
+Selección	선택
+Filtro de Selección	선택 필터
+Rellenar Selección	선택 채움
+Herramientas	툴
+Desplazamiento	디스플레이스먼트
+Centrar	중앙
+Malla	메쉬
+Conectar Objetos + Eliminar	오브젝트들 합치기+삭제
+Soldar	합치기
+Puente	브릿지
+Pincel	브러쉬
+Planchar	다리미
+Triangular	삼각 폴리곤화
+Fijación	스냅
+Activar Fijación	스냅 사용
+Fijación 2D	2D 스냅
+Fijación 3D	3D 스냅
+Plano de Trabajo	작업평면
+Animación	애니메이션
+Grabar Objetos Activos	선택 오브젝트 레코딩
+Fotogramas Clave Automáticos	자동 레코딩
+Reproducir Hacia Delante	앞으로 재생하기
+Reproducir Hacia Atrás	역재생
+Parar	중지
+Ir al Inicio	시작으로 이동
+Ir al Final	종료로 이동
+Personaje	캐릭터
+Piel	스키닝
+Restricción	제한
+Simulación	시뮬레이트
+Partículas	파티클
+Thinking Particles	씽킹 파티클
+Dinámicas	다이나믹
+Cloth	클로스
+Render	렌더
+Renderizar Región	부분 렌더링
+Región de Render Interactivo	실시간 구역 렌더링
+Cola de Render...	렌더 큐...
+Visor de Imágenes...	픽쳐 뷰어...
+Esculpir	조소
+Reducir	감소
+Suavizar	부드러움
+Aplanar	평탄화
+Pellizcar	집기
+Motion Tracker	모션 트래커
+Ocultar Seleccionado	선택된 것 숨김
+Selección MoGraph	모그라프 선택
+Clonador	클로너
+Matriz	매트릭스
+Fractura Voronoi	보로노이 분쇄
+PolyFX	폴리FX
+Character	캐릭터
+Junta	조인트
+Herramienta de Junta	조인트 툴
+Línea de Trabajo	파이프라인
+Sketch and Toon	스케치 앤 툰
+Plugins	플러그인
+Script	스크립트
+Gestor de Scripts...	스크립트 매니저...
+Consola...	콘솔...
+Ventana	윈도우
+Editor de Material...	재질 에디터...
+Gestor de Capas	레이어 매니저
+Ayuda	도움말
+Mostrar Ayuda...	도움말 표시...
+Animar	애니메이션
+Vista	뷰
+Deshacer Vista	뷰 Undo
+Rehacer Vista	뷰 Redo
+Encuadrar Todo	전체 프레임
+Encuadre por Defecto	디폴트 줌
+Redibujar	화면 고침
+Cámaras	카메라
+Navegación	네비게이션
+Usar Cámara	씬 카메라
+Perspectiva	3D 뷰
+Paralela	평행
+Mostrar	디스플레이
+Sombreado Gouraud	고로우 쉐이딩
+Sombreado Gouraud (Líneas)	고로우 쉐이딩 (선)
+Sombreado Rápido	퀵 쉐이딩
+Sombreado Constante	간략 쉐이딩
+Líneas Ocultas	은선
+Líneas	라인
+Alambre	와이어
+Caja	박스
+Opciones	옵션
+Nivel de Detalle	디테일 레벨
+Estereoscópico	스테레오스코픽
+Sombreado de Flujo de Trabajo Lineal	리니어 워크플로어 쉐이딩
+Post Efectos	포스트 이펙트
+Transparencia	투과
+Reflexiones	반사
+Profundidad de Campo	피사계 심도
+Usar Edición de Isolíneas	아이소라인 편집
+Normales de Polígonos	폴리곤 노말
+Normales de Vértices	버텍스 노말
+Etiquetas	태그
+Texturas	텍스쳐
+Rayos X	X-레이
+Luz por Defecto...	디폴트 라이트...
+Configurar...	설정...
+Filtrar	필터
+Cuadrícula	그리드
+Generador	제네레이터
+Subdivisión Superficie	서페이스 분할
+Entorno	환경
+Partícula	파티클
+Otro	그 외
+Horizonte	수평
+Ejes	축
+Guías	가이드
+Paneles	패널
+4 Vistas	4 분할
+Todas las Vistas	모든 뷰
+Fusionar Objetos...	오브젝트 병합...
+Guardar como Preestablecido...	프리셋 저장...
+Editar	편집
+Expandir Todo	모두 전개
+Ver	표시
+Mostrar Etiquetas	태그 표시하기
+Objetos	오브젝트
+Añadir	추가하기
+Duplicar	복제하기
+Favoritos	북마크
+Protección	잠금
+Hair Etiquetas	헤어 태그
+MoGraph Etiquetas	모그라프 태그
+Motion Tracker Etiquetas	트래커 태그
+Scripting Etiquetas	프로그래밍 태그
+Añadir a una Capa Nueva	새 레이어에 추가
+Gestor de Capas...	레이어 매니저...
+Eliminar de Todas las Tomas	전체 Take에서 제거하기
+Gestor de Tomas...	Take 매니저...
+Establecer como Raíz	루트로 설정
+Contraer Todo	모두 닫기
+Estado Actual del Objeto	현 상태로 오브젝트화
+Expandir Grupo de Objetos	오브젝트 그룹 전개
+Eliminar Sin Hijos	자식을 제외한 삭제
+Convertir Selección de Objetos a XRef	선택된 오브젝트를 XRef로 변환하기
+Información del Objeto...	오브젝트 정보...
+Información del Proyecto	프로젝트 정보...
+Renombrar	이름 변경
+Por Defecto	기본값
+Activado	사용
+Editor	에디터
+Atrás	뒤로
+Subir	업로드
+Bloquear Elemento	요소 잠그기
+Proyecto	프로젝트
+Información	정보
+Referenciar	레퍼런스로 사용중
+A Realizar	To Do
+Interpolación de Claves	키 보간
+Centímetros	센티미터
+Usar Animación	애니메이션 사용
+Usar Expresiones	익스프레션 사용
+Usar Generadores	제네레이터 사용
+Usar Deformadores	디포머 사용
+Usar Sistema de Movimiento	모션 시스템 사용
+Medio	중
+Cargar Preestablecido...	프리셋 불러오기...
+Guardar Preestablecido...	프리셋 저장하기...
+Básico	기본
+Phong	퐁 쉐이딩
+General	일반
+Detalles	디테일
+Visibilidad	가시성
+Sombra	그림자
+Cáusticas	커스틱스
+Ruido	노이즈
+Propiedades Básicas	기본 속성
+Nombre	이름
+Capa	레이어
+Desactivado	사용 해제
+Coordenadas	좌표
+Orden	순서
+Color	컬러
+Intensidad	강도
+Tubo	튜브
+Tipo	타입
+Ninguno	없음
+Difusión	확산
+Especular	스펙큘러
+Tolerancia	허용범위
+Punto	포인트
+Radio	반경
+Orientación	방향
+Vértices	정점
+Triángulos	삼각형
+Segmentos	세그먼트
+Estándar	표준
+Anchura	폭
+Lineal	리니어
+Inverso	반비례
+Decaimiento	감쇠
+Normal	노말
+Restar	빼기
+Multiplicar	Multiply
+Circular	원형
+Cuadrado	2승
+Beckmann	베크만
+Ward	구역
+Lambertiano (Difuso)	램버시안 (디퓨즈)
+Oren-Nayar (Difuso)	오렌 네이어 (디퓨즈)
+Promedio	평균
+Mínimo	최소
+Máximo	최대
+Metal	금속
+Dieléctrico	유도체
+Conductor	도체
+Textura	텍스쳐
+Imágenes	이미지
+Brillo	밝기
+Muestreo	샘플링
+Desenfoque Desfase	블러 옵셋
+Desenfoque Escala	블러 강도
+Fuerza	강도
+Delta	델타
+Invertir	반전
+Rugosidad	거친 정도
+Global	월드
+Brillo Reflexión Global	글로벌 반사 밝기
+Brillo Especular Global	글로벌 스펙큘러 밝기
+Pase Separado	패스 분리
+Atenuación	감쇠
+Fuerza Reflexión	반사 강도
+Fuerza Especular	스펙큘러 강도
+Fuerza Relieve	범프 강도
+Color de Capa	레이어 컬러
+Fresnel de Capa	레이어 프레넬
+Fresnel	프레넬
+Reflectancia	반사율
+Relieve	범프
+Fosforescencia	글로우
+Alfa	알파
+Iluminación	조명
+Asignar	지정
+Material	재질
+Proyección	프로젝션
+Ambos	모두
+Sin Costuras	반전 연결
+Desfase U	U 옵셋
+Desfase V	V 옵셋
+Modo	모드
+Datos de Usuario	유저 데이터
+Añadir Datos de Usuario...	유저 데이터 추가...
+Gestionar Datos de Usuario...	사용자 데이타 관리하기...
+Interpolación 	보간 
+Shader	쉐이더
+Guardar Materiales como...	재질 다른 이름으로 저장...
+Función	기능
+Editar...	편집...
+Aplicar	적용
+Posición	위치
+Tamaño	사이즈
+Rotación	회전
+Escala	크기
+Objeto (Rel)	오브젝트 (상대)
+Objeto (Abs)	오브젝트 (절대)
+Cancelar	취소
+Personalizar	사용자
+Colores	컬러
+Texto	텍스트
+Preferencias	설정
+Interfaz	인터페이스
+Visor	뷰
+Archivos	파일
+Unidades	단위
+Memoria	메모리
+Renderizador	렌더러
+OpenGL	뷰포트 하드웨어
+Normales	노말
+Cerrar	닫기
+Visor de Imágenes	픽쳐 뷰어
+Configuración...	설정...
+Configuración de Render	렌더 설정
+Salida	출력
+Preestablecido	프리셋
+Antialiasing	안티-알리아싱
+Fondo	배경
+Arriba	위
+Abajo	아래
+Puntos	포인트
+Aristas	엣지
+Polígonos	폴리곤
+Invertir Selección	선택 반전
+Preestablecidos	프리셋
+Elementos Recientes	최근 아이템
+Ya existe 	이미 존재합니다. 
+Nombre:	이름:
+Nueva Carpeta...	새 폴더...
+Nuevo Catálogo...	새 카탈로그...
+Nueva Librería de Preestablecidos...	새 프리셋 라이브러리...
+Borrar	삭제하기
+Renombrar...	이름 변경...
+Iconos Pequeños	소 아이콘
+Iconos Medianos	중 아이콘
+Iconos Grandes	대 아이콘
+Buscar...	검색...
+Añadir Archivos...	파일 추가하기...
+Catálogos	카탈로그
+Ordenador	컴퓨터
+Red	네트워크
+Resultado de la Búsqueda	검색 결과
+Carpeta	폴더
+Idioma	언어
+Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	언어가 저장되었습니다. 적용하려면 Iron3D Studio를 다시 시작하세요.
+Se aplicará al reiniciar Iron3D Studio.	Iron3D Studio를 다시 시작하면 적용됩니다.
+Polígono Vacío	빈 폴리곤
+Guía	가이드
+Cono	원뿔
+Cilindro	원기둥
+Disco	디스크
+Toroide	도넛
+Cápsula	캡슐
+Pirámide	피라미드
+Platónico	정다면체
+Figura	피규어
+Lápiz	스플라인 펜
+Dibujo	스케치
+Suavizado Spline	스플라인 다듬기
+Arco	호
+Círculo	원
+Hélice	스프링
+n-Lados	n-면
+Rectángulo	사각형
+Estrella	별
+4-Lados	마름모
+Cisoide	시소이드
+Rueda Dentada	기어
+Cicloide	싸이클로이드
+Fórmula	수식
+Flor	꽃모양
+Perfil	형상
+Sustraer Spline	스플라인 차집합
+Spline Y	스플라인 And
+Spline O	스플라인  Or
+Torno	회전
+Forro	로프트
+Recorrido	스윕
+Bezier	베지어
+Formación de Átomos	원자 배열
+Booleano	부울
+Máscara de Spline	스플라인 마스크
+Conector	커넥터
+Generador Python	Python 제네레이터
+Reducción de Polígonos	폴리곤 감소
+Instancia	인스턴스
+Metaball	메타볼
+Fractura	분쇄
+MoInstance	모인스턴스
+Trazador	트레이서 오브젝트
+MoSpline	모스플라인
+MoExtrude	돌출
+Doblar	구부리기
+Hinchar	팽창
+Sesgar	기울기
+Afilar	테이퍼
+Enroscar	트위스트
+Aplastar y Estirar	스쿼시＆스트래치
+Explosión	폭발
+FX Explosión	폭발 FX
+Romper	분쇄
+Corrección	보정
+Jiggle	지글 디포머
+Morph	몰프
+Cubrir	수축 디포머
+Esferizar	구
+Superficie	서페이스
+Rail de Splines	스플라인 레일
+Envolver Spline	스플라인 랩
+Colisión	충돌
+Desplazador	디스플레이서
+Viento	바람
+Suavizado	스무싱
+Suelo	바닥
+Cielo	스카이
+Primer Plano	전경
+Escenario	스테이지
+Cielo Físico	피지컬 스카이
+Unir Nubes	구름 연결
+Césped	잔디
+Cámara Estéreo	스테레오 카메라
+Morph de Cámara	카메라 몰프
+Grúa	크레인
+Luz Infinita	무한 라이트
+Luz de Área	에어리어 라이트
+Luz Solar	태양
+Luz PBR	PBR 라이트
+Activar Eje	오브젝트 축
+Nuevo Proyecto	새 프로젝트
+Gestor de Objetos	오브젝트 매니저
+Detener	정지
+Guardar Proyecto con su Contenido...	프로젝트 저장...
+Inflar	부풀리기
+Pincel Pesos MoGraph	모그라프 웨이트 페인트브러쉬
+Ejecutar Script...	스크립트 실행...
+Sombreado Rápido (Líneas)	퀵 쉐이딩 (선)
+Sombreado Constante (Líneas)	간략 쉐이딩 (선)
+Esqueleto	스켈레톤
+Sombras	그림자
+Teselación	테셀레이션
+Ocultar Caras Posteriores	뒷면 생략
+Configurar Todo...	모든창 설정...
+Objetivo	타겟
+Niebla	안개
+Mostrar Subcanales	서브-채널 표시
+Guardar Todos los Materiales como...	모든 재질을 다른 이름으로 저장...
+Todos los archivos	모든 파일
+Nueva Librería	새 라이브러리
+Nueva Carpeta	새 폴더
+Atributos	속성
+Línea de Tiempo	타임라인
+Gestor de Materiales	재질 매니저
+Entorno:	레이아웃:
+Tomas	Take
+Estructura	구조
+Capas	레이어
+Propiedades	속성
+Transformar	트랜스폼
+Vista 3D	3D 뷰

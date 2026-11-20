@@ -129,6 +129,7 @@ add_executable(Iron3DStudio
     src/core/GizmoMesh.cpp
     src/core/Paths.cpp
     src/core/Preferences.cpp
+    src/core/I18n.cpp
     src/core/Material.cpp
     src/core/ShaderTree.cpp
     src/core/ChannelBake.cpp
@@ -310,6 +311,11 @@ set(SHADER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/gbuffer.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/ssao.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/blur.frag)
+
+# Idiomas de la interfaz: resources/lang/<codigo>.txt -> <exe>/lang/ (ver core/I18n.h).
+add_custom_command(TARGET Iron3DStudio POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/resources/lang" "$<TARGET_FILE_DIR:Iron3DStudio>/lang"
+    COMMENT "Copiando los idiomas de la interfaz")
 
 add_custom_command(TARGET Iron3DStudio POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:Iron3DStudio>/shaders"

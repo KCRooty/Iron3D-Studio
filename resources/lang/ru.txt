@@ -1,0 +1,492 @@
+# Iron3D Studio - ru (clave = texto en espanol; valor = traduccion)
+Extrusión	Выдавливание
+Bisel	Фаска
+Superior	Сверху
+Derecha	Справа
+Frontal	Спереди
+Izquierda	Слева
+Inferior	Снизу
+Cubo	Куб
+Esfera	Сфера
+Plano	Плоскость
+Luz	Свет
+Cámara	Камера
+Polígono	Полигон
+Nulo	Ноль
+Abrir	Открыть
+Fusionar	Добавить
+Exportar	Экспорт
+Mat	Материал
+Simetría	Симметрия
+Supr	Del
+Deshacer	Отменить
+Encuadrar Seleccionados	Показать выделенное
+Encuadrar Geometría	Показать геометрию
+Hacer Editable	Конвертировать примитив
+Conectar Objetos	Объединить объекты
+Agrupar Objetos	Гуппировать объекты
+Nueva Etiqueta	Новый тег
+Restaurar Selección	Восстановить выделение
+Seleccionar Hijos	Выделить подобъекты
+Mostrar Pistas...	Показать треки...
+Mostrar F-Curves...	Показать f-кривые...
+Mostrar Movimientos...	Показать движения...
+Mover	Переместить
+Escalar	Масштабировать
+Rotar	Повернуть
+Selección Rectangular	Прямоугольное выделение
+Archivo	Файл
+Nuevo	Создать сцену
+Abrir...	Открыть...
+Fusionar...	Добавить сцену...
+Volver a Archivo Guardado...	Старая редакция сцены...
+Cerrar Todos	Закрыть все сцены
+Guardar	Сохранить
+Guardar como...	Сохранить сцену как...
+Guardar Todo	Сохранить все сцены
+Guardar Objetos Seleccionados como...	Сохранить выделенные объекты как...
+Salir	Выход
+Edición	Правка
+Rehacer	Вернуть
+Cortar	Вырезать
+Copiar	Копировать
+Pegar	Вставить
+Eliminar	Удалить
+Seleccionar Todo	Выделить все
+Deseleccionar Todo	Отменить все выделения
+Configuración del Proyecto...	Настройки сцены...
+Escalar Proyecto...	Масштаб сцены...
+Preferencias...	Ссылки...
+Crear	Создать
+Objeto	Объект
+Spline	Сплайн
+Generadores	Генераторы
+Modelado	Моделирование
+Deformador	Объект деформации
+Escena	Сцена
+Materiales	Материалы
+Nuevo Material	Новый стандартный материал
+Nuevo Material PBR	Новый материал PBR
+Cargar Materiales...	Импортировать...
+Etiqueta	Тег
+Sonido	Звук
+Selección	Выделение
+Filtro de Selección	Фильтр выбора
+Rellenar Selección	Заполнить выделение
+Herramientas	Инструменты
+Desplazamiento	Смещение
+Centrar	Центрировать
+Malla	Каркас
+Conectar Objetos + Eliminar	Объединить объекты и удалить
+Soldar	Сплавить
+Puente	Соединение
+Pincel	Кисть
+Planchar	Сгладить
+Triangular	Триангулировать
+Fijación	Привязка
+Activar Fijación	Использовать привязку
+Fijación 2D	2D привязка
+Fijación 3D	3D привязка
+Plano de Trabajo	Рабочая поверхность
+Animación	Анимация
+Grabar Objetos Activos	Запись активных объектов
+Fotogramas Clave Automáticos	Автозапись
+Reproducir Hacia Delante	Воспроизвести вперёд
+Reproducir Hacia Atrás	Воспроизвести назад
+Parar	Отмена
+Ir al Inicio	В начало
+Ir al Final	Перейти в конец
+Personaje	Персонаж
+Piel	Скиннинг
+Restricción	Ограничение
+Simulación	Симуляция
+Partículas	Частицы
+Dinámicas	Динамика
+Cloth	Одежда
+Render	Рендер
+Renderizar Región	Рендер фрагмента
+Región de Render Interactivo	Интерактивный рендер участка
+Cola de Render...	Менеджер рендеринга...
+Visor de Imágenes...	Менеджер изображений...
+Esculpir	Скульпт
+Reducir	Понизить
+Suavizar	Сглаживание
+Aplanar	Выравнять
+Pellizcar	Сжатие
+Motion Tracker	Трекер движения
+Ocultar Seleccionado	Скрыть выделенное
+Selección MoGraph	Выделение MoGraph
+Clonador	Клон
+Matriz	Матрица
+Fractura Voronoi	Разрушение по Вороному
+PolyFX	PolyFx
+Character	Персонаж
+Junta	Сустав
+Herramienta de Junta	Инструмент Сустав
+Línea de Trabajo	Рабочий процесс
+Plugins	Плагины
+Script	Скрипт
+Gestor de Scripts...	Менеджер скриптов...
+Consola...	Консоль...
+Ventana	Окно
+Editor de Material...	Редактор материалов...
+Gestor de Capas	Менеджер слоёв
+Ayuda	Справка
+Mostrar Ayuda...	Показать справку...
+Animar	Анимировать
+Vista	Вид
+Deshacer Vista	Отменить вид
+Rehacer Vista	Вернуть вид
+Encuadrar Todo	Показать всё
+Encuadre por Defecto	Стандартный вид
+Redibujar	Перечертить
+Cámaras	Камеры
+Navegación	Навигация
+Usar Cámara	Камера сцены
+Perspectiva	Перспектива
+Paralela	Параллельная проекция
+Mostrar	Показать
+Sombreado Gouraud	Затенение Гуро
+Sombreado Gouraud (Líneas)	Затенение Гуро (линии)
+Sombreado Rápido	Быстрое затенение
+Sombreado Constante	Неизменное затенение
+Líneas Ocultas	Невидимые линии
+Líneas	Линии
+Alambre	Линии
+Caja	Бокс
+Opciones	Настройки
+Nivel de Detalle	Степень детализации
+Estereoscópico	Стерео
+Sombreado de Flujo de Trabajo Lineal	Затенение линейного процесса
+Post Efectos	Пост-эффекты
+Transparencia	Прозрачность
+Reflexiones	Отражения
+Profundidad de Campo	Глубина резкости
+Usar Edición de Isolíneas	Изолинии
+Normales de Polígonos	Нормали полигонов
+Normales de Vértices	Нормали вершин
+Etiquetas	Теги
+Texturas	Текстура
+Rayos X	Рентген
+Luz por Defecto...	Стандартное освещение...
+Configurar...	Настройки вида...
+Filtrar	Фильтр
+Cuadrícula	Сетка
+Generador	Генератор
+Subdivisión Superficie	Subdivision Surface
+Entorno	Окружение
+Partícula	Система частиц
+Otro	Другие
+Horizonte	Горизонт
+Ejes	Ось
+Guías	Направляющие
+Paneles	Панели
+4 Vistas	4 вида
+Todas las Vistas	Все виды
+Fusionar Objetos...	Импортировать объект...
+Guardar como Preestablecido...	Сохранить предустановку...
+Editar	Правка
+Expandir Todo	Раскрыть все
+Ver	Вид
+Mostrar Etiquetas	Показать теги
+Objetos	Объекты
+Añadir	Добавить
+Duplicar	Дублировать
+Favoritos	Закладка
+Protección	Защита
+Hair Etiquetas	Теги Hair
+MoGraph Etiquetas	Теги MoGraph
+Motion Tracker Etiquetas	Теги Трекер
+Scripting Etiquetas	Теги Программирование
+Añadir a una Capa Nueva	Добавить к новому слою
+Gestor de Capas...	Менеджер слоёв...
+Eliminar de Todas las Tomas	Удалить из всех дублей
+Gestor de Tomas...	Менеджер дублей...
+Establecer como Raíz	Установить как корень
+Contraer Todo	Закрыть все
+Estado Actual del Objeto	Текущее состояние в объект
+Expandir Grupo de Objetos	Разгруппировать объекты
+Eliminar Sin Hijos	Удалить без подобъектов
+Convertir Selección de Objetos a XRef	Преобразовать выделение объекта в XRef
+Información del Objeto...	Информация об объекте...
+Información del Proyecto	Информация о сцене...
+Renombrar	Переименовать
+Por Defecto	По умолчанию
+Activado	Активный
+Editor	Редактор
+Atrás	Назад
+Subir	Импорт
+Bloquear Elemento	Блокировать элемент
+Proyecto	Сцена
+Información	Информация
+Referenciar	Ссылки
+A Realizar	Выполнить
+Interpolación de Claves	Анимация
+Centímetros	Сантиметр
+Usar Animación	Использовать анимацию
+Usar Expresiones	Использовать выражения
+Usar Generadores	Использовать генераторы
+Usar Deformadores	Использовать объекты деформации
+Usar Sistema de Movimiento	Использовать систему движения
+Medio	Средний
+Cargar Preestablecido...	Загрузить предустановку...
+Guardar Preestablecido...	Сохранить предустановку...
+Básico	Общие
+Phong	Фонг
+General	Общие
+Detalles	Детали
+Visibilidad	Видимость
+Sombra	Тень
+Cáusticas	Каустики
+Ruido	Шум
+Propiedades Básicas	Основные свойства
+Nombre	Название
+Capa	Слой
+Desactivado	Слой отключен
+Coordenadas	Координаты
+Orden	Порядок
+Color	Цвет
+Intensidad	Интенсивность
+Tubo	Труба
+Tipo	Тип
+Ninguno	Нет
+Difusión	Диффузия
+Especular	Глянец
+Tolerancia	Толерантность
+Punto	Точка
+Radio	Радиус
+Orientación	Направление
+Vértices	Вершины
+Triángulos	Треугольники
+Segmentos	Сегменты
+Estándar	Стандарт
+Anchura	Ширина
+Lineal	Линейная
+Inverso	Обратное
+Decaimiento	Ослабление
+Normal	Нормаль
+Restar	Вычесть
+Multiplicar	Умножить
+Circular	Окружность
+Cuadrado	Квадратичный
+Lambertiano (Difuso)	Ламберт (диффузия)
+Oren-Nayar (Difuso)	Орен Найяр (диффузия)
+Promedio	Усреднённое
+Mínimo	Минимальное
+Máximo	Максимальное
+Metal	Металл
+Dieléctrico	Диэлектрик
+Conductor	Проводник
+Textura	Текстура
+Imágenes	Изображения
+Brillo	Яркость
+Muestreo	Интерполяция
+Desenfoque Desfase	Сдвиг смаза
+Desenfoque Escala	Масштаб смаза
+Fuerza	Интенсивность
+Delta	Дельта
+Invertir	Инвертировать
+Rugosidad	Шероховатость
+Global	Мир
+Brillo Reflexión Global	Глобальная интенсивность отражения
+Brillo Especular Global	Глобальная интенсивность глянца
+Pase Separado	Отдельный проход
+Atenuación	Ослабление
+Fuerza Reflexión	Интенсивность отражения
+Fuerza Especular	Интенсивность глянца
+Fuerza Relieve	Интенсивность рельефа
+Color de Capa	Цвет слоя
+Fresnel de Capa	Френель слоя
+Fresnel	Френель
+IOR	Коэффициент преломления
+Reflectancia	Отражение
+Relieve	Рельеф
+Fosforescencia	Накал
+Alfa	Альфа
+Iluminación	Подсветка
+Asignar	Назначить
+Material	Материал
+Proyección	Проекция
+Ambos	Оба
+Sin Costuras	Бесшовный
+Desfase U	Сдвиг U
+Desfase V	Сдвиг V
+Modo	Режим
+Datos de Usuario	Данные пользователя
+Añadir Datos de Usuario...	Добавить данные пользователя...
+Gestionar Datos de Usuario...	Обработка данных пользователя...
+Interpolación 	Интерполяция 
+Shader	Шейдер
+Guardar Materiales como...	Сохранить материалы как...
+Función	Функция
+Editar...	Правка...
+Aplicar	Применить
+Posición	Позиция
+Tamaño	Размер
+Rotación	Вращение
+Escala	Масштаб
+Objeto (Rel)	Объект (Рел)
+Objeto (Abs)	Объект (Абс)
+Cancelar	Отменить
+Personalizar	Пользовательская
+Colores	Цвета
+Texto	Текст
+Preferencias	Установки
+Interfaz	Интерфейс
+Visor	Вид
+Archivos	Файлы
+Unidades	Единицы измерения
+Memoria	Память
+Renderizador	Рендер
+OpenGL	Комплектующие вьюпорта
+Normales	Нормали
+Cerrar	Закрыть
+Visor de Imágenes	Менеджер изображений
+Configuración...	Настройки...
+Configuración de Render	Настройки рендера
+Salida	Выход
+Preestablecido	Предустановки
+Antialiasing	Сглаживание
+Fondo	Фон
+Arriba	Вверх
+Abajo	Вниз
+Puntos	Точки
+Aristas	Грани
+Polígonos	Полигоны
+Invertir Selección	Инвертировать выделение
+Preestablecidos	Предустановки
+Elementos Recientes	Последние элементы
+Ya existe 	уже имеется 
+Nombre:	Название:
+Nueva Carpeta...	Новая папка...
+Nuevo Catálogo...	Новый каталог...
+Nueva Librería de Preestablecidos...	Новая библиотека...
+Borrar	Удалить
+Renombrar...	Переименовать...
+Iconos Pequeños	Мелкие значки
+Iconos Medianos	Средние значки
+Iconos Grandes	Крупные значки
+Buscar...	Поиск...
+Añadir Archivos...	Добавить файл(ы)...
+Catálogos	Каталоги
+Ordenador	ПК
+Red	Сеть
+Resultado de la Búsqueda	Результы поиска
+Carpeta	Папка
+Idioma	Язык
+Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	Язык сохранён. Перезапустите Iron3D Studio, чтобы применить его.
+Se aplicará al reiniciar Iron3D Studio.	Вступит в силу после перезапуска Iron3D Studio.
+Polígono Vacío	Пустой полигон
+Guía	Направляющая
+Cono	Конус
+Cilindro	Цилиндр
+Disco	Диск
+Toroide	Тор
+Cápsula	Капсула
+Pirámide	Пирамида
+Platónico	Платоново тело
+Figura	Фигура
+Lápiz	Сплайн-ручка
+Dibujo	Скетч
+Suavizado Spline	Сгладить сплайн
+Arco	Дуга
+Círculo	Окружность
+Hélice	Спираль
+n-Lados	N-гон
+Rectángulo	Прямоугольник
+Estrella	Звезда
+4-Lados	Четырёхугольник
+Cisoide	Циссоида
+Rueda Dentada	Шестерня
+Cicloide	Циклоида
+Fórmula	Формула
+Flor	Цветок
+Perfil	Профиль
+Sustraer Spline	Сплайн - Вычитание
+Spline Y	Сплайн - И
+Spline O	Сплайн - Или
+Torno	Вращение
+Forro	Лофт
+Recorrido	Sweep
+Bezier	Безье
+Formación de Átomos	Атомная решетка
+Booleano	Булев
+Máscara de Spline	Маска по сплайну
+Conector	Коннектор
+Generador Python	Генератор Python
+LOD	Уровень детализации
+Reducción de Polígonos	Редукция полигонов
+Instancia	Инстанция
+Metaball	Метабол
+Fractura	Разрушение
+MoInstance	МоИнстанция
+Trazador	Трейсер
+MoSpline	МоСплайн
+MoExtrude	МоВыдавливание
+Doblar	Изогнуть
+Hinchar	Вздуть
+Sesgar	Сдвинуть
+Afilar	Сжать
+Enroscar	Закрутить
+Aplastar y Estirar	Сжатие и растяжение
+Explosión	Взрыв
+FX Explosión	Взрыв FX
+Romper	Расщепить
+Corrección	Коррекция
+Jiggle	Тряска
+Morph	Морф
+Cubrir	Обёртка
+Esferizar	Сфера
+Superficie	Поверхность
+Rail de Splines	Направляющий сплайн
+Envolver Spline	Обернуть сплайн
+Colisión	Пересечение
+Desplazador	Смещение
+Viento	Ветер
+Suavizado	Сглаживание
+Suelo	Земля
+Cielo	Небо
+Primer Plano	Передний план
+Escenario	Режиссёр
+Cielo Físico	Физическое небо
+Unir Nubes	Соединить облака
+Césped	Трава
+Cámara Estéreo	Стерео-камера
+Morph de Cámara	Морф камер
+Grúa	Кран
+Luz Infinita	Удалённый
+Luz de Área	Поверхностный
+Luz Solar	Солнце
+Luz PBR	Свет PBR
+Activar Eje	Ось объекта
+Nuevo Proyecto	Новый проект
+Gestor de Objetos	Менеджер объектов
+Detener	Стоп
+Guardar Proyecto con su Contenido...	Сохранить сцену с учётом составляющих…...
+Inflar	Вздутие
+Pincel Pesos MoGraph	Кисть рисования веса MoGraph
+Ejecutar Script...	Вызвать скрипт...
+Sombreado Rápido (Líneas)	Быстрое затенение (линии)
+Sombreado Constante (Líneas)	Неизменное затенение (линии)
+Esqueleto	Скелет
+Sombras	Тень
+Teselación	Tесселяция
+Ocultar Caras Posteriores	Игнор. тыл поверхности
+Configurar Todo...	Настройки всех видов...
+Objetivo	Цель
+Niebla	Туман
+Mostrar Subcanales	Показать подканалы
+Guardar Todos los Materiales como...	Сохранить все материалы как...
+Todos los archivos	Все файлы
+Nueva Librería	Новая библиотека
+Nueva Carpeta	Новая папка
+Atributos	Атрибуты
+Línea de Tiempo	Таймлайн
+Gestor de Materiales	Менеджер материалов
+Entorno:	Компоновка
+Tomas	Дубли
+Estructura	Структура
+Capas	Слои
+Propiedades	Свойства
+Transformar	Трансформация
+Vista 3D	3D вид

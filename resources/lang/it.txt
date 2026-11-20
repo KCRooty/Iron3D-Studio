@@ -1,0 +1,457 @@
+# Iron3D Studio - it (clave = texto en espanol; valor = traduccion)
+Extrusión	Estrusione
+Bisel	Smussa
+Superior	Sopra
+Derecha	Destra
+Frontal	Frontale
+Izquierda	Sinistra
+Inferior	Sotto
+Esfera	Sfera
+Plano	Piano
+Luz	Luce
+Cámara	Camera
+Polígono	Poligono
+Nulo	Nullo
+Abrir	Apri
+Fusionar	Unisci
+Exportar	Esporta
+Mat	Nuovo
+Simetría	Simmetria
+Supr	Canc
+Deshacer	Annulla
+Encuadrar Seleccionados	Mostra Selezionati
+Encuadrar Geometría	Mostra Geometria
+Hacer Editable	Rendi Modificabile
+Conectar Objetos	Connetti Oggetti
+Agrupar Objetos	Raggruppa Oggetti
+Nueva Etiqueta	Nuovo Tag
+Restaurar Selección	Ripristina Selezione
+Seleccionar Hijos	Seleziona Figli
+Mostrar Pistas...	Mostra Tracce...
+Mostrar F-Curves...	Mostra F-Curve...
+Mostrar Movimientos...	Mostra Movimento...
+Mover	Muovi
+Escalar	Scala
+Rotar	Ruota
+Selección Rectangular	Selezione a Rettangolo
+Archivo	File
+Nuevo	Nuovo Progetto
+Abrir...	Apri...
+Fusionar...	Inserisci Progetto...
+Volver a Archivo Guardado...	Versione Precedente...
+Cerrar Todos	Chiudi Tutti i Progetti
+Guardar	Salva
+Guardar como...	Salva Progetto come...
+Guardar Todo	Salva Tutti i Progetti
+Guardar Objetos Seleccionados como...	Salva Oggetti Selezionati come...
+Salir	Esci
+Edición	Modifica
+Rehacer	Ripeti
+Cortar	Taglia
+Copiar	Copia
+Pegar	Incolla
+Eliminar	Rimuovi
+Seleccionar Todo	Seleziona Tutto
+Deseleccionar Todo	Deseleziona Tutto
+Configuración del Proyecto...	Parametri Progetto...
+Escalar Proyecto...	Scala Progetto...
+Preferencias...	Preferenze...
+Crear	Crea
+Objeto	Oggetto
+Generadores	Generatori
+Modelado	Modellazione
+Deformador	Deformatore
+Escena	Scena
+Materiales	Materiali
+Nuevo Material	Nuovo Materiale Standard
+Nuevo Material PBR	Nuovo Materiale PBR
+Cargar Materiales...	Carica Materiali...
+Etiqueta	Tag
+Sonido	Suono
+Selección	Selezione
+Filtro de Selección	Filtro Selezione
+Rellenar Selección	Riempi Selezione
+Herramientas	Strumenti
+Desplazamiento	Displacement
+Centrar	Centro
+Malla	Mesh
+Conectar Objetos + Eliminar	Connetti Oggetti + Cancella
+Soldar	Unisci
+Puente	Ponte
+Pincel	Pennello
+Planchar	Stira
+Triangular	Triangola
+Fijación	Snap
+Activar Fijación	Abilita Snap
+Fijación 2D	Snap 2D
+Fijación 3D	Snap 3D
+Plano de Trabajo	Piano di Lavoro
+Animación	Animazione
+Grabar Objetos Activos	Registra Oggetti Attivi
+Fotogramas Clave Automáticos	Auto-Registrazione
+Reproducir Hacia Delante	Riproduci Avanti
+Reproducir Hacia Atrás	Riproduci Indietro
+Parar	Cancella
+Ir al Inicio	Vai all'Inizio
+Ir al Final	Vai alla Fine
+Personaje	Personaggio
+Piel	Pelle
+Restricción	Restrizione
+Simulación	Simulazione
+Partículas	Particelle
+Dinámicas	Dinamiche
+Cloth	Tessuto
+Render	Rendering
+Renderizar Región	Renderizza Regione
+Región de Render Interactivo	Rendering Interattivo Regione
+Cola de Render...	Coda Render...
+Visor de Imágenes...	Visualizzatore Immagini...
+Esculpir	Sculpt
+Reducir	Decrementa
+Suavizar	Smussare
+Aplanar	Appiattisci
+Pellizcar	Schiacciare
+Ocultar Seleccionado	Nascondi Selezionati
+Selección MoGraph	Selezione MoGraph
+Clonador	Clona
+Matriz	Matrice
+Fractura Voronoi	Frattura Voronoi
+Character	Personaggio
+Junta	Joint
+Herramienta de Junta	Strumento Joint
+Línea de Trabajo	Pipeline
+Plugins	Plugin
+Gestor de Scripts...	Gestione Script...
+Consola...	Console...
+Ventana	Finestre
+Editor de Material...	Editor Materiale...
+Gestor de Capas	Gestione Livelli
+Ayuda	Aiuto
+Mostrar Ayuda...	Mostra Aiuto...
+Animar	Animazione
+Deshacer Vista	Annulla Vista
+Rehacer Vista	Ripeti Vista
+Encuadrar Todo	Mostra Tutto
+Encuadre por Defecto	Mostra come Predefinito
+Redibujar	Aggiorna
+Cámaras	Camere
+Navegación	Navigazione
+Usar Cámara	Camere Scena
+Perspectiva	Prospettiva
+Paralela	Parallela
+Mostrar	Mostra
+Sombreado Gouraud	Gouraud Shading
+Sombreado Gouraud (Líneas)	Gouraud Shading (Linee)
+Sombreado Rápido	Quick Shading
+Sombreado Constante	Shading Costante
+Líneas Ocultas	Linea Nascosta
+Líneas	Linee
+Alambre	Connessione
+Caja	Box
+Opciones	Opzioni
+Nivel de Detalle	Livello di Dettaglio
+Estereoscópico	Stereoscopico
+Sombreado de Flujo de Trabajo Lineal	Shading Workflow Lineare
+Post Efectos	Post Effetti
+Transparencia	Trasparenza
+Reflexiones	Riflessioni
+Profundidad de Campo	Profondità di Campo
+Usar Edición de Isolíneas	Usa Editing Isoline
+Normales de Polígonos	Normali Poligono
+Normales de Vértices	Normali Vertice
+Etiquetas	Tag
+Texturas	Texture
+Rayos X	Usa Raggi X
+Luz por Defecto...	Luce di Default...
+Configurar...	Configura...
+Filtrar	Filtro
+Cuadrícula	Griglia
+Generador	Generatore
+Subdivisión Superficie	Superficie di Suddivisione
+Entorno	Ambiente
+Partícula	Particelle
+Otro	Altro
+Horizonte	Orizzonte
+Ejes	Asse
+Guías	Guide
+Paneles	Vista
+4 Vistas	4 Viste
+Todas las Vistas	Tutte le Viste
+Fusionar Objetos...	Inserisci Oggetti...
+Guardar como Preestablecido...	Salva Presettaggi...
+Editar	Modifica
+Expandir Todo	Espandi Tutto
+Ver	Vista
+Mostrar Etiquetas	Mostra Tag
+Objetos	Oggetti
+Añadir	Aggiungi
+Duplicar	Duplica
+Favoritos	Segnalibri
+Protección	Protezione
+Hair Etiquetas	Tag Hair
+MoGraph Etiquetas	Tag MoGraph
+Motion Tracker Etiquetas	Tag Tracciatore
+Scripting Etiquetas	Tag Programmazione
+Añadir a una Capa Nueva	Aggiungi a Nuovo Livello
+Gestor de Capas...	Gestione Livelli...
+Eliminar de Todas las Tomas	Rimuovi da Tutti i Take
+Gestor de Tomas...	Gestione Take...
+Establecer como Raíz	Setta come Radice
+Contraer Todo	Comprimi Tutto
+Estado Actual del Objeto	Stato Corrente ad Oggetto
+Expandir Grupo de Objetos	Separa Oggetti
+Eliminar Sin Hijos	Cancella Senza Figli
+Convertir Selección de Objetos a XRef	Converitire l'Oggetto Selezionato a XRef
+Información del Objeto...	Informazioni Oggetto...
+Información del Proyecto	Informazioni Scena...
+Renombrar	Rinomina
+Por Defecto	Predefinito
+Activado	Abilitato
+Atrás	Indietro
+Subir	Carica
+Bloquear Elemento	Blocca Elemento
+Proyecto	Progetto
+Información	Info
+Referenciar	XRef
+A Realizar	Note
+Interpolación de Claves	Animazione
+Centímetros	Centimetri
+Usar Animación	Usa Animazione
+Usar Expresiones	Usa Espressioni
+Usar Generadores	Usa Generatori
+Usar Deformadores	Usa Deformatori
+Usar Sistema de Movimiento	Usa Sistema Movimento
+Cargar Preestablecido...	Carica Presettaggio...
+Guardar Preestablecido...	Salva Presettaggio...
+Básico	Base
+General	Generale
+Detalles	Dettagli
+Visibilidad	Visibilità
+Sombra	Ombra
+Cáusticas	Caustiche
+Ruido	Disturbo
+Propiedades Básicas	Proprietà Base
+Nombre	Nome
+Capa	Livello
+Desactivado	Disabilitato
+Coordenadas	Coordinate
+Orden	Ordine
+Color	Colore
+Intensidad	Forza
+Ninguno	Nessuno
+Difusión	Diffusione
+Especular	Speculare
+Tolerancia	Tolleranza
+Radio	Raggio
+Orientación	Orientamento
+Vértices	Vertici
+Triángulos	Triangoli
+Segmentos	Segmenti
+Estándar	Standard
+Anchura	Larghezza
+Lineal	Lineare
+Decaimiento	Decadenza
+Normal	Normale
+Restar	Sottrazione
+Multiplicar	Moltiplica
+Circular	Cerchio
+Cuadrado	Quadrato
+Lambertiano (Difuso)	Lambertian (Diffuso)
+Oren-Nayar (Difuso)	Oren-Nayar (Diffuso)
+Promedio	Media
+Mínimo	Minimo
+Máximo	Massimo
+Metal	Metallo
+Dieléctrico	Dielettrico
+Conductor	Conduttore
+Textura	Texture
+Imágenes	Immagini
+Brillo	Luminosità
+Muestreo	Campionamento
+Desenfoque Desfase	Offset Blur
+Desenfoque Escala	Scala Blur
+Fuerza	Forza
+Invertir	Inverti
+Rugosidad	Forza Ruvidità
+Global	Globale
+Brillo Reflexión Global	Luminosità di Riflessione Globale
+Brillo Especular Global	Luminosità Speculare Globale
+Pase Separado	Passi Separati
+Atenuación	Attenuazione
+Fuerza Reflexión	Forza Riflessione
+Fuerza Especular	Forza Speculare
+Fuerza Relieve	Forza Rilevo
+Color de Capa	Colore Livello
+Fresnel de Capa	Livello Fresnel
+Reflectancia	Riflettanza
+Relieve	Rilievo
+Fosforescencia	Alone
+Iluminación	Illuminazione
+Asignar	Assegna
+Material	Materiale
+Proyección	Proiezione
+Ambos	Entrambi
+Sin Costuras	Senza Cuciture
+Desfase U	Offset U
+Desfase V	Offset V
+Datos de Usuario	Dati Utente
+Añadir Datos de Usuario...	Aggiungi Dati Utente...
+Gestionar Datos de Usuario...	Gestisci Dati Utente...
+Interpolación 	Interpolazione 
+Guardar Materiales como...	Salva Materiali come...
+Función	Funzione
+Editar...	Modifica...
+Aplicar	Applica
+Posición	Posizione
+Tamaño	Dimensione
+Rotación	Rotazione
+Escala	Scala
+Objeto (Rel)	Oggetto (Rel)
+Objeto (Abs)	Oggetto (Abs)
+Cancelar	Annulla
+Personalizar	Personalizza
+Colores	Colori
+Texto	Testo
+Preferencias	Preferenze
+Interfaz	Interfaccia
+Visor	Vista
+Archivos	File
+Unidades	Unità
+Renderizador	Renderizzatore
+OpenGL	Hardware Viewport
+Normales	Normali
+Cerrar	Chiudi
+Visor de Imágenes	Visualizzatore Immagini
+Configuración...	Impostazioni...
+Configuración de Render	Settaggi di Rendering
+Salida	Output
+Preestablecido	Presettaggi
+Antialiasing	Anti-Aliasing
+Fondo	Sfondo
+Arriba	Su
+Abajo	Giù
+Puntos	Punti
+Aristas	Lati
+Polígonos	Poligoni
+Invertir Selección	Inverti Selezione
+Preestablecidos	Presettaggi
+Elementos Recientes	Elementi Recenti
+Ya existe 	esiste già 
+Nombre:	Nome:
+Nueva Carpeta...	Nuova Cartella...
+Nuevo Catálogo...	Nuovo Catalogo...
+Nueva Librería de Preestablecidos...	Nuova Libreria Presettaggi...
+Borrar	Cancella
+Renombrar...	Rinomina...
+Iconos Pequeños	Icone Piccole
+Iconos Medianos	Icone Medie
+Iconos Grandes	Icone Grandi
+Buscar...	Cerca...
+Añadir Archivos...	Seleziona File da Caricare...
+Catálogos	Cataloghi
+Ordenador	Computer
+Red	Network
+Resultado de la Búsqueda	Risultati Ricerca
+Carpeta	Cartella
+Idioma	Lingua
+Idioma guardado. Reinicie Iron3D Studio para aplicarlo.	Lingua salvata. Riavvia Iron3D Studio per applicarla.
+Se aplicará al reiniciar Iron3D Studio.	Avrà effetto al riavvio di Iron3D Studio.
+Polígono Vacío	Poligono Vuoto
+Guía	Guide
+Cápsula	Capsula
+Pirámide	Piramide
+Platónico	Platonico
+Figura	Manichino
+Lápiz	Penna Spline
+Dibujo	Sketch
+Suavizado Spline	Ammorbidisci Spline
+Círculo	Cerchio
+Hélice	Spirale
+n-Lados	n-Lati
+Rectángulo	Rettangolo
+Estrella	Stella
+4-Lados	4-Lati
+Cisoide	Cissoide
+Rueda Dentada	Ingranaggio
+Fórmula	Formula
+Flor	Fiore
+Perfil	Profilo
+Sustraer Spline	Sottrazione Spline
+Spline Y	And Spline
+Spline O	Or Spline
+Torno	Rotazione
+Forro	Loft
+Recorrido	Sweep
+Formación de Átomos	Schiera Atomo
+Booleano	Boole
+Máscara de Spline	Maschera Spline
+Conector	Connettore
+Generador Python	Generatore Python
+Reducción de Polígonos	Riduzione Poligoni
+Instancia	Istanza
+Fractura	Frattura
+MoInstance	MoIstanza
+Trazador	Tracciatore
+Doblar	Piegare
+Hinchar	Gonfiare
+Sesgar	Inclinare
+Afilar	Assottigliare
+Enroscar	Torcere
+Aplastar y Estirar	Schiaccia e Stira
+Explosión	Esplosione
+FX Explosión	Esplosione FX
+Romper	Frantumare
+Corrección	Correzione
+Jiggle	Scuotere
+Cubrir	Avvolgere
+Esferizar	Arrotondare
+Rail de Splines	Spline Binario
+Envolver Spline	Avvolgi Spline
+Colisión	Collisione
+Desplazador	Spostare
+Viento	Vento
+Suavizado	Smussatura
+Suelo	Pavimento
+Primer Plano	Primo Piano
+Escenario	Stage
+Cielo Físico	Cielo Fisico
+Unir Nubes	Connetti Nuvole
+Césped	Erba
+Cámara Estéreo	Camera Stereoscopica
+Morph de Cámara	Camera Morph
+Grúa	Crane
+Luz Infinita	Luce Infinita
+Luz de Área	Luce Area
+Luz Solar	Luce Solare
+Luz PBR	Luce PBR
+Activar Eje	Attiva Assi
+Nuevo Proyecto	Nuovo Progetto
+Gestor de Objetos	Gestione Oggetti
+Detener	Stop
+Guardar Proyecto con su Contenido...	Salva Progetto con Assets...
+Inflar	Gonfiare
+Pincel Pesos MoGraph	Pennello Peso Mograph
+Ejecutar Script...	Esegui Script...
+Sombreado Rápido (Líneas)	Quick Shading (Linee)
+Sombreado Constante (Líneas)	Shading Costante (Linee)
+Esqueleto	Scheletro
+Sombras	Ombre
+Teselación	Tassellatura
+Ocultar Caras Posteriores	Usa Backface Culling
+Configurar Todo...	Configura Tutto...
+Objetivo	Target
+Niebla	Nebbia
+Mostrar Subcanales	Mostra Sotto Canali
+Guardar Todos los Materiales como...	Salva Tutti i Materiali come...
+Todos los archivos	Tutti i File
+Nueva Librería	Nuova Libreria
+Nueva Carpeta	Nuova Cartella
+Atributos	Attributi
+Línea de Tiempo	Timeline
+Gestor de Materiales	Gestione Materiali
+Entorno:	Layout:
+Tomas	Take
+Estructura	Struttura
+Capas	Livelli
+Propiedades	Proprietà
+Transformar	Trasforma
