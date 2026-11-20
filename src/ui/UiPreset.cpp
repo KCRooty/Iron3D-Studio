@@ -43,6 +43,36 @@ std::vector<UiPreset> makeBuiltins() {
     c4d.name = "Cinema 4D";
     v.push_back(c4d);
 
+    // Presets por version de Cinema 4D (2026-11-20). Los colores salen de los
+    // schemes/*/dark.col y light.col REALES de cada instalacion (COLOR_BG,
+    // COLOR_BGEDIT, COLOR_TEXT, COLOR_TEXT_SELECTED); el resto de la paleta
+    // se deriva igual que en los demas presets. R16 y R19 comparten colores;
+    // R16-R20 comparten el tema claro. Los menus por version NO cambian aun.
+    struct C4DVer {
+        const char* id;
+        const char* name;
+        unsigned bg, edit, text, sel;
+    };
+    const C4DVer kVers[] = {
+        {"c4d-r16", "Cinema 4D R16", 0x474747, 0x333333, 0xB2B2B2, 0xFFAA18},
+        {"c4d-r19", "Cinema 4D R19", 0x474747, 0x333333, 0xB2B2B2, 0xFFAA18},
+        {"c4d-r20", "Cinema 4D R20", 0x454545, 0x333333, 0xB2B2B2, 0xFFAA18},
+        {"c4d-s24", "Cinema 4D S24", 0x3B3B3B, 0x323232, 0xC7C7C7, 0xF39D3C},
+        {"c4d-2023", "Cinema 4D 2023", 0x2B2B2B, 0x1C1C1C, 0xA6A6A6, 0xFFA53F},
+        {"c4d-claro", "Cinema 4D R16-R20 (claro)", 0x989898, 0x5B5B5B, 0x000000, 0xF2F2F2},
+    };
+    for (const C4DVer& cv : kVers) {
+        UiPreset p = c4d;
+        p.id = cv.id;
+        p.name = cv.name;
+        p.theme.panelBg = hex(cv.bg);
+        p.theme.fieldBg = hex(cv.edit);
+        p.theme.text = hex(cv.text);
+        p.theme.selection = hex(cv.sel);
+        p.theme.accent = hex(cv.sel);
+        v.push_back(p);
+    }
+
     UiPreset b;
     b.id = "blender";
     b.name = "Blender";

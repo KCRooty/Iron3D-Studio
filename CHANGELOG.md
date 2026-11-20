@@ -6,6 +6,14 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20: presets de interfaz por versión de Cinema 4D
+
+**Nuevo**
+- Seis presets integrados en Preferencias → Interfaz: **Cinema 4D R16, R19, R20, S24, 2023** y **R16–R20 (claro)**. Los colores (fondo de paneles, campos, texto y selección) salen de los `dark.col` y `light.col` reales de cada instalación, no de capturas. R16 y R19 comparten colores; S24 y 2023 son más oscuros; el tema claro es el mismo de R16 a R20.
+
+**Probado:** compila; capturas sin input de R19, 2023 y claro (los colores cambian y el contorno de selección sigue al preset).
+**No hecho:** los menús y la disposición de ventanas por versión todavía no cambian (solo los colores). Faltan capturas de R16, R20 y S24.
+
 ### 2026-11-19 (9): Nulos con forma, orientación «Pantalla»
 
 **Nuevo**
