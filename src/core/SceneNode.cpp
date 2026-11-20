@@ -188,6 +188,7 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
     copy->deform.kind = src.deform.kind;
     copy->deform.axis = src.deform.axis;
     copy->deform.amount = src.deform.amount;
+    copy->instance = src.instance;
     {
         const CloneData& s = src.clone;
         CloneData& d = copy->clone;

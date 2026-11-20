@@ -1232,6 +1232,12 @@ cuadriláteros	Vierecke
 Guardado como 	Gespeichert als 
 volver al archivo guardado	zur gespeicherten Datei zurückzukehren
 cerrar el proyecto	das Projekt zu schließen
+Subdivisiones	Unterteilungen
+Objeto de Origen	Quellobjekt
+Instancia: selecciona primero el objeto del que quieres una instancia.	Instanz: Wähle zuerst das Objekt, von dem du eine Instanz willst.
+  Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  Catmull-Clark auf das erste Kind mit Netz; das Kind ist der Käfig.
+  Comparte la malla del objeto de origen.	  Teilt das Netz des Quellobjekts.
+  No se encuentra el objeto de origen (ruta por nombres).	  Quellobjekt nicht gefunden (Pfad über Namen).
 Polígono Vacío	Leeres Polygon
 Guía	Hilfslinie
 Cápsula	Kapsel

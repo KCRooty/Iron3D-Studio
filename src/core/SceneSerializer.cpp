@@ -154,6 +154,8 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
     }
     if (node.deform.present)
         out << indent << "  DEF kind=" << node.deform.kind << " axis=" << node.deform.axis << " amount=" << node.deform.amount << "\n";
+    if (node.instance.present)
+        out << indent << "  INST src=" << quoted(node.instance.source) << "\n";
     if (node.hasHidden()) {
         std::string list;
         for (size_t i = 0; i < node.hiddenPolys->size(); ++i)
@@ -425,7 +427,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
     while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG" ||
                             p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "IK" || p.peek() == "NULLSHAPE" ||
-                            p.peek() == "SYM" || p.peek() == "DEF" || p.peek() == "CLN" || p.peek() == "HIDDEN")) {
+                            p.peek() == "SYM" || p.peek() == "DEF" || p.peek() == "INST" || p.peek() == "CLN" || p.peek() == "HIDDEN")) {
         const std::string kind = p.next();
         bool ok = true;
         if (kind == "LIGHT") {
@@ -528,9 +530,14 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
         } else if (kind == "DEF") {
             node.deform.present = true;
             ok = readAttrs(p, "DEF", err, [&](const std::string& k, const std::string& v) {
-                if (k == "kind") node.deform.kind = std::clamp(std::stoi(v), 0, 4);
+                if (k == "kind") node.deform.kind = std::clamp(std::stoi(v), 0, 8);
                 else if (k == "axis") node.deform.axis = std::clamp(std::stoi(v), 0, 2);
                 else if (k == "amount") node.deform.amount = std::stof(v);
+            });
+        } else if (kind == "INST") {
+            node.instance.present = true;
+            ok = readAttrs(p, "INST", err, [&](const std::string& k, const std::string& v) {
+                if (k == "src") node.instance.source = unquote(v);
             });
         } else if (kind == "IK") {
             IkTagData& t = node.ik;
@@ -829,6 +836,7 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.deform.kind = temp.deform.kind;
     root.deform.axis = temp.deform.axis;
     root.deform.amount = temp.deform.amount;
+    root.instance = temp.instance;
     {
         const CloneData& s = temp.clone;
         CloneData& d = root.clone;

@@ -6,6 +6,20 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (41): Subdivisión Superficie, Instancia, deformadores nuevos, Cámara, Luz Solar y Suelo
+
+**Añadido**
+- **Subdivisión Superficie** (Catmull-Clark en vivo): el objeto con malla se pone como hijo y el generador muestra la superficie suavizada; niveles 1 a 4, normales suaves, el hijo hace de jaula y se sigue editando aparte. Un cubo pasa a 24 cuadriláteros en el nivel 1 y a 96 en el 2.
+- **Instancia**: comparte la malla de otro objeto y la sigue en vivo cuando este cambia. Se enlaza por la ruta de nombres y se guarda en el `.iron` (línea `INST`).
+- **Deformadores nuevos**: Aplastar y Estirar, Esferizar y Derretir (se suman a Doblar, Torsión, Sesgar, Ahusar y Abultar).
+- **Cámara**, **Luz Solar** y **Suelo** ya crean objetos desde el menú Crear. El sol orienta la luz hacia abajo.
+- Los argumentos de la línea de comandos (`--ui-cmd`, rutas) se leen ahora en UTF-8, así que los nombres con tilde funcionan.
+- Traducciones de las cadenas nuevas al inglés, alemán, francés e italiano.
+
+**Límites:** Luz Solar es una luz infinita con color cálido y sombras suaves, no un sol físico. Siguen sin hacer nada: Cámara Objetivo, Luz Objetivo, Luz IES, Luz PBR, Cielo, Fondo, Entorno, Primer Plano, Bisel, FFD, Explosión, Jiggle y Morph.
+
+**Verificado por captura:** Subdivisión Superficie, Doblar, Derretir, Instancia, Luz Solar (cima y caras iluminadas), Cámara y Suelo en el Gestor de Objetos. **Verificado con tests:** Aplastar y Estirar, Esferizar, Derretir, Catmull-Clark (recuentos y normales unitarias) e Instancia (malla compartida, seguimiento, guardado y lectura).
+
 ### 2026-11-20 (40): Traducciones al alemán, francés e italiano
 
 **Añadido**

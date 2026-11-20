@@ -130,6 +130,23 @@ bool openFolderInExplorer(const std::filesystem::path& dir) {
     return (INT_PTR)h > 32;
 }
 
+std::vector<std::string> commandLineUtf8() {
+    std::vector<std::string> out;
+#ifdef _WIN32
+    int wargc = 0;
+    if (LPWSTR* wargv = CommandLineToArgvW(GetCommandLineW(), &wargc)) {
+        for (int i = 0; i < wargc; ++i) {
+            const int n = WideCharToMultiByte(CP_UTF8, 0, wargv[i], -1, nullptr, 0, nullptr, nullptr);
+            std::string a((size_t)(n > 1 ? n - 1 : 0), '\0');
+            if (n > 1) WideCharToMultiByte(CP_UTF8, 0, wargv[i], -1, a.data(), n, nullptr, nullptr);
+            out.push_back(std::move(a));
+        }
+        LocalFree(wargv);
+    }
+#endif
+    return out;
+}
+
 bool openUrl(const std::string& url) {
     const HINSTANCE h = ShellExecuteW(nullptr, L"open", widen(url).c_str(), nullptr, nullptr, SW_SHOWNORMAL);
     return (INT_PTR)h > 32;
@@ -150,6 +167,7 @@ SaveChoice askSaveChanges(const std::string&, const std::string&) { return SaveC
 bool openFolderInExplorer(const std::filesystem::path&) { return false; }
 
 bool openUrl(const std::string&) { return false; }
+std::vector<std::string> commandLineUtf8() { return {}; }
 
 std::optional<std::filesystem::path> saveFileDialog(const std::string&,
                                                     const std::vector<std::pair<std::string, std::string>>&,

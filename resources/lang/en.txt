@@ -1200,6 +1200,12 @@ cuadriláteros	quads
 Guardado como 	Saved as 
 volver al archivo guardado	revert to the saved file
 cerrar el proyecto	close the project
+Subdivisiones	Subdivisions
+Objeto de Origen	Source Object
+Instancia: selecciona primero el objeto del que quieres una instancia.	Instance: first select the object you want an instance of.
+  Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  Catmull-Clark on the first child with a mesh; the child is the cage.
+  Comparte la malla del objeto de origen.	  Shares the mesh of the source object.
+  No se encuentra el objeto de origen (ruta por nombres).	  Source object not found (path by names).
 Polígono Vacío	Empty Polygon
 Guía	Guide
 Cápsula	Capsule

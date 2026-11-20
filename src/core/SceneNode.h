@@ -132,16 +132,24 @@ struct SymmetryData {
     float lastTolCm = -1.0f;
 };
 
-// Deformador (generador de Deformadores, ver Deform.h): Doblar, Enroscar, Afilar, Hinchar o Sesgar.
+// Deformador (generador de Deformadores, ver Deform.h): Doblar, Enroscar, Afilar, Hinchar, Sesgar, Aplastar y Estirar,
+// Esferizar, Derretir o Subdivision Superficie (kind 8, amount = subdivisiones).
 struct DeformData {
     bool present = false;
-    int kind = 0;       // 0 Doblar, 1 Enroscar, 2 Afilar, 3 Hinchar, 4 Sesgar
+    int kind = 0;       // 0 Doblar, 1 Enroscar, 2 Afilar, 3 Hinchar, 4 Sesgar, 5 Aplastar, 6 Esferizar, 7 Derretir, 8 Subdivision
     int axis = 1;       // eje del nodo a lo largo del cual actua (0 X, 1 Y, 2 Z)
     float amount = 45;  // grados (Doblar, Enroscar) o % (Afilar, Hinchar, Sesgar)
     std::shared_ptr<const MeshData> output, lastSource;
     glm::mat4 lastChildMatrix{1.0f};
     int lastKind = -1, lastAxis = -1;
     float lastAmount = 1e9f;
+};
+
+// Objeto Instancia (2026-11-20): comparte la malla de otro objeto (ruta por nombres desde la raiz, como
+// CameraData::target) y se ve igual que el original aunque se edite despues. Tiene su propia transformacion.
+struct InstanceData {
+    bool present = false;
+    std::string source;
 };
 
 // Clonador (ver Clone.h): copias del primer hijo con malla en modo Lineal, Cuadricula o Radial.
@@ -298,6 +306,7 @@ public:
     IkTagData ik;
     SymmetryData symmetry;
     DeformData deform;
+    InstanceData instance;
     CloneData clone;
     ParamShape param;  // primitiva poligonal con parametros editables (ver MeshData.h)
     // Solo con primitive == Mesh: partes con su propio material, ordenadas por

@@ -824,6 +824,51 @@ int main() {
             check(bg.boundsMax.x > 0.7f && std::fabs(bg.boundsMax.y - 0.5f) < 1e-4f, "hinchar: ensancha el medio sin mover los extremos");
             const MeshData sh = deformMeshData(cb, 4, 1, 100.0f, id);
             check(std::fabs(sh.boundsMax.z - 1.0f) < 1e-4f && std::fabs(sh.boundsMin.z + 1.0f) < 1e-4f, "sesgar 100 %: desplaza los extremos +-0.5 en el eje b");
+            const MeshData sq = deformMeshData(cb, 5, 1, 100.0f, id);
+            check(std::fabs(sq.boundsMax.y - 1.0f) < 1e-4f && std::fabs(sq.boundsMax.x - 0.35355f) < 1e-3f, "aplastar y estirar 100 %: el doble de alto y 1/raiz(2) de ancho");
+            const MeshData sp = deformMeshData(cb, 6, 1, 100.0f, id);
+            bool onSphere = true;
+            for (const Vertex& v : sp.vertices) onSphere = onSphere && std::fabs(glm::length(v.position) - 0.8660f) < 1e-3f;
+            check(onSphere, "esferizar 100 %: todos los puntos a la misma distancia del centro");
+            const MeshData mt = deformMeshData(cb, 7, 1, 100.0f, id);
+            check(std::fabs(mt.boundsMax.y + 0.1f) < 1e-3f && std::fabs(mt.boundsMax.x - 0.8f) < 1e-3f, "derretir 100 %: la cima baja y la base se ensancha");
+            const MeshData s1 = deformMeshData(cb, 8, 1, 1.0f, id);
+            const MeshTopology s1t = buildMeshTopology(s1);
+            int inner = 0;
+            for (const Vertex& v : s1.vertices)
+                if (std::fabs(std::fabs(v.position.x) - 0.27778f) < 1e-3f && std::fabs(std::fabs(v.position.y) - 0.27778f) < 1e-3f &&
+                    std::fabs(std::fabs(v.position.z) - 0.27778f) < 1e-3f) ++inner;
+            check(s1.vertices.size() == 26 && s1t.polys.size() == 24 && inner == 8, "subdivision superficie 1: el cubo pasa a 24 cuadrilateros y las esquinas se redondean");
+            const MeshData s2 = deformMeshData(cb, 8, 1, 2.0f, id);
+            check(buildMeshTopology(s2).polys.size() == 96, "subdivision superficie 2: 96 cuadrilateros");
+            bool snorm = true;
+            for (const Vertex& v : s2.vertices) snorm = snorm && std::fabs(glm::length(v.normal) - 1.0f) < 1e-3f;
+            check(snorm, "subdivision superficie: normales unitarias");
+            {
+                SceneNode ir("r");
+                SceneNode* orig = ir.addChild("Cubo", PrimitiveType::Mesh);
+                orig->mesh = std::make_shared<const MeshData>(cb);
+                SceneNode* ins = ir.addChild("Instancia", PrimitiveType::None);
+                ins->instance.present = true;
+                ins->instance.source = "Cubo";
+                evaluateInstances(ir);
+                check(ins->mesh == orig->mesh && ins->primitive == PrimitiveType::Mesh, "instancia: comparte la malla del origen");
+                orig->mesh = std::make_shared<const MeshData>(makeSphereMesh());
+                evaluateInstances(ir);
+                check(ins->mesh == orig->mesh, "instancia: sigue al origen cuando cambia");
+                std::vector<Material> im;
+                const std::string itxt = serializeScene(ir, im);
+                SceneNode ib("x");
+                std::string ierr;
+                check(deserializeScene(itxt, ib, im, &ierr), "INST: el .iron se vuelve a leer");
+                bool found = false;
+                for (const auto& c : ib.children())
+                    if (c->instance.present && c->instance.source == "Cubo") found = true;
+                check(found, "INST: instancia guardada y leida");
+                ins->instance.source = "NoExiste";
+                evaluateInstances(ir);
+                check(!ins->mesh, "instancia: sin origen no dibuja nada");
+            }
 
             SceneNode root("r");
             SceneNode* dn = root.addChild("Doblar", PrimitiveType::None);

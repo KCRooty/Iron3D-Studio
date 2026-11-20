@@ -1238,6 +1238,12 @@ cuadriláteros	quadrilatères
 Guardado como 	Enregistré sous 
 volver al archivo guardado	revenir au fichier enregistré
 cerrar el proyecto	fermer le projet
+Subdivisiones	Subdivisions
+Objeto de Origen	Objet d'origine
+Instancia: selecciona primero el objeto del que quieres una instancia.	Instance : sélectionne d'abord l'objet dont tu veux une instance.
+  Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  Catmull-Clark sur le premier enfant avec un maillage ; l'enfant est la cage.
+  Comparte la malla del objeto de origen.	  Partage le maillage de l'objet d'origine.
+  No se encuentra el objeto de origen (ruta por nombres).	  Objet d'origine introuvable (chemin par noms).
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cápsula	Capsule

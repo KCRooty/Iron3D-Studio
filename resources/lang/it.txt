@@ -1205,6 +1205,12 @@ cuadriláteros	quadrilateri
 Guardado como 	Salvato come 
 volver al archivo guardado	tornare al file salvato
 cerrar el proyecto	chiudere il progetto
+Subdivisiones	Suddivisioni
+Objeto de Origen	Oggetto di origine
+Instancia: selecciona primero el objeto del que quieres una instancia.	Istanza: seleziona prima l'oggetto di cui vuoi un'istanza.
+  Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  Catmull-Clark sul primo figlio con mesh; il figlio è la gabbia.
+  Comparte la malla del objeto de origen.	  Condivide la mesh dell'oggetto di origine.
+  No se encuentra el objeto de origen (ruta por nombres).	  Oggetto di origine non trovato (percorso per nomi).
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula

@@ -38,6 +38,7 @@ extern "C" __declspec(dllimport) int __stdcall MultiByteToWideChar(unsigned int 
 #include "core/SceneSerializer.h"
 #include "ui/MainUi.h"
 #include "ui/ContentBrowser.h"
+#include "ui/FileDialog.h"
 #include "importers/lib4d/PresetLibrary.h"
 #include "importers/obj/ObjIO.h"
 
@@ -498,6 +499,17 @@ glm::mat4 gridModelFor(iron3d::OrbitalCamera::View v) {
 
 int main(int argc, char** argv) {
     using namespace iron3d;
+
+    // argv llega en la pagina de codigos ANSI: una "o" con tilde en una ruta o en --ui-cmd no coincidiria con
+    // los textos UTF-8 del programa. Si la plataforma lo permite, se rehace la lista en UTF-8.
+    std::vector<std::string> utf8Args = commandLineUtf8();
+    std::vector<char*> utf8Ptrs;
+    if (!utf8Args.empty()) {
+        for (std::string& a : utf8Args) utf8Ptrs.push_back(a.data());
+        utf8Ptrs.push_back(nullptr);
+        argc = (int)utf8Args.size();
+        argv = utf8Ptrs.data();
+    }
 
     // --- Preferencias (Fase 3c): que backend usar -- ver core/Preferences.h.
     // Se lee ANTES de crear la ventana (el backend decide los hints de

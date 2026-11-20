@@ -1960,10 +1960,37 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
         }
         return;
     }
+    if (std::string(it.name.key) == "Instancia") {
+        SceneNode* src = selected;
+        if (!src || !src->parent() || !(src->mesh || isParametric(src->primitive))) {
+            flashStatus(tr("Instancia: selecciona primero el objeto del que quieres una instancia."));
+            return;
+        }
+        const std::string path = nodePathFromRoot(root, *src);
+        SceneNode* inst = createObject(root, selected, history, PrimitiveType::None);
+        if (inst) {
+            inst->setName(tr("Instancia") + std::string(" ") + src->name());
+            inst->instance.present = true;
+            inst->instance.source = path;
+            inst->position = src->position + glm::vec3(0.5f, 0.0f, 0.0f);
+            inst->rotationDeg = src->rotationDeg;
+            inst->scale = src->scale;
+        }
+        return;
+    }
+    if (std::string(it.name.key) == "Suelo") {
+        SceneNode* fl = createObject(root, selected, history, PrimitiveType::Plane);
+        if (fl) {
+            fl->setName(tr("Suelo"));
+            fl->scale = glm::vec3(20.0f, 1.0f, 20.0f);
+        }
+        return;
+    }
     {
-        static const char* defNames[] = {"Doblar", "Enroscar", "Afilar", "Hinchar", "Sesgar"};
+        static const char* defNames[] = {"Doblar", "Enroscar", "Afilar", "Hinchar", "Sesgar",
+                                         "Aplastar y Estirar", "Esferizar", "Derretir", "Subdivisión Superficie"};
         int dk = -1;
-        for (int i = 0; i < 5; ++i)
+        for (int i = 0; i < 9; ++i)
             if (std::string(it.name.key) == defNames[i]) dk = i;
         if (dk >= 0) {
             SceneNode* sel = selected;
@@ -1975,7 +2002,7 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
                 selected->setName(tr(it.name.key));
                 selected->deform.present = true;
                 selected->deform.kind = dk;
-                selected->deform.amount = dk <= 1 ? 45.0f : 50.0f;
+                selected->deform.amount = dk == 8 ? 2.0f : dk <= 1 ? 45.0f : 50.0f;
                 g.collapsed.erase(selected->id());
                 if (child) child->editorVis = VisMode::Off;  // la copia deformada la dibuja el nodo
             }
@@ -1986,6 +2013,12 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
     if (n && it.type == PrimitiveType::Light && it.lightKind >= 0) {
         n->light.kind = (LightKind)it.lightKind;
         n->setName((const char*)it.name);
+        if (std::string(it.name.key) == "Luz Solar") {  // sol: infinita, calida, con sombras suaves
+            n->light.color = glm::vec3(1.0f, 0.96f, 0.85f);
+            n->light.intensity = 1.2f;
+            n->light.shadow = 1;
+            n->rotationDeg = glm::vec3(-50.0f, -35.0f, 0.0f);  // P y H: apunta hacia abajo
+        }
     }
 }
 
@@ -2108,7 +2141,7 @@ const PaletteItem kSplines[] = {
 };
 
 const PaletteItem kGenerators[] = {
-    {"Subdivisión Superficie", Icon::GenSubdiv, kNone, false},
+    {"Subdivisión Superficie", Icon::GenSubdiv, kNone, true},
     {"Extrusión", Icon::GenExtrude, kNone, false},
     {"Torno", Icon::GenLathe, kNone, false},
     {"Forro", Icon::GenLoft, kNone, false},
@@ -2127,7 +2160,7 @@ const PaletteItem kModeling[] = {
     {"Generador Python", Icon::ModPython, kNone, false},
     {"LOD", Icon::ModLod, kNone, false},
     {"Reducción de Polígonos", Icon::ModPolyReduction, kNone, false},
-    {"Instancia", Icon::ModInstance, kNone, false},
+    {"Instancia", Icon::ModInstance, kNone, true},
     {"Metaball", Icon::ModMetaball, kNone, false},
 };
 
@@ -2152,8 +2185,8 @@ const PaletteItem kDeformers[] = {
     {"Enroscar", Icon::DefTwist, kNone, true},
     {"FFD", Icon::DefFfd, kNone, false},
     {"Malla", Icon::DefMesh, kNone, false},
-    {"Aplastar y Estirar", Icon::DefSquash, kNone, false},
-    {"Derretir", Icon::DefMelt, kNone, false},
+    {"Aplastar y Estirar", Icon::DefSquash, kNone, true},
+    {"Derretir", Icon::DefMelt, kNone, true},
     {"Explosión", Icon::DefExplosion, kNone, false},
     {"FX Explosión", Icon::DefExplosionFx, kNone, false},
     {"Romper", Icon::DefShatter, kNone, false},
@@ -2161,7 +2194,7 @@ const PaletteItem kDeformers[] = {
     {"Jiggle", Icon::DefJiggle, kNone, false},
     {"Morph", Icon::DefMorph, kNone, false},
     {"Cubrir", Icon::DefShrinkWrap, kNone, false},
-    {"Esferizar", Icon::DefSpherify, kNone, false},
+    {"Esferizar", Icon::DefSpherify, kNone, true},
     {"Superficie", Icon::DefSurface, kNone, false},
     {"Envoltura", Icon::DefWrap, kNone, false},
     {"Spline", Icon::DefSpline, kNone, false},
@@ -2177,7 +2210,7 @@ const PaletteItem kDeformers[] = {
 };
 
 const PaletteItem kScene[] = {
-    {"Suelo", Icon::Floor, kNone, false},
+    {"Suelo", Icon::Floor, PrimitiveType::Plane, true},
     {"Cielo", Icon::SceSky, kNone, false},
     {"Entorno", Icon::SceEnvironment, kNone, false},
     {"Primer Plano", Icon::SceForeground, kNone, false},
@@ -2192,7 +2225,7 @@ const PaletteItem kScene[] = {
 };
 
 const PaletteItem kCameras[] = {
-    {"Cámara", Icon::Camera, kNone, false},
+    {"Cámara", Icon::Camera, PrimitiveType::Camera, true},
     {"Cámara Objetivo", Icon::CamTarget, kNone, false},
     {"Cámara Estéreo", Icon::CamStereo, kNone, false},
     {"Cámara de Movimiento", Icon::CamMotion, kNone, false},
@@ -2207,7 +2240,7 @@ const PaletteItem kLights[] = {
     {"Luz IES", Icon::LgtIes, kNone, false},
     {"Luz Infinita", Icon::LgtInfinite, PrimitiveType::Light, true, (int)LightKind::Infinite},
     {"Luz de Área", Icon::LgtArea, PrimitiveType::Light, true, (int)LightKind::Area},
-    {"Luz Solar", Icon::LgtSun, kNone, false},
+    {"Luz Solar", Icon::LgtSun, PrimitiveType::Light, true, (int)LightKind::Infinite},
     {"Luz PBR", Icon::LgtPbr, kNone, false},
     {"Herramienta de Iluminación", Icon::LgtTool, kNone, false},
 };
@@ -4597,29 +4630,54 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
         } else if (node.deform.present) {
             sectionHeader(tr("Propiedades del Objeto"));
             propLabel(tr("Tipo"));
-            const char* kinds[] = {tr("Doblar"), tr("Enroscar"), tr("Afilar"), tr("Hinchar"), tr("Sesgar")};
+            const char* kinds[] = {tr("Doblar"), tr("Enroscar"), tr("Afilar"), tr("Hinchar"), tr("Sesgar"),
+                                   tr("Aplastar y Estirar"), tr("Esferizar"), tr("Derretir"), tr("Subdivisión Superficie")};
             ImGui::SetNextItemWidth(-1);
             int kd = node.deform.kind;
-            if (ImGui::Combo("##defkind", &kd, kinds, 5)) {
+            if (ImGui::Combo("##defkind", &kd, kinds, 9)) {
                 history.commitBefore(root);
                 node.deform.kind = kd;
+                if (kd == 8) node.deform.amount = std::clamp(std::round(node.deform.amount), 1.0f, 4.0f);
             }
-            propLabel(tr("Eje"));
-            const char* axes[] = {"X", "Y", "Z"};
-            int dax = node.deform.axis;
-            ImGui::SetNextItemWidth(-1);
-            if (ImGui::Combo("##defaxis", &dax, axes, 3)) {
-                history.commitBefore(root);
-                node.deform.axis = dax;
+            if (node.deform.kind == 8) {
+                propLabel(tr("Subdivisiones"));
+                int lv = (int)std::lround(node.deform.amount);
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::SliderInt("##defsub", &lv, 1, 4)) {
+                    if (ImGui::IsItemActivated()) history.commitBefore(root);
+                    node.deform.amount = (float)lv;
+                }
+                ImGui::TextDisabled(tr("  Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula."));
+            } else {
+                propLabel(tr("Eje"));
+                const char* axes[] = {"X", "Y", "Z"};
+                int dax = node.deform.axis;
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::Combo("##defaxis", &dax, axes, 3)) {
+                    history.commitBefore(root);
+                    node.deform.axis = dax;
+                }
+                propLabel(node.deform.kind <= 1 ? tr("Ángulo") : tr("Fuerza"));
+                float am = node.deform.amount;
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::DragFloat("##defamt", &am, 0.5f, -360.0f, 360.0f, node.deform.kind <= 1 ? "%.1f °" : "%.1f %%")) {
+                    if (ImGui::IsItemActivated()) history.commitBefore(root);
+                    node.deform.amount = am;
+                }
+                ImGui::TextDisabled(tr("  Deforma al primer hijo con malla; el hijo se edita aparte."));
             }
-            propLabel(node.deform.kind <= 1 ? tr("Ángulo") : tr("Fuerza"));
-            float am = node.deform.amount;
+        } else if (node.instance.present) {
+            sectionHeader(tr("Propiedades del Objeto"));
+            propLabel(tr("Objeto de Origen"));
+            char ibuf[256];
+            std::snprintf(ibuf, sizeof ibuf, "%s", node.instance.source.c_str());
             ImGui::SetNextItemWidth(-1);
-            if (ImGui::DragFloat("##defamt", &am, 0.5f, -360.0f, 360.0f, node.deform.kind <= 1 ? "%.1f °" : "%.1f %%")) {
+            if (ImGui::InputText("##instsrc", ibuf, sizeof ibuf)) {
                 if (ImGui::IsItemActivated()) history.commitBefore(root);
-                node.deform.amount = am;
+                node.instance.source = ibuf;
             }
-            ImGui::TextDisabled(tr("  Deforma al primer hijo con malla; el hijo se edita aparte."));
+            ImGui::TextDisabled(findNodeByPath(root, node.instance.source) ? tr("  Comparte la malla del objeto de origen.")
+                                                                             : tr("  No se encuentra el objeto de origen (ruta por nombres)."));
         } else if (node.clone.present) {
             sectionHeader(tr("Propiedades del Objeto"));
             CloneData& cl = node.clone;
@@ -8187,6 +8245,12 @@ void runPendingToolCmd(SceneNode& root, SceneNode*& selected, const OrbitalCamer
                 if (it.functional && one == it.name.key) createPaletteItem(root, selected, history, it);
             for (const PaletteItem& it : kMoGraph)
                 if (it.functional && one == it.name.key) createPaletteItem(root, selected, history, it);
+            for (const PaletteItem* list : {kGenerators, kModeling, kScene, kCameras, kLights}) {
+                const int cnt = list == kGenerators ? countOf(kGenerators) : list == kModeling ? countOf(kModeling)
+                              : list == kScene ? countOf(kScene) : list == kCameras ? countOf(kCameras) : countOf(kLights);
+                for (int i = 0; i < cnt; ++i)
+                    if (list[i].functional && one == list[i].name.key) createPaletteItem(root, selected, history, list[i]);
+            }
         }
         return;
     }
@@ -8299,6 +8363,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     evaluateSymmetry(root);
     evaluateDeformers(root);
     evaluateCloners(root);
+    evaluateInstances(root);
     if (g.recordRequested) {
         g.recordRequested = false;
         recordActiveObjects(root, selected, &history);
