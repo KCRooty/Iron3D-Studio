@@ -6,6 +6,17 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-20 (35): Menú Ayuda activo e Información del Objeto
+
+**Añadido**
+- **Ayuda**: Mostrar Ayuda, Mostrar Tutoriales y Soporte de Static Forge abren staticforge.me en el navegador; Comprobar Actualizaciones abre la página de versiones del repositorio.
+- **Información del Objeto** (clic derecho en el Gestor de Objetos): nombre, tipo, posición, rotación, escala, hijos y, si es una malla, puntos, aristas, polígonos (triángulos, cuadriláteros, N-gons) y tamaño en cm.
+
+**Límites**
+- Aprendizaje Online, Instalación Manual, Registro Online y Personalizar siguen en gris.
+
+**Verificado:** compilación y tests. **Sin probar:** los dos en pantalla.
+
 ### 2026-11-20 (34): Fundir, Reflejar, Restaurar Escala y cortes Plano/Cíclico en el menú
 
 **Añadido**

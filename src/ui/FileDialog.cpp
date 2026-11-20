@@ -130,6 +130,11 @@ bool openFolderInExplorer(const std::filesystem::path& dir) {
     return (INT_PTR)h > 32;
 }
 
+bool openUrl(const std::string& url) {
+    const HINSTANCE h = ShellExecuteW(nullptr, L"open", widen(url).c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    return (INT_PTR)h > 32;
+}
+
 SaveChoice askSaveChanges(const std::string& title, const std::string& text) {
     const int r = MessageBoxW(GetActiveWindow(), widen(text).c_str(), widen(title).c_str(),
                               MB_YESNOCANCEL | MB_ICONQUESTION | MB_SETFOREGROUND);
@@ -143,6 +148,8 @@ bool nativeFileDialogAvailable() { return false; }
 SaveChoice askSaveChanges(const std::string&, const std::string&) { return SaveChoice::No; }
 
 bool openFolderInExplorer(const std::filesystem::path&) { return false; }
+
+bool openUrl(const std::string&) { return false; }
 
 std::optional<std::filesystem::path> saveFileDialog(const std::string&,
                                                     const std::vector<std::pair<std::string, std::string>>&,

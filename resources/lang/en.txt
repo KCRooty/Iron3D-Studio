@@ -1284,3 +1284,8 @@ Reflejar: no hay polígonos.	Mirror: no polygons.
 Restaurar Escala: el objeto tiene hijos; sus posiciones cambiarían.	Reset Scale: the object has children; their positions would change.
 Restaurar Escala: el objeto ya está a escala 1.	Reset Scale: the object is already at scale 1.
 Restaurar Escala: hecho.	Reset Scale: done.
+Información del Objeto	Object Information
+No hay ningún objeto seleccionado.	No object selected.
+Hijos	Children
+triángulos	triangles
+cuadriláteros	quads

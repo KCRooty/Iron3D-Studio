@@ -142,6 +142,7 @@ struct UiState {
     bool showPrefs = false;
     bool showMatEditor = false;
     bool showAbout = false;
+    bool showObjInfo = false;   // Información del Objeto
     // El hueco del Gestor de Objetos muestra el Navegador de Contenido
     // (pestana vertical "Navegador de Contenido", Ventana o Mayus+F8).
     bool browserOpen = false;
@@ -3133,10 +3134,14 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu(tr("Ayuda"))) {
-        iconMenuItem(Icon::MnuHelp, tr("Mostrar Ayuda..."), "F1", false, false);
-        disabledItems({{tr("Mostrar Tutoriales..."), ""}, {tr("Soporte de Static Forge..."), ""}, {tr("Aprendizaje Online..."), ""},
-                       {nullptr, nullptr}, {tr("Comprobar Actualizaciones..."), ""}, {tr("Instalación Manual..."), ""},
-                       {nullptr, nullptr}, {tr("Registro Online..."), ""}, {tr("Personalizar..."), ""}});
+        if (iconMenuItem(Icon::MnuHelp, tr("Mostrar Ayuda..."), "F1")) openUrl("https://staticforge.me");
+        if (ImGui::MenuItemEx(tr("Mostrar Tutoriales..."), kIconGutterText, "", false, true)) openUrl("https://staticforge.me");
+        if (ImGui::MenuItemEx(tr("Soporte de Static Forge..."), kIconGutterText, "", false, true)) openUrl("https://staticforge.me");
+        disabledItems({{tr("Aprendizaje Online..."), ""}});
+        ImGui::Separator();
+        if (ImGui::MenuItemEx(tr("Comprobar Actualizaciones..."), kIconGutterText, "", false, true))
+            openUrl("https://github.com/KCRooty/Iron3D-Studio/releases");
+        disabledItems({{tr("Instalación Manual..."), ""}, {nullptr, nullptr}, {tr("Registro Online..."), ""}, {tr("Personalizar..."), ""}});
         if (iconMenuItem(Icon::MnuAbout, tr("Información..."))) g.showAbout = true;
         ImGui::EndMenu();
     }
@@ -4008,7 +4013,7 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
             ImGui::Separator();
             disabledItems({{tr("Mostrar Pistas..."), ""}, {tr("Mostrar F-Curves..."), ""}, {tr("Mostrar Movimientos..."), ""}});
             ImGui::Separator();
-            ImGui::MenuItem(tr("Información del Objeto..."), nullptr, false, false);
+            if (ImGui::MenuItem(tr("Información del Objeto..."), nullptr, false, true)) g.showObjInfo = true;
             if (iconMenuItem(Icon::MnuProject, tr("Información del Proyecto"), tr("Ctrl+I"))) g.focus = AttrFocus::Project;
             ImGui::Separator();
             iconMenuItem(Icon::MnuHelp, tr("Mostrar Ayuda..."), tr("Ctrl+F1"), false, false);
@@ -6411,6 +6416,39 @@ void drawMaterialEditor(SceneNode& root, SceneHistory& history, std::vector<Mate
     ImGui::End();
 }
 
+// Informacion del Objeto (clic derecho en el Gestor de Objetos): datos del objeto activo, solo lectura.
+void drawObjectInfoDialog(const SceneNode* selected) {
+    if (!g.showObjInfo) return;
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::Begin(tr("Información del Objeto"), &g.showObjInfo, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
+        if (!selected) {
+            ImGui::TextDisabled(tr("No hay ningún objeto seleccionado."));
+        } else {
+            ImGui::Text("%s", selected->name().c_str());
+            ImGui::TextDisabled("%s", primitiveTypeName(selected->primitive));
+            ImGui::Separator();
+            ImGui::Text("%s: %.2f  %.2f  %.2f cm", tr("Posición"), selected->position.x * kCmPerUnit, selected->position.y * kCmPerUnit,
+                        selected->position.z * kCmPerUnit);
+            ImGui::Text("%s: %.1f  %.1f  %.1f", tr("Rotación"), selected->rotationDeg.x, selected->rotationDeg.y, selected->rotationDeg.z);
+            ImGui::Text("%s: %.3f  %.3f  %.3f", tr("Escala"), selected->scale.x, selected->scale.y, selected->scale.z);
+            ImGui::Text("%s: %d", tr("Hijos"), (int)selected->children().size());
+            if (selected->mesh) {
+                const MeshData& m = *selected->mesh;
+                const MeshTopology t = buildMeshTopology(m);
+                size_t tri = 0, quad = 0, ng = 0;
+                for (const auto& pl : t.polys) (pl.size() == 3 ? tri : pl.size() == 4 ? quad : ng)++;
+                ImGui::Separator();
+                ImGui::Text("%s: %zu", tr("Puntos"), t.points.size());
+                ImGui::Text("%s: %zu", tr("Aristas"), t.edges.size());
+                ImGui::Text("%s: %zu (%zu %s, %zu %s, %zu N-gons)", tr("Polígonos"), t.polys.size(), tri, tr("triángulos"), quad, tr("cuadriláteros"), ng);
+                const glm::vec3 sz = (m.boundsMax - m.boundsMin) * kCmPerUnit * selected->scale;
+                ImGui::Text("%s: %.1f x %.1f x %.1f cm", tr("Tamaño"), std::fabs(sz.x), std::fabs(sz.y), std::fabs(sz.z));
+            }
+        }
+    }
+    ImGui::End();
+}
+
 void drawAboutDialog() {
     if (!g.showAbout) return;
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
@@ -8289,6 +8327,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     drawPreferencesDialog(activeBackend, prefs, prefsPath);
     drawMaterialEditor(root, history, materials);
     drawAboutDialog();
+    drawObjectInfoDialog(selected);
     drawImportReport();
     drawExportReport();
     drawSavePresetDialog();

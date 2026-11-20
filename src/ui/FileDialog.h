@@ -36,5 +36,7 @@ SaveChoice askSaveChanges(const std::string& title, const std::string& text);
 
 // Abre una carpeta en el explorador de archivos del sistema (Windows; en el resto no hace nada). true = lanzado.
 bool openFolderInExplorer(const std::filesystem::path& dir);
+// Abre una direccion web (http/https) en el navegador por defecto (Windows; en el resto no hace nada). true = lanzado.
+bool openUrl(const std::string& url);
 
 } // namespace iron3d
