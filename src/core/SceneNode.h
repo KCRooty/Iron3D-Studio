@@ -134,6 +134,26 @@ struct SymmetryData {
     float lastTolCm = -1.0f;
 };
 
+// Spline (ver Spline.h): curva de C4D. kind 0 = puntos libres; el resto son primitivas con parametros (cm).
+// `extra` = contornos adicionales (texto o booleanas hechos editables, salida de un generador).
+struct SplineData {
+    bool present = false;
+    int kind = 0;
+    int plane = 0;             // 0 XY, 1 ZY, 2 XZ
+    int interp = 1;            // 0 lineal, 1 suave
+    bool closed = false;
+    std::vector<glm::vec3> points;
+    std::vector<std::vector<glm::vec3>> extra;
+    std::vector<char> extraClosed;
+    float a = 200.0f, b = 100.0f, c = 0.0f;
+    int n = 8;
+    float startDeg = 0.0f, endDeg = 90.0f;
+    std::string text = "Texto";  // Texto; ruta de la imagen en Vectorizador
+    std::string fx = "200*cos(t*2*pi)", fy = "200*sin(t*2*pi)", fz = "0";
+    bool generated = false;      // salida de un generador: no se guarda ni se edita
+    bool operator==(const SplineData&) const = default;
+};
+
 // Deformador (generador de Deformadores, ver Deform.h): Doblar, Enroscar, Afilar, Hinchar, Sesgar, Aplastar y Estirar,
 // Esferizar, Derretir o Subdivision Superficie (kind 8, amount = subdivisiones).
 struct DeformData {
@@ -161,6 +181,8 @@ struct DeformData {
     std::vector<std::shared_ptr<const MeshData>> lastAllMeshes;
     std::vector<glm::mat4> lastAllMats;
     glm::vec3 lastView{1e9f};
+    std::vector<SplineData> lastSplines;
+    std::vector<glm::mat4> lastSplineMats;
 };
 
 // Objeto Instancia (2026-11-20): comparte la malla de otro objeto (ruta por nombres desde la raiz, como
@@ -350,6 +372,7 @@ public:
     DeformData deform;
     InstanceData instance;
     EnvData env;
+    SplineData spline;
     CloneData clone;
     ParamShape param;  // primitiva poligonal con parametros editables (ver MeshData.h)
     // Solo con primitive == Mesh: partes con su propio material, ordenadas por

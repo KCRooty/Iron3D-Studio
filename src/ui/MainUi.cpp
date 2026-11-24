@@ -32,6 +32,7 @@
 #include "core/Clone.h"
 #include "core/Deform.h"
 #include "core/DeformMore.h"
+#include "core/Spline.h"
 #include "core/Symmetry.h"
 #include "importers/lib4d/PresetTextures.h"
 #include "core/ChannelBake.h"
@@ -237,7 +238,7 @@ struct UiState {
     std::string compOp;                // Seleccion/Malla sobre componentes (menu o --ui-cmd=meshop=...)
     int compSelectAllRequested = 0;    // --ui-cmd=sel-all-visible|sel-all-through
     // Herramientas de modelado (Malla).
-    enum class ModelTool { None, Extrude, InnerExtrude, Bevel, Knife };
+    enum class ModelTool { None, Extrude, InnerExtrude, Bevel, Knife, SplinePen, SplineSketch, SplineArc };
     ModelTool modelTool = ModelTool::None;
     // Simetria de edicion (como la "True Symmetry" de R19): -1 = apagada, 0/1/2 = plano X/Y/Z local del objeto.
     // Al mover puntos, sus espejos sin seleccionar se mueven reflejados; los que estan sobre el plano no lo abandonan.
@@ -371,6 +372,9 @@ const char* modelToolName(UiState::ModelTool t) {
         case UiState::ModelTool::InnerExtrude: return tr("Extrusión Interna");
         case UiState::ModelTool::Bevel: return tr("Bisel");
         case UiState::ModelTool::Knife: return tr("Cuchillo");
+        case UiState::ModelTool::SplinePen: return tr("Lápiz");
+        case UiState::ModelTool::SplineSketch: return tr("Dibujo");
+        case UiState::ModelTool::SplineArc: return tr("Spline Arco");
         default: return "";
     }
 }
@@ -381,6 +385,13 @@ void setModelTool(UiState::ModelTool t) {
     if (t == UiState::ModelTool::None) return;
     if (g_vp) g_vp->selectTool = false;
     // Extruir y Biselar trabajan con poligonos: se pasa a ese modo (como C4D).
+    const bool splineTool = t == UiState::ModelTool::SplinePen || t == UiState::ModelTool::SplineSketch || t == UiState::ModelTool::SplineArc;
+    if (splineTool) {
+        if (g_vp) g_vp->compMode = 0;
+        flashStatus(std::string(modelToolName(t)) + (t == UiState::ModelTool::SplineSketch ? tr(": arrastra en el visor para dibujar el spline (Esc para terminar).")
+                                                                                            : tr(": haz clic en el visor para añadir puntos al spline (Esc para terminar).")));
+        return;
+    }
     if (t != UiState::ModelTool::Knife && g_vp) g_vp->compMode = 3;
     flashStatus(std::string(modelToolName(t)) + (t == UiState::ModelTool::Knife
                                                     ? tr(": arrastra en el visor para dibujar la línea de corte.")
@@ -1559,7 +1570,9 @@ std::vector<SceneNode*> editableTargets(SceneNode& root, SceneNode* selected, Sc
     if (all.empty() && selected) all.push_back(selected);
     std::vector<SceneNode*> out;
     for (SceneNode* n : all)
-        if (isParametric(n->primitive)) out.push_back(n);
+        if (isParametric(n->primitive) || (n->spline.present && (n->spline.kind != 0 || n->spline.generated)) ||
+            (n->deform.present && (n->mesh || n->spline.generated)))
+            out.push_back(n);
     return out;
 }
 
@@ -1572,6 +1585,27 @@ int makeEditable(SceneNode& root, SceneNode* selected, SceneHistory& history, Sc
     if (nodes.empty()) return 0;
     history.commitBefore(root);
     for (SceneNode* n : nodes) {
+        if (n->deform.present || n->spline.present) {
+            // generador o spline: se queda la malla o el spline que se ve, sin parametros ni hijos de entrada
+            if (n->spline.present) {
+                const auto cs = splineContours(n->spline);
+                SplineData e;
+                e.present = true;
+                e.interp = 0;
+                for (size_t i = 0; i < cs.size(); ++i) {
+                    if (i == 0) { e.points = cs[0].pts; e.closed = cs[0].closed; }
+                    else { e.extra.push_back(cs[i].pts); e.extraClosed.push_back(cs[i].closed); }
+                }
+                n->spline = e;
+            }
+            if (n->deform.present) {
+                n->deform = DeformData{};
+                std::vector<SceneNode*> kids;
+                for (const auto& c : n->children()) kids.push_back(c.get());
+                for (SceneNode* c : kids) n->removeChild(c);
+            }
+            continue;
+        }
         MeshData m = n->primitive == PrimitiveType::Cube     ? makeCubeMesh()
                      : n->primitive == PrimitiveType::Sphere ? makeSphereMesh()
                                                              : makePlaneMesh();
@@ -1972,7 +2006,72 @@ int paramKindFor(const std::string& key) {
 // Crea el objeto de un elemento de menu/paleta; las luces salen con su tipo
 // y con el nombre del menu, como en C4D ("Foco", "Luz Infinita"...).
 bool isDeformPaletteItem(const PaletteItem* it);
+bool isSplinePaletteItem(const PaletteItem* it);
 void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& history, const PaletteItem& it) {
+    if (isSplinePaletteItem(&it)) {
+        const std::string key = it.name.key;
+        if (key == "Lápiz" || key == "Dibujo" || key == "Spline Arco") {
+            if (!(selected && selected->spline.present && selected->spline.kind == 0 && !selected->spline.generated)) {
+                SceneNode* n = createObject(root, selected, history, PrimitiveType::None);
+                if (n) {
+                    n->setName(tr("Spline"));
+                    n->spline = defaultSpline(0);
+                    n->spline.interp = key == "Dibujo" ? 1 : key == "Spline Arco" ? 0 : 1;
+                }
+            }
+            setModelTool(key == "Lápiz" ? UiState::ModelTool::SplinePen : key == "Dibujo" ? UiState::ModelTool::SplineSketch
+                                                                                          : UiState::ModelTool::SplineArc);
+            return;
+        }
+        if (key == "Suavizado Spline") {
+            if (!selected || !selected->spline.present || selected->spline.kind != 0 || selected->spline.points.size() < 3) {
+                flashStatus(tr("Suavizado Spline: selecciona un spline editable con al menos 3 puntos."));
+                return;
+            }
+            history.commitBefore(root);
+            auto& P = selected->spline.points;
+            std::vector<glm::vec3> Q = P;
+            const size_t n = P.size();
+            const bool cl = selected->spline.closed;
+            for (size_t i = 0; i < n; ++i) {
+                if (!cl && (i == 0 || i + 1 == n)) continue;
+                Q[i] = glm::mix(P[i], 0.5f * (P[(i + n - 1) % n] + P[(i + 1) % n]), 0.5f);
+            }
+            P = Q;
+            flashStatus(tr("Suavizado Spline: puntos relajados."));
+            return;
+        }
+        static const std::pair<const char*, int> boolOps[] = {{"Unión de Splines", 0}, {"Sustraer Spline", 1}, {"Spline Y", 2},
+                                                              {"Spline O", 3}, {"Intersección de Splines", 4}};
+        for (const auto& [nm, op] : boolOps) {
+            if (key != nm) continue;
+            std::vector<SceneNode*> sel;
+            collectSelected(root, sel);
+            int splines = 0;
+            for (SceneNode* n : sel) splines += n->spline.present ? 1 : 0;
+            if (splines >= 2) groupObjects(root, selected, history, nullptr);
+            else createObject(root, selected, history, PrimitiveType::None);
+            if (selected) {
+                selected->setName(tr(nm));
+                selected->deform.present = true;
+                selected->deform.kind = 48;
+                selected->deform.param2 = (float)op;
+                g.collapsed.erase(selected->id());
+            }
+            if (splines < 2) flashStatus(tr("Booleana de splines: mete dos o más splines dentro del objeto (o selecciónalos antes)."));
+            return;
+        }
+        for (int k = 1; k < kSplineKindCount; ++k) {
+            if (key != splineKindName(k)) continue;
+            SceneNode* n = createObject(root, selected, history, PrimitiveType::None);
+            if (n) {
+                n->setName(tr(splineKindName(k)));
+                n->spline = defaultSpline(k);
+            }
+            return;
+        }
+        return;
+    }
     // Simetria (generador): un Nulo con SymmetryData; si hay un objeto con malla seleccionado se mete dentro.
     if (std::string(it.name.key) == "Simetría") {
         SceneNode* sel = selected;
@@ -2082,7 +2181,7 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
                 if (std::string(it.name.key) == deformKindName(i)) dk = i;
         if (dk >= 0) {
             SceneNode* sel = selected;
-            const bool wrap = sel && (sel->mesh || isParametric(sel->primitive)) && sel->parent();
+            const bool wrap = sel && sel->parent() && (sel->mesh || isParametric(sel->primitive) || (sel->spline.present && dk >= 13 && deformKindUsesSplines(dk)));
             SceneNode* child = wrap ? sel : nullptr;
             if (wrap) groupObjects(root, selected, history, nullptr);
             else createObject(root, selected, history, PrimitiveType::None);
@@ -2093,7 +2192,7 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
                 selected->deform.amount = dk == 8 ? 2.0f : dk <= 1 ? 45.0f : dk == 9 ? 20.0f : dk == 12 ? 30.0f : dk >= 13 ? deformDefaultAmount(dk) : 50.0f;
                 selected->deform.param2 = deformDefaultParam2(dk);
                 g.collapsed.erase(selected->id());
-                if (child) child->editorVis = VisMode::Off;  // la copia deformada la dibuja el nodo
+                if (child && !child->spline.present) child->editorVis = VisMode::Off;  // la copia deformada la dibuja el nodo
             }
             return;
         }
@@ -2229,39 +2328,39 @@ const PaletteItem kPrimitives[] = {
 };
 
 const PaletteItem kSplines[] = {
-    {"Lápiz", Icon::SplPen, kNone, false},
-    {"Dibujo", Icon::SplSketch, kNone, false},
-    {"Suavizado Spline", Icon::SplSmooth, kNone, false},
-    {"Spline Arco", Icon::SplArcTool, kNone, false},
-    {"Arco", Icon::SplArc, kNone, false},
-    {"Círculo", Icon::SplCircle, kNone, false},
-    {"Hélice", Icon::SplHelix, kNone, false},
-    {"n-Lados", Icon::SplNSide, kNone, false},
-    {"Rectángulo", Icon::SplRectangle, kNone, false},
-    {"Estrella", Icon::SplStar, kNone, false},
-    {"Texto", Icon::SplText, kNone, false},
-    {"Vectorizador", Icon::SplVectorizer, kNone, false},
-    {"4-Lados", Icon::SplFourSide, kNone, false},
-    {"Cisoide", Icon::SplCissoid, kNone, false},
-    {"Rueda Dentada", Icon::SplCog, kNone, false},
-    {"Cicloide", Icon::SplCycloid, kNone, false},
-    {"Fórmula", Icon::SplFormula, kNone, false},
-    {"Flor", Icon::SplFlower, kNone, false},
-    {"Perfil", Icon::SplProfile, kNone, false},
-    {"Sustraer Spline", Icon::SplSubtract, kNone, false},
-    {"Unión de Splines", Icon::SplUnion, kNone, false},
-    {"Spline Y", Icon::SplAnd, kNone, false},
-    {"Spline O", Icon::SplOr, kNone, false},
-    {"Intersección de Splines", Icon::SplIntersect, kNone, false},
+    {"Lápiz", Icon::SplPen, kNone, true},
+    {"Dibujo", Icon::SplSketch, kNone, true},
+    {"Suavizado Spline", Icon::SplSmooth, kNone, true},
+    {"Spline Arco", Icon::SplArcTool, kNone, true},
+    {"Arco", Icon::SplArc, kNone, true},
+    {"Círculo", Icon::SplCircle, kNone, true},
+    {"Hélice", Icon::SplHelix, kNone, true},
+    {"n-Lados", Icon::SplNSide, kNone, true},
+    {"Rectángulo", Icon::SplRectangle, kNone, true},
+    {"Estrella", Icon::SplStar, kNone, true},
+    {"Texto", Icon::SplText, kNone, true},
+    {"Vectorizador", Icon::SplVectorizer, kNone, true},
+    {"4-Lados", Icon::SplFourSide, kNone, true},
+    {"Cisoide", Icon::SplCissoid, kNone, true},
+    {"Rueda Dentada", Icon::SplCog, kNone, true},
+    {"Cicloide", Icon::SplCycloid, kNone, true},
+    {"Fórmula", Icon::SplFormula, kNone, true},
+    {"Flor", Icon::SplFlower, kNone, true},
+    {"Perfil", Icon::SplProfile, kNone, true},
+    {"Sustraer Spline", Icon::SplSubtract, kNone, true},
+    {"Unión de Splines", Icon::SplUnion, kNone, true},
+    {"Spline Y", Icon::SplAnd, kNone, true},
+    {"Spline O", Icon::SplOr, kNone, true},
+    {"Intersección de Splines", Icon::SplIntersect, kNone, true},
 };
 
 const PaletteItem kGenerators[] = {
     {"Subdivisión Superficie", Icon::GenSubdiv, kNone, true},
-    {"Extrusión", Icon::GenExtrude, kNone, false},
-    {"Torno", Icon::GenLathe, kNone, false},
-    {"Forro", Icon::GenLoft, kNone, false},
-    {"Recorrido", Icon::GenSweep, kNone, false},
-    {"Bezier", Icon::GenBezier, kNone, false},
+    {"Extrusión", Icon::GenExtrude, kNone, true},
+    {"Torno", Icon::GenLathe, kNone, true},
+    {"Forro", Icon::GenLoft, kNone, true},
+    {"Recorrido", Icon::GenSweep, kNone, true},
+    {"Bezier", Icon::GenBezier, kNone, true},
 };
 
 // Grupo "Modelado" de la barra de R19 (icono de Matriz).
@@ -2269,7 +2368,7 @@ const PaletteItem kModeling[] = {
     {"Matriz", Icon::ModArray, kNone, true},
     {"Formación de Átomos", Icon::ModAtomArray, kNone, true},
     {"Booleano", Icon::ModBoole, kNone, true},
-    {"Máscara de Spline", Icon::ModSplineMask, kNone, false},
+    {"Máscara de Spline", Icon::ModSplineMask, kNone, true},
     {"Conector", Icon::ModConnect, kNone, true},
     {"Simetría", Icon::ModSymmetry, kNone, true},
     {"Generador Python", Icon::ModPython, kNone, false},
@@ -2285,9 +2384,9 @@ const PaletteItem kMoGraph[] = {
     {"Fractura", Icon::MoFracture, kNone, true},
     {"Fractura Voronoi", Icon::MoVoronoi, kNone, true},
     {"MoInstance", Icon::MoInstance, kNone, true},
-    {"MoText", Icon::MoText, kNone, false},
-    {"Trazador", Icon::MoTracer, kNone, false},
-    {"MoSpline", Icon::MoSpline, kNone, false},
+    {"MoText", Icon::MoText, kNone, true},
+    {"Trazador", Icon::MoTracer, kNone, true},
+    {"MoSpline", Icon::MoSpline, kNone, true},
     {"MoExtrude", Icon::MoExtrude, kNone, true},
     {"PolyFX", Icon::MoPolyFx, kNone, true},
 };
@@ -2312,9 +2411,9 @@ const PaletteItem kDeformers[] = {
     {"Esferizar", Icon::DefSpherify, kNone, true},
     {"Superficie", Icon::DefSurface, kNone, true},
     {"Envoltura", Icon::DefWrap, kNone, true},
-    {"Spline", Icon::DefSpline, kNone, false},
-    {"Rail de Splines", Icon::DefSplineRail, kNone, false},
-    {"Envolver Spline", Icon::DefSplineWrap, kNone, false},
+    {"Spline", Icon::DefSpline, kNone, true},
+    {"Rail de Splines", Icon::DefSplineRail, kNone, true},
+    {"Envolver Spline", Icon::DefSplineWrap, kNone, true},
     {"Cámara", Icon::DefCamera, kNone, true},
     {"Colisión", Icon::DefCollision, kNone, true},
     {"Desplazador", Icon::DefDisplacer, kNone, true},
@@ -2326,8 +2425,9 @@ const PaletteItem kDeformers[] = {
 
 bool isDeformPaletteItem(const PaletteItem* it) {
     return (it >= std::begin(kDeformers) && it < std::end(kDeformers)) || (it >= std::begin(kModeling) && it < std::end(kModeling)) ||
-           (it >= std::begin(kMoGraph) && it < std::end(kMoGraph));
+           (it >= std::begin(kMoGraph) && it < std::end(kMoGraph)) || (it >= std::begin(kGenerators) && it < std::end(kGenerators));
 }
+bool isSplinePaletteItem(const PaletteItem* it) { return it >= std::begin(kSplines) && it < std::end(kSplines); }
 
 const PaletteItem kScene[] = {
     {"Suelo", Icon::Floor, PrimitiveType::Plane, true},
@@ -4947,7 +5047,8 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
             if (node.deform.kind >= 13) {
                 DeformData& dd = node.deform;
                 const int k = dd.kind;
-                if (k != 28 && k != 29 && k != 30 && k != 32 && k != 33 && k != 35 && k != 36 && k != 37 && k != 38 && k != 39) {
+                if (k != 28 && k != 29 && k != 30 && k != 32 && k != 33 && k != 35 && k != 36 && k != 37 && k != 38 && k != 39 &&
+                    k != 42 && k != 43 && k != 44 && k != 45 && k != 46 && k != 47 && k != 48 && k != 51) {
                     propLabel(tr("Eje"));
                     const char* axes[] = {"X", "Y", "Z"};
                     int dax = dd.axis;
@@ -4959,35 +5060,82 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                 }
                 if (const char* al = deformAmountLabel(k)) {
                     propLabel(tr(al));
-                    const bool cm = k == 22 || k == 29 || k == 31 || k == 33 || k == 34 || k == 35 || k == 36 || k == 37 || k == 39;
+                    const bool cm = k == 22 || k == 29 || k == 31 || k == 33 || k == 34 || k == 35 || k == 36 || k == 37 || k == 39 ||
+                                    k == 27 || k == 41 || k == 45;
                     ImGui::SetNextItemWidth(-1);
                     if (ImGui::DragFloat("##defamt2", &dd.amount, cm ? 0.5f : 0.5f, k == 38 ? 0.1f : -10000.0f, 100000.0f,
-                                         k == 38 ? "%.1f" : cm ? "%.1f cm" : "%.1f %%")) {
+                                         k == 38 ? "%.1f" : k == 42 ? "%.1f °" : cm ? "%.1f cm" : "%.1f %%")) {
                         if (ImGui::IsItemActivated()) history.commitBefore(root);
                     }
                 }
                 if (const char* pl = deformParam2Label(k)) {
                     propLabel(tr(pl));
                     ImGui::SetNextItemWidth(-1);
-                    if (k == 28) {
+                    if (k == 48) {
+                        const char* ops[] = {tr("Unión"), tr("Sustraer"), tr("Y"), tr("O"), tr("Intersección")};
+                        int op = std::clamp((int)std::lround(dd.param2), 0, 4);
+                        if (ImGui::Combo("##defmask", &op, ops, 5)) {
+                            history.commitBefore(root);
+                            dd.param2 = (float)op;
+                        }
+                    } else if (k == 28) {
                         const char* ops[] = {tr("A unir B"), tr("A sustraer B"), tr("A intersección B")};
                         int op = std::clamp((int)std::lround(dd.param2), 0, 2);
                         if (ImGui::Combo("##defbool", &op, ops, 3)) {
                             history.commitBefore(root);
                             dd.param2 = (float)op;
                         }
-                    } else if (k == 25 || k == 34 || k == 35 || k == 37 || k == 38 || k == 39) {
+                    } else if (k == 25 || k == 34 || k == 35 || k == 37 || k == 38 || k == 39 || k == 41 || k == 42 || k == 43 || k == 46 ||
+                               k == 47 || k == 51) {
                         int iv = (int)std::lround(dd.param2);
                         if (ImGui::DragInt("##defp2i", &iv, 0.2f, 1, k == 35 ? 30 : 500)) {
                             if (ImGui::IsItemActivated()) history.commitBefore(root);
                             dd.param2 = (float)iv;
                         }
                     } else {
-                        const bool cm = k == 22 || k == 31 || k == 32;
-                        if (ImGui::DragFloat("##defp2", &dd.param2, 0.05f, 0.01f, 100000.0f, cm ? "%.1f cm" : k == 13 ? "%.2f Hz" : "%.2f")) {
+                        const bool cm = k == 22 || k == 31 || k == 32 || k == 45;
+                        if (ImGui::DragFloat("##defp2", &dd.param2, k == 44 ? 1.0f : 0.05f, k == 44 ? -100000.0f : 0.01f, 100000.0f,
+                                             cm ? "%.1f cm" : k == 13 ? "%.2f Hz" : k == 44 ? "%.1f °" : "%.2f")) {
                             if (ImGui::IsItemActivated()) history.commitBefore(root);
                         }
                     }
+                }
+                if (k == 45) {
+                    propLabel(tr("Texto"));
+                    char tbuf2[256];
+                    std::snprintf(tbuf2, sizeof tbuf2, "%s", dd.formula.c_str());
+                    ImGui::SetNextItemWidth(-1);
+                    if (ImGui::InputText("##deftext", tbuf2, sizeof tbuf2)) {
+                        if (ImGui::IsItemActivated()) history.commitBefore(root);
+                        dd.formula = tbuf2;
+                    }
+                }
+                if (k == 51) {
+                    if (!dd.bindRest || dd.bindRest->vertices.size() != 16) {
+                        MeshData cp;
+                        for (int j = 0; j < 4; ++j)
+                            for (int i = 0; i < 4; ++i)
+                                cp.vertices.push_back({glm::vec3((i / 3.0f - 0.5f) * 2.0f, 0.0f, (j / 3.0f - 0.5f) * 2.0f), glm::vec3(0.8f), glm::vec3(0, 1, 0), glm::vec2(0.0f)});
+                        dd.bindRest = std::make_shared<const MeshData>(std::move(cp));
+                    }
+                    ImGui::TextDisabled("%s", tr("  Altura (cm) de los 16 puntos de control:"));
+                    MeshData cp = *dd.bindRest;
+                    bool changed = false;
+                    for (int j = 0; j < 4; ++j) {
+                        for (int i = 0; i < 4; ++i) {
+                            ImGui::PushID(j * 4 + i);
+                            if (i) ImGui::SameLine();
+                            ImGui::SetNextItemWidth(std::max(30.0f, (ImGui::GetContentRegionAvail().x - 12.0f) / (4 - i)));
+                            float hcm = cp.vertices[(size_t)(j * 4 + i)].position.y * kCmPerUnit;
+                            if (ImGui::DragFloat("##bz", &hcm, 1.0f, -100000.0f, 100000.0f, "%.0f")) {
+                                if (ImGui::IsItemActivated()) history.commitBefore(root);
+                                cp.vertices[(size_t)(j * 4 + i)].position.y = hcm / kCmPerUnit;
+                                changed = true;
+                            }
+                            ImGui::PopID();
+                        }
+                    }
+                    if (changed) dd.bindRest = std::make_shared<const MeshData>(std::move(cp));
                 }
                 if (k == 23) {
                     propLabel(tr("Fórmula"));
@@ -5050,7 +5198,18 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                     help[38] = "  Estela con copias del primer hijo en fotogramas anteriores (posición animada).";
                     help[39] = "  Extruye todos los polígonos del primer hijo.";
                     help[40] = "  Cada polígono se separa y se desplaza y gira al azar.";
-                    help[27] = "  Necesita splines.";
+                    help[27] = "  Deforma el hijo con malla según la diferencia entre dos splines hijos (original y modificado).";
+                    help[41] = "  Extruye los splines hijos a lo largo del eje, con tapas en los cerrados.";
+                    help[42] = "  Gira el primer spline hijo alrededor del eje Y.";
+                    help[43] = "  Superficie que pasa por todos los splines hijos, en orden.";
+                    help[44] = "  El primer spline hijo es el perfil y el segundo el recorrido.";
+                    help[45] = "  Texto extruido con la fuente del sistema.";
+                    help[46] = "  Dibuja la trayectoria animada de cada hijo (posición con claves).";
+                    help[47] = "  Hace crecer el spline hijo (anima Crecimiento); sin hijo, una espiral.";
+                    help[48] = "  Booleana de los splines hijos cerrados (aproximada por rejilla).";
+                    help[49] = "  El ancho del hijo con malla sigue al spline hijo a lo largo del eje.";
+                    help[50] = "  Dobla el hijo con malla a lo largo del spline hijo (el eje del objeto recorre el spline).";
+                    help[51] = "  Superficie de Bezier de 4x4 puntos de control.";
                 }
                 if (help[k]) ImGui::TextDisabled("%s", tr(help[k]));
             } else if (node.deform.kind == 8) {
@@ -5096,6 +5255,147 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                 }
                 ImGui::TextDisabled(dk2 == 10 ? tr("  Mezcla el primer hijo con el segundo (mismo número de puntos).")
                                               : tr("  Deforma al primer hijo con malla; el hijo se edita aparte."));
+            }
+        } else if (node.spline.present && !node.deform.present) {
+            sectionHeader(tr("Propiedades del Objeto"));
+            SplineData& sp = node.spline;
+            auto fl = [&](const char* label, const char* id, float& v, float speed, const char* fmt) {
+                propLabel(label);
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::DragFloat(id, &v, speed, -100000.0f, 100000.0f, fmt))
+                    if (ImGui::IsItemActivated()) history.commitBefore(root);
+            };
+            auto in = [&](const char* label, const char* id, int& v, int lo, int hi) {
+                propLabel(label);
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::DragInt(id, &v, 0.1f, lo, hi))
+                    if (ImGui::IsItemActivated()) history.commitBefore(root);
+            };
+            auto tx = [&](const char* label, const char* id, std::string& v) {
+                propLabel(label);
+                char buf[512];
+                std::snprintf(buf, sizeof buf, "%s", v.c_str());
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::InputText(id, buf, sizeof buf)) {
+                    if (ImGui::IsItemActivated()) history.commitBefore(root);
+                    v = buf;
+                }
+            };
+            if (sp.generated) {
+                ImGui::TextDisabled("%s", tr("  Spline generado por este objeto (Hacer Editable lo convierte en un spline normal)."));
+            } else {
+                propLabel(tr("Tipo"));
+                const char* kinds[kSplineKindCount];
+                for (int i = 0; i < kSplineKindCount; ++i) kinds[i] = tr(splineKindName(i));
+                int k = sp.kind;
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::Combo("##splkind", &k, kinds, kSplineKindCount, 16) && k != sp.kind) {
+                    history.commitBefore(root);
+                    const int plane = sp.plane;
+                    const auto pts = sp.points;
+                    sp = defaultSpline(k);
+                    sp.plane = plane;
+                    if (k == 0) sp.points = pts;
+                }
+                propLabel(tr("Plano"));
+                const char* planes[] = {"XY", "ZY", "XZ"};
+                int pl = sp.plane;
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::Combo("##splplane", &pl, planes, 3)) {
+                    history.commitBefore(root);
+                    sp.plane = pl;
+                }
+                switch (sp.kind) {
+                    case 0: {
+                        propLabel(tr("Interpolación"));
+                        const char* ints[] = {tr("Lineal"), tr("Suave")};
+                        int ip = sp.interp;
+                        ImGui::SetNextItemWidth(-1);
+                        if (ImGui::Combo("##splint", &ip, ints, 2)) { history.commitBefore(root); sp.interp = ip; }
+                        propLabel(tr("Cerrar Spline"));
+                        bool cl = sp.closed;
+                        if (ImGui::Checkbox("##splcl", &cl)) { history.commitBefore(root); sp.closed = cl; }
+                        sectionHeader(tr("Puntos"));
+                        int removeAt = -1;
+                        for (size_t i = 0; i < sp.points.size(); ++i) {
+                            ImGui::PushID((int)i);
+                            glm::vec3 cmv = sp.points[i] * kCmPerUnit;
+                            ImGui::SetNextItemWidth(std::max(60.0f, ImGui::GetContentRegionAvail().x - 28.0f));
+                            if (ImGui::DragFloat3("##pt", &cmv.x, 1.0f, -100000.0f, 100000.0f, "%.1f")) {
+                                if (ImGui::IsItemActivated()) history.commitBefore(root);
+                                sp.points[i] = cmv / kCmPerUnit;
+                            }
+                            ImGui::SameLine();
+                            if (ImGui::SmallButton("x")) removeAt = (int)i;
+                            ImGui::PopID();
+                        }
+                        if (removeAt >= 0) { history.commitBefore(root); sp.points.erase(sp.points.begin() + removeAt); }
+                        if (ImGui::Button(tr("Añadir Punto"), ImVec2(-1, 0))) {
+                            history.commitBefore(root);
+                            glm::vec3 np = sp.points.empty() ? glm::vec3(0.0f) : sp.points.back() + glm::vec3(0.5f, 0.0f, 0.0f);
+                            sp.points.push_back(np);
+                        }
+                        ImGui::TextDisabled("%s", tr("  Los puntos van en cm, en el espacio del objeto. Lápiz y Dibujo añaden puntos en el visor."));
+                        break;
+                    }
+                    case 1: fl(tr("Radio"), "##sa", sp.a, 1, "%.1f cm"); fl(tr("Ángulo Inicial"), "##s0", sp.startDeg, 1, "%.1f °"); fl(tr("Ángulo Final"), "##s1", sp.endDeg, 1, "%.1f °"); break;
+                    case 2: fl(tr("Radio"), "##sa", sp.a, 1, "%.1f cm"); break;
+                    case 3: fl(tr("Radio Inicial"), "##sa", sp.a, 1, "%.1f cm"); fl(tr("Radio Final"), "##sb", sp.b, 1, "%.1f cm"); fl(tr("Altura"), "##sc", sp.c, 1, "%.1f cm"); in(tr("Vueltas"), "##sn", sp.n, 1, 200); break;
+                    case 4: fl(tr("Radio"), "##sa", sp.a, 1, "%.1f cm"); in(tr("Lados"), "##sn", sp.n, 3, 256); break;
+                    case 5: fl(tr("Anchura"), "##sa", sp.a, 1, "%.1f cm"); fl(tr("Altura"), "##sb", sp.b, 1, "%.1f cm"); fl(tr("Radio de Redondeo"), "##sc", sp.c, 1, "%.1f cm"); break;
+                    case 6: fl(tr("Radio Exterior"), "##sa", sp.a, 1, "%.1f cm"); fl(tr("Radio Interior"), "##sb", sp.b, 1, "%.1f cm"); in(tr("Puntas"), "##sn", sp.n, 2, 256); break;
+                    case 7: tx(tr("Texto"), "##stx", sp.text); fl(tr("Altura"), "##sa", sp.a, 1, "%.1f cm"); break;
+                    case 8: fl(tr("Anchura"), "##sa", sp.a, 1, "%.1f cm"); fl(tr("Altura"), "##sb", sp.b, 1, "%.1f cm"); break;
+                    case 9: fl(tr("Anchura"), "##sa", sp.a, 1, "%.1f cm"); break;
+                    case 10: fl(tr("Radio Exterior"), "##sa", sp.a, 1, "%.1f cm"); fl(tr("Radio Interior"), "##sb", sp.b, 1, "%.1f cm"); in(tr("Dientes"), "##sn", sp.n, 3, 512); break;
+                    case 11: fl(tr("Radio"), "##sa", sp.a, 1, "%.1f cm"); in(tr("Vueltas"), "##sn", sp.n, 1, 100); break;
+                    case 12: {
+                        tx("X(t)", "##sfx", sp.fx); tx("Y(t)", "##sfy", sp.fy); tx("Z(t)", "##sfz", sp.fz);
+                        in(tr("Muestras"), "##sn", sp.n, 2, 5000);
+                        propLabel(tr("Cerrar Spline"));
+                        bool cl = sp.closed;
+                        if (ImGui::Checkbox("##splcl2", &cl)) { history.commitBefore(root); sp.closed = cl; }
+                        ImGui::TextDisabled("%s", tr("  t va de 0 a 1; los valores salen en cm."));
+                        break;
+                    }
+                    case 13: fl(tr("Radio Exterior"), "##sa", sp.a, 1, "%.1f cm"); fl(tr("Radio Interior"), "##sb", sp.b, 1, "%.1f cm"); in(tr("Pétalos"), "##sn", sp.n, 1, 100); break;
+                    case 14: {
+                        propLabel(tr("Tipo de Perfil"));
+                        const char* pr[] = {"H", "L", "T", "U", "Z"};
+                        int pt = std::clamp(sp.n, 0, 4);
+                        ImGui::SetNextItemWidth(-1);
+                        if (ImGui::Combo("##sprof", &pt, pr, 5)) { history.commitBefore(root); sp.n = pt; }
+                        fl(tr("Anchura"), "##sa", sp.a, 1, "%.1f cm"); fl(tr("Altura"), "##sb", sp.b, 1, "%.1f cm"); fl(tr("Grosor"), "##sc", sp.c, 0.5f, "%.1f cm");
+                        break;
+                    }
+                    case 15: {
+                        tx(tr("Imagen"), "##simg", sp.text);
+                        if (nativeFileDialogAvailable() && ImGui::Button(tr("Elegir Imagen..."), ImVec2(-1, 0))) {
+                            if (auto pth = openFileDialog(tr("Vectorizador"), {{tr("Imágenes"), "*.png;*.jpg;*.jpeg;*.bmp;*.tga"}})) {
+                                history.commitBefore(root);
+                                sp.text = pth->string();
+                            }
+                        }
+                        fl(tr("Anchura"), "##sa", sp.a, 1, "%.1f cm"); fl(tr("Umbral"), "##sb", sp.b, 0.5f, "%.0f %%");
+                        break;
+                    }
+                    default: break;
+                }
+                if (sp.kind != 0 || !sp.extra.empty()) {
+                    if (ImGui::Button(tr("Convertir en Spline Editable"), ImVec2(-1, 0))) {
+                        history.commitBefore(root);
+                        const auto cs = splineContours(sp);
+                        SplineData e;
+                        e.present = true;
+                        e.kind = 0;
+                        e.interp = 0;
+                        for (size_t i = 0; i < cs.size(); ++i) {
+                            if (i == 0) { e.points = cs[0].pts; e.closed = cs[0].closed; }
+                            else { e.extra.push_back(cs[i].pts); e.extraClosed.push_back(cs[i].closed); }
+                        }
+                        sp = e;
+                    }
+                }
             }
         } else if (node.env.present) {
             sectionHeader(tr("Propiedades del Objeto"));
@@ -8656,10 +8956,78 @@ int knifePlaneAt(SceneNode& root, SceneNode* selected, const OrbitalCamera& came
     return r.changed;
 }
 
+// Punto del visor sobre el plano de trabajo: el suelo (Y = 0) en perspectiva y vistas superiores; el plano de la
+// vista que pasa por el origen cuando el rayo va casi paralelo al suelo (vistas frontal y lateral).
+glm::vec3 splineToolPoint(const OrbitalCamera& camera, const ViewportState& vp, float mx, float my) {
+    const glm::mat4 view = camera.viewMatrix();
+    const glm::mat4 proj = camera.projectionMatrix(vp.w / std::max(1.0f, vp.h), true);
+    const glm::vec3 eye = glm::vec3(glm::inverse(view)[3]);
+    const Ray ray = TransformGizmo::screenRay(mx - vp.x, my - vp.y, (int)vp.w, (int)vp.h, view, proj, eye);
+    const glm::vec3 d = glm::normalize(ray.direction);
+    glm::vec3 n(0.0f, 1.0f, 0.0f);
+    if (std::fabs(d.y) < 0.2f) n = -glm::vec3(view[0][2], view[1][2], view[2][2]);
+    const float den = glm::dot(n, d);
+    if (std::fabs(den) < 1e-6f) return ray.origin;
+    const float t = -glm::dot(n, ray.origin) / den;
+    return ray.origin + d * t;
+}
+
+void splineToolMouse(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, float mx, float my, bool leftDown,
+                     bool leftPressed, SceneHistory& history) {
+    using MT = UiState::ModelTool;
+    if (!selected || !selected->spline.present || selected->spline.kind != 0 || selected->spline.generated) {
+        if (leftPressed) flashStatus(tr("Selecciona un spline editable (o vuelve a elegir Lápiz o Dibujo para crear uno)."));
+        return;
+    }
+    auto& d = g.tdrag;
+    SplineData& sp = selected->spline;
+    const glm::mat4 inv = glm::inverse(selected->worldMatrix());
+    auto local = [&](float x, float y) { return glm::vec3(inv * glm::vec4(splineToolPoint(camera, *g_vp, x, y), 1.0f)); };
+    if (leftPressed) {
+        history.commitBefore(root);
+        d = {};
+        d.active = true;
+        d.startX = d.curX = mx;
+        d.startY = d.curY = my;
+        const glm::vec3 p = local(mx, my);
+        if (g.modelTool == MT::SplineArc && !sp.points.empty()) {
+            // arco de 90 grados entre el ultimo punto y el nuevo, en el plano de trabajo
+            const glm::vec3 a = sp.points.back(), b = p;
+            const glm::vec3 mid = 0.5f * (a + b), ch = b - a;
+            glm::vec3 nrm = glm::vec3(inv * glm::vec4(0, 1, 0, 0));
+            if (glm::length(glm::cross(ch, nrm)) < 1e-6f) nrm = glm::vec3(0, 0, 1);
+            const glm::vec3 side = glm::normalize(glm::cross(nrm, ch)) * (0.2071f * glm::length(ch));
+            for (int i = 1; i <= 8; ++i) {
+                const float t = i / 8.0f;
+                const glm::vec3 q = glm::mix(a, b, t) + side * (4.0f * t * (1.0f - t)) * 1.0f;
+                sp.points.push_back(i == 8 ? b : q + (mid - mid));
+            }
+        } else {
+            sp.points.push_back(p);
+        }
+        return;
+    }
+    if (!d.active) return;
+    if (leftDown) {
+        if (g.modelTool == MT::SplineSketch && std::hypot(mx - d.curX, my - d.curY) > 8.0f) {
+            sp.points.push_back(local(mx, my));
+            d.curX = mx;
+            d.curY = my;
+        }
+        return;
+    }
+    d = {};
+}
+
 void modelToolMouse(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, float mx, float my,
                     bool leftDown, bool leftPressed, SceneHistory& history) {
     auto& d = g.tdrag;
     if (!g_vp) return;
+    if (g.modelTool == UiState::ModelTool::SplinePen || g.modelTool == UiState::ModelTool::SplineSketch ||
+        g.modelTool == UiState::ModelTool::SplineArc) {
+        splineToolMouse(root, selected, camera, mx, my, leftDown, leftPressed, history);
+        return;
+    }
     if (leftPressed) {
         d = {};
         d.startX = d.curX = mx;

@@ -104,6 +104,7 @@ add_executable(Iron3DStudio
     src/core/Symmetry.cpp
     src/core/Deform.cpp
     src/core/DeformMore.cpp
+    src/core/Spline.cpp
     src/core/Clone.cpp
     src/core/Boolean.cpp
     src/core/NullShapes.cpp
@@ -227,6 +228,7 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         src/core/Symmetry.cpp
         src/core/Deform.cpp
     src/core/DeformMore.cpp
+    src/core/Spline.cpp
     src/core/Boolean.cpp
         src/core/MeshEdit.cpp
         src/core/Clone.cpp
@@ -356,6 +358,7 @@ add_executable(iron3d_tests
     src/core/PrimitiveShapes.cpp
     src/core/Deform.cpp
     src/core/DeformMore.cpp
+    src/core/Spline.cpp
     src/core/Symmetry.cpp
     src/core/LightGizmo.cpp
     src/core/Clone.cpp
@@ -455,6 +458,7 @@ add_test(NAME ik COMMAND ik_test)
 add_executable(deform_more_test
     tests/deform_more_test.cpp
     src/core/DeformMore.cpp
+    src/core/Spline.cpp
     src/core/Boolean.cpp
     src/core/MeshData.cpp
     src/core/PrimitiveShapes.cpp
@@ -462,17 +466,37 @@ add_executable(deform_more_test
     src/core/MeshEdit.cpp
     src/core/SceneNode.cpp)
 target_include_directories(deform_more_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+target_link_libraries(deform_more_test PRIVATE iron3d_lib4d)
 target_compile_definitions(deform_more_test PRIVATE GLM_FORCE_RADIANS)
 if(MSVC)
     target_compile_options(deform_more_test PRIVATE /W4 /utf-8)
 endif()
 add_test(NAME deform_more COMMAND deform_more_test)
+# Splines y generadores de splines (Extrusion, Torno, Forro, Recorrido, booleanas, texto).
+add_executable(spline_test
+    tests/spline_test.cpp
+    src/core/DeformMore.cpp
+    src/core/Spline.cpp
+    src/core/Boolean.cpp
+    src/core/MeshData.cpp
+    src/core/PrimitiveShapes.cpp
+    src/core/MeshTopology.cpp
+    src/core/MeshEdit.cpp
+    src/core/SceneNode.cpp)
+target_include_directories(spline_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+target_link_libraries(spline_test PRIVATE iron3d_lib4d)
+target_compile_definitions(spline_test PRIVATE GLM_FORCE_RADIANS)
+if(MSVC)
+    target_compile_options(spline_test PRIVATE /W4 /utf-8)
+endif()
+add_test(NAME spline COMMAND spline_test)
 add_executable(skin_test
     tests/skin_test.cpp
     src/core/Skin.cpp
     src/core/Symmetry.cpp
     src/core/Deform.cpp
     src/core/DeformMore.cpp
+    src/core/Spline.cpp
     src/core/Boolean.cpp
     src/core/Clone.cpp
     src/core/NullShapes.cpp

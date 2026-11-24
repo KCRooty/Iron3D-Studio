@@ -32,9 +32,22 @@
 //   38 MoInstance      estela: copias del hijo en fotogramas anteriores (param2 = copias, amount = paso en fotogramas)
 //   39 MoExtrude       extruye todos los poligonos (amount = distancia cm, param2 = pasos)
 //   40 PolyFX          cada poligono se separa y se desplaza/gira al azar (amount = intensidad %)
+//   27 Spline          deforma el hijo con malla segun la diferencia entre dos splines hijos (original, modificado)
+//   41 Extrusion       extruye los splines hijos a lo largo del eje (amount = cm, param2 = segmentos), con tapas
+//   42 Torno           gira el primer spline alrededor del eje Y (amount = angulo, param2 = segmentos)
+//   43 Forro           superficie que pasa por todos los splines hijos (param2 = subdivisiones entre splines)
+//   44 Recorrido       perfil (1.er spline) a lo largo de un recorrido (2.o spline); amount = escala final %, param2 = giro
+//   45 MoText          texto extruido (texto en `formula`, amount = altura cm, param2 = profundidad cm)
+//   46 Trazador        traza la trayectoria animada de los hijos como spline (param2 = fotogramas)
+//   47 MoSpline        spline que crece sobre el spline hijo (amount = %), o espiral simple si no hay hijo
+//   48 Mascara Spline  booleana de los splines hijos (param2: 0 union, 1 sustraer, 2 Y, 3 O, 4 interseccion)
+//   49 Rail de Splines el ancho del hijo con malla sigue al spline hijo a lo largo del eje
+//   50 Envolver Spline el hijo con malla se dobla a lo largo del spline hijo
+//   51 Bezier          superficie de Bezier bicubica de 4x4 puntos de control (DeformData::bindRest), param2 = subdivisiones
 
 #include "MeshData.h"
 #include "SceneNode.h"
+#include "Spline.h"
 
 #include <glm/glm.hpp>
 
@@ -44,7 +57,7 @@
 
 namespace iron3d {
 
-constexpr int kDeformKindCount = 41;
+constexpr int kDeformKindCount = 52;
 // Nombre del tipo (clave de traduccion, en espanol).
 const char* deformKindName(int kind);
 // true si el resultado depende del fotograma (se recalcula al cambiarlo).
@@ -73,7 +86,16 @@ struct DeformMoreInput {
     std::vector<std::pair<const MeshData*, glm::mat4>> all;  // Conector / Metaball / LOD: hijos con malla y su matriz
     std::vector<std::pair<glm::vec3, float>> spheres;        // Metaball: centro y radio de cada hijo (espacio del nodo)
     glm::vec3 viewPointNode{0.0f, 0.0f, 1e9f};     // LOD: camara en el espacio del nodo
+    std::vector<std::vector<SplineContour>> splines;       // splines hijos en el espacio del nodo
+    std::vector<std::vector<SplineContour>> splinesLocal;  // los mismos sin su transformacion (perfil de Recorrido)
+    std::vector<const AnimTrack*> childMotions;            // Trazador: pista de posicion de cada hijo
+    std::vector<glm::vec3> childPositions;                 // Trazador: posicion actual de cada hijo
+    std::vector<SplineContour>* splineOut = nullptr;       // tipos que devuelven un spline (46, 47, 48)
 };
+// true si el tipo devuelve un spline en vez de una malla.
+bool deformKindOutputsSpline(int kind);
+// true si el tipo necesita splines hijos.
+bool deformKindUsesSplines(int kind);
 
 // `src` ya esta en el espacio del nodo. axis 0..2.
 MeshData deformMore(MeshData src, int kind, int axis, float amount, const DeformMoreInput& in);

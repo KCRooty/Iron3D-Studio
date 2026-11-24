@@ -57,6 +57,7 @@ extern "C" __declspec(dllimport) int __stdcall MultiByteToWideChar(unsigned int 
 #include "core/Skin.h"
 #include "core/IkSolver.h"
 #include "core/NullShapes.h"
+#include "core/Spline.h"
 #include "core/LightGizmo.h"
 
 namespace {
@@ -471,6 +472,13 @@ void pickNode(iron3d::SceneNode& node, const glm::mat4& parentWorld, const iron3
         // Nulo con forma (controlador de rig): se elige pinchando sus lineas.
         float t = 0.0f;
         if (iron3d::rayHitsNullShape(node, world, ray.origin, glm::normalize(ray.direction), t) && t < bestDist) {
+            bestDist = t;
+            best = &node;
+        }
+    }
+    if (vis && node.spline.present) {
+        float t = 0.0f;
+        if (iron3d::rayHitsSpline(node, world, ray.origin, glm::normalize(ray.direction), t) && t < bestDist) {
             bestDist = t;
             best = &node;
         }
@@ -1262,6 +1270,7 @@ int main(int argc, char** argv) {
             std::vector<Vertex> nullLines;
             if (!viewport.renderView) iron3d::buildNullShapes(sceneRoot, selected, nullLines);
             if (!viewport.renderView) iron3d::buildLightGizmos(sceneRoot, selected, nullLines);
+            if (!viewport.renderView) iron3d::buildSplineLines(sceneRoot, selected, nullLines);
             const std::vector<Vertex> noTris;
 
             for (const Panel& pn : panels) {

@@ -52,6 +52,28 @@ Las entradas de Deformadores, Modelado y MoGraph que no hacían nada ahora crean
 - El deformador Spline y Rail/Envolver Spline siguen deshabilitados: necesitan splines.
 - Nada de esto se ha mirado todavía en la interfaz; solo compila y pasa los tests.
 
+### Splines y generadores de splines (2026-11-24)
+
+**Añadido**
+- Objeto Spline (`src/core/Spline.*`) con 16 tipos: libre (puntos, lineal o suave), Arco, Círculo, Hélice, n-Lados, Rectángulo (con redondeo), Estrella, Texto (fuente del sistema vía stb_truetype), 4-Lados, Cisoide, Rueda Dentada, Cicloide, Fórmula (X/Y/Z de t), Flor, Perfil (H/L/T/U/Z) y Vectorizador (contorno de una imagen). Plano XY/ZY/XZ, panel de atributos, edición de la lista de puntos y "Convertir en Spline Editable".
+- Los splines se dibujan en el visor (seleccionado en amarillo, generados en azul, cruces en los puntos de control) y se seleccionan con un clic.
+- Herramientas de visor Lápiz (clic añade punto), Dibujo (arrastrar) y Spline Arco (arco entre el último punto y el clic), sobre el suelo o el plano de la vista. Suavizado Spline relaja los puntos.
+- Booleanas de splines (Unión, Sustraer, Y, O, Intersección) y Máscara de Spline: rasterizado + marching squares, resultado aproximado.
+- Generadores: Extrusión (con tapas y agujeros), Torno, Forro, Recorrido (escala final y giro), Bezier (4x4 puntos de control editables), MoText, Trazador (trayectoria animada de los hijos), MoSpline (crecimiento), y los deformadores Spline, Rail de Splines y Envolver Spline.
+- Hacer Editable convierte también splines paramétricos y generadores (se queda la malla o el spline que se ve).
+- Guardado y carga de splines (`SPL`) y de los parámetros nuevos de los deformadores al duplicar.
+- Test `spline_test` (áreas de tapas con agujero, extrusión, torno, forro, recorrido, booleanas, texto, generadores).
+
+**Corregido**
+- Duplicar un deformador perdía `param2`, la fórmula y la jaula en reposo.
+
+**Límites conocidos**
+- Las booleanas de splines son aproximadas (rejilla de 384 celdas) y no conservan las curvas originales.
+- Rail de Splines usa un solo rail (el ancho), no dos.
+- Los puntos de un spline se editan en la lista del panel o se añaden con Lápiz/Dibujo; aún no se arrastran en el visor.
+- Sin tangentes Bezier por punto: la interpolación suave es Catmull-Rom.
+- Nada de esto está comprobado a mano en la interfaz todavía; solo compilación, tests y arranque.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

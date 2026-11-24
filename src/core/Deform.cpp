@@ -1,5 +1,6 @@
 #include "Deform.h"
 #include "DeformMore.h"
+#include "Spline.h"
 #include "MeshEdit.h"
 #include "MeshTopology.h"
 #include "Symmetry.h"
@@ -350,15 +351,26 @@ void walkMore(SceneNode& node, int& count) {
             allMeshes.push_back(c->mesh);
         }
     }
+    std::vector<SplineData> splineDatas;
+    std::vector<glm::mat4> splineMats;
+    if (deformKindUsesSplines(d.kind)) {
+        for (const auto& c : node.children())
+            if (c->spline.present) {
+                splineDatas.push_back(c->spline);
+                splineMats.push_back(c->localMatrix());
+            }
+    }
     const bool timeDep = deformKindUsesTime(d.kind);
     glm::vec3 view(0.0f);
     if (d.kind == 33) view = glm::vec3(glm::inverse(node.worldMatrix()) * glm::vec4(lodViewPoint(), 1.0f));
     if (d.kind == 26 && mesh2 && (!d.bindRest || d.bindRest->vertices.size() != mesh2->vertices.size())) d.bindRest = mesh2;
     const bool same = d.lastSource == (child ? child->mesh : nullptr) && d.lastChildMatrix == cm && d.lastKind == d.kind &&
-                      d.lastAxis == d.axis && d.lastAmount == d.amount && node.mesh == d.output && d.output &&
+                      d.lastAxis == d.axis && d.lastAmount == d.amount && (deformKindOutputsSpline(d.kind) || node.mesh == d.output) &&
                       d.lastSource2 == mesh2 && d.lastChildMatrix2 == cm2 && sameFfd(d.lastFfd, d.ffd) &&
                       d.lastParam2 == d.param2 && d.lastFormula == d.formula && (!timeDep || d.lastFrame == g_evalFrame) &&
-                      d.lastAllMeshes == allMeshes && d.lastAllMats == allMats && d.lastView == view;
+                      d.lastAllMeshes == allMeshes && d.lastAllMats == allMats && d.lastView == view &&
+                      d.lastSplines == splineDatas && d.lastSplineMats == splineMats &&
+                      (deformKindOutputsSpline(d.kind) || d.output);
     if (same) return;
     DeformMoreInput in;
     in.frame = g_evalFrame;
@@ -382,16 +394,44 @@ void walkMore(SceneNode& node, int& count) {
         }
     }
     in.viewPointNode = view;
+    for (size_t i = 0; i < splineDatas.size(); ++i) {
+        std::vector<SplineContour> local = splineContours(splineDatas[i]);
+        std::vector<SplineContour> ns = local;
+        for (auto& cc : ns) for (glm::vec3& p : cc.pts) p = glm::vec3(splineMats[i] * glm::vec4(p, 1.0f));
+        in.splinesLocal.push_back(std::move(local));
+        in.splines.push_back(std::move(ns));
+    }
+    if (d.kind == 46)
+        for (const auto& c : node.children()) in.childMotions.push_back(&c->animPos);
+    std::vector<SplineContour> splineOut;
+    in.splineOut = &splineOut;
     MeshData src;
     if (child) src = *meshInNodeSpace(*child->mesh, cm);
     auto m = std::make_shared<const MeshData>(deformMore(std::move(src), d.kind, d.axis, d.amount, in));
-    node.mesh = m;
-    node.primitive = PrimitiveType::Mesh;
+    if (deformKindOutputsSpline(d.kind)) {
+        SplineData out;
+        out.present = true;
+        out.generated = true;
+        out.kind = 0;
+        out.interp = 0;
+        for (const auto& cc : splineOut) {
+            out.extra.push_back(cc.pts);
+            out.extraClosed.push_back(cc.closed);
+        }
+        node.spline = std::move(out);
+        node.mesh.reset();
+        node.primitive = PrimitiveType::None;
+        d.output.reset();
+    } else {
+        if (node.spline.generated) node.spline = SplineData{};
+        node.mesh = m;
+        node.primitive = PrimitiveType::Mesh;
+        d.output = m;
+    }
     if (child) {
         node.materialIndex = child->materialIndex;
         node.texTag = child->texTag;
     }
-    d.output = m;
     d.lastSource = child ? child->mesh : nullptr;
     d.lastChildMatrix = cm;
     d.lastKind = d.kind;
@@ -406,6 +446,8 @@ void walkMore(SceneNode& node, int& count) {
     d.lastAllMeshes = allMeshes;
     d.lastAllMats = allMats;
     d.lastView = view;
+    d.lastSplines = splineDatas;
+    d.lastSplineMats = splineMats;
     ++count;
 }
 

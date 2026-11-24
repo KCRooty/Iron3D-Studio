@@ -393,12 +393,15 @@ const char* deformKindName(int kind) {
         "Subdivisión Superficie", "Explosión", "Morph", "FFD", "Bisel", "Jiggle", "FX Explosión", "Romper", "Corrección",
         "Cubrir", "Superficie", "Envoltura", "Cámara", "Colisión", "Desplazador", "Fórmula", "Viento", "Suavizado", "Malla",
         "Spline", "Booleano", "Conector", "Reducción de Polígonos", "Formación de Átomos", "Metaball", "LOD", "Matriz",
-        "Matriz MoGraph", "Fractura", "Fractura Voronoi", "MoInstance", "MoExtrude", "PolyFX"};
+        "Matriz MoGraph", "Fractura", "Fractura Voronoi", "MoInstance", "MoExtrude", "PolyFX", "Extrusión", "Torno", "Forro",
+        "Recorrido", "MoText", "Trazador", "MoSpline", "Máscara de Spline", "Rail de Splines", "Envolver Spline", "Bezier"};
     return kind >= 0 && kind < kDeformKindCount ? names[kind] : "?";
 }
-bool deformKindUsesTime(int kind) { return kind == 13 || kind == 23 || kind == 24 || kind == 38; }
+bool deformKindUsesTime(int kind) { return kind == 13 || kind == 23 || kind == 24 || kind == 38 || kind == 46; }
+bool deformKindOutputsSpline(int kind) { return kind == 46 || kind == 47 || kind == 48; }
+bool deformKindUsesSplines(int kind) { return kind == 27 || (kind >= 41 && kind <= 50 && kind != 45 && kind != 46); }
 bool deformKindUsesAllChildren(int kind) { return kind == 29 || kind == 32 || kind == 33; }
-bool deformKindNeedsNoChild(int kind) { return kind == 35 || kind == 32; }
+bool deformKindNeedsNoChild(int kind) { return kind == 35 || kind == 32 || (kind >= 41 && kind <= 48) || kind == 51; }
 
 const char* deformAmountLabel(int kind) {
     switch (kind) {
@@ -414,7 +417,6 @@ const char* deformAmountLabel(int kind) {
         case 24: return "Amplitud";
         case 25: return "Fuerza";
         case 26: return "Fuerza";
-        case 27: return nullptr;
         case 28: return nullptr;
         case 29: return "Tolerancia";
         case 30: return "Reducir al";
@@ -428,6 +430,18 @@ const char* deformAmountLabel(int kind) {
         case 38: return "Paso (fotogramas)";
         case 39: return "Distancia";
         case 40: return "Intensidad";
+        case 27: return "Radio";
+        case 41: return "Distancia";
+        case 42: return "Ángulo";
+        case 43: return nullptr;
+        case 44: return "Escala Final";
+        case 45: return "Altura";
+        case 46: return nullptr;
+        case 47: return "Crecimiento";
+        case 48: return nullptr;
+        case 51: return nullptr;
+        case 49: return "Fuerza";
+        case 50: return "Fuerza";
         default: return "Fuerza";
     }
 }
@@ -445,6 +459,15 @@ const char* deformParam2Label(int kind) {
         case 37: return "Celdas";
         case 38: return "Copias";
         case 39: return "Pasos";
+        case 41: return "Segmentos";
+        case 42: return "Segmentos";
+        case 43: return "Subdivisiones";
+        case 44: return "Giro";
+        case 45: return "Profundidad";
+        case 46: return "Longitud (fotogramas)";
+        case 47: return "Segmentos";
+        case 48: return "Modo";
+        case 51: return "Subdivisiones";
         default: return nullptr;
     }
 }
@@ -467,6 +490,12 @@ float deformDefaultAmount(int kind) {
         case 38: return 3.0f;
         case 39: return 10.0f;
         case 40: return 30.0f;
+        case 27: return 100.0f;
+        case 41: return 40.0f;
+        case 42: return 360.0f;
+        case 44: return 100.0f;
+        case 45: return 100.0f;
+        case 47: return 100.0f;
         default: return 100.0f;
     }
 }
@@ -484,6 +513,15 @@ float deformDefaultParam2(int kind) {
         case 37: return 12.0f;
         case 38: return 5.0f;
         case 39: return 1.0f;
+        case 41: return 1.0f;
+        case 42: return 24.0f;
+        case 43: return 4.0f;
+        case 44: return 0.0f;
+        case 45: return 20.0f;
+        case 46: return 30.0f;
+        case 47: return 20.0f;
+        case 48: return 0.0f;
+        case 51: return 12.0f;
         default: return 1.0f;
     }
 }
@@ -893,6 +931,175 @@ MeshData deformMore(MeshData out, int kind, int axis, float amount, const Deform
             }
             updateBounds(r);
             return r;
+        }
+        case 27:    // Spline: dos splines (original, modificado)
+        case 49:    // Rail de Splines
+        case 50: {  // Envolver Spline
+            if (in.splines.empty() || in.splines[0].empty()) break;
+            const SplineContour& s0 = in.splines[0][0];
+            if (kind == 27) {
+                if (in.splines.size() < 2 || in.splines[1].empty()) break;
+                const SplineContour orig = resampleContour(s0, 200), mod = resampleContour(in.splines[1][0], 200);
+                const float rad = std::max(amount, 0.1f) / kCm;
+                for (Vertex& v : out.vertices) {
+                    size_t bi = 0;
+                    float bd = 1e30f;
+                    for (size_t i = 0; i < orig.pts.size(); ++i) {
+                        const float d = glm::length(v.position - orig.pts[i]);
+                        if (d < bd) { bd = d; bi = i; }
+                    }
+                    const float w = std::clamp(1.0f - bd / rad, 0.0f, 1.0f);
+                    v.position += (mod.pts[bi] - orig.pts[bi]) * (w * w * (3 - 2 * w));
+                }
+            } else if (kind == 49) {
+                // ancho (eje b) a cada altura (eje a) = |coordenada b| del rail a esa altura
+                const SplineContour r = resampleContour(s0, 200);
+                float maxB = 1e-6f;
+                for (const Vertex& v : out.vertices) maxB = std::max(maxB, std::fabs(v.position[b] - ctr[b]));
+                for (Vertex& v : out.vertices) {
+                    float bd = 1e30f, width = maxB;
+                    for (const glm::vec3& q : r.pts) {
+                        const float d = std::fabs(q[a] - v.position[a]);
+                        if (d < bd) { bd = d; width = std::fabs(q[b] - ctr[b]); }
+                    }
+                    const float k = glm::mix(1.0f, width / maxB, std::clamp(k01, 0.0f, 1.0f));
+                    v.position[b] = ctr[b] + (v.position[b] - ctr[b]) * k;
+                    v.position[c] = ctr[c] + (v.position[c] - ctr[c]) * k;
+                }
+            } else {
+                // eje a del objeto -> longitud del spline; (b, c) -> desplazamiento en el marco del spline
+                const SplineContour path = resampleContour(s0, 256);
+                const int K = (int)path.pts.size();
+                std::vector<glm::vec3> T(K), N(K), B(K);
+                for (int i = 0; i < K; ++i) {
+                    const glm::vec3 p0 = path.pts[(size_t)std::max(0, i - 1)], p1 = path.pts[(size_t)std::min(K - 1, i + 1)];
+                    T[i] = glm::length(p1 - p0) > 1e-12f ? glm::normalize(p1 - p0) : glm::vec3(1, 0, 0);
+                }
+                glm::vec3 up(0.0f);
+                up[b] = 1.0f;
+                N[0] = glm::length(glm::cross(T[0], up)) > 1e-6f ? glm::normalize(up - glm::dot(up, T[0]) * T[0]) : glm::vec3(0, 0, 1);
+                for (int i = 1; i < K; ++i) {
+                    const glm::vec3 n = N[i - 1] - glm::dot(N[i - 1], T[i]) * T[i];
+                    N[i] = glm::length(n) > 1e-9f ? glm::normalize(n) : N[i - 1];
+                }
+                for (int i = 0; i < K; ++i) B[i] = glm::cross(T[i], N[i]);
+                for (Vertex& v : out.vertices) {
+                    const float tl = std::clamp((v.position[a] - mn[a]) / size[a], 0.0f, 1.0f);
+                    const float fi = tl * (K - 1);
+                    const int i0 = std::min(K - 2, (int)fi);
+                    const float fr = fi - i0;
+                    const glm::vec3 P = glm::mix(path.pts[(size_t)i0], path.pts[(size_t)i0 + 1], fr);
+                    const glm::vec3 Nn = glm::normalize(glm::mix(N[i0], N[i0 + 1], fr)), Bn = glm::normalize(glm::mix(B[i0], B[i0 + 1], fr));
+                    const glm::vec3 np = P + Nn * (v.position[b] - ctr[b]) + Bn * (v.position[c] - ctr[c]);
+                    v.position = glm::mix(v.position, np, std::clamp(k01, 0.0f, 1.0f));
+                }
+            }
+            recomputeNormals(out);
+            break;
+        }
+        case 41: {  // Extrusion
+            std::vector<SplineContour> all;
+            for (const auto& sp : in.splines) all.insert(all.end(), sp.begin(), sp.end());
+            if (all.empty()) return MeshData{};
+            glm::vec3 off(0.0f);
+            off[axis == 1 ? 2 : axis == 2 ? 1 : 0] = 0.0f;
+            off[std::clamp(axis, 0, 2)] = amount / kCm;
+            return extrudeContours(all, off, (int)std::lround(in.param2), true);
+        }
+        case 42: {  // Torno
+            if (in.splines.empty() || in.splines[0].empty()) return MeshData{};
+            return latheContour(in.splines[0][0], amount, (int)std::lround(in.param2));
+        }
+        case 43: {  // Forro
+            std::vector<SplineContour> rings;
+            for (const auto& sp : in.splines) if (!sp.empty()) rings.push_back(sp[0]);
+            if (rings.size() < 2) return MeshData{};
+            return loftContours(rings, (int)std::lround(in.param2), true);
+        }
+        case 44: {  // Recorrido
+            if (in.splinesLocal.size() < 2 || in.splinesLocal[0].empty() || in.splines[1].empty()) return MeshData{};
+            return sweepContour(in.splinesLocal[0][0], in.splines[1][0], amount / 100.0f, in.param2, true);
+        }
+        case 45: {  // MoText
+            const std::string txt = in.formula ? *in.formula : std::string("MoText");
+            auto cs = textContours(txt, amount / kCm);
+            if (cs.empty()) return MeshData{};
+            float maxX = 0;
+            for (const auto& cc : cs) for (const glm::vec3& p : cc.pts) maxX = std::max(maxX, p.x);
+            for (auto& cc : cs) for (glm::vec3& p : cc.pts) p.x -= maxX * 0.5f;  // centrado
+            return extrudeContours(cs, glm::vec3(0, 0, -std::max(in.param2, 0.0f) / kCm), 1, true);
+        }
+        case 46: {  // Trazador
+            if (!in.splineOut) break;
+            const int len = std::clamp((int)std::lround(in.param2), 1, 10000);
+            for (size_t i = 0; i < in.childMotions.size(); ++i) {
+                const AnimTrack* tr = in.childMotions[i];
+                if (!tr || tr->empty()) continue;
+                SplineContour sc;
+                const float f0 = std::max((float)tr->keys.front().frame, in.frame - len);
+                const int n = std::max(2, (int)std::ceil(in.frame - f0) + 1);
+                for (int k = 0; k < n; ++k) sc.pts.push_back(tr->evaluate(f0 + (in.frame - f0) * k / (n - 1)));
+                in.splineOut->push_back(std::move(sc));
+            }
+            return MeshData{};
+        }
+        case 47: {  // MoSpline
+            if (!in.splineOut) break;
+            if (!in.splines.empty() && !in.splines[0].empty()) {
+                for (const auto& cc : in.splines[0]) in.splineOut->push_back(contourPart(cc, 0.0f, std::clamp(k01, 0.0f, 1.0f)));
+            } else {
+                SplineContour sc;
+                const int segs = std::clamp((int)std::lround(in.param2), 2, 2000);
+                glm::vec3 p(0.0f), dir(0, 1, 0);
+                const float step = 2.0f / segs;  // 400 cm en total
+                sc.pts.push_back(p);
+                for (int i = 0; i < segs * std::clamp(k01, 0.0f, 1.0f); ++i) {
+                    const float ang = glm::radians(15.0f);
+                    dir = glm::normalize(glm::vec3(dir.x * std::cos(ang) - dir.z * std::sin(ang), dir.y, dir.x * std::sin(ang) + dir.z * std::cos(ang)) + glm::vec3(0.12f, 0, 0));
+                    p += dir * step;
+                    sc.pts.push_back(p);
+                }
+                in.splineOut->push_back(std::move(sc));
+            }
+            return MeshData{};
+        }
+        case 51: {  // Bezier: 16 puntos de control (in.rest)
+            std::vector<glm::vec3> cp(16);
+            for (int j = 0; j < 4; ++j)
+                for (int i = 0; i < 4; ++i) cp[(size_t)(j * 4 + i)] = glm::vec3((i / 3.0f - 0.5f) * 2.0f, 0.0f, (j / 3.0f - 0.5f) * 2.0f);
+            if (in.rest && in.rest->vertices.size() == 16)
+                for (int k = 0; k < 16; ++k) cp[(size_t)k] = in.rest->vertices[(size_t)k].position;
+            const int sub = std::clamp((int)std::lround(in.param2), 1, 128);
+            auto bern = [](int i, float t) {
+                const float u = 1 - t;
+                return i == 0 ? u * u * u : i == 1 ? 3 * u * u * t : i == 2 ? 3 * u * t * t : t * t * t;
+            };
+            MeshData r;
+            for (int y = 0; y <= sub; ++y)
+                for (int x = 0; x <= sub; ++x) {
+                    const float u = (float)x / sub, v = (float)y / sub;
+                    glm::vec3 p(0.0f);
+                    for (int j = 0; j < 4; ++j)
+                        for (int i = 0; i < 4; ++i) p += cp[(size_t)(j * 4 + i)] * bern(i, u) * bern(j, v);
+                    r.vertices.push_back({p, glm::vec3(0.8f), glm::vec3(0, 1, 0), glm::vec2(u, v)});
+                }
+            for (int y = 0; y < sub; ++y)
+                for (int x = 0; x < sub; ++x) {
+                    const uint32_t a0 = (uint32_t)(y * (sub + 1) + x), a1 = a0 + 1, b0 = a0 + (uint32_t)(sub + 1), b1 = b0 + 1;
+                    r.indices.insert(r.indices.end(), {a0, b0, b1, a0, b1, a1});
+                    r.faceTris.push_back(2);
+                }
+            recomputeNormals(r);
+            updateBounds(r);
+            return r;
+        }
+        case 48: {  // Mascara de Spline
+            if (!in.splineOut || in.splines.empty()) break;
+            std::vector<std::vector<SplineContour>> ins;
+            for (const auto& sp : in.splines) if (!sp.empty()) ins.push_back(sp);
+            if (ins.empty()) break;
+            *in.splineOut = splineBoolean(ins, std::clamp((int)std::lround(in.param2), 0, 4));
+            return MeshData{};
         }
         default: break;
     }

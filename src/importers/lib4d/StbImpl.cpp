@@ -17,3 +17,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define STBI_WRITE_NO_STDIO
 #include <stb_image_write.h>
+
+// stb_truetype (2026-11-24): contornos de las letras para los splines de Texto y MoText.
+#define STB_TRUETYPE_IMPLEMENTATION
+#include <stb_truetype.h>

@@ -173,12 +173,27 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             out << " ffd=" << quoted(f.str());
         }
         if (node.deform.kind >= 13) out << " p2=" << node.deform.param2 << " formula=" << quoted(node.deform.formula);
-        if (node.deform.kind == 26 && node.deform.bindRest) {
+        if ((node.deform.kind == 26 || node.deform.kind == 51) && node.deform.bindRest) {
             std::ostringstream f;
             for (const Vertex& v : node.deform.bindRest->vertices) f << v.position.x << " " << v.position.y << " " << v.position.z << " ";
             out << " rest=" << quoted(f.str());
         }
         out << "\n";
+    }
+    if (node.spline.present && !node.spline.generated) {
+        const SplineData& sp = node.spline;
+        auto pts = [](const std::vector<glm::vec3>& v) {
+            std::ostringstream f;
+            for (const glm::vec3& q : v) f << q.x << " " << q.y << " " << q.z << " ";
+            return f.str();
+        };
+        std::ostringstream ex;
+        for (size_t i = 0; i < sp.extra.size(); ++i)
+            ex << (i ? "|" : "") << ((i < sp.extraClosed.size() && sp.extraClosed[i]) ? "c " : "o ") << pts(sp.extra[i]);
+        out << indent << "  SPL kind=" << sp.kind << " plane=" << sp.plane << " interp=" << sp.interp << " closed=" << (int)sp.closed
+            << " a=" << sp.a << " b=" << sp.b << " c=" << sp.c << " n=" << sp.n << " s0=" << sp.startDeg << " s1=" << sp.endDeg
+            << " text=" << quoted(sp.text) << " fx=" << quoted(sp.fx) << " fy=" << quoted(sp.fy) << " fz=" << quoted(sp.fz)
+            << " pts=" << quoted(pts(sp.points)) << " extra=" << quoted(ex.str()) << "\n";
     }
     if (node.env.present)
         out << indent << "  ENV kind=" << node.env.kind << " tr=" << node.env.top.r << " tg=" << node.env.top.g << " tb=" << node.env.top.b
@@ -456,7 +471,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
     while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG" ||
                             p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "PROT" || p.peek() == "IK" || p.peek() == "NULLSHAPE" ||
-                            p.peek() == "SYM" || p.peek() == "DEF" || p.peek() == "INST" || p.peek() == "ENV" || p.peek() == "CLN" || p.peek() == "HIDDEN")) {
+                            p.peek() == "SYM" || p.peek() == "DEF" || p.peek() == "INST" || p.peek() == "ENV" || p.peek() == "SPL" || p.peek() == "CLN" || p.peek() == "HIDDEN")) {
         const std::string kind = p.next();
         bool ok = true;
         if (kind == "LIGHT") {
@@ -582,7 +597,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
         } else if (kind == "DEF") {
             node.deform.present = true;
             ok = readAttrs(p, "DEF", err, [&](const std::string& k, const std::string& v) {
-                if (k == "kind") node.deform.kind = std::clamp(std::stoi(v), 0, 40);
+                if (k == "kind") node.deform.kind = std::clamp(std::stoi(v), 0, 51);
                 else if (k == "axis") node.deform.axis = std::clamp(std::stoi(v), 0, 2);
                 else if (k == "amount") node.deform.amount = std::stof(v);
                 else if (k == "ffd") {
@@ -596,6 +611,43 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
                     glm::vec3 q;
                     while (f >> q.x >> q.y >> q.z) rm.vertices.push_back({q, glm::vec3(0.8f), glm::vec3(0, 1, 0), glm::vec2(0.0f)});
                     node.deform.bindRest = std::make_shared<const MeshData>(std::move(rm));
+                }
+            });
+        } else if (kind == "SPL") {
+            node.spline.present = true;
+            ok = readAttrs(p, "SPL", err, [&](const std::string& k, const std::string& v) {
+                SplineData& sp = node.spline;
+                auto readPts = [](const std::string& txt) {
+                    std::istringstream f(txt);
+                    std::vector<glm::vec3> r;
+                    glm::vec3 q;
+                    while (f >> q.x >> q.y >> q.z) r.push_back(q);
+                    return r;
+                };
+                if (k == "kind") sp.kind = std::clamp(std::stoi(v), 0, 15);
+                else if (k == "plane") sp.plane = std::clamp(std::stoi(v), 0, 2);
+                else if (k == "interp") sp.interp = std::clamp(std::stoi(v), 0, 1);
+                else if (k == "closed") sp.closed = std::stoi(v) != 0;
+                else if (k == "a") sp.a = std::stof(v);
+                else if (k == "b") sp.b = std::stof(v);
+                else if (k == "c") sp.c = std::stof(v);
+                else if (k == "n") sp.n = std::stoi(v);
+                else if (k == "s0") sp.startDeg = std::stof(v);
+                else if (k == "s1") sp.endDeg = std::stof(v);
+                else if (k == "text") sp.text = unquote(v);
+                else if (k == "fx") sp.fx = unquote(v);
+                else if (k == "fy") sp.fy = unquote(v);
+                else if (k == "fz") sp.fz = unquote(v);
+                else if (k == "pts") sp.points = readPts(unquote(v));
+                else if (k == "extra") {
+                    const std::string all = unquote(v);
+                    std::stringstream ss(all);
+                    std::string part;
+                    while (std::getline(ss, part, '|')) {
+                        if (part.size() < 2) continue;
+                        sp.extraClosed.push_back(part[0] == 'c');
+                        sp.extra.push_back(readPts(part.substr(2)));
+                    }
                 }
             });
         } else if (kind == "ENV") {
@@ -916,6 +968,10 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     for (int i = 0; i < 8; ++i) root.deform.ffd[i] = temp.deform.ffd[i];
     root.instance = temp.instance;
     root.env = temp.env;
+    root.spline = temp.spline;
+    root.deform.param2 = temp.deform.param2;
+    root.deform.formula = temp.deform.formula;
+    root.deform.bindRest = temp.deform.bindRest;
     {
         const CloneData& s = temp.clone;
         CloneData& d = root.clone;
