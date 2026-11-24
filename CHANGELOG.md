@@ -6,6 +6,19 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
+
+**Añadido**
+- **Ctrl+Mayús+Z / Ctrl+Mayús+Y** deshacen y rehacen la vista (como en Cinema 4D), tal como anunciaba el menú Vista. Antes Ctrl+Mayús+Z rehacía la escena; ahora el rehacer de la escena es **Ctrl+Y**.
+- **Fijación** al girar (pasos de 5°) y al escalar (pasos de 0,1), además de al mover; respeta los ejes bloqueados y solo cuantiza los ejes que se tocan. Se aplica antes de la etiqueta Protección, así que un límite nunca se sobrepasa por redondeo.
+
+**Corregido (nota)**
+- El límite «Vista Solo no oculta los iconos de cámara ni de luz» estaba desactualizado: los iconos y la selección con el ratón ya respetan Vista Solo. Lo que sigue igual es que las luces ocultas por Vista Solo **siguen iluminando** la escena.
+
+**Verificado:** compila y pasan las pruebas; los atajos y la Fijación no se han probado a mano con el ratón en esta sesión.
+
+**Límites:** la Fijación al girar y escalar usa pasos fijos (5° y 0,1), sin ajustes propios todavía.
+
 ### 2026-11-24 (48): Etiqueta Límite / Protección de C4D
 
 **Añadido**

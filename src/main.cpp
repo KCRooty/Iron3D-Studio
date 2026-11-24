@@ -1020,13 +1020,24 @@ int main(int argc, char** argv) {
                     const glm::mat4 beforeWorld = selected ? selected->worldMatrix() : glm::mat4(1.0f);
                     for (int k = 0; k < 3; ++k) gizmo.axisLocked[k] = viewport.axisLock[k];
                     gizmo.updateDrag(mouseRay, mouseX - viewport.x, mouseY - viewport.y);
-                    // Etiqueta Proteccion/Limite: los ejes bloqueados no se mueven y los limitados se recortan.
-                    if (selected && !compProxy && !viewport.axisMode && selected->protection.present)
-                        iron3d::applyProtection(*selected, beforeLocalPos, beforeRot, beforeScl);
                     if (viewport.snap && selected && gizmo.mode == iron3d::GizmoMode::Translate) {
                         for (int k = 0; k < 3; ++k)
                             if (!viewport.axisLock[k]) selected->position[k] = std::round(selected->position[k] / 0.5f) * 0.5f;
+                    } else if (viewport.snap && selected && !compProxy && gizmo.mode == iron3d::GizmoMode::Rotate) {
+                        // Fijacion al girar: pasos de 5 grados (cuantizacion de rotacion por defecto de C4D).
+                        for (int k = 0; k < 3; ++k)
+                            if (!viewport.axisLock[k] && selected->rotationDeg[k] != beforeRot[k])
+                                selected->rotationDeg[k] = std::round(selected->rotationDeg[k] / 5.0f) * 5.0f;
+                    } else if (viewport.snap && selected && !compProxy && gizmo.mode == iron3d::GizmoMode::Scale) {
+                        // Fijacion al escalar: pasos de 0,1 (cuantizacion de escala por defecto de C4D).
+                        for (int k = 0; k < 3; ++k)
+                            if (!viewport.axisLock[k] && selected->scale[k] != beforeScl[k])
+                                selected->scale[k] = std::max(0.1f, std::round(selected->scale[k] / 0.1f) * 0.1f);
                     }
+                    // Etiqueta Proteccion/Limite (despues de la fijacion): los ejes bloqueados no se mueven y los
+                    // limitados se recortan.
+                    if (selected && !compProxy && !viewport.axisMode && selected->protection.present)
+                        iron3d::applyProtection(*selected, beforeLocalPos, beforeRot, beforeScl);
                     if (compProxy) {
                         if (selected) iron3d::applyComponentDrag(*selected);
                     } else if (selected && viewport.axisMode) {

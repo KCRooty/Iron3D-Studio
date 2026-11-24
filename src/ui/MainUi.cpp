@@ -60,6 +60,7 @@ namespace iron3d {
 bool componentMarquee(SceneNode* selected, const OrbitalCamera& camera, const ViewportState& vp,
                       const std::function<bool(ImVec2)>& inside, bool shift, bool ctrl);
 bool deleteComponents(SceneNode& root, SceneNode* selected, SceneHistory& history);
+namespace { void stepViewHistory(OrbitalCamera& camera, bool redo); }
 const MeshData* editableMesh(const SceneNode* n);
 // Modo de componentes con un objeto editable (1/2/3) o 0.
 int componentModeFor(const SceneNode* n);
@@ -2390,7 +2391,10 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
         if (pressed(ImGuiKey_Z) && !shift) {
             if (history.undo(root)) selected = nullptr;
         }
-        if (pressed(ImGuiKey_Y) || (pressed(ImGuiKey_Z) && shift)) {
+        // Ctrl+Mayus+Z / Ctrl+Mayus+Y = Deshacer/Rehacer Vista (como Cinema 4D); Ctrl+Y rehace la escena.
+        if (shift && pressed(ImGuiKey_Z)) stepViewHistory(camera, false);
+        else if (shift && pressed(ImGuiKey_Y)) stepViewHistory(camera, true);
+        else if (pressed(ImGuiKey_Y)) {
             if (history.redo(root)) selected = nullptr;
         }
         if (pressed(ImGuiKey_C) && selected) copySelection(root, selected, history, false);
@@ -3531,6 +3535,17 @@ ViewHistory& trackView(const OrbitalCamera& camera) {
     }
     h.lastFrame = now;
     return h;
+}
+
+// Deshacer (redo=false) o Rehacer Vista: lo usan el menu Vista y los atajos Ctrl+Mayus+Z/Y.
+void stepViewHistory(OrbitalCamera& camera, bool redo) {
+    ViewHistory& h = trackView(camera);
+    auto& from = redo ? h.redo : h.undo;
+    if (from.empty()) return;
+    (redo ? h.undo : h.redo).push_back(h.committed);
+    h.committed = from.back();
+    from.pop_back();
+    camera.restoreView(h.committed);
 }
 
 void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& camera, ViewportState& vp,
