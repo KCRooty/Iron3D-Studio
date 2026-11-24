@@ -6,6 +6,11 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+## Traducciones completas en los 6 idiomas restantes
+
+- Polaco, checo, ruso, japonés, coreano y chino tenían ~890 textos sin traducir (menús, tooltips, mensajes, atributos, biblioteca, modelado, render); ahora los 11 idiomas cubren el 100 % de la interfaz.
+- Cada traducción se validó contra el original: mismos marcadores `%s/%d/%lld`, mismos saltos `\n` y mismos sufijos `##id`.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

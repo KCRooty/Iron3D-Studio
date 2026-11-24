@@ -493,3 +493,891 @@ Estructura	구조
 Capas	레이어
 Propiedades	속성
 Transformar	트랜스폼
+Importar Cinema 4D	Cinema 4D 가져오기
+Grabar Objetos Activos: no hay ningún objeto seleccionado.	활성 오브젝트 기록: 선택된 오브젝트가 없습니다.
+Grabar Objetos Activos: Posición, Escala y Rotación están desactivadas.	활성 오브젝트 기록: 위치, 스케일, 회전이 꺼져 있습니다.
+Clave grabada en el fotograma 	키를 기록한 프레임: 
+ objeto).	 개 오브젝트).
+ objetos).	 개 오브젝트).
+Extrusión Interna	안쪽 돌출
+Cuchillo	나이프
+: arrastra en el visor para dibujar la línea de corte.	: 뷰포트에서 드래그하여 절단선을 그립니다.
+: arrastra en horizontal en el visor (o usa Aplicar).	: 뷰포트에서 가로로 드래그합니다(또는 적용 사용).
+Trasera	뒤로
+Parámetro todavía no implementado en Iron3D	이 매개변수는 Iron3D에서 아직 구현되지 않았습니다
+Clic: mostrar esta página. Mayús+Clic: mostrar varias a la vez.	클릭: 이 페이지 표시. Shift+클릭: 여러 개 동시 표시.
+Abrir librería	라이브러리 열기
+Abrir una librería necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe. Cópiala a library/browser.	라이브러리를 열려면 시스템 파일 대화상자가 필요하지만 이 플랫폼에는 아직 없습니다. library/browser에 복사하세요.
+Abrir librería de preestablecidos	프리셋 라이브러리 열기
+Librerías de preestablecidos de Cinema 4D	Cinema 4D 프리셋 라이브러리
+Este preestablecido no es un modelo de Cinema 4D.	이 프리셋은 Cinema 4D 모델이 아닙니다.
+No se pudo escribir el archivo temporal en 	임시 파일을 쓸 수 없습니다: 
+Textura que no está en ninguna librería montada: 	텍스처가 마운트된 어떤 라이브러리에도 없습니다: 
+Importar OBJ	OBJ 가져오기
+Importar glTF	glTF 가져오기
+Escenas y librerías (iron, c4d, obj, glb, lib4d)	씬 및 라이브러리 (iron, c4d, obj, glb, lib4d)
+Fusionar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	병합하려면 시스템 파일 대화상자가 필요하지만 이 플랫폼에는 아직 없습니다.
+Escenas de Cinema 4D, OBJ, glTF e Iron3D	Cinema 4D, OBJ, glTF 및 Iron3D 씬
+Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	내보내려면 시스템 파일 대화상자가 필요하지만 이 플랫폼에는 아직 없습니다.
+La escena está vacía.	씬이 비어 있습니다.
+Exportar a Wavefront	Wavefront로 내보내기
+Escena.obj	Scene.obj
+Exportar OBJ	OBJ 내보내기
+Exportar a glTF	glTF로 내보내기
+glTF binario	바이너리 glTF
+Escena.glb	Scene.glb
+Exportar glTF	glTF 내보내기
+Exportar a Cinema 4D	Cinema 4D로 내보내기
+Escena.c4d	Scene.c4d
+Guardar Objetos Seleccionados como	선택한 오브젝트를 다른 이름으로 저장
+Objetos.c4d	Objects.c4d
+%s\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)	%s\n오브젝트 %s 추가  (Alt+클릭: 선택 항목의 자식으로)
+%s\nTodavía no implementado en Iron3D	%s\nIron3D에서 아직 구현되지 않았습니다
+Sistema de coordenadas: Mundo	좌표계: 월드
+Sistema de coordenadas: Objeto	좌표계: 오브젝트
+Activar Eje: se mueve el eje, no el objeto	축 활성화: 오브젝트가 아니라 축이 이동합니다
+Activar Eje: desactivado	축 활성화: 꺼짐
+Fotogramas Clave Automáticos: activados	자동 키프레임: 켜짐
+Fotogramas Clave Automáticos: desactivados	자동 키프레임: 꺼짐
+Hacer Editable: selecciona un Cubo, Esfera o Plano (los demás ya son editables o no tienen malla).	편집 가능하게 만들기: 큐브, 구 또는 평면을 선택하세요(나머지는 이미 편집 가능하거나 메시가 없습니다).
+Hacer Editable: 1 objeto convertido a Objeto Poligonal.	편집 가능하게 만들기: 오브젝트 1개를 폴리곤 오브젝트로 변환했습니다.
+Hacer Editable: 	편집 가능하게 만들기: 
+ objetos convertidos a Objeto Poligonal.	 개 오브젝트를 폴리곤 오브젝트로 변환했습니다.
+Animación eliminada.	애니메이션이 삭제되었습니다.
+Estado Actual a Objeto: 	현재 상태를 오브젝트로: 
+ copia poligonal creada.	 개의 폴리곤 복사본을 만들었습니다.
+ copias poligonales creadas.	 개의 폴리곤 복사본을 만들었습니다.
+Estado Actual a Objeto: la selección no tiene geometría.	현재 상태를 오브젝트로: 선택 항목에 지오메트리가 없습니다.
+Conectar Objetos: 	오브젝트 연결: 
+ mallas unidas en un Objeto Polígono.	 개의 메시를 하나의 폴리곤 오브젝트로 연결했습니다.
+Conectar Objetos: la selección no tiene geometría.	오브젝트 연결: 선택 항목에 지오메트리가 없습니다.
+Mayús+H	Shift+H
+Mayús+R	Shift+R
+Ctrl+Mayús+O	Ctrl+Shift+O
+Mayús+F8	Shift+F8
+Mayús+F1	Shift+F1
+Mayús+F	Shift+F
+Mayús+G	Shift+G
+Buscar orden...	명령 검색...
+Ninguna orden coincide.	일치하는 명령이 없습니다.
+Estado Actual a Objeto	현재 상태를 오브젝트로
+Conectar+Eliminar	오브젝트 연결 + 삭제
+Selección en Vivo	라이브 선택
+Selección con Lazo	올가미 선택
+Ctrl+Mayús+F4	Ctrl+Shift+F4
+Ctrl+Mayús+S	Ctrl+Shift+S
+Guardar incrementalmente...	증분 저장...
+Esta compilación no lleva el Cineware SDK de MAXON	이 빌드에는 MAXON의 Cineware SDK가 포함되어 있지 않습니다
+glTF binario (*.glb)...	바이너리 glTF (*.glb)...
+Archivos recientes	최근 파일
+Física	피직스
+Selección de Polígono	폴리곤 선택
+Selección de Bucle	루프 선택
+Selección de Anillo	링 선택
+Seleccionar Conectados	연결된 항목 선택
+Reducir Selección	선택 축소
+Eje X / Encabezado	X축 / 헤딩
+Eje Y / Inclinación	Y축 / 피치
+Eje Z / Alabeo	Z축 / 뱅크
+Sistema de Coordenadas de Mundo	월드 좌표계
+Medir y Construir	측정 및 구성
+Organizar Objetos	오브젝트 정렬
+Simetría de edición	대칭 편집
+Apagada	끔
+Plano X (izquierda/derecha)	X 평면(왼쪽/오른쪽)
+Plano Y (arriba/abajo)	Y 평면(위/아래)
+Plano Z (delante/detrás)	Z 평면(앞/뒤)
+Tolerancia (cm)	허용 오차 (cm)
+Cerrar Agujero Poligonal	폴리곤 구멍 닫기
+Subdividir	세분
+Comprobar Malla	메시 검사
+Invertir Normales	노멀 뒤집기
+Alinear Normales	노멀 정렬
+Mayús+S	Shift+S
+Ir a la Clave Anterior	이전 키로 이동
+Ir a la Clave Siguiente	다음 키로 이동
+Editor de Curvas...	커브 에디터...
+Claves Seleccionadas	선택한 키
+Eliminar Animación del Objeto	오브젝트 애니메이션 삭제
+Fotograma Siguiente	다음 프레임
+Fotograma Anterior	이전 프레임
+Repetir (Loop)	반복(루프)
+Resolver IK (experimental)	IK 풀기(실험적)
+ cadenas resueltas.	 개의 체인을 풀었습니다.
+IK: ninguna etiqueta IK activa con Punta y Objetivo alcanzables.	IK: 도달 가능한 팁과 목표가 있는 활성 IK 태그가 없습니다.
+Mueve las articulaciones de cada etiqueta IK para que la punta llegue a su objetivo	각 IK 태그의 조인트를 움직여 팁이 목표에 닿게 합니다
+Articulación	조인트
+Pesos	웨이트
+Renderizar Vista Activa	활성 뷰 렌더
+Renderizar Seleccionados en Visor de Imágenes	선택 항목을 픽처 뷰어에 렌더
+Renderizar en Visor de Imágenes	픽처 뷰어로 렌더
+Crear Previsualización...	미리보기 만들기...
+Añadir a la Cola de Render...	렌더 대기열에 추가...
+Editar Configuración de Render...	렌더 설정 편집...
+Tirar	당기기
+Amasar	반죽
+Rastreador de Objetos	오브젝트 트래커
+Intercambiar Clonador-Matriz	클로너 매트릭스 교체
+Pintar Pesos	웨이트 페인트
+Etiqueta IK	IK 태그
+Ningún plugin cargado	로드된 플러그인 없음
+Buscar Plugins...	플러그인 찾기...
+Mayús+F10	Shift+F10
+Mayús+F2	Shift+F2
+Mayús+F3	Shift+F3
+Mayús+F5	Shift+F5
+Mayús+F7	Shift+F7
+Navegador de Contenido	콘텐츠 브라우저
+Mayús+F4	Shift+F4
+Acerca de Iron3D Studio...	Iron3D Studio 정보...
+Arranque	시작
+Visualizar	시각화
+Deshacer [Ctrl+Z]	실행 취소 [Ctrl+Z]
+Deshacer la última acción.	마지막 동작을 취소합니다.
+Rehacer [Ctrl+Y]	다시 실행 [Ctrl+Y]
+Rehacer la última acción deshecha.	마지막으로 취소한 동작을 다시 실행합니다.
+Selección en Vivo [Atajo de Teclado 9]	라이브 선택 [단축키 9]
+Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.	라이브 선택: 클릭하고 드래그하여 요소를 선택합니다. SHIFT를 누르면 선택에 추가, CTRL을 누르면 제거됩니다.
+Herramienta de Mover [Atajo de Teclado E]	이동 도구 [단축키 E]
+Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.	이동: 클릭하고 드래그하여 요소를 이동합니다. SHIFT를 누르면 이동 양자화 / 포인트 모드에서 선택에 추가, CTRL을 누르면 제거됩니다.
+Herramienta de Escalar [Atajo de Teclado T]	스케일 도구 [단축키 T]
+Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.	스케일: 클릭하고 드래그하여 요소의 크기를 조절합니다. SHIFT를 누르면 스케일 양자화 / 포인트 모드에서 선택에 추가, CTRL을 누르면 제거됩니다.
+Herramienta de Rotar [Atajo de Teclado R]	회전 도구 [단축키 R]
+Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.	회전: 클릭하고 드래그하여 요소를 회전합니다. SHIFT를 누르면 회전 양자화 / 포인트 모드에서 선택에 추가, CTRL을 누르면 제거됩니다.
+Eje X / Encabezado [X]\n(todavía no implementado)	X축 / 헤딩 [X]\n(아직 구현되지 않음)
+Bloqueo de eje X: todavía no implementado.	X축 잠금: 아직 구현되지 않았습니다.
+Eje Y / Inclinación [Y]\n(todavía no implementado)	Y축 / 피치 [Y]\n(아직 구현되지 않음)
+Bloqueo de eje Y: todavía no implementado.	Y축 잠금: 아직 구현되지 않았습니다.
+Eje Z / Alabeo [Z]\n(todavía no implementado)	Z축 / 뱅크 [Z]\n(아직 구현되지 않음)
+Bloqueo de eje Z: todavía no implementado.	Z축 잠금: 아직 구현되지 않았습니다.
+Usar Sistema de Coordenadas de Objeto [W]\n(ahora: Mundo)	오브젝트 좌표계 사용 [W]\n(현재: 월드)
+Usar Sistema de Coordenadas de Mundo [W]\n(ahora: Objeto)	월드 좌표계 사용 [W]\n(현재: 오브젝트)
+Cambia los ejes del gizmo entre los del objeto y los del mundo.	기즈모 축을 오브젝트 축과 월드 축 사이에서 전환합니다.
+Renderizar Vista Activa\nRenderiza la vista activa en el propio visor.\n[Atajo de Teclado Ctrl+R]	활성 뷰 렌더\n활성 뷰를 뷰포트 안에서 렌더합니다.\n[단축키 Ctrl+R]
+Renderiza la vista activa en el propio visor.	활성 뷰를 뷰포트 안에서 렌더합니다.
+Renderizar en Visor de Imágenes [Mayús+R]\nRenderiza la cámara activa con la Configuración de Render.	픽처 뷰어로 렌더 [Shift+R]\n렌더 설정으로 활성 카메라를 렌더합니다.
+Renderiza la cámara activa en el Visor de Imágenes.	활성 카메라를 픽처 뷰어에서 렌더합니다.
+Editar Configuración de Render... [Ctrl+B]	렌더 설정 편집... [Ctrl+B]
+Resolución, antialiasing y fondo del render.	렌더 해상도, 안티앨리어싱 및 배경.
+Cubo  (mantener pulsado: más objetos)	큐브  (길게 누르기: 더 많은 오브젝트)
+Lápiz  (mantener pulsado: más splines)	펜  (길게 누르기: 더 많은 스플라인)
+Subdivisión Superficie  (mantener pulsado: generadores)	서브디비전 서피스  (길게 누르기: 제너레이터)
+Matriz  (mantener pulsado: modelado)	어레이  (길게 누르기: 모델링)
+Doblar  (mantener pulsado: deformadores)	벤드  (길게 누르기: 디포머)
+Suelo  (mantener pulsado: escena)	플로어  (길게 누르기: 씬)
+Cámara  (mantener pulsado: más cámaras)	카메라  (길게 누르기: 더 많은 카메라)
+Luz  (mantener pulsado: más luces)	라이트  (길게 누르기: 더 많은 라이트)
+Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado.	클릭: 오브젝트 생성. 길게 누르기 또는 오른쪽 클릭: 그룹 팔레트 열기. Alt+클릭: 선택 항목의 자식으로 생성.
+Hacer Editable [C]\nConvierte Cubo, Esfera o Plano en un Objeto Poligonal.	편집 가능하게 만들기 [C]\n큐브, 구, 평면을 폴리곤 오브젝트로 변환합니다.
+Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.	편집 가능하게 만들기: 선택한 파라메트릭 오브젝트를 폴리곤 오브젝트로 변환합니다.
+Usar Modo Modelo	모델 모드 사용
+Modo Modelo: se editan objetos enteros.	모델 모드: 오브젝트 전체를 편집합니다.
+Usar Modo Textura\n(todavía no implementado)	텍스처 모드 사용\n(아직 구현되지 않음)
+Modo Textura: todavía no implementado.	텍스처 모드: 아직 구현되지 않았습니다.
+Activar Eje [L]	축 활성화 [L]
+Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.	축 모드: 이동, 회전, 스케일은 오브젝트의 축만 변경하며 편집 가능한 지오메트리와 자식은 제자리에 남습니다.
+Usar Modo Puntos	포인트 모드 사용
+Modo Puntos: elige y mueve puntos de un objeto editable (C para hacerlo editable).	포인트 모드: 편집 가능한 오브젝트의 포인트를 선택하고 이동합니다(C로 편집 가능하게 만들기).
+Usar Modo Aristas	에지 모드 사용
+Modo Aristas: elige y mueve aristas de un objeto editable.	에지 모드: 편집 가능한 오브젝트의 에지를 선택하고 이동합니다.
+Usar Modo Polígonos	폴리곤 모드 사용
+Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.	폴리곤 모드: 편집 가능한 오브젝트의 폴리곤(삼각형)을 선택하고 이동합니다.
+Modo Ajuste\n(todavía no implementado)	스냅 모드\n(아직 구현되지 않음)
+Modo Ajuste: todavía no implementado.	스냅 모드: 아직 구현되지 않았습니다.
+Vista Solo\n(todavía no implementado)	솔로 뷰\n(아직 구현되지 않음)
+Vista Solo: todavía no implementado.	솔로 뷰: 아직 구현되지 않았습니다.
+Activar Fijación [Mayús+S]\n(todavía no implementado)	스냅 활성화 [Shift+S]\n(아직 구현되지 않음)
+Fijación: todavía no implementado.	스냅: 아직 구현되지 않았습니다.
+Plano de Trabajo\n(todavía no implementado)	작업 평면\n(아직 구현되지 않음)
+Plano de Trabajo: todavía no implementado.	작업 평면: 아직 구현되지 않았습니다.
+Bloquear Plano de Trabajo\n(todavía no implementado)	작업 평면 잠금\n(아직 구현되지 않음)
+Bloquear Plano de Trabajo: todavía no implementado.	작업 평면 잠금: 아직 구현되지 않았습니다.
+Usar como Cámara de Render	렌더 카메라로 사용
+Ctrl+Mayús+Z	Ctrl+Shift+Z
+Ctrl+Mayús+Y	Ctrl+Shift+Y
+Encuadrar Elementos Activos	활성 요소 프레임
+Cámara del Editor	에디터 카메라
+Axonométrica	축측 투영
+OpenGL Mejorado	향상된 OpenGL
+Ruidos	노이즈
+Mayús+V	Shift+V
+Ejes Globales	글로벌 축
+Cajas Delimitadoras	바운딩 박스
+Resaltar Componente	컴포넌트 강조
+Resaltar Objeto	오브젝트 강조
+Cruz Navegación	내비게이션 십자
+Disposición	레이아웃
+Vista Simple	단일 뷰
+2 Vistas Apiladas	2개 뷰(위아래)
+2 Vistas Lado a Lado	2개 뷰(나란히)
+Vista 1 (Perspectiva)	뷰 1 (퍼스펙티브)
+Vista 2 (Superior)	뷰 2 (위)
+Vista 3 (Derecha)	뷰 3 (오른쪽)
+Vista 4 (Frontal)	뷰 4 (앞)
+Mover Cámara (arrastrar)	카메라 이동 (드래그)
+Zoom de Cámara (arrastrar)	카메라 줌 (드래그)
+Rotar Cámara (arrastrar)	카메라 회전 (드래그)
+Cambiar Vista (todavía no implementado)	뷰 전환 (아직 구현되지 않음)
+Multi-vista: todavía no implementado.	멀티 뷰: 아직 구현되지 않았습니다.
+Arrastre sobre el icono para navegar por la vista.	아이콘 위에서 드래그하여 뷰를 탐색합니다.
+Espaciado Cuadrícula : 100 cm	그리드 간격: 100 cm
+\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.	\n선택한 오브젝트가 시야 밖에 있습니다. 클릭: 카메라를 그쪽으로 이동합니다.
+Modo Árbol	트리 모드
+Modo Lista	목록 모드
+Etiqueta de Textura	텍스처 태그
+Buscar (todavía no implementado)	검색 (아직 구현되지 않음)
+Filtrar (todavía no implementado)	필터 (아직 구현되지 않음)
+Clic: seleccionar. Ctrl+Clic: anadir o quitar de la seleccion. Doble clic: renombrar. Clic derecho: menú contextual. Arrastre un material aquí para asignarlo.	클릭: 선택. Ctrl+클릭: 선택에 추가 또는 제거. 더블 클릭: 이름 변경. 오른쪽 클릭: 컨텍스트 메뉴. 머티리얼을 여기로 드래그하여 할당합니다.
+CINEMA 4D Etiquetas	CINEMA 4D 태그
+Eliminar Etiqueta de Textura	텍스처 태그 삭제
+Fong	Phong
+Character Etiquetas	캐릭터 태그
+Cineman Etiquetas	Cineman 태그
+Etiqueta UVW	UVW 태그
+Simulación Etiquetas	시뮬레이션 태그
+Sketch Etiquetas	스케치 태그
+Videocámara Etiquetas	모션 카메라 태그
+Cargar Etiqueta Preestablecida	태그 프리셋 불러오기
+ objeto convertido.	 개 오브젝트를 변환했습니다.
+ objetos convertidos.	 개 오브젝트를 변환했습니다.
+Añadir Hijo	자식 추가
+Apagado	끔
+Visible en %s: %s\n(clic para cambiar)	%s에서 표시: %s\n(클릭하여 변경)
+Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.	위쪽 점: 에디터에서 표시. 아래쪽 점: 렌더에서 표시. 회색 = 기본값(부모에서 상속), 녹색 = 켜짐, 빨강 = 꺼짐.
+Etiqueta de Textura [%s]	텍스처 태그 [%s]
+%s (todavía no implementado)	%s (아직 구현되지 않음)
+Adelante	앞으로
+Nuevo Gestor de Atributos	새 어트리뷰트 매니저
+Configuración del Proyecto	프로젝트 설정
+Escala del Proyecto	프로젝트 스케일
+Escalar Proyecto: todavía no implementado en Iron3D.	프로젝트 스케일: Iron3D에서 아직 구현되지 않았습니다.
+Fotogramas por segundo: velocidad de reproducción de la Línea de Tiempo.	초당 프레임: 타임라인 재생 속도.
+Tiempo del Proyecto	프로젝트 시간
+Tiempo Mínimo	최소 시간
+Tiempo Máximo	최대 시간
+Tiempo Mínimo de Previo	미리보기 최소 시간
+Tiempo Máximo de Previo	미리보기 최대 시간
+Nivel de Detalle del Render en el Editor	에디터 렌더 디테일 레벨
+Color Objetos por Defecto	기본 오브젝트 색상
+Gris-Azul	회청색
+Recortar Vista	뷰 클립
+Flujo de Trabajo Lineal	리니어 워크플로
+Introducir Perfil de Color	입력 색상 프로필
+Preestablecidos de proyecto: todavía no implementados en Iron3D.	프로젝트 프리셋: Iron3D에서 아직 구현되지 않았습니다.
+Página no disponible	페이지를 사용할 수 없습니다
+  Todavía no implementado en Iron3D.	  Iron3D에서 아직 구현되지 않았습니다.
+Fotométrico	포토메트릭
+Lentes	렌즈
+Visible en Editor	에디터에서 표시
+Visible en Editor (punto superior): Por Defecto hereda del padre, Activado lo muestra siempre, Apagado lo oculta en el visor.	에디터에서 표시(위쪽 점): 기본값은 부모에서 상속, 켜짐은 항상 표시, 꺼짐은 뷰포트에서 숨깁니다.
+Visible en Render	렌더에서 표시
+Visible en Render (punto inferior): Iron3D todavía no tiene render final; el valor se guarda en la escena.	렌더에서 표시(아래쪽 점): Iron3D에는 아직 최종 렌더가 없으며 값은 씬에 저장됩니다.
+Usar Color	색상 사용
+Congelar Transformación	트랜스폼 고정
+Foco	스폿
+Foco Cuadrado	사각 스폿
+Infinita	인피니트
+Foco Paralelo	패럴렐 스폿
+Foco Paralelo Cuadrado	사각 패럴렐 스폿
+Área	에어리어
+Tipo de luz. En el visor, Tubo, Área e IES iluminan como una Omni; Paralela y Foco Paralelo como una Infinita.	라이트 종류. 뷰포트에서 튜브, 에어리어, IES는 옴니처럼, 패럴렐과 패럴렐 스폿은 인피니트처럼 비춥니다.
+Mapeado (Suave)	섀도 맵(소프트)
+Trazado (Duro)	레이트레이스(하드)
+Con sombra activada, la primera luz de la escena que la tenga proyecta sombras en el visor.	그림자가 켜져 있으면 씬에서 그림자가 있는 첫 번째 라이트가 뷰포트에 그림자를 드리웁니다.
+Luz Visible	보이는 라이트
+No Ilumina	조명 없음
+Mostrar Iluminación	조명 표시
+Mostrar Luz Visible	보이는 라이트 표시
+Iluminación de IG	GI 조명
+Propiedades del Objeto	오브젝트 속성
+Plano de Simetría	대칭 평면
+ZY (refleja X)	ZY (X 미러)
+XZ (refleja Y)	XZ (Y 미러)
+XY (refleja Z)	XY (Z 미러)
+  Refleja al primer hijo con malla; el hijo se edita aparte.	  메시가 있는 첫 번째 자식을 미러합니다. 자식은 따로 편집합니다.
+Relación de Aspecto	종횡비
+Tamaño . X	크기 . X
+Tamaño . Y	크기 . Y
+Tamaño . Z	크기 . Z
+Segmentos en X	세그먼트 X
+Segmentos en Y	세그먼트 Y
+Segmentos en Z	세그먼트 Z
+Superficies Separadas	서피스 분리
+Canto	필렛
+  Objeto Poligonal (importado o hecho editable con C).	  폴리곤 오브젝트(가져왔거나 C로 편집 가능하게 만든 것).
+  Puntos, aristas y polígonos: botones de la barra izquierda (Supr borra).	  포인트, 에지, 폴리곤: 왼쪽 바의 버튼(Del로 삭제).
+Perfectos de Render	렌더 퍼펙트
+Altura	높이
+Segmentos en la Anchura	너비 세그먼트
+Segmentos en la Altura	높이 세그먼트
+  Para cambiar el tamaño use Escala (Coord.) o el Gestor de Coordenadas.	  크기를 바꾸려면 스케일(좌표) 또는 좌표 매니저를 사용하세요.
+Etiqueta Phong	Phong 태그
+Limitar Ángulo	각도 제한
+Ángulo de Phong	Phong 각도
+Usar Bordes	에지 사용
+Ángulo Interior	안쪽 각도
+Ángulo Exterior	바깥쪽 각도
+Inverso Cuadrado (Físicamente Exacto)	역제곱(물리적으로 정확)
+Escalón	스텝
+Inverso Cuadrado Limitado	역제곱 클램프
+Inverso Limitado	역 클램프
+Cómo pierde fuerza la luz con la distancia. En las inversas, el Radio es la distancia a la que da el 100 %.	거리에 따라 빛이 약해지는 방식입니다. 역감쇠에서는 반경이 100 %가 되는 거리입니다.
+Radio Interior	안쪽 반경
+Radio/Decaimiento	반경/감쇠
+Tamaño Horizontal	가로 크기
+Tamaño Vertical	세로 크기
+Tamaño en Profundidad	깊이 크기
+  En el visor, las sombras son siempre mapeadas y de una sola luz.	  뷰포트에서 그림자는 항상 맵 방식이며 하나의 라이트에서 생깁니다.
+Especular - Blinn (Heredado)	스펙큘러 - Blinn(레거시)
+Especular - Phong (Heredado)	스펙큘러 - Phong(레거시)
+Irawan (Tejido)	Irawan(직물)
+ nudos	 노드
+ capas	 레이어
+no se evalúa en el visor	뷰포트에서 계산되지 않음
+Elegir imagen	이미지 선택
+Elegir la imagen del canal (sustituye al shader importado).	채널 이미지를 선택합니다(가져온 셰이더를 대체합니다).
+Quitar la textura del canal.	채널 텍스처를 제거합니다.
+  Hay shaders que el visor todavía no evalúa.	  일부 셰이더는 뷰포트에서 아직 계산되지 않습니다.
+Modo de Mezcla	혼합 모드
+Fuerza de Mezcla	혼합 강도
+Alfa Suave	소프트 알파
+Alfa de Imagen	이미지 알파
+Lambertiano	램버트
+Modelo	모델
+Caída Difusa	디퓨즈 폴오프
+Nivel Difuso	디퓨즈 레벨
+(ninguna)	(없음)
+  Sin capas importadas: el visor usa Metálico/Rugosidad.	  가져온 레이어가 없습니다: 뷰포트는 메탈릭/러프니스를 사용합니다.
+Visor (PBR equivalente)	뷰포트(PBR 상당)
+Metálico	메탈릭
+  El visor todavía no pinta cada capa por separado (brillos de color, Atenuación).	  뷰포트는 아직 각 레이어를 따로 그리지 않습니다(컬러 하이라이트, 감쇠).
+Luminancia	휘도
+Refracción	굴절
+  Ningún objeto usa este material. Arrástrelo al Gestor de Objetos.	  이 머티리얼을 사용하는 오브젝트가 없습니다. 오브젝트 매니저로 드래그하세요.
+Etiqueta de Textura [Textura]	텍스처 태그 [텍스처]
+Propiedades de Etiqueta	태그 속성
+Mapeado UVW	UVW 매핑
+Lado	면
+Mezclar Texturas	텍스처 혼합
+Repetición	타일
+Usar UVW para Relieve	범프에 UVW 사용
+Longitud U	길이 U
+Longitud V	길이 V
+Repeticiones U	타일 U
+Repeticiones V	타일 V
+%zu clave%s seleccionada%s	키 %zu개%s 선택됨%s
+Interpolación Spline	스플라인 보간
+Interpolación Lineal	선형 보간
+Interpolación Escalón	스텝 보간
+Eliminar Claves	키 삭제
+Claves movidas 	키 이동: 
+Eliminadas 	삭제됨: 
+ clave.	 개의 키.
+ claves.	 개의 키.
+ en 	 위치: 
+Editor de Curvas	커브 에디터
+Esc. X	스케일 X
+Esc. Y	스케일 Y
+Esc. Z	스케일 Z
+%s: sin claves (F9 graba)	%s: 키 없음(F9로 기록)
+Sin objeto activo	활성 오브젝트 없음
+Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.	타임라인: 클릭하고 드래그하여 현재 프레임을 바꿉니다.
+Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.	키: 클릭하여 선택(Shift로 추가), 드래그하여 이동, 오른쪽 클릭으로 보간.
+Tiempo Mínimo del proyecto.	프로젝트 최소 시간.
+Rango de previo (Tiempo Mínimo/Máximo de Previo).	미리보기 범위(미리보기 최소/최대 시간).
+Tiempo Máximo del proyecto (editable, la regla se reescala).	프로젝트 최대 시간(편집 가능, 눈금자가 다시 조정됨).
+Tiempo Máximo de Previo.	미리보기 최대 시간.
+Ir al Inicio [Mayús+F]	처음으로 이동 [Shift+F]
+Ir a la Clave Anterior [Ctrl+F]	이전 키로 이동 [Ctrl+F]
+Ir al Fotograma Anterior [F]	이전 프레임으로 이동 [F]
+Reproducir Hacia Atrás [F6]	거꾸로 재생 [F6]
+Reproducir Hacia Delante [F8]	앞으로 재생 [F8]
+Ir al Fotograma Siguiente [G]	다음 프레임으로 이동 [G]
+Ir a la Clave Siguiente [Ctrl+G]	다음 키로 이동 [Ctrl+G]
+Ir al Final [Mayús+G]	끝으로 이동 [Shift+G]
+Grabar Objetos Activos [F9]	활성 오브젝트 기록 [F9]
+Fotogramas Clave Automáticos [Ctrl+F9]	자동 키프레임 [Ctrl+F9]
+Selección de Claves (todavía no implementado)	키 선택 (아직 구현되지 않음)
+Grabar Posición	위치 기록
+Grabar Escala	스케일 기록
+Grabar Rotación	회전 기록
+Grabar Parámetro (todavía no implementado)	매개변수 기록 (아직 구현되지 않음)
+Grabar Nivel de Puntos (todavía no implementado)	포인트 레벨 애니메이션 기록 (아직 구현되지 않음)
+Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D	그래프 에디터 / 도프 시트: Iron3D에서 아직 구현되지 않았습니다
+Ctrl+Mayús+N	Ctrl+Shift+N
+Guardar Material Preestablecido...	머티리얼 프리셋 저장...
+Eliminar Materiales sin Usar	사용하지 않는 머티리얼 삭제
+Cargar Textura...	텍스처 불러오기...
+Editar Textura...	텍스처 편집...
+Clic: seleccionar material. Doble clic: Editor de Material (en el nombre: renombrar). Arrastre a un objeto para asignarlo.	클릭: 머티리얼 선택. 더블 클릭: 머티리얼 에디터(이름 위: 이름 변경). 오브젝트로 드래그하여 할당합니다.
+Doble clic en un espacio vacío del Gestor de Materiales para crear un material nuevo.	머티리얼 매니저의 빈 공간을 더블 클릭하면 새 머티리얼을 만듭니다.
+Doble clic aquí para crear un material	여기를 더블 클릭하여 머티리얼 만들기
+Mundo	월드
+Sistema de coordenadas de los campos (solo Objeto (Rel) disponible por ahora).	필드의 좌표계(현재는 오브젝트(상대)만 사용 가능).
+Tamaño: medidas en cm. Escala: multiplicador del objeto.	크기: cm 단위 치수. 스케일: 오브젝트 배율.
+Aplicar los valores de los campos al objeto seleccionado.	필드 값을 선택한 오브젝트에 적용합니다.
+Selección Rectangular: arrastre para seleccionar los objetos que toque el rectángulo. MAYÚSCULAS añade, CTRL quita.	사각형 선택: 드래그하여 사각형이 닿는 오브젝트를 선택합니다. SHIFT는 추가, CTRL은 제거합니다.
+Selección con Lazo: dibuje una zona para seleccionar los objetos que queden dentro. MAYÚSCULAS añade, CTRL quita.	올가미 선택: 영역을 그려 안쪽의 오브젝트를 선택합니다. SHIFT는 추가, CTRL은 제거합니다.
+Selección en Vivo: Haga clic para seleccionar elementos.	라이브 선택: 클릭하여 요소를 선택합니다.
+Guardar como	다른 이름으로 저장
+Nombre de archivo:	파일 이름:
+Carpeta: %s	폴더: %s
+Cargado: 	불러옴: 
+Error al cargar: 	불러오기 오류: 
+Guardado: 	저장됨: 
+Error al guardar: 	저장 오류: 
+%s\nDisposición: %s	%s\n레이아웃: %s
+Colores y disposición de los paneles como en cada programa. Se aplica al momento.	각 프로그램과 같은 색상과 패널 레이아웃. 즉시 적용됩니다.
+Mis presets	내 프리셋
+Fondo de paneles	패널 배경
+Fondo de campos	필드 배경
+Acento	강조색
+Azul de herramientas	도구 파랑
+Fondo del visor	뷰포트 배경
+Barra superior	상단 바
+Columna lateral	사이드 열
+Columna de objetos	오브젝트 열
+Objetos / Atributos	오브젝트 / 어트리뷰트
+Fila inferior	하단 행
+Línea de tiempo	타임라인
+Pestañas verticales	세로 탭
+Redondeo	둥글기
+Personalizado (sin guardar)	사용자 지정(저장 안 됨)
+Nombre del preset	프리셋 이름
+Guardar como preset	프리셋으로 저장
+Preset guardado en presets/.	프리셋이 presets/에 저장되었습니다.
+Escriba un nombre válido (letras, números, espacios, - o _).	올바른 이름을 입력하세요(문자, 숫자, 공백, - 또는 _).
+Preset eliminado.	프리셋이 삭제되었습니다.
+Restablecer	초기화
+Vuelve al preset integrado «%s».	내장 프리셋 "%s"(으)로 되돌립니다.
+Guardado. Se usará al abrir Iron3D.	저장되었습니다. Iron3D를 시작할 때 사용됩니다.
+Error al guardar las preferencias.	환경설정 저장 오류.
+Preset activo: %s	활성 프리셋: %s
+Backend activo en esta sesión: %s	이 세션에서 활성화된 백엔드: %s
+Backend de render (se aplica al reiniciar):	렌더 백엔드(재시작 후 적용):
+Guardado. Reinicie Iron3D Studio para aplicarlo.	저장되었습니다. 적용하려면 Iron3D Studio를 다시 시작하세요.
+Asignación	할당
+  Ningún objeto usa este material.	  이 머티리얼을 사용하는 오브젝트가 없습니다.
+Acerca de Iron3D Studio	Iron3D Studio 정보
+Interfaz inspirada en el flujo de trabajo de Cinema 4D R19.	Cinema 4D R19의 워크플로에서 영감을 받은 인터페이스.
+Cinema 4D es una marca de Maxon; Iron3D no está afiliado a Maxon.	Cinema 4D는 Maxon의 상표이며 Iron3D는 Maxon과 관련이 없습니다.
+La importación de archivos .c4d usa el Cineware SDK	.c4d 파일 가져오기는 Cineware SDK를 사용합니다
+de MAXON Computer GmbH, integrado según su licencia.	MAXON Computer GmbH 제공, 해당 라이선스에 따라 통합되었습니다.
+No se pudo abrir	열 수 없음
+%d objetos, %d con malla, %d materiales, %d luces	오브젝트 %d개, 메시 있는 것 %d개, 머티리얼 %d개, 라이트 %d개
+%lld puntos, %lld polígonos	포인트 %lld개, 폴리곤 %lld개
+%d generadores con la geometría guardada por Cinema 4D	Cinema 4D가 저장한 지오메트리를 가진 제너레이터 %d개
+%d primitivas reconstruidas desde sus parámetros	매개변수에서 다시 만든 프리미티브 %d개
+Importado sin avisos.	경고 없이 가져왔습니다.
+Revisa:	확인:
+Exportado a Cinema 4D	Cinema 4D로 내보냈습니다
+%d objetos: %d mallas, %d primitivas, %d luces	오브젝트 %d개: 메시 %d, 프리미티브 %d, 라이트 %d
+%d materiales, %lld puntos, %lld polígonos	머티리얼 %d개, 포인트 %lld개, 폴리곤 %lld개
+Exportado sin avisos.	경고 없이 내보냈습니다.
+Une los puntos que coinciden (misma posición,\nnormal y color) al conectar.	연결할 때 일치하는 포인트(위치,\n노멀, 색상이 같은 것)를 합칩니다.
+Tolerante	관대함
+Se elige todo lo que toque la zona.	영역이 닿는 모든 것이 선택됩니다.
+Solo se elige lo que queda dentro entero.	완전히 안쪽에 있는 것만 선택됩니다.
+Solo Seleccionar Visibles	보이는 요소만 선택
+Puntos, aristas y polígonos tapados por la malla no se eligen.	메시에 가려진 포인트, 에지, 폴리곤은 선택되지 않습니다.
+También se eligen los tapados (a través de la malla).	가려진 것도 선택됩니다(메시를 통해).
+Guardar render	렌더 저장
+Imagen PNG	PNG 이미지
+Render guardado: 	렌더가 저장되었습니다: 
+No se pudo guardar el render.	렌더를 저장할 수 없습니다.
+Ajustar a la Ventana	창에 맞추기
+Renderizar	렌더
+Todavía no hay ningún render (Mayús+R).	아직 렌더가 없습니다(Shift+R).
+%s · %d x %d · antialiasing %dx%d · %.2f s · %d triángulos	%s · %d x %d · 안티앨리어싱 %dx%d · %.2f초 · 삼각형 %d개
+1080 x 1080 (cuadrado)	1080 x 1080 (정사각형)
+Elegir...	선택...
+Usar el tamaño del visor	뷰포트 크기 사용
+Anchura (px)	너비 (px)
+Altura (px)	높이 (px)
+Ninguno (1x1)	없음 (1x1)
+Geometría (2x2)	지오메트리 (2x2)
+Mejor (4x4)	최상 (4x4)
+Render por CPU con el sombreado de las miniaturas:\nsin sombras ni texturas todavía.	썸네일 셰이딩을 사용하는 CPU 렌더:\n아직 그림자와 텍스처가 없습니다.
+Malla demasiado grande para dibujar sus componentes.	메시가 너무 커서 컴포넌트를 그릴 수 없습니다.
+Selecciona un objeto editable y entra en modo Puntos, Aristas o Polígonos.	편집 가능한 오브젝트를 선택하고 포인트, 에지 또는 폴리곤 모드로 들어가세요.
+ seleccionados.	 선택됨.
+Bucle y Anillo funcionan en modo Aristas.	루프와 링은 에지 모드에서 작동합니다.
+Comprobar Malla: sin problemas.	메시 검사: 문제가 없습니다.
+Comprobar Malla: 	메시 검사: 
+ aristas abiertas, 	 개의 열린 에지, 
+ no manifold, 	 개의 논매니폴드, 
+ puntos sueltos, 	 개의 떨어진 포인트, 
+ polígonos sin área.	 개의 면적이 0인 폴리곤.
+Puente: selecciona exactamente 2 polígonos (modo Polígonos).	브리지: 정확히 2개의 폴리곤을 선택하세요(폴리곤 모드).
+Puente: los dos polígonos deben tener el mismo número de lados.	브리지: 두 폴리곤의 변 수가 같아야 합니다.
+Soldar: selecciona al menos 2 puntos.	웰드: 포인트를 2개 이상 선택하세요.
+Cerrar Agujero: no hay bordes abiertos que toquen la selección.	구멍 닫기: 선택 항목에 닿는 열린 경계가 없습니다.
+Alinear Normales: ya están todas alineadas.	노멀 정렬: 모두 이미 정렬되어 있습니다.
+Triangular: no hay polígonos de más de 3 lados.	삼각화: 변이 3개보다 많은 폴리곤이 없습니다.
+Operación desconocida: 	알 수 없는 작업: 
+ elemento.	 개의 요소.
+ elementos.	 개의 요소.
+Eliminados 	삭제됨: 
+ polígono.	 개의 폴리곤.
+ polígonos.	 개의 폴리곤.
+: selecciona polígonos de un objeto editable.	: 편집 가능한 오브젝트의 폴리곤을 선택하세요.
+Cuchillo: selecciona un objeto editable (C).	나이프: 편집 가능한 오브젝트를 선택하세요(C).
+Cuchillo: la línea no corta ningún polígono.	나이프: 선이 어떤 폴리곤도 자르지 않습니다.
+Cuchillo: 	나이프: 
+ polígono cortado.	 개의 폴리곤을 잘랐습니다.
+ polígonos cortados.	 개의 폴리곤을 잘랐습니다.
+Desplazamiento (cm)	오프셋 (cm)
+Desplazamiento de Inserción (cm)	인셋 오프셋 (cm)
+Extrusión (cm)	돌출 (cm)
+Solo Visibles	보이는 것만
+Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos.	라인 모드: 선이 지나는 모든 것을 자릅니다.\n폴리곤이 선택되어 있으면 그것만.
+o arrastra en el visor	또는 뷰포트에서 드래그
+(objeto editable)	(편집 가능한 오브젝트)
+ vertices sin espejo.	 개의 미러 짝이 없는 정점.
+Iron3D Studio - hoja de iconos (%d)	Iron3D Studio - 아이콘 시트 (%d)
+Resultado de la Búsqueda: "	검색 결과: "
+Preestablecidos > 	프리셋 > 
+Ya hay una librería con ese nombre en library/browser.	같은 이름의 라이브러리가 library/browser에 이미 있습니다.
+No se pudo copiar la librería a library/browser: 	라이브러리를 library/browser에 복사할 수 없습니다: 
+" es ahora permanente (	" 이(가) 이제 영구 라이브러리입니다 (
+Librería "	라이브러리 "
+" creada en library/browser.	" 이(가) library/browser에 만들어졌습니다.
+Carpeta "	폴더 "
+" creada.	" 이(가) 만들어졌습니다.
+No se puede leer 	읽을 수 없음: 
+ modelos y 	 개의 모델과 
+ archivos añadidos a "	 개의 파일을 추가함: "
+Añadir a la librería	라이브러리에 추가
+Modelos y texturas	모델 및 텍스처
+" eliminado de "	" 제거됨: "
+; muévela antes de corregir.	; 수정하기 전에 이동하세요.
+No se pudo renombrar la librería: 	라이브러리 이름을 바꿀 수 없습니다: 
+Url interna corregida (copia de seguridad en 	내부 URL이 수정되었습니다(백업 위치: 
+Eliminar de la Librería	라이브러리에서 제거
+¿Eliminar "%s"%s?	"%s"%s을(를) 삭제하시겠습니까?
+ y todo su contenido	 및 모든 내용
+Se borra de la librería (%s).	라이브러리(%s)에서 삭제됩니다.
+Nueva Librería de Preestablecidos	새 프리셋 라이브러리
+Mover a	이동 위치
+Carpeta de destino (vacío = raíz, "a/b" = subcarpetas):	대상 폴더(비움 = 루트, "a/b" = 하위 폴더):
+Ruta no válida (o dentro de sí misma).	잘못된 경로입니다(또는 자기 자신의 안쪽).
+Sin  / \\ : * ? " < > |	사용 불가:  / \ : * ? " < > |
+Se guarda en library/browser: sale siempre.	library/browser에 저장됨: 항상 불러옵니다.
+Todavía no implementado	아직 구현되지 않음
+Nuevo Navegador	새 브라우저
+Abre antes una librería (o una carpeta suya)	먼저 라이브러리(또는 그 폴더)를 여세요
+Añadir Archivos a la Librería...	라이브러리에 파일 추가...
+Abrir Librería de Preestablecidos...	프리셋 라이브러리 열기...
+Hacer Permanente (copiar a library/browser)	영구화(library/browser로 복사)
+Quitar Librería del Navegador	브라우저에서 라이브러리 제거
+Cargar en la Escena	씬으로 불러오기
+Intro	Enter
+Mostrar Texturas y Archivos	텍스처 및 파일 표시
+Ir a	이동
+Busca por nombre en todas las librerías (Intro)	모든 라이브러리에서 이름으로 검색 (Enter)
+Librería temporal (solo esta sesión)	임시 라이브러리(이 세션만)
+Librería permanente	영구 라이브러리
+Quitar del Navegador	브라우저에서 제거
+Corregir Url Interna (archivo renombrado)	내부 URL 수정(파일 이름이 바뀜)
+Dentro pone "%s": Cinema 4D no la monta si no coincide con el nombre del archivo.	내부에 "%s"(이)라고 되어 있습니다: 파일 이름과 일치하지 않으면 Cinema 4D가 마운트하지 않습니다.
+  (temporal)	  (임시)
+Temporal: solo en esta sesión	임시: 이 세션만
+Permanente (library/browser)	영구 (library/browser)
+   (ninguna librería)	   (라이브러리 없음)
+No hay librerías. Abre un .lib4d (Archivo > Abrir) o cópialo a library/browser.	라이브러리가 없습니다. .lib4d를 열거나(파일 > 열기) library/browser에 복사하세요.
+Aún no has cargado ningún preestablecido en esta sesión.	이 세션에서 아직 프리셋을 불러오지 않았습니다.
+Sin resultados.	결과 없음.
+Carpeta vacía.	빈 폴더.
+Suéltalo en el visor para añadirlo a la escena	뷰포트에 놓아 씬에 추가
+Mover a...	이동...
+Modelo / escena de Cinema 4D	Cinema 4D 모델 / 씬
+Archivo (textura, imagen...)	파일(텍스처, 이미지...)
+\nDoble clic o arrastrar al visor: cargar	\n더블 클릭 또는 뷰포트로 드래그: 불러오기
+\nDoble clic: abrir	\n더블 클릭: 열기
+%s\n%d modelos  ·  %s	%s\n모델 %d개  ·  %s
+temporal (solo esta sesión)	임시(이 세션만)
+  ·  librería temporal (solo esta sesión)	  ·  임시 라이브러리(이 세션만)
+  ·  librería permanente	  ·  영구 라이브러리
+Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. Clic derecho > Corregir Url Interna.	이 라이브러리는 Cinema 4D 밖에서 이름이 바뀌었습니다: 내부 URL이 파일과 일치하지 않습니다. 오른쪽 클릭 > 내부 URL 수정.
+%s\n(clic para quitar el aviso)	%s\n(클릭하여 경고 닫기)
+Guardar como Preestablecido	프리셋으로 저장
+No hay ninguna librería de preestablecidos.	프리셋 라이브러리가 없습니다.
+Crear "Mis Preestablecidos"	"내 프리셋" 만들기
+Mis Preestablecidos	내 프리셋
+Librería	라이브러리
+(elige una)	(선택하세요)
+(raíz de la librería)	(라이브러리 루트)
+ objetos	 개 오브젝트
+ polígonos	 개 폴리곤
+ materiales	 개 머티리얼
+" guardado en "	" 저장 위치: "
+Tanque de Petróleo	오일 탱크
+Terreno Fractal	랜드스케이프
+Vectorizador	벡터라이저
+Derretir	멜트
+Envoltura	랩
+Cargar Material Preestablecido	머티리얼 프리셋 불러오기
+Spline Arco	아크 스플라인 도구
+Unión de Splines	스플라인 합집합
+Intersección de Splines	스플라인 교집합
+Herramienta de Nubes	클라우드 도구
+Grupo de Nubes	클라우드 그룹
+Nube	클라우드
+Cámara Objetivo	타깃 카메라
+Cámara de Movimiento	모션 카메라
+Luz Objetivo	타깃 라이트
+Luz IES	IES 라이트
+Herramienta de Iluminación	라이팅 도구
+Vista Perspectiva	퍼스펙티브 뷰
+Vista Superior	상단 뷰
+Vista Derecha	오른쪽 뷰
+Vista Frontal	정면 뷰
+Vista Izquierda	왼쪽 뷰
+Vista Trasera	후면 뷰
+Vista Inferior	하단 뷰
+Guardar Proyecto	프로젝트 저장
+Selección Contorno	윤곽 선택
+Aumentar Selección	선택 확장
+Fijación 2.5D	2.5D 스냅
+Construcción de Personaje	캐릭터 빌더
+Objeto %s [%s]	오브젝트 %s [%s]
+Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f	색조 %.0f°  채도 %.0f%%  명도 %.0f%%  밝기 %.0f%%  대비 %.0f%%  감마 %.2f
+Render: %d x %d en %.2f s	렌더: %d x %d, %.2f초
+%s: %zu de %zu seleccionados	%s: %zu/%zu 선택됨
+%d elementos	항목 %d개
+Esquema	아웃라이너
+Espacio de trabajo:	작업 공간:
+Librería de preestablecidos de Cinema 4D	Cinema 4D 프리셋 라이브러리
+Objeto poligonal	폴리곤 오브젝트
+Nulo (vacio)	널(빈 오브젝트)
+Fotométrica	포토메트릭
+Destriangular	삼각화 해제
+Destriangular: no hay triángulos vecinos que unir.	삼각화 해제: 합칠 인접 삼각형이 없습니다.
+Ocultar Selección	선택 항목 숨기기
+Ocultar No Seleccionados	선택 안 된 항목 숨기기
+Mostrar Todo	모두 표시
+No se puede ocultar todo el objeto.	오브젝트 전체를 숨길 수 없습니다.
+Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio가 창을 열 수 없습니다.
+Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	Vulkan 1.3 또는 OpenGL 3.3을 지원하는 그래픽 카드가 필요합니다. 그래픽 드라이버를 업데이트해 보세요.
+SMD: %d huesos y %d mallas con pesos; solo la pose actual, sin animación. Cada material de Source necesita su .vmt.	SMD: 본 %d개와 웨이트가 있는 메시 %d개; 현재 포즈만, 애니메이션 없음. 각 Source 머티리얼에는 .vmt가 필요합니다.
+Línea	라인
+Bucle	루프
+Cuchillo: no hay ninguna arista bajo el cursor.	나이프: 커서 아래에 에지가 없습니다.
+Cuchillo: esa arista no tiene un bucle de cuadriláteros que cortar.	나이프: 이 에지에는 자를 사각형 루프가 없습니다.
+Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic.	루프 모드: 에지를 클릭하면 클릭한 지점에서\n그 링 전체를 자릅니다.
+Eje	축
+Cuchillo: el clic no toca la malla.	나이프: 클릭이 메시에 닿지 않았습니다.
+Cuchillo: el plano no corta ningún polígono.	나이프: 평면이 어떤 폴리곤도 자르지 않습니다.
+Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	평면 모드: 메시를 클릭하면 그 지점을 지나며\n선택한 축에 수직인 평면으로 자릅니다.
+Segmentos de Rotación	회전 세그먼트
+Radio Exterior	바깥 반경
+Radio del Anillo	링 반경
+Radio del Tubo	파이프 반경
+Segmentos del Anillo	링 세그먼트
+Segmentos del Tubo	파이프 세그먼트
+Segmentos de la Tapa	캡 세그먼트
+Profundidad	깊이
+Tetraedro	정사면체
+Octaedro	정팔면체
+Icosaedro	정이십면체
+Dodecaedro	정십이면체
+  Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  파라메트릭 프리미티브: 메시(포인트, 에지 등)를 편집하면 매개변수가 사라집니다.
+Ángulo	각도
+  Deforma al primer hijo con malla; el hijo se edita aparte.	  메시가 있는 첫 번째 자식을 변형합니다. 자식은 따로 편집합니다.
+Booleano: Unión (A + B)	불리언: 합집합 (A + B)
+Booleano: Sustracción (A - B)	불리언: 차집합 (A - B)
+Booleano: Intersección (A y B)	불리언: 교집합 (A 및 B)
+Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.	불리언: 오브젝트 매니저에서 Ctrl+클릭으로 오브젝트 2개(A와 B)를 선택하세요.
+Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).	불리언: 두 오브젝트 모두 지오메트리가 필요합니다(큐브, 구, 폴리곤 등).
+Booleano: 	불리언: 
+Booleano: objeto creado; A y B quedan ocultos.	불리언: 오브젝트를 만들었습니다. A와 B는 숨겨져 있습니다.
+Cantidad	개수
+Cantidad X	개수 X
+Cantidad Y	개수 Y
+Cantidad Z	개수 Z
+Separación X	간격 X
+Separación Y	간격 Y
+Separación Z	간격 Z
+Paso X	스텝 X
+Paso Y	스텝 Y
+Paso Z	스텝 Z
+Escala por copia	클론당 스케일
+Giro por copia	클론당 회전
+  Clona el primer hijo con malla; el hijo se edita aparte.	  메시가 있는 첫 번째 자식을 복제합니다. 자식은 따로 편집합니다.
+copias	개 클론
+Efector Aleatorio	랜덤 이펙터
+Posición Aleatoria X	랜덤 위치 X
+Posición Aleatoria Y	랜덤 위치 Y
+Posición Aleatoria Z	랜덤 위치 Z
+Giro Aleatorio	랜덤 회전
+Escala Aleatoria	랜덤 스케일
+Semilla	시드
+  Modo Objeto: una copia en cada punto del 2.º hijo con malla.	  오브젝트 모드: 메시가 있는 두 번째 자식의 각 포인트에 클론 하나.
+Seleccionar Patrón	패턴 선택
+Patrón: 1 de cada 2	패턴: 2번째마다
+Patrón: 1 de cada 2 (desfasado)	패턴: 2번째마다(오프셋)
+Patrón: 1 de cada 3	패턴: 3번째마다
+Exportar a Source (SMD)	Source(SMD)로 내보내기
+Escena.smd	Scene.smd
+Exportar SMD	SMD 내보내기
+SMD: solo geometría, normales y UV; sin esqueleto ni animación. Cada material de Source necesita su .vmt.	SMD: 지오메트리, 노멀, UV만; 스켈레톤과 애니메이션 없음. 각 Source 머티리얼에는 자체 .vmt가 필요합니다.
+Crear Punto	포인트 만들기
+Cerrar Agujero de Polígonos	폴리곤 구멍 닫기
+Lápiz Polígonos	폴리곤 펜
+Cortar Línea	라인 컷
+Cortar Plano	평면 컷
+Cortar Cíclico/Trayectoria	루프/패스 컷
+Magnetismo	마그넷
+Reflejar	미러
+Puntada y Cosido	스티치 앤 소
+Extruir	돌출
+Extrusión Interior	안쪽 돌출
+Extrusión Matriz	매트릭스 돌출
+Suavizar Desplazamiento	스무스 시프트
+Mover Normal	노멀 이동
+Escalar Normal	노멀 스케일
+Rotar Normal	노멀 회전
+Destriangular...	삼각화 해제...
+Retriangular N-gons	N-곤 재삼각화
+Eliminar N-gons	N-곤 제거
+Clonar	복제
+Desconectar...	분리...
+Separar	분할
+Colapso	콜랩스
+Conectar	연결
+Fundir	멜트
+Disolver	디졸브
+Subdividir...	세분...
+Asignar Valor al Punto	포인트 값 설정
+Voltear Arista	에지 회전
+Aristas a Spline	에지를 스플라인으로
+Cambiar Orden de Puntos	포인트 순서 변경
+Optimizar...	최적화...
+Restaurar Escala...	스케일 초기화...
+Configuración Modelado	모델링 설정
+Deshacer (Acción)	실행 취소(동작)
+Mayús+Z	Shift+Z
+Encuadrar Elementos Seleccionados	선택한 요소 프레임
+Invertir Órbita	오빗 반전
+Velocidad Pan	팬 속도
+Velocidad Muñeca/Zoom	돌리/줌 속도
+Velocidad Órbita	오빗 속도
+Se aplica al momento. Alt+clic orbita, panea y hace zoom; la rueda acerca y aleja.	즉시 적용됩니다. Alt+클릭으로 오빗, 팬, 줌; 휠로 가까이/멀리 이동합니다.
+Dispositivos de Entrada	입력 장치
+Comunicación	통신
+Escultura	스컬프팅
+Motor Houdini	Houdini Engine
+Motor Substance	Substance Engine
+Previo del Material	머티리얼 미리보기
+Importación/Exportación	가져오기/내보내기
+Colores Esquema	스킴 색상
+Conversión	변환
+Comandos	명령
+Herramientas Crear	생성 도구
+Herramientas Transformar	변형 도구
+Interpolación Dura	하드 보간
+Interpolación Suave	소프트 보간
+Igualar Longitud de Tangentes	탄젠트 길이 동일
+Igualar Dirección de Tangentes	탄젠트 방향 동일
+Unir Segmento	세그먼트 결합
+Romper Segmento	세그먼트 끊기
+Explotar Segmentos	세그먼트 분해
+Asignar Primer Punto	첫 포인트 설정
+Invertir Secuencia	순서 뒤집기
+Mover Secuencia Abajo	시퀀스 아래로 이동
+Mover Secuencia Arriba	시퀀스 위로 이동
+Contornear	윤곽
+Sección Transversal	단면
+Alinear	정렬
+Proyectar	투영
+Redondear	라운드
+Unión Spline	스플라인 합집합
+Intersección Spline	스플라인 교집합
+Centrar Ejes	축 중앙 정렬
+Centrar Eje a Objeto	축을 오브젝트 중앙으로
+Centrar Eje a Selección	축을 선택 항목 중앙으로
+Abrir Carpeta de Preferencias...	환경설정 폴더 열기...
+Disolver: selecciona aristas, o polígonos vecinos.	디졸브: 에지 또는 인접한 폴리곤을 선택하세요.
+Disolver: el resultado no sería un polígono convexo.	디졸브: 결과가 볼록한 평면 폴리곤이 되지 않습니다.
+Planchar: no hay puntos que alisar.	Iron: 부드럽게 할 포인트가 없습니다.
+Voltear Arista: selecciona aristas (modo Aristas).	에지 회전: 에지를 선택하세요(에지 모드).
+Voltear Arista: solo entre dos triángulos y sin cuadrilátero cóncavo.	에지 회전: 두 삼각형 사이에서만, 오목한 사각형이 생기지 않을 때만 가능합니다.
+Clonar: selecciona polígonos (modo Polígonos).	복제: 폴리곤을 선택하세요(폴리곤 모드).
+Conectar: selecciona 2 puntos no vecinos de un mismo polígono.	연결: 같은 폴리곤의 인접하지 않은 포인트 2개를 선택하세요.
+Reflejar: no hay polígonos.	미러: 폴리곤이 없습니다.
+Restaurar Escala: el objeto tiene hijos; sus posiciones cambiarían.	스케일 초기화: 오브젝트에 자식이 있어 그 위치가 바뀝니다.
+Restaurar Escala: el objeto ya está a escala 1.	스케일 초기화: 오브젝트의 스케일이 이미 1입니다.
+Restaurar Escala: hecho.	스케일 초기화: 완료.
+Información del Objeto	오브젝트 정보
+No hay ningún objeto seleccionado.	선택된 오브젝트가 없습니다.
+Hijos	자식
+triángulos	삼각형
+cuadriláteros	사각형
+Guardado como 	저장 이름: 
+volver al archivo guardado	저장된 파일로 되돌리기
+cerrar el proyecto	프로젝트 닫기
+Subdivisiones	서브디비전
+Objeto de Origen	소스 오브젝트
+Instancia: selecciona primero el objeto del que quieres una instancia.	인스턴스: 먼저 인스턴스를 만들 오브젝트를 선택하세요.
+  Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  메시가 있는 첫 번째 자식에 Catmull-Clark를 적용합니다. 자식이 케이지입니다.
+  Comparte la malla del objeto de origen.	  소스 오브젝트의 메시를 공유합니다.
+  No se encuentra el objeto de origen (ruta por nombres).	  소스 오브젝트를 찾을 수 없습니다(이름 경로).
+Distancia Focal	초점 거리
+Tamaño del Sensor	센서 크기
+Campo de Visión	시야각
+Esquina	모서리
+Color Superior	상단 색상
+Color Inferior	하단 색상
+  Ruta por nombres del objeto al que mira (vacío = sin objetivo).	  바라보는 오브젝트의 이름 경로(비움 = 타깃 없음).
+  Rejilla 2x2x2 sobre la caja del primer hijo; cada esquina se desplaza una fracción del tamaño.	  첫 번째 자식의 박스 위 2x2x2 격자. 각 모서리가 크기의 일부만큼 움직입니다.
+  Mezcla el primer hijo con el segundo (mismo número de puntos).	  첫 번째 자식과 두 번째 자식을 혼합합니다(포인트 수가 같아야 함).
+  Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo).	  이것은 픽처 뷰어의 렌더 배경입니다(위에서 아래로 그라데이션).
+Eje X / Encabezado [X]\n(bloqueado)	X축 / 헤딩 [X]\n(잠김)
+Eje X / Encabezado [X]\n(desbloqueado)	X축 / 헤딩 [X]\n(잠금 해제)
+Bloquea o desbloquea el eje X: un eje bloqueado no cambia al mover, rotar o escalar.	X축을 잠그거나 잠금 해제합니다. 잠긴 축은 이동, 회전, 스케일 시 변하지 않습니다.
+Eje Y / Inclinación [Y]\n(bloqueado)	Y축 / 피치 [Y]\n(잠김)
+Eje Y / Inclinación [Y]\n(desbloqueado)	Y축 / 피치 [Y]\n(잠금 해제)
+Bloquea o desbloquea el eje Y: un eje bloqueado no cambia al mover, rotar o escalar.	Y축을 잠그거나 잠금 해제합니다. 잠긴 축은 이동, 회전, 스케일 시 변하지 않습니다.
+Eje Z / Alabeo [Z]\n(bloqueado)	Z축 / 뱅크 [Z]\n(잠김)
+Eje Z / Alabeo [Z]\n(desbloqueado)	Z축 / 뱅크 [Z]\n(잠금 해제)
+Bloquea o desbloquea el eje Z: un eje bloqueado no cambia al mover, rotar o escalar.	Z축을 잠그거나 잠금 해제합니다. 잠긴 축은 이동, 회전, 스케일 시 변하지 않습니다.
+Desactivar Fijación [Mayús+S]	스냅 비활성화 [Shift+S]
+Activar Fijación [Mayús+S]	스냅 활성화 [Shift+S]
+Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).	스냅을 사용하면 이동이 100 cm(그리드) 단위로 점프합니다.
+Fijación: activada	스냅: 켜짐
+Fijación: desactivada	스냅: 꺼짐
+Buscar por nombre	이름으로 검색
+Filtrar por tipo	유형별 필터
+Nombre del objeto...	오브젝트 이름...
+Geometría	지오메트리
+Luces	라이트
+Otros (Nulos, generadores...)	기타(널, 제너레이터 등)
+Reflejos de estudio y transparencia	스튜디오 반사 및 투명도
+Sombra suave en el suelo	부드러운 바닥 그림자
+Efectos	이펙트
+Salir de Vista Solo	솔로 뷰 종료
+Vista Solo	솔로 뷰
+Vista Solo: el visor dibuja solo el objeto seleccionado y sus hijos.	솔로 뷰: 뷰포트에 선택한 오브젝트와 그 자식만 그립니다.
+Salir de Modo Ajuste	트윅 모드 종료
+Modo Ajuste	트윅 모드
+Modo Ajuste: sin gizmo, arrastre el objeto directamente con el ratón (usa la herramienta activa: Mover, Rotar o Escalar).	트윅 모드: 기즈모 없이 마우스로 오브젝트를 직접 드래그합니다(활성 도구: 이동, 회전 또는 스케일 사용).
+Desactivar Plano de Trabajo	작업 평면 비활성화
+Plano de Trabajo: la cuadrícula del visor en perspectiva toma la posición y orientación del objeto seleccionado.	작업 평면: 퍼스펙티브 뷰포트의 그리드가 선택한 오브젝트의 위치와 방향을 따릅니다.
+Desbloquear Plano de Trabajo	작업 평면 잠금 해제
+Bloquear Plano de Trabajo	작업 평면 잠금
+Bloquear Plano de Trabajo: la cuadrícula deja de seguir la selección y se queda donde está.	작업 평면 잠금: 그리드가 선택 항목을 따라가지 않고 제자리에 남습니다.
+Salir de Modo Textura	텍스처 모드 종료
+Usar Modo Textura	텍스처 모드 사용
+Modo Textura: edita la proyección, el desplazamiento y la longitud de la etiqueta de Textura del objeto seleccionado.	텍스처 모드: 선택한 오브젝트의 텍스처 태그의 투영, 오프셋, 길이를 편집합니다.
+Modo Textura	텍스처 모드
+Seleccione un objeto con geometría.	지오메트리가 있는 오브젝트를 선택하세요.
+(ninguno)	(없음)
+Esférico	구형
+Cilíndrico	원통형
+Cúbico	큐빅
+Otra	기타
+Desplazamiento U/V	오프셋 U/V
+Longitud U/V	길이 U/V
+Aviso: el visor y el render solo dibujan texturas con proyección UVW.	참고: 뷰포트와 렌더는 UVW 투영 텍스처만 그립니다.
+Mosaico	타일
+Editor de Material  [%s]	머티리얼 에디터  [%s]

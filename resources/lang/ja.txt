@@ -483,3 +483,891 @@ Estructura	構造
 Capas	レイヤー
 Propiedades	属性
 Transformar	トランスフォーム
+Importar Cinema 4D	Cinema 4D をインポート
+Grabar Objetos Activos: no hay ningún objeto seleccionado.	アクティブオブジェクトを記録: オブジェクトが選択されていません。
+Grabar Objetos Activos: Posición, Escala y Rotación están desactivadas.	アクティブオブジェクトを記録: 位置、スケール、回転が無効です。
+Clave grabada en el fotograma 	キーを記録したフレーム: 
+ objeto).	 個のオブジェクト)。
+ objetos).	 個のオブジェクト)。
+Extrusión Interna	内側に押し出し
+Cuchillo	ナイフ
+: arrastra en el visor para dibujar la línea de corte.	: ビューポートでドラッグしてカットラインを描きます。
+: arrastra en horizontal en el visor (o usa Aplicar).	: ビューポートで水平にドラッグします(または適用を使用)。
+Trasera	戻る
+Parámetro todavía no implementado en Iron3D	このパラメータは Iron3D ではまだ実装されていません
+Clic: mostrar esta página. Mayús+Clic: mostrar varias a la vez.	クリック: このページを表示。Shift+クリック: 複数を同時に表示。
+Abrir librería	ライブラリを開く
+Abrir una librería necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe. Cópiala a library/browser.	ライブラリを開くにはシステムのファイルダイアログが必要ですが、このプラットフォームにはまだありません。library/browser にコピーしてください。
+Abrir librería de preestablecidos	プリセットライブラリを開く
+Librerías de preestablecidos de Cinema 4D	Cinema 4D プリセットライブラリ
+Este preestablecido no es un modelo de Cinema 4D.	このプリセットは Cinema 4D のモデルではありません。
+No se pudo escribir el archivo temporal en 	一時ファイルを書き込めませんでした: 
+Textura que no está en ninguna librería montada: 	テクスチャがマウント済みのどのライブラリにもありません: 
+Importar OBJ	OBJ をインポート
+Importar glTF	glTF をインポート
+Escenas y librerías (iron, c4d, obj, glb, lib4d)	シーンとライブラリ (iron, c4d, obj, glb, lib4d)
+Fusionar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	マージにはシステムのファイルダイアログが必要ですが、このプラットフォームにはまだありません。
+Escenas de Cinema 4D, OBJ, glTF e Iron3D	Cinema 4D、OBJ、glTF、Iron3D シーン
+Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	エクスポートにはシステムのファイルダイアログが必要ですが、このプラットフォームにはまだありません。
+La escena está vacía.	シーンが空です。
+Exportar a Wavefront	Wavefront にエクスポート
+Escena.obj	Scene.obj
+Exportar OBJ	OBJ をエクスポート
+Exportar a glTF	glTF にエクスポート
+glTF binario	バイナリ glTF
+Escena.glb	Scene.glb
+Exportar glTF	glTF をエクスポート
+Exportar a Cinema 4D	Cinema 4D にエクスポート
+Escena.c4d	Scene.c4d
+Guardar Objetos Seleccionados como	選択したオブジェクトに名前を付けて保存
+Objetos.c4d	Objects.c4d
+%s\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)	%s\nオブジェクト %s を追加  (Alt+クリック: 選択の子として)
+%s\nTodavía no implementado en Iron3D	%s\nIron3D ではまだ実装されていません
+Sistema de coordenadas: Mundo	座標系: ワールド
+Sistema de coordenadas: Objeto	座標系: オブジェクト
+Activar Eje: se mueve el eje, no el objeto	軸を有効化: オブジェクトではなく軸が動きます
+Activar Eje: desactivado	軸を有効化: オフ
+Fotogramas Clave Automáticos: activados	オートキーフレーム: オン
+Fotogramas Clave Automáticos: desactivados	オートキーフレーム: オフ
+Hacer Editable: selecciona un Cubo, Esfera o Plano (los demás ya son editables o no tienen malla).	編集可能にする: 立方体、球体、平面のいずれかを選択してください(他はすでに編集可能か、メッシュがありません)。
+Hacer Editable: 1 objeto convertido a Objeto Poligonal.	編集可能にする: 1 個のオブジェクトをポリゴンオブジェクトに変換しました。
+Hacer Editable: 	編集可能にする: 
+ objetos convertidos a Objeto Poligonal.	 個のオブジェクトをポリゴンオブジェクトに変換しました。
+Animación eliminada.	アニメーションを削除しました。
+Estado Actual a Objeto: 	カレントステートをオブジェクトに: 
+ copia poligonal creada.	 個のポリゴンコピーを作成しました。
+ copias poligonales creadas.	 個のポリゴンコピーを作成しました。
+Estado Actual a Objeto: la selección no tiene geometría.	カレントステートをオブジェクトに: 選択にジオメトリがありません。
+Conectar Objetos: 	オブジェクトを連結: 
+ mallas unidas en un Objeto Polígono.	 個のメッシュを 1 つのポリゴンオブジェクトに連結しました。
+Conectar Objetos: la selección no tiene geometría.	オブジェクトを連結: 選択にジオメトリがありません。
+Mayús+H	Shift+H
+Mayús+R	Shift+R
+Ctrl+Mayús+O	Ctrl+Shift+O
+Mayús+F8	Shift+F8
+Mayús+F1	Shift+F1
+Mayús+F	Shift+F
+Mayús+G	Shift+G
+Buscar orden...	コマンドを検索...
+Ninguna orden coincide.	一致するコマンドはありません。
+Estado Actual a Objeto	カレントステートをオブジェクトに
+Conectar+Eliminar	オブジェクトを連結 + 削除
+Selección en Vivo	ライブ選択
+Selección con Lazo	投げ縄選択
+Ctrl+Mayús+F4	Ctrl+Shift+F4
+Ctrl+Mayús+S	Ctrl+Shift+S
+Guardar incrementalmente...	インクリメンタル保存...
+Esta compilación no lleva el Cineware SDK de MAXON	このビルドには MAXON の Cineware SDK が含まれていません
+glTF binario (*.glb)...	バイナリ glTF (*.glb)...
+Archivos recientes	最近使ったファイル
+Física	物理
+Selección de Polígono	ポリゴン選択
+Selección de Bucle	ループ選択
+Selección de Anillo	リング選択
+Seleccionar Conectados	連結を選択
+Reducir Selección	選択を縮小
+Eje X / Encabezado	X 軸 / ヘディング
+Eje Y / Inclinación	Y 軸 / ピッチ
+Eje Z / Alabeo	Z 軸 / バンク
+Sistema de Coordenadas de Mundo	ワールド座標系
+Medir y Construir	計測と構築
+Organizar Objetos	オブジェクトを整列
+Simetría de edición	シンメトリを編集
+Apagada	オフ
+Plano X (izquierda/derecha)	X 平面(左/右)
+Plano Y (arriba/abajo)	Y 平面(上/下)
+Plano Z (delante/detrás)	Z 平面(前/後)
+Tolerancia (cm)	許容値 (cm)
+Cerrar Agujero Poligonal	ポリゴンの穴を閉じる
+Subdividir	細分化
+Comprobar Malla	メッシュをチェック
+Invertir Normales	法線を反転
+Alinear Normales	法線を揃える
+Mayús+S	Shift+S
+Ir a la Clave Anterior	前のキーへ移動
+Ir a la Clave Siguiente	次のキーへ移動
+Editor de Curvas...	カーブエディタ...
+Claves Seleccionadas	選択したキー
+Eliminar Animación del Objeto	オブジェクトのアニメーションを削除
+Fotograma Siguiente	次のフレーム
+Fotograma Anterior	前のフレーム
+Repetir (Loop)	リピート(ループ)
+Resolver IK (experimental)	IK を解く(試験的)
+ cadenas resueltas.	 個のチェーンを解きました。
+IK: ninguna etiqueta IK activa con Punta y Objetivo alcanzables.	IK: 到達可能な先端とゴールを持つアクティブな IK タグがありません。
+Mueve las articulaciones de cada etiqueta IK para que la punta llegue a su objetivo	各 IK タグのジョイントを動かし、先端をゴールに到達させます
+Articulación	ジョイント
+Pesos	ウェイト
+Renderizar Vista Activa	アクティブビューをレンダリング
+Renderizar Seleccionados en Visor de Imágenes	選択をピクチャビューアにレンダリング
+Renderizar en Visor de Imágenes	ピクチャビューアにレンダリング
+Crear Previsualización...	プレビューを作成...
+Añadir a la Cola de Render...	レンダーキューに追加...
+Editar Configuración de Render...	レンダリング設定を編集...
+Tirar	引く
+Amasar	こねる
+Rastreador de Objetos	オブジェクトトラッカー
+Intercambiar Clonador-Matriz	クローナーマトリクスを入れ替え
+Pintar Pesos	ウェイトをペイント
+Etiqueta IK	IK タグ
+Ningún plugin cargado	プラグインが読み込まれていません
+Buscar Plugins...	プラグインを検索...
+Mayús+F10	Shift+F10
+Mayús+F2	Shift+F2
+Mayús+F3	Shift+F3
+Mayús+F5	Shift+F5
+Mayús+F7	Shift+F7
+Navegador de Contenido	コンテンツブラウザ
+Mayús+F4	Shift+F4
+Acerca de Iron3D Studio...	Iron3D Studio について...
+Arranque	起動
+Visualizar	可視化
+Deshacer [Ctrl+Z]	元に戻す [Ctrl+Z]
+Deshacer la última acción.	直前の操作を元に戻します。
+Rehacer [Ctrl+Y]	やり直し [Ctrl+Y]
+Rehacer la última acción deshecha.	最後に元に戻した操作をやり直します。
+Selección en Vivo [Atajo de Teclado 9]	ライブ選択 [ショートカット 9]
+Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.	ライブ選択: クリック&ドラッグで要素を選択します。SHIFT で選択に追加、CTRL で除外します。
+Herramienta de Mover [Atajo de Teclado E]	移動ツール [ショートカット E]
+Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.	移動: クリック&ドラッグで要素を移動します。SHIFT で移動を量子化 / ポイントモードで選択に追加、CTRL で除外します。
+Herramienta de Escalar [Atajo de Teclado T]	スケールツール [ショートカット T]
+Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.	スケール: クリック&ドラッグで要素を拡大縮小します。SHIFT でスケールを量子化 / ポイントモードで選択に追加、CTRL で除外します。
+Herramienta de Rotar [Atajo de Teclado R]	回転ツール [ショートカット R]
+Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.	回転: クリック&ドラッグで要素を回転します。SHIFT で回転を量子化 / ポイントモードで選択に追加、CTRL で除外します。
+Eje X / Encabezado [X]\n(todavía no implementado)	X 軸 / ヘディング [X]\n(未実装)
+Bloqueo de eje X: todavía no implementado.	X 軸ロック: 未実装です。
+Eje Y / Inclinación [Y]\n(todavía no implementado)	Y 軸 / ピッチ [Y]\n(未実装)
+Bloqueo de eje Y: todavía no implementado.	Y 軸ロック: 未実装です。
+Eje Z / Alabeo [Z]\n(todavía no implementado)	Z 軸 / バンク [Z]\n(未実装)
+Bloqueo de eje Z: todavía no implementado.	Z 軸ロック: 未実装です。
+Usar Sistema de Coordenadas de Objeto [W]\n(ahora: Mundo)	オブジェクト座標系を使用 [W]\n(現在: ワールド)
+Usar Sistema de Coordenadas de Mundo [W]\n(ahora: Objeto)	ワールド座標系を使用 [W]\n(現在: オブジェクト)
+Cambia los ejes del gizmo entre los del objeto y los del mundo.	ギズモの軸をオブジェクト軸とワールド軸で切り替えます。
+Renderizar Vista Activa\nRenderiza la vista activa en el propio visor.\n[Atajo de Teclado Ctrl+R]	アクティブビューをレンダリング\nアクティブビューをビューポート内でレンダリングします。\n[ショートカット Ctrl+R]
+Renderiza la vista activa en el propio visor.	アクティブビューをビューポート内でレンダリングします。
+Renderizar en Visor de Imágenes [Mayús+R]\nRenderiza la cámara activa con la Configuración de Render.	ピクチャビューアにレンダリング [Shift+R]\nレンダリング設定でアクティブカメラをレンダリングします。
+Renderiza la cámara activa en el Visor de Imágenes.	アクティブカメラをピクチャビューアにレンダリングします。
+Editar Configuración de Render... [Ctrl+B]	レンダリング設定を編集... [Ctrl+B]
+Resolución, antialiasing y fondo del render.	レンダリング解像度、アンチエイリアス、背景。
+Cubo  (mantener pulsado: más objetos)	立方体  (長押し: その他のオブジェクト)
+Lápiz  (mantener pulsado: más splines)	ペン  (長押し: その他のスプライン)
+Subdivisión Superficie  (mantener pulsado: generadores)	サブディビジョンサーフェス  (長押し: ジェネレータ)
+Matriz  (mantener pulsado: modelado)	アレイ  (長押し: モデリング)
+Doblar  (mantener pulsado: deformadores)	ベンド  (長押し: デフォーマ)
+Suelo  (mantener pulsado: escena)	フロア  (長押し: シーン)
+Cámara  (mantener pulsado: más cámaras)	カメラ  (長押し: その他のカメラ)
+Luz  (mantener pulsado: más luces)	ライト  (長押し: その他のライト)
+Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado.	クリック: オブジェクトを作成。長押しまたは右クリック: グループパレットを開く。Alt+クリック: 選択の子として作成。
+Hacer Editable [C]\nConvierte Cubo, Esfera o Plano en un Objeto Poligonal.	編集可能にする [C]\n立方体、球体、平面をポリゴンオブジェクトに変換します。
+Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.	編集可能にする: 選択したパラメトリックオブジェクトをポリゴンオブジェクトに変換します。
+Usar Modo Modelo	モデルモードを使用
+Modo Modelo: se editan objetos enteros.	モデルモード: オブジェクト全体を編集します。
+Usar Modo Textura\n(todavía no implementado)	テクスチャモードを使用\n(未実装)
+Modo Textura: todavía no implementado.	テクスチャモード: 未実装です。
+Activar Eje [L]	軸を有効化 [L]
+Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.	軸モード: 移動・回転・スケールはオブジェクトの軸のみを変更し、編集可能なジオメトリと子はそのままです。
+Usar Modo Puntos	ポイントモードを使用
+Modo Puntos: elige y mueve puntos de un objeto editable (C para hacerlo editable).	ポイントモード: 編集可能オブジェクトのポイントを選択して移動します(C で編集可能にします)。
+Usar Modo Aristas	エッジモードを使用
+Modo Aristas: elige y mueve aristas de un objeto editable.	エッジモード: 編集可能オブジェクトのエッジを選択して移動します。
+Usar Modo Polígonos	ポリゴンモードを使用
+Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.	ポリゴンモード: 編集可能オブジェクトのポリゴン(三角形)を選択して移動します。
+Modo Ajuste\n(todavía no implementado)	スナップモード\n(未実装)
+Modo Ajuste: todavía no implementado.	スナップモード: 未実装です。
+Vista Solo\n(todavía no implementado)	ソロビュー\n(未実装)
+Vista Solo: todavía no implementado.	ソロビュー: 未実装です。
+Activar Fijación [Mayús+S]\n(todavía no implementado)	スナップを有効化 [Shift+S]\n(未実装)
+Fijación: todavía no implementado.	スナップ: 未実装です。
+Plano de Trabajo\n(todavía no implementado)	ワークプレーン\n(未実装)
+Plano de Trabajo: todavía no implementado.	ワークプレーン: 未実装です。
+Bloquear Plano de Trabajo\n(todavía no implementado)	ワークプレーンをロック\n(未実装)
+Bloquear Plano de Trabajo: todavía no implementado.	ワークプレーンをロック: 未実装です。
+Usar como Cámara de Render	レンダリングカメラとして使用
+Ctrl+Mayús+Z	Ctrl+Shift+Z
+Ctrl+Mayús+Y	Ctrl+Shift+Y
+Encuadrar Elementos Activos	アクティブな要素をフレーム表示
+Cámara del Editor	エディタカメラ
+Axonométrica	アクソノメトリック
+OpenGL Mejorado	拡張 OpenGL
+Ruidos	ノイズ
+Mayús+V	Shift+V
+Ejes Globales	グローバル軸
+Cajas Delimitadoras	バウンディングボックス
+Resaltar Componente	コンポーネントをハイライト
+Resaltar Objeto	オブジェクトをハイライト
+Cruz Navegación	ナビゲーションクロス
+Disposición	レイアウト
+Vista Simple	シングルビュー
+2 Vistas Apiladas	2 ビュー(上下)
+2 Vistas Lado a Lado	2 ビュー(左右)
+Vista 1 (Perspectiva)	ビュー 1 (パース)
+Vista 2 (Superior)	ビュー 2 (上)
+Vista 3 (Derecha)	ビュー 3 (右)
+Vista 4 (Frontal)	ビュー 4 (前)
+Mover Cámara (arrastrar)	カメラを移動 (ドラッグ)
+Zoom de Cámara (arrastrar)	カメラをズーム (ドラッグ)
+Rotar Cámara (arrastrar)	カメラを回転 (ドラッグ)
+Cambiar Vista (todavía no implementado)	ビューを切り替え (未実装)
+Multi-vista: todavía no implementado.	マルチビュー: 未実装です。
+Arrastre sobre el icono para navegar por la vista.	アイコン上をドラッグしてビューを操作します。
+Espaciado Cuadrícula : 100 cm	グリッド間隔: 100 cm
+\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.	\n選択したオブジェクトは視界の外です。クリック: カメラをそこへ移動します。
+Modo Árbol	ツリーモード
+Modo Lista	リストモード
+Etiqueta de Textura	テクスチャタグ
+Buscar (todavía no implementado)	検索 (未実装)
+Filtrar (todavía no implementado)	フィルタ (未実装)
+Clic: seleccionar. Ctrl+Clic: anadir o quitar de la seleccion. Doble clic: renombrar. Clic derecho: menú contextual. Arrastre un material aquí para asignarlo.	クリック: 選択。Ctrl+クリック: 選択に追加/除外。ダブルクリック: 名前変更。右クリック: コンテキストメニュー。マテリアルをここにドラッグして割り当てます。
+CINEMA 4D Etiquetas	CINEMA 4D タグ
+Eliminar Etiqueta de Textura	テクスチャタグを削除
+Fong	Phong
+Character Etiquetas	キャラクタータグ
+Cineman Etiquetas	Cineman タグ
+Etiqueta UVW	UVW タグ
+Simulación Etiquetas	シミュレーションタグ
+Sketch Etiquetas	スケッチタグ
+Videocámara Etiquetas	モーションカメラタグ
+Cargar Etiqueta Preestablecida	タグプリセットを読み込む
+ objeto convertido.	 個のオブジェクトを変換しました。
+ objetos convertidos.	 個のオブジェクトを変換しました。
+Añadir Hijo	子を追加
+Apagado	オフ
+Visible en %s: %s\n(clic para cambiar)	%s での表示: %s\n(クリックで変更)
+Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.	上の点: エディタで表示。下の点: レンダリングで表示。グレー = デフォルト(親から継承)、緑 = オン、赤 = オフ。
+Etiqueta de Textura [%s]	テクスチャタグ [%s]
+%s (todavía no implementado)	%s (未実装)
+Adelante	進む
+Nuevo Gestor de Atributos	新規アトリビュートマネージャ
+Configuración del Proyecto	プロジェクト設定
+Escala del Proyecto	プロジェクトスケール
+Escalar Proyecto: todavía no implementado en Iron3D.	プロジェクトをスケール: Iron3D ではまだ実装されていません。
+Fotogramas por segundo: velocidad de reproducción de la Línea de Tiempo.	フレームレート: タイムラインの再生速度。
+Tiempo del Proyecto	プロジェクト時間
+Tiempo Mínimo	最小時間
+Tiempo Máximo	最大時間
+Tiempo Mínimo de Previo	プレビュー最小時間
+Tiempo Máximo de Previo	プレビュー最大時間
+Nivel de Detalle del Render en el Editor	エディタレンダーのディテールレベル
+Color Objetos por Defecto	デフォルトのオブジェクトカラー
+Gris-Azul	グレーブルー
+Recortar Vista	ビューをクリップ
+Flujo de Trabajo Lineal	リニアワークフロー
+Introducir Perfil de Color	入力カラープロファイル
+Preestablecidos de proyecto: todavía no implementados en Iron3D.	プロジェクトプリセット: Iron3D ではまだ実装されていません。
+Página no disponible	ページは利用できません
+  Todavía no implementado en Iron3D.	  Iron3D ではまだ実装されていません。
+Fotométrico	フォトメトリック
+Lentes	レンズ
+Visible en Editor	エディタで表示
+Visible en Editor (punto superior): Por Defecto hereda del padre, Activado lo muestra siempre, Apagado lo oculta en el visor.	エディタで表示(上の点): デフォルトは親から継承、オンで常に表示、オフでビューポートから非表示にします。
+Visible en Render	レンダリングで表示
+Visible en Render (punto inferior): Iron3D todavía no tiene render final; el valor se guarda en la escena.	レンダリングで表示(下の点): Iron3D にはまだ最終レンダリングがなく、値はシーンに保存されます。
+Usar Color	カラーを使用
+Congelar Transformación	トランスフォームをフリーズ
+Foco	スポット
+Foco Cuadrado	スクエアスポット
+Infinita	インフィニット
+Foco Paralelo	パラレルスポット
+Foco Paralelo Cuadrado	スクエアパラレルスポット
+Área	エリア
+Tipo de luz. En el visor, Tubo, Área e IES iluminan como una Omni; Paralela y Foco Paralelo como una Infinita.	ライトの種類。ビューポートではチューブ、エリア、IES はオムニのように、パラレルとパラレルスポットはインフィニットのように照らします。
+Mapeado (Suave)	シャドウマップ(ソフト)
+Trazado (Duro)	レイトレース(ハード)
+Con sombra activada, la primera luz de la escena que la tenga proyecta sombras en el visor.	シャドウがオンの場合、シーン内で最初にシャドウを持つライトがビューポートに影を落とします。
+Luz Visible	可視光
+No Ilumina	照明なし
+Mostrar Iluminación	照明を表示
+Mostrar Luz Visible	可視光を表示
+Iluminación de IG	GI 照明
+Propiedades del Objeto	オブジェクトプロパティ
+Plano de Simetría	シンメトリ平面
+ZY (refleja X)	ZY(X をミラー)
+XZ (refleja Y)	XZ(Y をミラー)
+XY (refleja Z)	XY(Z をミラー)
+  Refleja al primer hijo con malla; el hijo se edita aparte.	  メッシュを持つ最初の子をミラーします。子は別に編集します。
+Relación de Aspecto	アスペクト比
+Tamaño . X	サイズ . X
+Tamaño . Y	サイズ . Y
+Tamaño . Z	サイズ . Z
+Segmentos en X	分割数 X
+Segmentos en Y	分割数 Y
+Segmentos en Z	分割数 Z
+Superficies Separadas	サーフェスを分離
+Canto	フィレット
+  Objeto Poligonal (importado o hecho editable con C).	  ポリゴンオブジェクト(インポート、または C で編集可能にしたもの)。
+  Puntos, aristas y polígonos: botones de la barra izquierda (Supr borra).	  ポイント、エッジ、ポリゴン: 左バーのボタン(Del で削除)。
+Perfectos de Render	レンダー・パーフェクト
+Altura	高さ
+Segmentos en la Anchura	幅の分割数
+Segmentos en la Altura	高さの分割数
+  Para cambiar el tamaño use Escala (Coord.) o el Gestor de Coordenadas.	  サイズを変更するには、スケール(座標)または座標マネージャを使用します。
+Etiqueta Phong	Phong タグ
+Limitar Ángulo	角度制限
+Ángulo de Phong	Phong 角度
+Usar Bordes	エッジを使用
+Ángulo Interior	内側の角度
+Ángulo Exterior	外側の角度
+Inverso Cuadrado (Físicamente Exacto)	逆二乗(物理的に正確)
+Escalón	ステップ
+Inverso Cuadrado Limitado	逆二乗クランプ
+Inverso Limitado	逆クランプ
+Cómo pierde fuerza la luz con la distancia. En las inversas, el Radio es la distancia a la que da el 100 %.	距離による光の減衰。逆減衰では、半径が 100 % になる距離です。
+Radio Interior	内側の半径
+Radio/Decaimiento	半径/減衰
+Tamaño Horizontal	水平サイズ
+Tamaño Vertical	垂直サイズ
+Tamaño en Profundidad	奥行きサイズ
+  En el visor, las sombras son siempre mapeadas y de una sola luz.	  ビューポートでは、シャドウは常にマップ方式で、1 つのライトからのものです。
+Especular - Blinn (Heredado)	スペキュラ - Blinn(レガシー)
+Especular - Phong (Heredado)	スペキュラ - Phong(レガシー)
+Irawan (Tejido)	Irawan(織物)
+ nudos	 ノード
+ capas	 レイヤー
+no se evalúa en el visor	ビューポートでは評価されません
+Elegir imagen	画像を選択
+Elegir la imagen del canal (sustituye al shader importado).	チャンネル画像を選択します(インポートしたシェーダーを置き換えます)。
+Quitar la textura del canal.	チャンネルのテクスチャを削除します。
+  Hay shaders que el visor todavía no evalúa.	  一部のシェーダーはビューポートでまだ評価されません。
+Modo de Mezcla	ミックスモード
+Fuerza de Mezcla	ミックス強度
+Alfa Suave	ソフトアルファ
+Alfa de Imagen	イメージアルファ
+Lambertiano	ランバート
+Modelo	モデル
+Caída Difusa	ディフューズフォールオフ
+Nivel Difuso	ディフューズレベル
+(ninguna)	(なし)
+  Sin capas importadas: el visor usa Metálico/Rugosidad.	  インポートされたレイヤーがありません: ビューポートでは メタリック/ラフネス を使用します。
+Visor (PBR equivalente)	ビューポート(PBR 相当)
+Metálico	メタリック
+  El visor todavía no pinta cada capa por separado (brillos de color, Atenuación).	  ビューポートはまだ各レイヤーを個別に描画しません(カラーハイライト、減衰)。
+Luminancia	輝度
+Refracción	屈折
+  Ningún objeto usa este material. Arrástrelo al Gestor de Objetos.	  このマテリアルを使用しているオブジェクトはありません。オブジェクトマネージャにドラッグしてください。
+Etiqueta de Textura [Textura]	テクスチャタグ [テクスチャ]
+Propiedades de Etiqueta	タグプロパティ
+Mapeado UVW	UVW マッピング
+Lado	サイド
+Mezclar Texturas	テクスチャをミックス
+Repetición	タイル
+Usar UVW para Relieve	バンプに UVW を使用
+Longitud U	長さ U
+Longitud V	長さ V
+Repeticiones U	タイル U
+Repeticiones V	タイル V
+%zu clave%s seleccionada%s	%zu 個のキー%s を選択%s
+Interpolación Spline	スプライン補間
+Interpolación Lineal	リニア補間
+Interpolación Escalón	ステップ補間
+Eliminar Claves	キーを削除
+Claves movidas 	キーを移動: 
+Eliminadas 	削除: 
+ clave.	 個のキー。
+ claves.	 個のキー。
+ en 	 位置: 
+Editor de Curvas	カーブエディタ
+Esc. X	スケール X
+Esc. Y	スケール Y
+Esc. Z	スケール Z
+%s: sin claves (F9 graba)	%s: キーがありません(F9 で記録)
+Sin objeto activo	アクティブなオブジェクトがありません
+Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.	タイムライン: クリック&ドラッグで現在のフレームを変更します。
+Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.	キー: クリックで選択(Shift で追加)、ドラッグで移動、右クリックで補間。
+Tiempo Mínimo del proyecto.	プロジェクトの最小時間。
+Rango de previo (Tiempo Mínimo/Máximo de Previo).	プレビュー範囲(プレビュー最小/最大時間)。
+Tiempo Máximo del proyecto (editable, la regla se reescala).	プロジェクトの最大時間(編集可能。ルーラーが再スケールされます)。
+Tiempo Máximo de Previo.	プレビューの最大時間。
+Ir al Inicio [Mayús+F]	先頭へ移動 [Shift+F]
+Ir a la Clave Anterior [Ctrl+F]	前のキーへ移動 [Ctrl+F]
+Ir al Fotograma Anterior [F]	前のフレームへ移動 [F]
+Reproducir Hacia Atrás [F6]	逆再生 [F6]
+Reproducir Hacia Delante [F8]	順再生 [F8]
+Ir al Fotograma Siguiente [G]	次のフレームへ移動 [G]
+Ir a la Clave Siguiente [Ctrl+G]	次のキーへ移動 [Ctrl+G]
+Ir al Final [Mayús+G]	末尾へ移動 [Shift+G]
+Grabar Objetos Activos [F9]	アクティブオブジェクトを記録 [F9]
+Fotogramas Clave Automáticos [Ctrl+F9]	オートキーフレーム [Ctrl+F9]
+Selección de Claves (todavía no implementado)	キー選択 (未実装)
+Grabar Posición	位置を記録
+Grabar Escala	スケールを記録
+Grabar Rotación	回転を記録
+Grabar Parámetro (todavía no implementado)	パラメータを記録 (未実装)
+Grabar Nivel de Puntos (todavía no implementado)	ポイントレベルアニメーションを記録 (未実装)
+Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D	グラフエディタ / ドープシート: Iron3D ではまだ実装されていません
+Ctrl+Mayús+N	Ctrl+Shift+N
+Guardar Material Preestablecido...	マテリアルプリセットを保存...
+Eliminar Materiales sin Usar	未使用のマテリアルを削除
+Cargar Textura...	テクスチャを読み込む...
+Editar Textura...	テクスチャを編集...
+Clic: seleccionar material. Doble clic: Editor de Material (en el nombre: renombrar). Arrastre a un objeto para asignarlo.	クリック: マテリアルを選択。ダブルクリック: マテリアルエディタ(名前上: 名前変更)。オブジェクトにドラッグして割り当てます。
+Doble clic en un espacio vacío del Gestor de Materiales para crear un material nuevo.	マテリアルマネージャの空白部分をダブルクリックすると新しいマテリアルを作成します。
+Doble clic aquí para crear un material	ここをダブルクリックしてマテリアルを作成
+Mundo	ワールド
+Sistema de coordenadas de los campos (solo Objeto (Rel) disponible por ahora).	フィールドの座標系(現時点ではオブジェクト(相対)のみ利用可能)。
+Tamaño: medidas en cm. Escala: multiplicador del objeto.	サイズ: cm 単位の寸法。スケール: オブジェクトの倍率。
+Aplicar los valores de los campos al objeto seleccionado.	フィールドの値を選択したオブジェクトに適用します。
+Selección Rectangular: arrastre para seleccionar los objetos que toque el rectángulo. MAYÚSCULAS añade, CTRL quita.	矩形選択: ドラッグして、矩形に触れるオブジェクトを選択します。SHIFT で追加、CTRL で除外します。
+Selección con Lazo: dibuje una zona para seleccionar los objetos que queden dentro. MAYÚSCULAS añade, CTRL quita.	投げ縄選択: 領域を描いて内側のオブジェクトを選択します。SHIFT で追加、CTRL で除外します。
+Selección en Vivo: Haga clic para seleccionar elementos.	ライブ選択: クリックして要素を選択します。
+Guardar como	名前を付けて保存
+Nombre de archivo:	ファイル名:
+Carpeta: %s	フォルダ: %s
+Cargado: 	読み込み完了: 
+Error al cargar: 	読み込みエラー: 
+Guardado: 	保存完了: 
+Error al guardar: 	保存エラー: 
+%s\nDisposición: %s	%s\nレイアウト: %s
+Colores y disposición de los paneles como en cada programa. Se aplica al momento.	各プログラムと同じ配色とパネルレイアウト。すぐに適用されます。
+Mis presets	マイプリセット
+Fondo de paneles	パネルの背景
+Fondo de campos	フィールドの背景
+Acento	アクセント
+Azul de herramientas	ツールブルー
+Fondo del visor	ビューポートの背景
+Barra superior	トップバー
+Columna lateral	サイドカラム
+Columna de objetos	オブジェクトカラム
+Objetos / Atributos	オブジェクト / アトリビュート
+Fila inferior	下段
+Línea de tiempo	タイムライン
+Pestañas verticales	縦タブ
+Redondeo	角丸
+Personalizado (sin guardar)	カスタム(未保存)
+Nombre del preset	プリセット名
+Guardar como preset	プリセットとして保存
+Preset guardado en presets/.	プリセットを presets/ に保存しました。
+Escriba un nombre válido (letras, números, espacios, - o _).	有効な名前を入力してください(文字、数字、スペース、- または _)。
+Preset eliminado.	プリセットを削除しました。
+Restablecer	リセット
+Vuelve al preset integrado «%s».	内蔵プリセット "%s" に戻します。
+Guardado. Se usará al abrir Iron3D.	保存しました。Iron3D の起動時に使用されます。
+Error al guardar las preferencias.	設定の保存中にエラーが発生しました。
+Preset activo: %s	アクティブなプリセット: %s
+Backend activo en esta sesión: %s	このセッションで有効なバックエンド: %s
+Backend de render (se aplica al reiniciar):	レンダリングバックエンド(再起動後に適用):
+Guardado. Reinicie Iron3D Studio para aplicarlo.	保存しました。適用するには Iron3D Studio を再起動してください。
+Asignación	割り当て
+  Ningún objeto usa este material.	  このマテリアルを使用しているオブジェクトはありません。
+Acerca de Iron3D Studio	Iron3D Studio について
+Interfaz inspirada en el flujo de trabajo de Cinema 4D R19.	Cinema 4D R19 のワークフローにインスパイアされたインターフェース。
+Cinema 4D es una marca de Maxon; Iron3D no está afiliado a Maxon.	Cinema 4D は Maxon の商標です。Iron3D は Maxon とは無関係です。
+La importación de archivos .c4d usa el Cineware SDK	.c4d ファイルのインポートには Cineware SDK を使用します
+de MAXON Computer GmbH, integrado según su licencia.	MAXON Computer GmbH 提供、そのライセンスに基づいて統合されています。
+No se pudo abrir	開けませんでした
+%d objetos, %d con malla, %d materiales, %d luces	オブジェクト %d 個、メッシュあり %d 個、マテリアル %d 個、ライト %d 個
+%lld puntos, %lld polígonos	ポイント %lld 個、ポリゴン %lld 個
+%d generadores con la geometría guardada por Cinema 4D	Cinema 4D が保存したジオメトリを持つジェネレータ %d 個
+%d primitivas reconstruidas desde sus parámetros	パラメータから再構築したプリミティブ %d 個
+Importado sin avisos.	警告なしでインポートしました。
+Revisa:	確認:
+Exportado a Cinema 4D	Cinema 4D にエクスポートしました
+%d objetos: %d mallas, %d primitivas, %d luces	オブジェクト %d 個: メッシュ %d、プリミティブ %d、ライト %d
+%d materiales, %lld puntos, %lld polígonos	マテリアル %d 個、ポイント %lld 個、ポリゴン %lld 個
+Exportado sin avisos.	警告なしでエクスポートしました。
+Une los puntos que coinciden (misma posición,\nnormal y color) al conectar.	連結時に、一致するポイント(位置、\n法線、カラーが同じ)を結合します。
+Tolerante	許容
+Se elige todo lo que toque la zona.	領域に触れるものはすべて選択されます。
+Solo se elige lo que queda dentro entero.	完全に内側にあるものだけが選択されます。
+Solo Seleccionar Visibles	表示されている要素のみ選択
+Puntos, aristas y polígonos tapados por la malla no se eligen.	メッシュに隠れたポイント、エッジ、ポリゴンは選択されません。
+También se eligen los tapados (a través de la malla).	隠れたものも選択されます(メッシュ越し)。
+Guardar render	レンダリングを保存
+Imagen PNG	PNG 画像
+Render guardado: 	レンダリングを保存しました: 
+No se pudo guardar el render.	レンダリングを保存できませんでした。
+Ajustar a la Ventana	ウィンドウに合わせる
+Renderizar	レンダリング
+Todavía no hay ningún render (Mayús+R).	まだレンダリングがありません (Shift+R)。
+%s · %d x %d · antialiasing %dx%d · %.2f s · %d triángulos	%s · %d x %d · アンチエイリアス %dx%d · %.2f 秒 · 三角形 %d 個
+1080 x 1080 (cuadrado)	1080 x 1080 (正方形)
+Elegir...	選択...
+Usar el tamaño del visor	ビューポートのサイズを使用
+Anchura (px)	幅 (px)
+Altura (px)	高さ (px)
+Ninguno (1x1)	なし (1x1)
+Geometría (2x2)	ジオメトリ (2x2)
+Mejor (4x4)	ベスト (4x4)
+Render por CPU con el sombreado de las miniaturas:\nsin sombras ni texturas todavía.	サムネイルのシェーディングによる CPU レンダリング:\nシャドウとテクスチャはまだありません。
+Malla demasiado grande para dibujar sus componentes.	メッシュが大きすぎてコンポーネントを描画できません。
+Selecciona un objeto editable y entra en modo Puntos, Aristas o Polígonos.	編集可能オブジェクトを選択し、ポイント、エッジ、またはポリゴンモードに入ってください。
+ seleccionados.	 を選択しました。
+Bucle y Anillo funcionan en modo Aristas.	ループとリングはエッジモードで動作します。
+Comprobar Malla: sin problemas.	メッシュをチェック: 問題はありません。
+Comprobar Malla: 	メッシュをチェック: 
+ aristas abiertas, 	 個の開いたエッジ、 
+ no manifold, 	 個のノンマニホールド、 
+ puntos sueltos, 	 個の孤立ポイント、 
+ polígonos sin área.	 個の面積ゼロのポリゴン。
+Puente: selecciona exactamente 2 polígonos (modo Polígonos).	ブリッジ: ちょうど 2 つのポリゴンを選択してください(ポリゴンモード)。
+Puente: los dos polígonos deben tener el mismo número de lados.	ブリッジ: 両方のポリゴンの辺の数が同じである必要があります。
+Soldar: selecciona al menos 2 puntos.	ウェルド: 少なくとも 2 つのポイントを選択してください。
+Cerrar Agujero: no hay bordes abiertos que toquen la selección.	穴を閉じる: 選択に接する開いた境界がありません。
+Alinear Normales: ya están todas alineadas.	法線を揃える: すべてすでに揃っています。
+Triangular: no hay polígonos de más de 3 lados.	三角形化: 4 辺以上のポリゴンはありません。
+Operación desconocida: 	不明な操作: 
+ elemento.	 個の要素。
+ elementos.	 個の要素。
+Eliminados 	削除: 
+ polígono.	 個のポリゴン。
+ polígonos.	 個のポリゴン。
+: selecciona polígonos de un objeto editable.	: 編集可能オブジェクトのポリゴンを選択してください。
+Cuchillo: selecciona un objeto editable (C).	ナイフ: 編集可能オブジェクトを選択してください (C)。
+Cuchillo: la línea no corta ningún polígono.	ナイフ: ラインはどのポリゴンも切りません。
+Cuchillo: 	ナイフ: 
+ polígono cortado.	 個のポリゴンをカットしました。
+ polígonos cortados.	 個のポリゴンをカットしました。
+Desplazamiento (cm)	オフセット (cm)
+Desplazamiento de Inserción (cm)	インセットオフセット (cm)
+Extrusión (cm)	押し出し (cm)
+Solo Visibles	表示されているもののみ
+Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos.	ライン モード: ラインが横切るものをすべてカットします。\nポリゴンを選択している場合はそれだけ。
+o arrastra en el visor	またはビューポートでドラッグ
+(objeto editable)	(編集可能オブジェクト)
+ vertices sin espejo.	 個のミラーのない頂点。
+Iron3D Studio - hoja de iconos (%d)	Iron3D Studio - アイコンシート (%d)
+Resultado de la Búsqueda: "	検索結果: "
+Preestablecidos > 	プリセット > 
+Ya hay una librería con ese nombre en library/browser.	その名前のライブラリは library/browser にすでに存在します。
+No se pudo copiar la librería a library/browser: 	ライブラリを library/browser にコピーできませんでした: 
+" es ahora permanente (	" を恒久化しました (
+Librería "	ライブラリ "
+" creada en library/browser.	" を library/browser に作成しました。
+Carpeta "	フォルダ "
+" creada.	" を作成しました。
+No se puede leer 	読み取れません: 
+ modelos y 	 個のモデルと 
+ archivos añadidos a "	 個のファイルを追加: "
+Añadir a la librería	ライブラリに追加
+Modelos y texturas	モデルとテクスチャ
+" eliminado de "	" を削除: "
+; muévela antes de corregir.	; 修正する前に移動してください。
+No se pudo renombrar la librería: 	ライブラリの名前を変更できませんでした: 
+Url interna corregida (copia de seguridad en 	内部 URL を修正しました(バックアップ: 
+Eliminar de la Librería	ライブラリから削除
+¿Eliminar "%s"%s?	"%s"%s を削除しますか?
+ y todo su contenido	 とその内容すべて
+Se borra de la librería (%s).	ライブラリ(%s)から削除されます。
+Nueva Librería de Preestablecidos	新規プリセットライブラリ
+Mover a	移動先
+Carpeta de destino (vacío = raíz, "a/b" = subcarpetas):	移動先フォルダ(空 = ルート、"a/b" = サブフォルダ):
+Ruta no válida (o dentro de sí misma).	無効なパスです(またはそれ自身の内部)。
+Sin  / \\ : * ? " < > |	使用不可:  / \ : * ? " < > |
+Se guarda en library/browser: sale siempre.	library/browser に保存されます: 常に読み込まれます。
+Todavía no implementado	未実装
+Nuevo Navegador	新規ブラウザ
+Abre antes una librería (o una carpeta suya)	先にライブラリ(またはそのフォルダ)を開いてください
+Añadir Archivos a la Librería...	ライブラリにファイルを追加...
+Abrir Librería de Preestablecidos...	プリセットライブラリを開く...
+Hacer Permanente (copiar a library/browser)	恒久化(library/browser にコピー)
+Quitar Librería del Navegador	ブラウザからライブラリを削除
+Cargar en la Escena	シーンに読み込む
+Intro	Enter
+Mostrar Texturas y Archivos	テクスチャとファイルを表示
+Ir a	移動
+Busca por nombre en todas las librerías (Intro)	すべてのライブラリを名前で検索 (Enter)
+Librería temporal (solo esta sesión)	一時ライブラリ(このセッションのみ)
+Librería permanente	恒久ライブラリ
+Quitar del Navegador	ブラウザから削除
+Corregir Url Interna (archivo renombrado)	内部 URL を修正(ファイル名変更済み)
+Dentro pone "%s": Cinema 4D no la monta si no coincide con el nombre del archivo.	内部には "%s" とあります: ファイル名と一致しないと Cinema 4D はマウントしません。
+  (temporal)	  (一時)
+Temporal: solo en esta sesión	一時: このセッションのみ
+Permanente (library/browser)	恒久 (library/browser)
+   (ninguna librería)	   (ライブラリなし)
+No hay librerías. Abre un .lib4d (Archivo > Abrir) o cópialo a library/browser.	ライブラリがありません。.lib4d を開く(ファイル > 開く)か、library/browser にコピーしてください。
+Aún no has cargado ningún preestablecido en esta sesión.	このセッションではまだプリセットを読み込んでいません。
+Sin resultados.	結果がありません。
+Carpeta vacía.	空のフォルダ。
+Suéltalo en el visor para añadirlo a la escena	ビューポートにドロップしてシーンに追加
+Mover a...	移動先...
+Modelo / escena de Cinema 4D	Cinema 4D モデル / シーン
+Archivo (textura, imagen...)	ファイル(テクスチャ、画像...)
+\nDoble clic o arrastrar al visor: cargar	\nダブルクリックまたはビューポートへドラッグ: 読み込み
+\nDoble clic: abrir	\nダブルクリック: 開く
+%s\n%d modelos  ·  %s	%s\nモデル %d 個  ·  %s
+temporal (solo esta sesión)	一時(このセッションのみ)
+  ·  librería temporal (solo esta sesión)	  ·  一時ライブラリ(このセッションのみ)
+  ·  librería permanente	  ·  恒久ライブラリ
+Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. Clic derecho > Corregir Url Interna.	このライブラリは Cinema 4D の外で名前が変更されました: 内部 URL がファイルと一致しません。右クリック > 内部 URL を修正。
+%s\n(clic para quitar el aviso)	%s\n(クリックで警告を閉じる)
+Guardar como Preestablecido	プリセットとして保存
+No hay ninguna librería de preestablecidos.	プリセットライブラリがありません。
+Crear "Mis Preestablecidos"	"マイプリセット" を作成
+Mis Preestablecidos	マイプリセット
+Librería	ライブラリ
+(elige una)	(選択してください)
+(raíz de la librería)	(ライブラリのルート)
+ objetos	 個のオブジェクト
+ polígonos	 個のポリゴン
+ materiales	 個のマテリアル
+" guardado en "	" を保存: "
+Tanque de Petróleo	オイルタンク
+Terreno Fractal	ランドスケープ
+Vectorizador	ベクタライザー
+Derretir	メルト
+Envoltura	ラップ
+Cargar Material Preestablecido	マテリアルプリセットを読み込む
+Spline Arco	円弧スプラインツール
+Unión de Splines	スプラインユニオン
+Intersección de Splines	スプライン交差
+Herramienta de Nubes	クラウドツール
+Grupo de Nubes	クラウドグループ
+Nube	クラウド
+Cámara Objetivo	ターゲットカメラ
+Cámara de Movimiento	モーションカメラ
+Luz Objetivo	ターゲットライト
+Luz IES	IES ライト
+Herramienta de Iluminación	ライティングツール
+Vista Perspectiva	パースビュー
+Vista Superior	上面ビュー
+Vista Derecha	右側面ビュー
+Vista Frontal	正面ビュー
+Vista Izquierda	左側面ビュー
+Vista Trasera	背面ビュー
+Vista Inferior	下面ビュー
+Guardar Proyecto	プロジェクトを保存
+Selección Contorno	アウトライン選択
+Aumentar Selección	選択を拡張
+Fijación 2.5D	2.5D スナップ
+Construcción de Personaje	キャラクタービルダー
+Objeto %s [%s]	オブジェクト %s [%s]
+Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f	色相 %.0f°  彩度 %.0f%%  明度 %.0f%%  輝度 %.0f%%  コントラスト %.0f%%  ガンマ %.2f
+Render: %d x %d en %.2f s	レンダリング: %d x %d、%.2f 秒
+%s: %zu de %zu seleccionados	%s: %zu / %zu を選択
+%d elementos	%d 個の項目
+Esquema	アウトライナー
+Espacio de trabajo:	ワークスペース:
+Librería de preestablecidos de Cinema 4D	Cinema 4D プリセットライブラリ
+Objeto poligonal	ポリゴンオブジェクト
+Nulo (vacio)	ヌル(空)
+Fotométrica	フォトメトリック
+Destriangular	三角形化を解除
+Destriangular: no hay triángulos vecinos que unir.	三角形化を解除: 結合できる隣接三角形がありません。
+Ocultar Selección	選択を隠す
+Ocultar No Seleccionados	非選択を隠す
+Mostrar Todo	すべて表示
+No se puede ocultar todo el objeto.	オブジェクト全体を隠すことはできません。
+Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio はウィンドウを開けませんでした。
+Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	Vulkan 1.3 または OpenGL 3.3 に対応したグラフィックスカードが必要です。グラフィックスドライバーを更新してみてください。
+SMD: %d huesos y %d mallas con pesos; solo la pose actual, sin animación. Cada material de Source necesita su .vmt.	SMD: ボーン %d 個、ウェイト付きメッシュ %d 個。現在のポーズのみでアニメーションなし。各 Source マテリアルには .vmt が必要です。
+Línea	ライン
+Bucle	ループ
+Cuchillo: no hay ninguna arista bajo el cursor.	ナイフ: カーソル下にエッジがありません。
+Cuchillo: esa arista no tiene un bucle de cuadriláteros que cortar.	ナイフ: このエッジにはカットできる四角形のループがありません。
+Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic.	ループモード: エッジをクリックすると、\nクリック位置でそのリング全体をカットします。
+Eje	軸
+Cuchillo: el clic no toca la malla.	ナイフ: クリックがメッシュに触れていません。
+Cuchillo: el plano no corta ningún polígono.	ナイフ: 平面はどのポリゴンも切りません。
+Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	プレーンモード: メッシュをクリックすると、\nその点を通り選択した軸に垂直な平面でカットします。
+Segmentos de Rotación	回転の分割数
+Radio Exterior	外半径
+Radio del Anillo	リング半径
+Radio del Tubo	パイプ半径
+Segmentos del Anillo	リングの分割数
+Segmentos del Tubo	パイプの分割数
+Segmentos de la Tapa	キャップの分割数
+Profundidad	奥行き
+Tetraedro	正四面体
+Octaedro	正八面体
+Icosaedro	正二十面体
+Dodecaedro	正十二面体
+  Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  パラメトリックプリミティブ: メッシュ(ポイント、エッジなど)を編集するとパラメータは失われます。
+Ángulo	角度
+  Deforma al primer hijo con malla; el hijo se edita aparte.	  メッシュを持つ最初の子を変形します。子は別に編集します。
+Booleano: Unión (A + B)	ブーリアン: 合体 (A + B)
+Booleano: Sustracción (A - B)	ブーリアン: 減算 (A - B)
+Booleano: Intersección (A y B)	ブーリアン: 交差 (A と B)
+Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.	ブーリアン: オブジェクトマネージャで Ctrl+クリックして 2 つのオブジェクト(A と B)を選択してください。
+Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).	ブーリアン: 両方のオブジェクトにジオメトリが必要です(立方体、球体、ポリゴンなど)。
+Booleano: 	ブーリアン: 
+Booleano: objeto creado; A y B quedan ocultos.	ブーリアン: オブジェクトを作成しました。A と B は非表示です。
+Cantidad	カウント
+Cantidad X	カウント X
+Cantidad Y	カウント Y
+Cantidad Z	カウント Z
+Separación X	間隔 X
+Separación Y	間隔 Y
+Separación Z	間隔 Z
+Paso X	ステップ X
+Paso Y	ステップ Y
+Paso Z	ステップ Z
+Escala por copia	クローンごとのスケール
+Giro por copia	クローンごとの回転
+  Clona el primer hijo con malla; el hijo se edita aparte.	  メッシュを持つ最初の子をクローンします。子は別に編集します。
+copias	個のクローン
+Efector Aleatorio	ランダムエフェクタ
+Posición Aleatoria X	ランダム位置 X
+Posición Aleatoria Y	ランダム位置 Y
+Posición Aleatoria Z	ランダム位置 Z
+Giro Aleatorio	ランダム回転
+Escala Aleatoria	ランダムスケール
+Semilla	シード
+  Modo Objeto: una copia en cada punto del 2.º hijo con malla.	  オブジェクトモード: メッシュを持つ 2 番目の子の各ポイントに 1 つのクローン。
+Seleccionar Patrón	パターンを選択
+Patrón: 1 de cada 2	パターン: 1 つおき
+Patrón: 1 de cada 2 (desfasado)	パターン: 1 つおき(オフセット)
+Patrón: 1 de cada 3	パターン: 2 つおき
+Exportar a Source (SMD)	Source (SMD) にエクスポート
+Escena.smd	Scene.smd
+Exportar SMD	SMD をエクスポート
+SMD: solo geometría, normales y UV; sin esqueleto ni animación. Cada material de Source necesita su .vmt.	SMD: ジオメトリ、法線、UV のみ。スケルトンとアニメーションなし。各 Source マテリアルには独自の .vmt が必要です。
+Crear Punto	ポイントを作成
+Cerrar Agujero de Polígonos	ポリゴンの穴を閉じる
+Lápiz Polígonos	ポリゴンペン
+Cortar Línea	ラインカット
+Cortar Plano	プレーンカット
+Cortar Cíclico/Trayectoria	ループ/パスカット
+Magnetismo	マグネット
+Reflejar	ミラー
+Puntada y Cosido	スティッチ&ソー
+Extruir	押し出し
+Extrusión Interior	内側に押し出し
+Extrusión Matriz	マトリクス押し出し
+Suavizar Desplazamiento	スムースシフト
+Mover Normal	法線移動
+Escalar Normal	法線スケール
+Rotar Normal	法線回転
+Destriangular...	三角形化を解除...
+Retriangular N-gons	N-gon を再三角形化
+Eliminar N-gons	N-gon を削除
+Clonar	クローン
+Desconectar...	切断...
+Separar	分割
+Colapso	コラプス
+Conectar	接続
+Fundir	メルト
+Disolver	ディゾルブ
+Subdividir...	細分化...
+Asignar Valor al Punto	ポイント値を設定
+Voltear Arista	エッジを回転
+Aristas a Spline	エッジからスプライン
+Cambiar Orden de Puntos	ポイント順を変更
+Optimizar...	最適化...
+Restaurar Escala...	スケールをリセット...
+Configuración Modelado	モデリング設定
+Deshacer (Acción)	元に戻す(アクション)
+Mayús+Z	Shift+Z
+Encuadrar Elementos Seleccionados	選択した要素をフレーム表示
+Invertir Órbita	オービットを反転
+Velocidad Pan	パン速度
+Velocidad Muñeca/Zoom	ドリー/ズーム速度
+Velocidad Órbita	オービット速度
+Se aplica al momento. Alt+clic orbita, panea y hace zoom; la rueda acerca y aleja.	すぐに適用されます。Alt+クリックでオービット、パン、ズーム。ホイールで近づく/離れる。
+Dispositivos de Entrada	入力デバイス
+Comunicación	通信
+Escultura	スカルプト
+Motor Houdini	Houdini Engine
+Motor Substance	Substance Engine
+Previo del Material	マテリアルプレビュー
+Importación/Exportación	インポート/エクスポート
+Colores Esquema	スキームカラー
+Conversión	変換
+Comandos	コマンド
+Herramientas Crear	作成ツール
+Herramientas Transformar	トランスフォームツール
+Interpolación Dura	ハード補間
+Interpolación Suave	ソフト補間
+Igualar Longitud de Tangentes	接線の長さを揃える
+Igualar Dirección de Tangentes	接線の方向を揃える
+Unir Segmento	セグメントを結合
+Romper Segmento	セグメントを切断
+Explotar Segmentos	セグメントを分解
+Asignar Primer Punto	最初のポイントを設定
+Invertir Secuencia	順序を反転
+Mover Secuencia Abajo	シーケンスを下へ移動
+Mover Secuencia Arriba	シーケンスを上へ移動
+Contornear	アウトライン
+Sección Transversal	断面
+Alinear	整列
+Proyectar	投影
+Redondear	丸める
+Unión Spline	スプラインユニオン
+Intersección Spline	スプライン交差
+Centrar Ejes	軸を中央に配置
+Centrar Eje a Objeto	軸をオブジェクトの中央へ
+Centrar Eje a Selección	軸を選択の中央へ
+Abrir Carpeta de Preferencias...	設定フォルダを開く...
+Disolver: selecciona aristas, o polígonos vecinos.	ディゾルブ: エッジまたは隣接するポリゴンを選択してください。
+Disolver: el resultado no sería un polígono convexo.	ディゾルブ: 結果が凸の平面ポリゴンになりません。
+Planchar: no hay puntos que alisar.	Iron: スムーズ化するポイントがありません。
+Voltear Arista: selecciona aristas (modo Aristas).	エッジを回転: エッジを選択してください(エッジモード)。
+Voltear Arista: solo entre dos triángulos y sin cuadrilátero cóncavo.	エッジを回転: 2 つの三角形の間のみで、凹四角形にならない場合に限ります。
+Clonar: selecciona polígonos (modo Polígonos).	クローン: ポリゴンを選択してください(ポリゴンモード)。
+Conectar: selecciona 2 puntos no vecinos de un mismo polígono.	接続: 同じポリゴンの隣接していない 2 つのポイントを選択してください。
+Reflejar: no hay polígonos.	ミラー: ポリゴンがありません。
+Restaurar Escala: el objeto tiene hijos; sus posiciones cambiarían.	スケールをリセット: オブジェクトに子があり、その位置が変わってしまいます。
+Restaurar Escala: el objeto ya está a escala 1.	スケールをリセット: オブジェクトはすでにスケール 1 です。
+Restaurar Escala: hecho.	スケールをリセット: 完了しました。
+Información del Objeto	オブジェクト情報
+No hay ningún objeto seleccionado.	オブジェクトが選択されていません。
+Hijos	子
+triángulos	三角形
+cuadriláteros	四角形
+Guardado como 	保存名: 
+volver al archivo guardado	保存したファイルに戻す
+cerrar el proyecto	プロジェクトを閉じる
+Subdivisiones	サブディビジョン
+Objeto de Origen	ソースオブジェクト
+Instancia: selecciona primero el objeto del que quieres una instancia.	インスタンス: 先にインスタンスを作成したいオブジェクトを選択してください。
+  Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  メッシュを持つ最初の子に Catmull-Clark を適用します。子がケージになります。
+  Comparte la malla del objeto de origen.	  ソースオブジェクトのメッシュを共有します。
+  No se encuentra el objeto de origen (ruta por nombres).	  ソースオブジェクトが見つかりません(名前によるパス)。
+Distancia Focal	焦点距離
+Tamaño del Sensor	センサーサイズ
+Campo de Visión	視野
+Esquina	コーナー
+Color Superior	上の色
+Color Inferior	下の色
+  Ruta por nombres del objeto al que mira (vacío = sin objetivo).	  注視するオブジェクトの名前パス(空 = ターゲットなし)。
+  Rejilla 2x2x2 sobre la caja del primer hijo; cada esquina se desplaza una fracción del tamaño.	  最初の子のボックス上の 2x2x2 ラティス。各コーナーはサイズの一部ぶん動きます。
+  Mezcla el primer hijo con el segundo (mismo número de puntos).	  最初の子と 2 番目の子をブレンドします(ポイント数が同じ場合)。
+  Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo).	  これはピクチャビューアのレンダリング背景です(上から下へのグラデーション)。
+Eje X / Encabezado [X]\n(bloqueado)	X 軸 / ヘディング [X]\n(ロック中)
+Eje X / Encabezado [X]\n(desbloqueado)	X 軸 / ヘディング [X]\n(ロック解除)
+Bloquea o desbloquea el eje X: un eje bloqueado no cambia al mover, rotar o escalar.	X 軸をロック/解除します。ロックした軸は移動、回転、スケールで変化しません。
+Eje Y / Inclinación [Y]\n(bloqueado)	Y 軸 / ピッチ [Y]\n(ロック中)
+Eje Y / Inclinación [Y]\n(desbloqueado)	Y 軸 / ピッチ [Y]\n(ロック解除)
+Bloquea o desbloquea el eje Y: un eje bloqueado no cambia al mover, rotar o escalar.	Y 軸をロック/解除します。ロックした軸は移動、回転、スケールで変化しません。
+Eje Z / Alabeo [Z]\n(bloqueado)	Z 軸 / バンク [Z]\n(ロック中)
+Eje Z / Alabeo [Z]\n(desbloqueado)	Z 軸 / バンク [Z]\n(ロック解除)
+Bloquea o desbloquea el eje Z: un eje bloqueado no cambia al mover, rotar o escalar.	Z 軸をロック/解除します。ロックした軸は移動、回転、スケールで変化しません。
+Desactivar Fijación [Mayús+S]	スナップを無効化 [Shift+S]
+Activar Fijación [Mayús+S]	スナップを有効化 [Shift+S]
+Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).	スナップ時、移動は 100 cm(グリッド)単位で飛びます。
+Fijación: activada	スナップ: オン
+Fijación: desactivada	スナップ: オフ
+Buscar por nombre	名前で検索
+Filtrar por tipo	タイプでフィルタ
+Nombre del objeto...	オブジェクト名...
+Geometría	ジオメトリ
+Luces	ライト
+Otros (Nulos, generadores...)	その他(ヌル、ジェネレータなど)
+Reflejos de estudio y transparencia	スタジオの反射と透明度
+Sombra suave en el suelo	ソフトなフロアシャドウ
+Efectos	エフェクト
+Salir de Vista Solo	ソロビューを終了
+Vista Solo	ソロビュー
+Vista Solo: el visor dibuja solo el objeto seleccionado y sus hijos.	ソロビュー: ビューポートには選択したオブジェクトとその子のみを描画します。
+Salir de Modo Ajuste	ツイークモードを終了
+Modo Ajuste	ツイークモード
+Modo Ajuste: sin gizmo, arrastre el objeto directamente con el ratón (usa la herramienta activa: Mover, Rotar o Escalar).	ツイークモード: ギズモなしで、マウスでオブジェクトを直接ドラッグします(アクティブなツール: 移動、回転、スケールを使用)。
+Desactivar Plano de Trabajo	ワークプレーンを無効化
+Plano de Trabajo: la cuadrícula del visor en perspectiva toma la posición y orientación del objeto seleccionado.	ワークプレーン: パースビューポートのグリッドが選択したオブジェクトの位置と向きに合わせられます。
+Desbloquear Plano de Trabajo	ワークプレーンのロックを解除
+Bloquear Plano de Trabajo	ワークプレーンをロック
+Bloquear Plano de Trabajo: la cuadrícula deja de seguir la selección y se queda donde está.	ワークプレーンをロック: グリッドは選択に追従しなくなり、その場に留まります。
+Salir de Modo Textura	テクスチャモードを終了
+Usar Modo Textura	テクスチャモードを使用
+Modo Textura: edita la proyección, el desplazamiento y la longitud de la etiqueta de Textura del objeto seleccionado.	テクスチャモード: 選択したオブジェクトのテクスチャタグの投影、オフセット、長さを編集します。
+Modo Textura	テクスチャモード
+Seleccione un objeto con geometría.	ジオメトリを持つオブジェクトを選択してください。
+(ninguno)	(なし)
+Esférico	球面
+Cilíndrico	円柱
+Cúbico	キュービック
+Otra	その他
+Desplazamiento U/V	オフセット U/V
+Longitud U/V	長さ U/V
+Aviso: el visor y el render solo dibujan texturas con proyección UVW.	注意: ビューポートとレンダリングは UVW 投影のテクスチャのみ描画します。
+Mosaico	タイル
+Editor de Material  [%s]	マテリアルエディタ  [%s]

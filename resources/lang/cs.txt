@@ -477,3 +477,893 @@ Estructura	Struktura
 Capas	Vrstvy
 Propiedades	Vlastnosti
 Transformar	Transformovat
+Importar Cinema 4D	Importovat Cinema 4D
+Grabar Objetos Activos: no hay ningún objeto seleccionado.	Nahrát aktivní objekty: není vybrán žádný objekt.
+Grabar Objetos Activos: Posición, Escala y Rotación están desactivadas.	Nahrát aktivní objekty: Pozice, Měřítko a Rotace jsou vypnuté.
+Clave grabada en el fotograma 	Klíč zaznamenán na snímku 
+ objeto).	 objekt).
+ objetos).	 objekty).
+Extrusión Interna	Vnitřní vytažení
+Cuchillo	Nůž
+: arrastra en el visor para dibujar la línea de corte.	: tažením v pohledu nakreslete čáru řezu.
+: arrastra en horizontal en el visor (o usa Aplicar).	: táhněte vodorovně v pohledu (nebo použijte Použít).
+Trasera	Zpět
+Parámetro todavía no implementado en Iron3D	Parametr zatím není v Iron3D implementován
+Clic: mostrar esta página. Mayús+Clic: mostrar varias a la vez.	Klepnutí: zobrazit tuto stránku. Shift+klepnutí: zobrazit více najednou.
+Abrir librería	Otevřít knihovnu
+Abrir una librería necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe. Cópiala a library/browser.	Otevření knihovny vyžaduje systémový dialog souborů, který tato platforma zatím nemá. Zkopírujte ji do library/browser.
+Abrir librería de preestablecidos	Otevřít knihovnu předvoleb
+Librerías de preestablecidos de Cinema 4D	Knihovny předvoleb Cinema 4D
+Este preestablecido no es un modelo de Cinema 4D.	Tato předvolba není model Cinema 4D.
+No se pudo escribir el archivo temporal en 	Nelze zapsat dočasný soubor do 
+Textura que no está en ninguna librería montada: 	Textura není v žádné připojené knihovně: 
+Importar OBJ	Importovat OBJ
+Importar glTF	Importovat glTF
+Escenas y librerías (iron, c4d, obj, glb, lib4d)	Scény a knihovny (iron, c4d, obj, glb, lib4d)
+Fusionar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	Sloučení vyžaduje systémový dialog souborů, který tato platforma zatím nemá.
+Escenas de Cinema 4D, OBJ, glTF e Iron3D	Scény Cinema 4D, OBJ, glTF a Iron3D
+Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	Export vyžaduje systémový dialog souborů, který tato platforma zatím nemá.
+La escena está vacía.	Scéna je prázdná.
+Exportar a Wavefront	Exportovat do Wavefront
+Escena.obj	Scene.obj
+Exportar OBJ	Exportovat OBJ
+Exportar a glTF	Exportovat do glTF
+glTF binario	Binární glTF
+Escena.glb	Scene.glb
+Exportar glTF	Exportovat glTF
+Exportar a Cinema 4D	Exportovat do Cinema 4D
+Escena.c4d	Scene.c4d
+Guardar Objetos Seleccionados como	Uložit vybrané objekty jako
+Objetos.c4d	Objects.c4d
+%s\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)	%s\nPřidat objekt %s  (Alt+klepnutí: jako potomek výběru)
+%s\nTodavía no implementado en Iron3D	%s\nZatím není v Iron3D implementováno
+Sistema de coordenadas: Mundo	Souřadnicový systém: Svět
+Sistema de coordenadas: Objeto	Souřadnicový systém: Objekt
+Activar Eje: se mueve el eje, no el objeto	Aktivovat osu: pohybuje se osa, ne objekt
+Activar Eje: desactivado	Aktivovat osu: vypnuto
+Fotogramas Clave Automáticos: activados	Automatické klíčování: zapnuto
+Fotogramas Clave Automáticos: desactivados	Automatické klíčování: vypnuto
+Hacer Editable: selecciona un Cubo, Esfera o Plano (los demás ya son editables o no tienen malla).	Převést na editovatelný: vyberte Krychli, Kouli nebo Rovinu (ostatní jsou již editovatelné nebo nemají síť).
+Hacer Editable: 1 objeto convertido a Objeto Poligonal.	Převést na editovatelný: 1 objekt převeden na polygonový objekt.
+Hacer Editable: 	Převést na editovatelný: 
+ objetos convertidos a Objeto Poligonal.	 objektů převedeno na polygonové objekty.
+Animación eliminada.	Animace odstraněna.
+Estado Actual a Objeto: 	Aktuální stav na objekt: 
+ copia poligonal creada.	 polygonová kopie vytvořena.
+ copias poligonales creadas.	 polygonové kopie vytvořeny.
+Estado Actual a Objeto: la selección no tiene geometría.	Aktuální stav na objekt: výběr nemá geometrii.
+Conectar Objetos: 	Spojit objekty: 
+ mallas unidas en un Objeto Polígono.	 sítí spojeno do jednoho polygonového objektu.
+Conectar Objetos: la selección no tiene geometría.	Spojit objekty: výběr nemá geometrii.
+Mayús+H	Shift+H
+Mayús+R	Shift+R
+Ctrl+Mayús+O	Ctrl+Shift+O
+Mayús+F8	Shift+F8
+Mayús+F1	Shift+F1
+Mayús+F	Shift+F
+Mayús+G	Shift+G
+Buscar orden...	Hledat příkazy...
+Ninguna orden coincide.	Žádný příkaz neodpovídá.
+Estado Actual a Objeto	Aktuální stav na objekt
+Conectar+Eliminar	Spojit objekty + smazat
+Selección en Vivo	Živý výběr
+Selección con Lazo	Výběr lasem
+Ctrl+Mayús+F4	Ctrl+Shift+F4
+Ctrl+Mayús+S	Ctrl+Shift+S
+Guardar incrementalmente...	Uložit přírůstkově...
+Esta compilación no lleva el Cineware SDK de MAXON	Tato sestavení neobsahuje SDK Cineware společnosti MAXON
+glTF binario (*.glb)...	Binární glTF (*.glb)...
+Archivos recientes	Poslední soubory
+Física	Fyzika
+Selección de Polígono	Výběr polygonů
+Selección de Bucle	Výběr smyčky
+Selección de Anillo	Výběr prstence
+Seleccionar Conectados	Vybrat spojené
+Reducir Selección	Zmenšit výběr
+Eje X / Encabezado	Osa X / Heading
+Eje Y / Inclinación	Osa Y / Pitch
+Eje Z / Alabeo	Osa Z / Bank
+Sistema de Coordenadas de Mundo	Světový souřadnicový systém
+Medir y Construir	Měření a konstrukce
+Organizar Objetos	Uspořádat objekty
+Simetría de edición	Upravit symetrii
+Apagada	Vyp.
+Plano X (izquierda/derecha)	Rovina X (vlevo/vpravo)
+Plano Y (arriba/abajo)	Rovina Y (nahoru/dolů)
+Plano Z (delante/detrás)	Rovina Z (vpředu/vzadu)
+Tolerancia (cm)	Tolerance (cm)
+Cerrar Agujero Poligonal	Zavřít díru v polygonu
+Subdividir	Rozdělit
+Comprobar Malla	Zkontrolovat síť
+Invertir Normales	Obrátit normály
+Alinear Normales	Zarovnat normály
+Mayús+S	Shift+S
+Ir a la Clave Anterior	Přejít na předchozí klíč
+Ir a la Clave Siguiente	Přejít na další klíč
+Editor de Curvas...	Editor křivek...
+Claves Seleccionadas	Vybrané klíče
+Eliminar Animación del Objeto	Smazat animaci objektu
+Fotograma Siguiente	Další snímek
+Fotograma Anterior	Předchozí snímek
+Repetir (Loop)	Opakovat (smyčka)
+Resolver IK (experimental)	Vyřešit IK (experimentální)
+ cadenas resueltas.	 řetězců vyřešeno.
+IK: ninguna etiqueta IK activa con Punta y Objetivo alcanzables.	IK: žádný aktivní tag IK s dosažitelným koncem a cílem.
+Mueve las articulaciones de cada etiqueta IK para que la punta llegue a su objetivo	Pohybuje klouby každého tagu IK tak, aby konec dosáhl cíle
+Articulación	Kloub
+Pesos	Váhy
+Renderizar Vista Activa	Renderovat aktivní pohled
+Renderizar Seleccionados en Visor de Imágenes	Renderovat vybrané v Prohlížeči obrázků
+Renderizar en Visor de Imágenes	Renderovat do Prohlížeče obrázků
+Crear Previsualización...	Vytvořit náhled...
+Añadir a la Cola de Render...	Přidat do fronty renderování...
+Editar Configuración de Render...	Upravit nastavení renderování...
+Tirar	Přitáhnout
+Amasar	Hníst
+Rastreador de Objetos	Sledování objektu
+Intercambiar Clonador-Matriz	Zaměnit matici klonovače
+Pintar Pesos	Malovat váhy
+Etiqueta IK	Tag IK
+Ningún plugin cargado	Není načten žádný zásuvný modul
+Buscar Plugins...	Najít zásuvné moduly...
+Mayús+F10	Shift+F10
+Mayús+F2	Shift+F2
+Mayús+F3	Shift+F3
+Mayús+F5	Shift+F5
+Mayús+F7	Shift+F7
+Navegador de Contenido	Prohlížeč obsahu
+Mayús+F4	Shift+F4
+Acerca de Iron3D Studio...	O programu Iron3D Studio...
+Arranque	Spuštění
+Visualizar	Vizualizovat
+Deshacer [Ctrl+Z]	Zpět [Ctrl+Z]
+Deshacer la última acción.	Vrátit poslední akci.
+Rehacer [Ctrl+Y]	Znovu [Ctrl+Y]
+Rehacer la última acción deshecha.	Zopakovat poslední vrácenou akci.
+Selección en Vivo [Atajo de Teclado 9]	Živý výběr [zkratka 9]
+Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.	Živý výběr: klepněte a táhněte pro výběr prvků. Podržte SHIFT pro přidání do výběru, CTRL pro odebrání.
+Herramienta de Mover [Atajo de Teclado E]	Nástroj přesunutí [zkratka E]
+Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.	Přesunout: klepněte a táhněte pro přesun prvků. Podržte SHIFT pro kvantizaci pohybu / přidání do výběru v režimu bodů, CTRL pro odebrání.
+Herramienta de Escalar [Atajo de Teclado T]	Nástroj měřítka [zkratka T]
+Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.	Měřítko: klepněte a táhněte pro změnu měřítka prvků. Podržte SHIFT pro kvantizaci měřítka / přidání do výběru v režimu bodů, CTRL pro odebrání.
+Herramienta de Rotar [Atajo de Teclado R]	Nástroj rotace [zkratka R]
+Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.	Rotace: klepněte a táhněte pro otáčení prvků. Podržte SHIFT pro kvantizaci rotace / přidání do výběru v režimu bodů, CTRL pro odebrání.
+Eje X / Encabezado [X]\n(todavía no implementado)	Osa X / Heading [X]\n(zatím neimplementováno)
+Bloqueo de eje X: todavía no implementado.	Zámek osy X: zatím neimplementován.
+Eje Y / Inclinación [Y]\n(todavía no implementado)	Osa Y / Pitch [Y]\n(zatím neimplementováno)
+Bloqueo de eje Y: todavía no implementado.	Zámek osy Y: zatím neimplementován.
+Eje Z / Alabeo [Z]\n(todavía no implementado)	Osa Z / Bank [Z]\n(zatím neimplementováno)
+Bloqueo de eje Z: todavía no implementado.	Zámek osy Z: zatím neimplementován.
+Usar Sistema de Coordenadas de Objeto [W]\n(ahora: Mundo)	Použít souřadnicový systém objektu [W]\n(nyní: Svět)
+Usar Sistema de Coordenadas de Mundo [W]\n(ahora: Objeto)	Použít světový souřadnicový systém [W]\n(nyní: Objekt)
+Cambia los ejes del gizmo entre los del objeto y los del mundo.	Přepíná osy manipulátoru mezi osami objektu a světovými osami.
+Renderizar Vista Activa\nRenderiza la vista activa en el propio visor.\n[Atajo de Teclado Ctrl+R]	Renderovat aktivní pohled\nRenderuje aktivní pohled přímo v pohledu.\n[Zkratka Ctrl+R]
+Renderiza la vista activa en el propio visor.	Renderuje aktivní pohled přímo v pohledu.
+Renderizar en Visor de Imágenes [Mayús+R]\nRenderiza la cámara activa con la Configuración de Render.	Renderovat do Prohlížeče obrázků [Shift+R]\nRenderuje aktivní kameru s nastavením renderování.
+Renderiza la cámara activa en el Visor de Imágenes.	Renderuje aktivní kameru v Prohlížeči obrázků.
+Editar Configuración de Render... [Ctrl+B]	Upravit nastavení renderování... [Ctrl+B]
+Resolución, antialiasing y fondo del render.	Rozlišení renderování, vyhlazování a pozadí.
+Cubo  (mantener pulsado: más objetos)	Krychle  (podržte: více objektů)
+Lápiz  (mantener pulsado: más splines)	Pero  (podržte: více splajnů)
+Subdivisión Superficie  (mantener pulsado: generadores)	Povrch dělení  (podržte: generátory)
+Matriz  (mantener pulsado: modelado)	Pole  (podržte: modelování)
+Doblar  (mantener pulsado: deformadores)	Ohyb  (podržte: deformátory)
+Suelo  (mantener pulsado: escena)	Podlaha  (podržte: scéna)
+Cámara  (mantener pulsado: más cámaras)	Kamera  (podržte: více kamer)
+Luz  (mantener pulsado: más luces)	Světlo  (podržte: více světel)
+Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado.	Klepnutí: vytvořit objekt. Podržení nebo pravé tlačítko: otevřít paletu skupiny. Alt+klepnutí: vytvořit jako potomka výběru.
+Hacer Editable [C]\nConvierte Cubo, Esfera o Plano en un Objeto Poligonal.	Převést na editovatelný [C]\nPřevede Krychli, Kouli nebo Rovinu na polygonový objekt.
+Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.	Převést na editovatelný: převede vybrané parametrické objekty na polygonové objekty.
+Usar Modo Modelo	Použít režim modelu
+Modo Modelo: se editan objetos enteros.	Režim modelu: upravují se celé objekty.
+Usar Modo Textura\n(todavía no implementado)	Použít režim textury\n(zatím neimplementováno)
+Modo Textura: todavía no implementado.	Režim textury: zatím neimplementován.
+Activar Eje [L]	Aktivovat osu [L]
+Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.	Režim osy: přesun, rotace nebo změna měřítka mění jen osu objektu; editovatelná geometrie a potomci zůstávají na místě.
+Usar Modo Puntos	Použít režim bodů
+Modo Puntos: elige y mueve puntos de un objeto editable (C para hacerlo editable).	Režim bodů: vybírejte a přesouvejte body editovatelného objektu (C pro převod na editovatelný).
+Usar Modo Aristas	Použít režim hran
+Modo Aristas: elige y mueve aristas de un objeto editable.	Režim hran: vybírejte a přesouvejte hrany editovatelného objektu.
+Usar Modo Polígonos	Použít režim polygonů
+Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.	Režim polygonů: vybírejte a přesouvejte polygony (trojúhelníky) editovatelného objektu.
+Modo Ajuste\n(todavía no implementado)	Režim přichytávání\n(zatím neimplementováno)
+Modo Ajuste: todavía no implementado.	Režim přichytávání: zatím neimplementován.
+Vista Solo\n(todavía no implementado)	Pohled Solo\n(zatím neimplementováno)
+Vista Solo: todavía no implementado.	Pohled Solo: zatím neimplementován.
+Activar Fijación [Mayús+S]\n(todavía no implementado)	Aktivovat přichytávání [Shift+S]\n(zatím neimplementováno)
+Fijación: todavía no implementado.	Přichytávání: zatím neimplementováno.
+Plano de Trabajo\n(todavía no implementado)	Pracovní rovina\n(zatím neimplementováno)
+Plano de Trabajo: todavía no implementado.	Pracovní rovina: zatím neimplementována.
+Bloquear Plano de Trabajo\n(todavía no implementado)	Zamknout pracovní rovinu\n(zatím neimplementováno)
+Bloquear Plano de Trabajo: todavía no implementado.	Zamknout pracovní rovinu: zatím neimplementováno.
+Usar como Cámara de Render	Použít jako kameru renderu
+Ctrl+Mayús+Z	Ctrl+Shift+Z
+Ctrl+Mayús+Y	Ctrl+Shift+Y
+Encuadrar Elementos Activos	Zarámovat aktivní prvky
+Cámara del Editor	Kamera editoru
+Axonométrica	Axonometrický
+OpenGL Mejorado	Rozšířený OpenGL
+Ruidos	Šumy
+Mayús+V	Shift+V
+Ejes Globales	Globální osy
+Cajas Delimitadoras	Ohraničující kvádry
+Resaltar Componente	Zvýraznit komponentu
+Resaltar Objeto	Zvýraznit objekt
+Cruz Navegación	Navigační kříž
+Disposición	Rozvržení
+Vista Simple	Jeden pohled
+2 Vistas Apiladas	2 pohledy nad sebou
+2 Vistas Lado a Lado	2 pohledy vedle sebe
+Vista 1 (Perspectiva)	Pohled 1 (Perspektiva)
+Vista 2 (Superior)	Pohled 2 (Shora)
+Vista 3 (Derecha)	Pohled 3 (Zprava)
+Vista 4 (Frontal)	Pohled 4 (Zepředu)
+Mover Cámara (arrastrar)	Posunout kameru (táhněte)
+Zoom de Cámara (arrastrar)	Přiblížit kameru (táhněte)
+Rotar Cámara (arrastrar)	Otočit kameru (táhněte)
+Cambiar Vista (todavía no implementado)	Přepnout pohled (zatím neimplementováno)
+Multi-vista: todavía no implementado.	Více pohledů: zatím neimplementováno.
+Arrastre sobre el icono para navegar por la vista.	Tažením přes ikonu navigujte pohled.
+Espaciado Cuadrícula : 100 cm	Rozestup mřížky: 100 cm
+\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.	\nVybraný objekt je mimo pohled. Klepnutí: přesunout k němu kameru.
+Modo Árbol	Stromový režim
+Modo Lista	Režim seznamu
+Etiqueta de Textura	Tag textury
+Buscar (todavía no implementado)	Hledat (zatím neimplementováno)
+Filtrar (todavía no implementado)	Filtr (zatím neimplementován)
+Clic: seleccionar. Ctrl+Clic: anadir o quitar de la seleccion. Doble clic: renombrar. Clic derecho: menú contextual. Arrastre un material aquí para asignarlo.	Klepnutí: vybrat. Ctrl+klepnutí: přidat do výběru nebo odebrat. Dvojklik: přejmenovat. Pravé tlačítko: kontextová nabídka. Přetáhněte sem materiál pro přiřazení.
+CINEMA 4D Etiquetas	Tagy CINEMA 4D
+Eliminar Etiqueta de Textura	Smazat tag textury
+Fong	Phong
+Character Etiquetas	Tagy postavy
+Cineman Etiquetas	Tagy Cineman
+Etiqueta UVW	Tag UVW
+Simulación Etiquetas	Tagy simulace
+Sketch Etiquetas	Tagy skici
+Videocámara Etiquetas	Tagy pohybové kamery
+Cargar Etiqueta Preestablecida	Načíst předvolbu tagu
+ objeto convertido.	 objekt převeden.
+ objetos convertidos.	 objektů převedeno.
+Añadir Hijo	Přidat potomka
+Apagado	Vyp.
+Visible en %s: %s\n(clic para cambiar)	Viditelný v %s: %s\n(klepnutím změníte)
+Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.	Horní tečka: viditelný v editoru. Dolní tečka: viditelný v renderu. Šedá = Výchozí (dědí od rodiče), zelená = Zap., červená = Vyp.
+Etiqueta de Textura [%s]	Tag textury [%s]
+%s (todavía no implementado)	%s (zatím neimplementováno)
+Adelante	Vpřed
+Nuevo Gestor de Atributos	Nový Správce atributů
+Configuración del Proyecto	Nastavení projektu
+Escala del Proyecto	Měřítko projektu
+Escalar Proyecto: todavía no implementado en Iron3D.	Měřítko projektu: zatím neimplementováno v Iron3D.
+Fotogramas por segundo: velocidad de reproducción de la Línea de Tiempo.	Snímky za sekundu: rychlost přehrávání Časové osy.
+Tiempo del Proyecto	Čas projektu
+Tiempo Mínimo	Minimální čas
+Tiempo Máximo	Maximální čas
+Tiempo Mínimo de Previo	Min. čas náhledu
+Tiempo Máximo de Previo	Max. čas náhledu
+Nivel de Detalle del Render en el Editor	Úroveň detailu renderu editoru
+Color Objetos por Defecto	Výchozí barva objektu
+Gris-Azul	Šedomodrá
+Recortar Vista	Oříznout pohled
+Flujo de Trabajo Lineal	Lineární pracovní postup
+Introducir Perfil de Color	Vstupní barevný profil
+Preestablecidos de proyecto: todavía no implementados en Iron3D.	Předvolby projektu: zatím neimplementovány v Iron3D.
+Página no disponible	Stránka není dostupná
+  Todavía no implementado en Iron3D.	  Zatím neimplementováno v Iron3D.
+Fotométrico	Fotometrické
+Lentes	Objektivy
+Visible en Editor	Viditelný v editoru
+Visible en Editor (punto superior): Por Defecto hereda del padre, Activado lo muestra siempre, Apagado lo oculta en el visor.	Viditelný v editoru (horní tečka): Výchozí dědí od rodiče, Zap. jej vždy zobrazí, Vyp. jej v pohledu skryje.
+Visible en Render	Viditelný v renderu
+Visible en Render (punto inferior): Iron3D todavía no tiene render final; el valor se guarda en la escena.	Viditelný v renderu (dolní tečka): Iron3D zatím nemá finální render; hodnota se ukládá do scény.
+Usar Color	Použít barvu
+Congelar Transformación	Zmrazit transformaci
+Foco	Reflektor
+Foco Cuadrado	Čtvercový reflektor
+Infinita	Nekonečné
+Foco Paralelo	Paralelní reflektor
+Foco Paralelo Cuadrado	Čtvercový paralelní reflektor
+Área	Plošné
+Tipo de luz. En el visor, Tubo, Área e IES iluminan como una Omni; Paralela y Foco Paralelo como una Infinita.	Typ světla. V pohledu Trubice, Plošné a IES svítí jako Omni; Paralelní a Paralelní reflektor jako Nekonečné.
+Mapeado (Suave)	Stínové mapy (měkké)
+Trazado (Duro)	Raytracing (tvrdé)
+Con sombra activada, la primera luz de la escena que la tenga proyecta sombras en el visor.	Při zapnutých stínech vrhá stíny v pohledu první světlo ve scéně, které je má.
+Luz Visible	Viditelné světlo
+No Ilumina	Bez osvětlení
+Mostrar Iluminación	Zobrazit osvětlení
+Mostrar Luz Visible	Zobrazit viditelné světlo
+Iluminación de IG	Osvětlení GI
+Propiedades del Objeto	Vlastnosti objektu
+Plano de Simetría	Rovina symetrie
+ZY (refleja X)	ZY (zrcadlí X)
+XZ (refleja Y)	XZ (zrcadlí Y)
+XY (refleja Z)	XY (zrcadlí Z)
+  Refleja al primer hijo con malla; el hijo se edita aparte.	  Zrcadlí prvního potomka se sítí; potomek se upravuje samostatně.
+Relación de Aspecto	Poměr stran
+Tamaño . X	Velikost . X
+Tamaño . Y	Velikost . Y
+Tamaño . Z	Velikost . Z
+Segmentos en X	Segmenty X
+Segmentos en Y	Segmenty Y
+Segmentos en Z	Segmenty Z
+Superficies Separadas	Oddělené plochy
+Canto	Zaoblení
+  Objeto Poligonal (importado o hecho editable con C).	  Polygonový objekt (importovaný nebo převedený na editovatelný klávesou C).
+  Puntos, aristas y polígonos: botones de la barra izquierda (Supr borra).	  Body, hrany a polygony: tlačítka na levém panelu (Del maže).
+Perfectos de Render	Dokonalý render
+Altura	Výška
+Segmentos en la Anchura	Segmenty šířky
+Segmentos en la Altura	Segmenty výšky
+  Para cambiar el tamaño use Escala (Coord.) o el Gestor de Coordenadas.	  Pro změnu velikosti použijte Měřítko (Souř.) nebo Správce souřadnic.
+Etiqueta Phong	Tag Phong
+Limitar Ángulo	Limit úhlu
+Ángulo de Phong	Úhel Phong
+Usar Bordes	Použít hrany
+Ángulo Interior	Vnitřní úhel
+Ángulo Exterior	Vnější úhel
+Inverso Cuadrado (Físicamente Exacto)	Inverzní čtverec (fyzikálně přesný)
+Escalón	Krok
+Inverso Cuadrado Limitado	Inverzní čtverec omezený
+Inverso Limitado	Inverzní omezený
+Cómo pierde fuerza la luz con la distancia. En las inversas, el Radio es la distancia a la que da el 100 %.	Jak světlo slábne se vzdáleností. U inverzních poklesů je Poloměr vzdálenost, při které dává 100 %.
+Radio Interior	Vnitřní poloměr
+Radio/Decaimiento	Poloměr/útlum
+Tamaño Horizontal	Vodorovná velikost
+Tamaño Vertical	Svislá velikost
+Tamaño en Profundidad	Velikost hloubky
+  En el visor, las sombras son siempre mapeadas y de una sola luz.	  V pohledu jsou stíny vždy mapované a pocházejí z jediného světla.
+Especular - Blinn (Heredado)	Odlesk - Blinn (starší)
+Especular - Phong (Heredado)	Odlesk - Phong (starší)
+Irawan (Tejido)	Irawan (tkaná látka)
+ nudos	 uzlů
+ capas	 vrstev
+no se evalúa en el visor	není v pohledu vyhodnoceno
+Textura	Textura
+Elegir imagen	Vybrat obrázek
+Elegir la imagen del canal (sustituye al shader importado).	Vyberte obrázek kanálu (nahradí importovaný shader).
+Quitar la textura del canal.	Odebrat texturu kanálu.
+  Hay shaders que el visor todavía no evalúa.	  Některé shadery zatím pohled nevyhodnocuje.
+Modo de Mezcla	Režim míchání
+Fuerza de Mezcla	Síla míchání
+Alfa Suave	Měkká alfa
+Alfa de Imagen	Alfa obrázku
+Lambertiano	Lambertovský
+Modelo	Model
+Caída Difusa	Útlum difuze
+Nivel Difuso	Úroveň difuze
+(ninguna)	(žádný)
+  Sin capas importadas: el visor usa Metálico/Rugosidad.	  Žádné importované vrstvy: pohled používá Kovovost/Drsnost.
+Visor (PBR equivalente)	Pohled (ekvivalent PBR)
+Metálico	Kovovost
+  El visor todavía no pinta cada capa por separado (brillos de color, Atenuación).	  Pohled zatím nevykresluje každou vrstvu zvlášť (barevné odlesky, Útlum).
+Luminancia	Světelnost
+Alfa	Alfa
+Refracción	Lom
+  Ningún objeto usa este material. Arrástrelo al Gestor de Objetos.	  Žádný objekt tento materiál nepoužívá. Přetáhněte jej do Správce objektů.
+Etiqueta de Textura [Textura]	Tag textury [Textura]
+Propiedades de Etiqueta	Vlastnosti tagu
+Mapeado UVW	Mapování UVW
+Lado	Strana
+Mezclar Texturas	Míchat textury
+Repetición	Dlaždice
+Usar UVW para Relieve	Použít UVW pro reliéf
+Longitud U	Délka U
+Longitud V	Délka V
+Repeticiones U	Dlaždice U
+Repeticiones V	Dlaždice V
+%zu clave%s seleccionada%s	%zu klíč%s vybráno%s
+Interpolación Spline	Splajnová interpolace
+Interpolación Lineal	Lineární interpolace
+Interpolación Escalón	Skoková interpolace
+Eliminar Claves	Smazat klíče
+Claves movidas 	Klíče posunuty 
+Eliminadas 	Smazáno 
+ clave.	 klíč.
+ claves.	 klíče.
+ en 	 na 
+Editor de Curvas	Editor křivek
+Esc. X	Měř. X
+Esc. Y	Měř. Y
+Esc. Z	Měř. Z
+%s: sin claves (F9 graba)	%s: žádné klíče (F9 nahrává)
+Sin objeto activo	Žádný aktivní objekt
+Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.	Časová osa: klepněte a táhněte pro změnu aktuálního snímku.
+Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.	Klíč: klepnutím vyberte (Shift přidává), tažením posunete, pravé tlačítko – interpolace.
+Tiempo Mínimo del proyecto.	Minimální čas projektu.
+Rango de previo (Tiempo Mínimo/Máximo de Previo).	Rozsah náhledu (Min./Max. čas náhledu).
+Tiempo Máximo del proyecto (editable, la regla se reescala).	Maximální čas projektu (editovatelný, pravítko se přeškáluje).
+Tiempo Máximo de Previo.	Maximální čas náhledu.
+Ir al Inicio [Mayús+F]	Přejít na začátek [Shift+F]
+Ir a la Clave Anterior [Ctrl+F]	Přejít na předchozí klíč [Ctrl+F]
+Ir al Fotograma Anterior [F]	Přejít na předchozí snímek [F]
+Reproducir Hacia Atrás [F6]	Přehrát pozpátku [F6]
+Reproducir Hacia Delante [F8]	Přehrát vpřed [F8]
+Ir al Fotograma Siguiente [G]	Přejít na další snímek [G]
+Ir a la Clave Siguiente [Ctrl+G]	Přejít na další klíč [Ctrl+G]
+Ir al Final [Mayús+G]	Přejít na konec [Shift+G]
+Grabar Objetos Activos [F9]	Nahrát aktivní objekty [F9]
+Fotogramas Clave Automáticos [Ctrl+F9]	Automatické klíčování [Ctrl+F9]
+Selección de Claves (todavía no implementado)	Výběr klíčů (zatím neimplementováno)
+Grabar Posición	Nahrát pozici
+Grabar Escala	Nahrát měřítko
+Grabar Rotación	Nahrát rotaci
+Grabar Parámetro (todavía no implementado)	Nahrát parametr (zatím neimplementováno)
+Grabar Nivel de Puntos (todavía no implementado)	Nahrát animaci na úrovni bodů (zatím neimplementováno)
+Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D	Editor grafů / Dopesheet: zatím neimplementováno v Iron3D
+Ctrl+Mayús+N	Ctrl+Shift+N
+Guardar Material Preestablecido...	Uložit předvolbu materiálu...
+Eliminar Materiales sin Usar	Smazat nepoužité materiály
+Cargar Textura...	Načíst texturu...
+Editar Textura...	Upravit texturu...
+Clic: seleccionar material. Doble clic: Editor de Material (en el nombre: renombrar). Arrastre a un objeto para asignarlo.	Klepnutí: vybrat materiál. Dvojklik: Editor materiálů (na názvu: přejmenovat). Přetažením na objekt přiřadíte.
+Doble clic en un espacio vacío del Gestor de Materiales para crear un material nuevo.	Dvojklikem na prázdné místo ve Správci materiálů vytvoříte nový materiál.
+Doble clic aquí para crear un material	Dvojklikem zde vytvoříte materiál
+Mundo	Svět
+Sistema de coordenadas de los campos (solo Objeto (Rel) disponible por ahora).	Souřadnicový systém polí (zatím je k dispozici jen Objekt (rel.)).
+Tamaño: medidas en cm. Escala: multiplicador del objeto.	Velikost: rozměry v cm. Měřítko: násobitel objektu.
+Aplicar los valores de los campos al objeto seleccionado.	Použít hodnoty polí na vybraný objekt.
+Selección Rectangular: arrastre para seleccionar los objetos que toque el rectángulo. MAYÚSCULAS añade, CTRL quita.	Obdélníkový výběr: tažením vyberte objekty, kterých se obdélník dotýká. SHIFT přidává, CTRL odebírá.
+Selección con Lazo: dibuje una zona para seleccionar los objetos que queden dentro. MAYÚSCULAS añade, CTRL quita.	Výběr lasem: nakreslete oblast pro výběr objektů uvnitř. SHIFT přidává, CTRL odebírá.
+Selección en Vivo: Haga clic para seleccionar elementos.	Živý výběr: klepnutím vyberete prvky.
+Guardar como	Uložit jako
+Nombre de archivo:	Název souboru:
+Carpeta: %s	Složka: %s
+Cargado: 	Načteno: 
+Error al cargar: 	Chyba načítání: 
+Guardado: 	Uloženo: 
+Error al guardar: 	Chyba ukládání: 
+%s\nDisposición: %s	%s\nRozvržení: %s
+Colores y disposición de los paneles como en cada programa. Se aplica al momento.	Barvy a rozvržení panelů jako v každém programu. Použije se okamžitě.
+Mis presets	Moje předvolby
+Fondo de paneles	Pozadí panelu
+Fondo de campos	Pozadí pole
+Acento	Akcent
+Azul de herramientas	Modrá nástrojů
+Fondo del visor	Pozadí pohledu
+Barra superior	Horní lišta
+Columna lateral	Boční sloupec
+Columna de objetos	Sloupec objektů
+Objetos / Atributos	Objekty / Atributy
+Fila inferior	Spodní řada
+Línea de tiempo	Časová osa
+Pestañas verticales	Svislé karty
+Redondeo	Zaoblení
+Personalizado (sin guardar)	Vlastní (neuložený)
+Nombre del preset	Název předvolby
+Guardar como preset	Uložit jako předvolbu
+Preset guardado en presets/.	Předvolba uložena v presets/.
+Escriba un nombre válido (letras, números, espacios, - o _).	Zadejte platný název (písmena, číslice, mezery, - nebo _).
+Preset eliminado.	Předvolba smazána.
+Restablecer	Obnovit
+Vuelve al preset integrado «%s».	Vrátí se na vestavěnou předvolbu "%s".
+Guardado. Se usará al abrir Iron3D.	Uloženo. Použije se při spuštění Iron3D.
+Error al guardar las preferencias.	Chyba při ukládání předvoleb.
+Preset activo: %s	Aktivní předvolba: %s
+Backend activo en esta sesión: %s	Backend aktivní v této relaci: %s
+Backend de render (se aplica al reiniciar):	Backend renderování (použije se po restartu):
+Guardado. Reinicie Iron3D Studio para aplicarlo.	Uloženo. Pro použití restartujte Iron3D Studio.
+Asignación	Přiřazení
+  Ningún objeto usa este material.	  Žádný objekt tento materiál nepoužívá.
+Acerca de Iron3D Studio	O programu Iron3D Studio
+Interfaz inspirada en el flujo de trabajo de Cinema 4D R19.	Rozhraní inspirované pracovním postupem Cinema 4D R19.
+Cinema 4D es una marca de Maxon; Iron3D no está afiliado a Maxon.	Cinema 4D je ochranná známka společnosti Maxon; Iron3D s ní není nijak spojen.
+La importación de archivos .c4d usa el Cineware SDK	Import souborů .c4d využívá Cineware SDK
+de MAXON Computer GmbH, integrado según su licencia.	společnosti MAXON Computer GmbH, integrovaný na základě její licence.
+No se pudo abrir	Nelze otevřít
+%d objetos, %d con malla, %d materiales, %d luces	%d objektů, %d se sítí, %d materiálů, %d světel
+%lld puntos, %lld polígonos	%lld bodů, %lld polygonů
+%d generadores con la geometría guardada por Cinema 4D	%d generátorů s geometrií uloženou programem Cinema 4D
+%d primitivas reconstruidas desde sus parámetros	%d primitiv znovu vytvořeno z jejich parametrů
+Importado sin avisos.	Importováno bez varování.
+Revisa:	Zkontrolujte:
+Exportado a Cinema 4D	Exportováno do Cinema 4D
+%d objetos: %d mallas, %d primitivas, %d luces	%d objektů: %d sítí, %d primitiv, %d světel
+%d materiales, %lld puntos, %lld polígonos	%d materiálů, %lld bodů, %lld polygonů
+Exportado sin avisos.	Exportováno bez varování.
+Une los puntos que coinciden (misma posición,\nnormal y color) al conectar.	Při spojování spojí body, které splývají (stejná pozice,\nnormála a barva).
+Tolerante	Tolerantní
+Se elige todo lo que toque la zona.	Vybere se vše, čeho se oblast dotýká.
+Solo se elige lo que queda dentro entero.	Vybere se jen to, co leží celé uvnitř.
+Solo Seleccionar Visibles	Vybírat jen viditelné prvky
+Puntos, aristas y polígonos tapados por la malla no se eligen.	Body, hrany a polygony skryté sítí se nevybírají.
+También se eligen los tapados (a través de la malla).	Skryté se vybírají také (skrz síť).
+Guardar render	Uložit render
+Imagen PNG	Obrázek PNG
+Render guardado: 	Render uložen: 
+No se pudo guardar el render.	Render nelze uložit.
+Ajustar a la Ventana	Přizpůsobit oknu
+Renderizar	Render
+Todavía no hay ningún render (Mayús+R).	Zatím neexistuje žádný render (Shift+R).
+%s · %d x %d · antialiasing %dx%d · %.2f s · %d triángulos	%s · %d x %d · vyhlazování %dx%d · %.2f s · %d trojúhelníků
+1080 x 1080 (cuadrado)	1080 x 1080 (čtverec)
+Elegir...	Vybrat...
+Usar el tamaño del visor	Použít velikost pohledu
+Anchura (px)	Šířka (px)
+Altura (px)	Výška (px)
+Ninguno (1x1)	Žádné (1x1)
+Geometría (2x2)	Geometrie (2x2)
+Mejor (4x4)	Nejlepší (4x4)
+Render por CPU con el sombreado de las miniaturas:\nsin sombras ni texturas todavía.	Render na CPU se stínováním náhledů:\nzatím bez stínů a textur.
+Malla demasiado grande para dibujar sus componentes.	Síť je příliš velká na vykreslení jejích komponent.
+Selecciona un objeto editable y entra en modo Puntos, Aristas o Polígonos.	Vyberte editovatelný objekt a přejděte do režimu Body, Hrany nebo Polygony.
+ seleccionados.	 vybráno.
+Bucle y Anillo funcionan en modo Aristas.	Smyčka a Prstenec fungují v režimu hran.
+Comprobar Malla: sin problemas.	Zkontrolovat síť: žádné problémy.
+Comprobar Malla: 	Zkontrolovat síť: 
+ aristas abiertas, 	 otevřených hran, 
+ no manifold, 	 non-manifold, 
+ puntos sueltos, 	 volných bodů, 
+ polígonos sin área.	 polygonů s nulovou plochou.
+Puente: selecciona exactamente 2 polígonos (modo Polígonos).	Můstek: vyberte přesně 2 polygony (režim polygonů).
+Puente: los dos polígonos deben tener el mismo número de lados.	Můstek: oba polygony musí mít stejný počet stran.
+Soldar: selecciona al menos 2 puntos.	Svařit: vyberte alespoň 2 body.
+Cerrar Agujero: no hay bordes abiertos que toquen la selección.	Zavřít díru: žádné otevřené okraje se výběru nedotýkají.
+Alinear Normales: ya están todas alineadas.	Zarovnat normály: všechny jsou již zarovnané.
+Triangular: no hay polígonos de más de 3 lados.	Triangulace: nejsou žádné polygony s více než 3 stranami.
+Operación desconocida: 	Neznámá operace: 
+ elemento.	 prvek.
+ elementos.	 prvků.
+Eliminados 	Smazáno 
+ polígono.	 polygon.
+ polígonos.	 polygony.
+: selecciona polígonos de un objeto editable.	: vyberte polygony editovatelného objektu.
+Cuchillo: selecciona un objeto editable (C).	Nůž: vyberte editovatelný objekt (C).
+Cuchillo: la línea no corta ningún polígono.	Nůž: čára neprotíná žádný polygon.
+Cuchillo: 	Nůž: 
+ polígono cortado.	 polygon rozříznut.
+ polígonos cortados.	 polygonů rozřezáno.
+Desplazamiento (cm)	Odsazení (cm)
+Desplazamiento de Inserción (cm)	Odsazení vsazení (cm)
+Extrusión (cm)	Vytažení (cm)
+Solo Visibles	Jen viditelné
+Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos.	Režim čáry: řeže vše, co čára protíná.\nPři vybraných polygonech jen ty.
+o arrastra en el visor	nebo táhněte v pohledu
+(objeto editable)	(editovatelný objekt)
+ vertices sin espejo.	 vrcholů bez zrcadla.
+Iron3D Studio - hoja de iconos (%d)	Iron3D Studio - arch ikon (%d)
+Resultado de la Búsqueda: "	Výsledek hledání: "
+Preestablecidos > 	Předvolby > 
+Ya hay una librería con ese nombre en library/browser.	Knihovna s tímto názvem již v library/browser existuje.
+No se pudo copiar la librería a library/browser: 	Knihovnu nelze zkopírovat do library/browser: 
+" es ahora permanente (	" je nyní trvalá (
+Librería "	Knihovna "
+" creada en library/browser.	" vytvořena v library/browser.
+Carpeta "	Složka "
+" creada.	" vytvořena.
+No se puede leer 	Nelze přečíst 
+ modelos y 	 modelů a 
+ archivos añadidos a "	 souborů přidáno do "
+Añadir a la librería	Přidat do knihovny
+Modelos y texturas	Modely a textury
+" eliminado de "	" odebráno z "
+; muévela antes de corregir.	; před opravou jej přesuňte.
+No se pudo renombrar la librería: 	Knihovnu nelze přejmenovat: 
+Url interna corregida (copia de seguridad en 	Interní URL opraveno (záloha v 
+Eliminar de la Librería	Odebrat z knihovny
+¿Eliminar "%s"%s?	Smazat "%s"%s?
+ y todo su contenido	 a veškerý jeho obsah
+Se borra de la librería (%s).	Bude smazán z knihovny (%s).
+Nueva Librería de Preestablecidos	Nová knihovna předvoleb
+Mover a	Přesunout do
+Carpeta de destino (vacío = raíz, "a/b" = subcarpetas):	Cílová složka (prázdné = kořen, "a/b" = podsložky):
+Ruta no válida (o dentro de sí misma).	Neplatná cesta (nebo uvnitř sebe sama).
+Sin  / \\ : * ? " < > |	Bez  / \ : * ? " < > |
+Se guarda en library/browser: sale siempre.	Uloženo v library/browser: načítá se vždy.
+Todavía no implementado	Zatím neimplementováno
+Nuevo Navegador	Nový prohlížeč
+Abre antes una librería (o una carpeta suya)	Nejprve otevřete knihovnu (nebo jednu z jejích složek)
+Añadir Archivos a la Librería...	Přidat soubory do knihovny...
+Abrir Librería de Preestablecidos...	Otevřít knihovnu předvoleb...
+Hacer Permanente (copiar a library/browser)	Učinit trvalou (kopírovat do library/browser)
+Quitar Librería del Navegador	Odebrat knihovnu z prohlížeče
+Cargar en la Escena	Načíst do scény
+Intro	Enter
+Mostrar Texturas y Archivos	Zobrazit textury a soubory
+Ir a	Přejít na
+Busca por nombre en todas las librerías (Intro)	Hledá podle názvu ve všech knihovnách (Enter)
+Librería temporal (solo esta sesión)	Dočasná knihovna (jen tato relace)
+Librería permanente	Trvalá knihovna
+Quitar del Navegador	Odebrat z prohlížeče
+Corregir Url Interna (archivo renombrado)	Opravit interní URL (přejmenovaný soubor)
+Dentro pone "%s": Cinema 4D no la monta si no coincide con el nombre del archivo.	Uvnitř je "%s": Cinema 4D ji nepřipojí, pokud neodpovídá názvu souboru.
+  (temporal)	  (dočasná)
+Temporal: solo en esta sesión	Dočasná: jen tato relace
+Permanente (library/browser)	Trvalá (library/browser)
+   (ninguna librería)	   (žádné knihovny)
+No hay librerías. Abre un .lib4d (Archivo > Abrir) o cópialo a library/browser.	Nejsou žádné knihovny. Otevřete .lib4d (Soubor > Otevřít) nebo jej zkopírujte do library/browser.
+Aún no has cargado ningún preestablecido en esta sesión.	V této relaci jste zatím nenačetli žádnou předvolbu.
+Sin resultados.	Žádné výsledky.
+Carpeta vacía.	Prázdná složka.
+Suéltalo en el visor para añadirlo a la escena	Pusťte v pohledu pro přidání do scény
+Mover a...	Přesunout do...
+Modelo / escena de Cinema 4D	Model / scéna Cinema 4D
+Archivo (textura, imagen...)	Soubor (textura, obrázek...)
+\nDoble clic o arrastrar al visor: cargar	\nDvojklik nebo přetažení do pohledu: načíst
+\nDoble clic: abrir	\nDvojklik: otevřít
+%s\n%d modelos  ·  %s	%s\n%d modelů  ·  %s
+temporal (solo esta sesión)	dočasná (jen tato relace)
+  ·  librería temporal (solo esta sesión)	  ·  dočasná knihovna (jen tato relace)
+  ·  librería permanente	  ·  trvalá knihovna
+Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. Clic derecho > Corregir Url Interna.	Tato knihovna byla přejmenována mimo Cinema 4D: její interní URL neodpovídá souboru. Pravé tlačítko > Opravit interní URL.
+%s\n(clic para quitar el aviso)	%s\n(klepnutím zavřete varování)
+Guardar como Preestablecido	Uložit jako předvolbu
+No hay ninguna librería de preestablecidos.	Nejsou žádné knihovny předvoleb.
+Crear "Mis Preestablecidos"	Vytvořit "Moje předvolby"
+Mis Preestablecidos	Moje předvolby
+Librería	Knihovna
+(elige una)	(vyberte)
+(raíz de la librería)	(kořen knihovny)
+ objetos	 objektů
+ polígonos	 polygonů
+ materiales	 materiálů
+" guardado en "	" uloženo do "
+Tanque de Petróleo	Nádrž na olej
+Terreno Fractal	Krajina
+Vectorizador	Vektorizátor
+Derretir	Tavení
+Envoltura	Obalení
+Cargar Material Preestablecido	Načíst předvolbu materiálu
+Spline Arco	Nástroj obloukového splajnu
+Unión de Splines	Sjednocení splajnů
+Intersección de Splines	Průnik splajnů
+Herramienta de Nubes	Nástroj mraku
+Grupo de Nubes	Skupina mraků
+Nube	Mrak
+Cámara Objetivo	Cílová kamera
+Cámara de Movimiento	Pohybová kamera
+Luz Objetivo	Cílové světlo
+Luz IES	Světlo IES
+Herramienta de Iluminación	Nástroj osvětlení
+Vista Perspectiva	Pohled perspektiva
+Vista Superior	Pohled shora
+Vista Derecha	Pohled zprava
+Vista Frontal	Pohled zepředu
+Vista Izquierda	Pohled zleva
+Vista Trasera	Pohled zezadu
+Vista Inferior	Pohled zdola
+Guardar Proyecto	Uložit projekt
+Selección Contorno	Výběr obrysu
+Aumentar Selección	Zvětšit výběr
+Fijación 2.5D	Přichytávání 2,5D
+Construcción de Personaje	Tvůrce postav
+Objeto %s [%s]	Objekt %s [%s]
+Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f	Odstín %.0f°  Sytost %.0f%%  Jas %.0f%%  Světlost %.0f%%  Kontrast %.0f%%  Gama %.2f
+Render: %d x %d en %.2f s	Render: %d x %d za %.2f s
+%s: %zu de %zu seleccionados	%s: vybráno %zu z %zu
+%d elementos	%d položek
+Esquema	Osnova
+Espacio de trabajo:	Pracovní prostor:
+Librería de preestablecidos de Cinema 4D	Knihovna předvoleb Cinema 4D
+Objeto poligonal	Polygonový objekt
+Nulo (vacio)	Null (prázdný)
+Fotométrica	Fotometrické
+Destriangular	Zrušit triangulaci
+Destriangular: no hay triángulos vecinos que unir.	Zrušit triangulaci: nejsou žádné sousední trojúhelníky ke spojení.
+Ocultar Selección	Skrýt vybrané
+Ocultar No Seleccionados	Skrýt nevybrané
+Mostrar Todo	Zobrazit vše
+No se puede ocultar todo el objeto.	Nelze skrýt celý objekt.
+Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio nemohlo otevřít okno.
+Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	Vyžaduje grafickou kartu s Vulkan 1.3 nebo OpenGL 3.3. Zkuste aktualizovat grafické ovladače.
+SMD: %d huesos y %d mallas con pesos; solo la pose actual, sin animación. Cada material de Source necesita su .vmt.	SMD: %d kostí a %d sítí s vahami; jen aktuální póza, bez animace. Každý materiál Source potřebuje svůj .vmt.
+Línea	Čára
+Bucle	Smyčka
+Cuchillo: no hay ninguna arista bajo el cursor.	Nůž: pod kurzorem není žádná hrana.
+Cuchillo: esa arista no tiene un bucle de cuadriláteros que cortar.	Nůž: tato hrana nemá smyčku čtyřúhelníků k rozříznutí.
+Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic.	Režim smyčky: klepněte na hranu; rozřízne celý její prstenec\nv místě klepnutí.
+Eje	Osa
+Cuchillo: el clic no toca la malla.	Nůž: klepnutí se sítě nedotýká.
+Cuchillo: el plano no corta ningún polígono.	Nůž: rovina neprotíná žádný polygon.
+Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	Režim roviny: klepněte na síť; řeže rovinou\nkolmou k vybrané ose skrz tento bod.
+Segmentos de Rotación	Segmenty rotace
+Radio Exterior	Vnější poloměr
+Radio del Anillo	Poloměr prstence
+Radio del Tubo	Poloměr trubky
+Segmentos del Anillo	Segmenty prstence
+Segmentos del Tubo	Segmenty trubky
+Segmentos de la Tapa	Segmenty víčka
+Profundidad	Hloubka
+Tetraedro	Čtyřstěn
+Octaedro	Osmistěn
+Icosaedro	Dvacetistěn
+Dodecaedro	Dvanáctistěn
+  Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  Parametrický primitiv: úprava sítě (bodů, hran...) zahodí parametry.
+Ángulo	Úhel
+  Deforma al primer hijo con malla; el hijo se edita aparte.	  Deformuje prvního potomka se sítí; potomek se upravuje samostatně.
+Booleano: Unión (A + B)	Boolean: sjednocení (A + B)
+Booleano: Sustracción (A - B)	Boolean: rozdíl (A - B)
+Booleano: Intersección (A y B)	Boolean: průnik (A a B)
+Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.	Boolean: vyberte dva objekty (A a B) pomocí Ctrl+klepnutí ve Správci objektů.
+Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).	Boolean: oba objekty musí mít geometrii (Krychle, Koule, polygon...).
+Booleano: 	Boolean: 
+Booleano: objeto creado; A y B quedan ocultos.	Boolean: objekt vytvořen; A a B jsou skryté.
+Cantidad	Počet
+Cantidad X	Počet X
+Cantidad Y	Počet Y
+Cantidad Z	Počet Z
+Separación X	Rozestup X
+Separación Y	Rozestup Y
+Separación Z	Rozestup Z
+Paso X	Krok X
+Paso Y	Krok Y
+Paso Z	Krok Z
+Escala por copia	Měřítko na klon
+Giro por copia	Rotace na klon
+  Clona el primer hijo con malla; el hijo se edita aparte.	  Klonuje prvního potomka se sítí; potomek se upravuje samostatně.
+copias	klonů
+Efector Aleatorio	Náhodný efektor
+Posición Aleatoria X	Náhodná pozice X
+Posición Aleatoria Y	Náhodná pozice Y
+Posición Aleatoria Z	Náhodná pozice Z
+Giro Aleatorio	Náhodná rotace
+Escala Aleatoria	Náhodné měřítko
+Semilla	Seed
+  Modo Objeto: una copia en cada punto del 2.º hijo con malla.	  Režim objektu: jeden klon v každém bodě 2. potomka se sítí.
+Seleccionar Patrón	Vybrat vzor
+Patrón: 1 de cada 2	Vzor: každý druhý
+Patrón: 1 de cada 2 (desfasado)	Vzor: každý druhý (posunutý)
+Patrón: 1 de cada 3	Vzor: každý třetí
+Exportar a Source (SMD)	Exportovat do Source (SMD)
+Escena.smd	Scene.smd
+Exportar SMD	Exportovat SMD
+SMD: solo geometría, normales y UV; sin esqueleto ni animación. Cada material de Source necesita su .vmt.	SMD: jen geometrie, normály a UV; bez kostry a animace. Každý materiál Source potřebuje vlastní .vmt.
+Crear Punto	Vytvořit bod
+Cerrar Agujero de Polígonos	Zavřít díru v polygonu
+Lápiz Polígonos	Pero polygonů
+Cortar Línea	Řez čárou
+Cortar Plano	Řez rovinou
+Cortar Cíclico/Trayectoria	Řez smyčkou/cestou
+Magnetismo	Magnet
+Reflejar	Zrcadlo
+Puntada y Cosido	Sešít a spojit
+Extruir	Vytáhnout
+Extrusión Interior	Vytáhnout dovnitř
+Extrusión Matriz	Maticové vytažení
+Suavizar Desplazamiento	Hladký posun
+Mover Normal	Posun po normále
+Escalar Normal	Měřítko po normále
+Rotar Normal	Rotace po normále
+Destriangular...	Zrušit triangulaci...
+Retriangular N-gons	Znovu triangulovat n-úhelníky
+Eliminar N-gons	Odstranit n-úhelníky
+Clonar	Klonovat
+Desconectar...	Odpojit...
+Separar	Rozdělit
+Colapso	Sbalit
+Conectar	Spojit
+Fundir	Tavit
+Disolver	Rozpustit
+Subdividir...	Rozdělit na menší...
+Asignar Valor al Punto	Nastavit hodnotu bodu
+Voltear Arista	Otočit hranu
+Aristas a Spline	Hrana na splajn
+Cambiar Orden de Puntos	Změnit pořadí bodů
+Optimizar...	Optimalizovat...
+Restaurar Escala...	Obnovit měřítko...
+Configuración Modelado	Nastavení modelování
+Deshacer (Acción)	Zpět (akce)
+Mayús+Z	Shift+Z
+Encuadrar Elementos Seleccionados	Zarámovat vybrané prvky
+Invertir Órbita	Obrátit orbitování
+Velocidad Pan	Rychlost posunu
+Velocidad Muñeca/Zoom	Rychlost přiblížení/zoomu
+Velocidad Órbita	Rychlost orbitování
+Se aplica al momento. Alt+clic orbita, panea y hace zoom; la rueda acerca y aleja.	Použije se okamžitě. Alt+klepnutí otáčí, posouvá a zoomuje; kolečko přibližuje a oddaluje.
+Dispositivos de Entrada	Vstupní zařízení
+Comunicación	Komunikace
+Escultura	Sochání
+Motor Houdini	Houdini Engine
+Motor Substance	Substance Engine
+Previo del Material	Náhled materiálu
+Importación/Exportación	Import/export
+Colores Esquema	Barvy schématu
+Conversión	Konverze
+Comandos	Příkazy
+Herramientas Crear	Nástroje vytváření
+Herramientas Transformar	Nástroje transformace
+Interpolación Dura	Tvrdá interpolace
+Interpolación Suave	Měkká interpolace
+Igualar Longitud de Tangentes	Stejná délka tečen
+Igualar Dirección de Tangentes	Stejný směr tečen
+Unir Segmento	Spojit segment
+Romper Segmento	Přerušit segment
+Explotar Segmentos	Rozložit segmenty
+Asignar Primer Punto	Nastavit první bod
+Invertir Secuencia	Obrátit pořadí
+Mover Secuencia Abajo	Posunout sekvenci dolů
+Mover Secuencia Arriba	Posunout sekvenci nahoru
+Contornear	Obrys
+Sección Transversal	Průřez
+Alinear	Zarovnat
+Proyectar	Promítnout
+Redondear	Zaoblit
+Unión Spline	Sjednocení splajnů
+Intersección Spline	Průnik splajnů
+Centrar Ejes	Vycentrovat osu
+Centrar Eje a Objeto	Vycentrovat osu na objekt
+Centrar Eje a Selección	Vycentrovat osu na výběr
+Abrir Carpeta de Preferencias...	Otevřít složku předvoleb...
+Disolver: selecciona aristas, o polígonos vecinos.	Rozpustit: vyberte hrany nebo sousední polygony.
+Disolver: el resultado no sería un polígono convexo.	Rozpustit: výsledek by nebyl konvexní rovinný polygon.
+Planchar: no hay puntos que alisar.	Iron: žádné body k vyhlazení.
+Voltear Arista: selecciona aristas (modo Aristas).	Otočit hranu: vyberte hrany (režim hran).
+Voltear Arista: solo entre dos triángulos y sin cuadrilátero cóncavo.	Otočit hranu: jen mezi dvěma trojúhelníky a bez konkávního čtyřúhelníku.
+Clonar: selecciona polígonos (modo Polígonos).	Klonovat: vyberte polygony (režim polygonů).
+Conectar: selecciona 2 puntos no vecinos de un mismo polígono.	Spojit: vyberte 2 nesousedící body téhož polygonu.
+Reflejar: no hay polígonos.	Zrcadlo: žádné polygony.
+Restaurar Escala: el objeto tiene hijos; sus posiciones cambiarían.	Obnovit měřítko: objekt má potomky; jejich pozice by se změnily.
+Restaurar Escala: el objeto ya está a escala 1.	Obnovit měřítko: objekt už má měřítko 1.
+Restaurar Escala: hecho.	Obnovit měřítko: hotovo.
+Información del Objeto	Informace o objektu
+No hay ningún objeto seleccionado.	Není vybrán žádný objekt.
+Hijos	Potomci
+triángulos	trojúhelníků
+cuadriláteros	čtyřúhelníků
+Guardado como 	Uloženo jako 
+volver al archivo guardado	vrátit se k uloženému souboru
+cerrar el proyecto	zavřít projekt
+Subdivisiones	Dělení
+Objeto de Origen	Zdrojový objekt
+Instancia: selecciona primero el objeto del que quieres una instancia.	Instance: nejprve vyberte objekt, ze kterého chcete vytvořit instanci.
+  Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  Catmull-Clark na prvním potomku se sítí; potomek je klec.
+  Comparte la malla del objeto de origen.	  Sdílí síť zdrojového objektu.
+  No se encuentra el objeto de origen (ruta por nombres).	  Zdrojový objekt nenalezen (cesta podle názvů).
+Distancia Focal	Ohnisková vzdálenost
+Tamaño del Sensor	Velikost senzoru
+Campo de Visión	Zorné pole
+Esquina	Roh
+Color Superior	Horní barva
+Color Inferior	Spodní barva
+  Ruta por nombres del objeto al que mira (vacío = sin objetivo).	  Cesta názvů objektu, na který se dívá (prázdné = bez cíle).
+  Rejilla 2x2x2 sobre la caja del primer hijo; cada esquina se desplaza una fracción del tamaño.	  Mřížka 2x2x2 přes kvádr prvního potomka; každý roh se posune o zlomek velikosti.
+  Mezcla el primer hijo con el segundo (mismo número de puntos).	  Mísí prvního potomka s druhým (stejný počet bodů).
+  Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo).	  Toto je pozadí renderu v Prohlížeči obrázků (přechod shora dolů).
+Eje X / Encabezado [X]\n(bloqueado)	Osa X / Heading [X]\n(zamčená)
+Eje X / Encabezado [X]\n(desbloqueado)	Osa X / Heading [X]\n(odemčená)
+Bloquea o desbloquea el eje X: un eje bloqueado no cambia al mover, rotar o escalar.	Zamyká nebo odemyká osu X: zamčená osa se při posunu, rotaci ani změně měřítka nemění.
+Eje Y / Inclinación [Y]\n(bloqueado)	Osa Y / Pitch [Y]\n(zamčená)
+Eje Y / Inclinación [Y]\n(desbloqueado)	Osa Y / Pitch [Y]\n(odemčená)
+Bloquea o desbloquea el eje Y: un eje bloqueado no cambia al mover, rotar o escalar.	Zamyká nebo odemyká osu Y: zamčená osa se při posunu, rotaci ani změně měřítka nemění.
+Eje Z / Alabeo [Z]\n(bloqueado)	Osa Z / Bank [Z]\n(zamčená)
+Eje Z / Alabeo [Z]\n(desbloqueado)	Osa Z / Bank [Z]\n(odemčená)
+Bloquea o desbloquea el eje Z: un eje bloqueado no cambia al mover, rotar o escalar.	Zamyká nebo odemyká osu Z: zamčená osa se při posunu, rotaci ani změně měřítka nemění.
+Desactivar Fijación [Mayús+S]	Vypnout přichytávání [Shift+S]
+Activar Fijación [Mayús+S]	Zapnout přichytávání [Shift+S]
+Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).	S přichytáváním se posun mění po krocích 100 cm (mřížka).
+Fijación: activada	Přichytávání: zap.
+Fijación: desactivada	Přichytávání: vyp.
+Buscar por nombre	Hledat podle názvu
+Filtrar por tipo	Filtrovat podle typu
+Nombre del objeto...	Název objektu...
+Geometría	Geometrie
+Luces	Světla
+Otros (Nulos, generadores...)	Ostatní (Nully, generátory...)
+Reflejos de estudio y transparencia	Studiové odrazy a průhlednost
+Sombra suave en el suelo	Měkký stín na podlaze
+Efectos	Efekty
+Salir de Vista Solo	Ukončit pohled Solo
+Vista Solo	Pohled Solo
+Vista Solo: el visor dibuja solo el objeto seleccionado y sus hijos.	Pohled Solo: pohled vykresluje jen vybraný objekt a jeho potomky.
+Salir de Modo Ajuste	Ukončit režim úprav
+Modo Ajuste	Režim úprav
+Modo Ajuste: sin gizmo, arrastre el objeto directamente con el ratón (usa la herramienta activa: Mover, Rotar o Escalar).	Režim úprav: bez manipulátoru, táhněte objekt přímo myší (používá aktivní nástroj: Přesun, Rotace nebo Měřítko).
+Desactivar Plano de Trabajo	Vypnout pracovní rovinu
+Plano de Trabajo: la cuadrícula del visor en perspectiva toma la posición y orientación del objeto seleccionado.	Pracovní rovina: mřížka perspektivního pohledu přebírá pozici a orientaci vybraného objektu.
+Desbloquear Plano de Trabajo	Odemknout pracovní rovinu
+Bloquear Plano de Trabajo	Zamknout pracovní rovinu
+Bloquear Plano de Trabajo: la cuadrícula deja de seguir la selección y se queda donde está.	Zamknout pracovní rovinu: mřížka přestane sledovat výběr a zůstane na místě.
+Salir de Modo Textura	Ukončit režim textury
+Usar Modo Textura	Použít režim textury
+Modo Textura: edita la proyección, el desplazamiento y la longitud de la etiqueta de Textura del objeto seleccionado.	Režim textury: upravuje projekci, posun a délku tagu textury vybraného objektu.
+Modo Textura	Režim textury
+Seleccione un objeto con geometría.	Vyberte objekt s geometrií.
+(ninguno)	(žádný)
+Esférico	Sférické
+Cilíndrico	Válcové
+Cúbico	Krychlové
+Otra	Jiné
+Desplazamiento U/V	Posun U/V
+Longitud U/V	Délka U/V
+Aviso: el visor y el render solo dibujan texturas con proyección UVW.	Poznámka: pohled a render vykreslují jen textury s projekcí UVW.
+Mosaico	Dlaždice
+Editor de Material  [%s]	Editor materiálů  [%s]

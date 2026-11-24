@@ -490,3 +490,891 @@ Estructura	Структура
 Capas	Слои
 Propiedades	Свойства
 Transformar	Трансформация
+Importar Cinema 4D	Импорт Cinema 4D
+Grabar Objetos Activos: no hay ningún objeto seleccionado.	Записать активные объекты: ни один объект не выбран.
+Grabar Objetos Activos: Posición, Escala y Rotación están desactivadas.	Записать активные объекты: Позиция, Масштаб и Вращение отключены.
+Clave grabada en el fotograma 	Ключ записан на кадре 
+ objeto).	 объект).
+ objetos).	 объектов).
+Extrusión Interna	Внутреннее выдавливание
+Cuchillo	Нож
+: arrastra en el visor para dibujar la línea de corte.	: перетащите в окне просмотра, чтобы нарисовать линию разреза.
+: arrastra en horizontal en el visor (o usa Aplicar).	: перетащите по горизонтали в окне просмотра (или используйте Применить).
+Trasera	Назад
+Parámetro todavía no implementado en Iron3D	Параметр пока не реализован в Iron3D
+Clic: mostrar esta página. Mayús+Clic: mostrar varias a la vez.	Щелчок: показать эту страницу. Shift+щелчок: показать несколько сразу.
+Abrir librería	Открыть библиотеку
+Abrir una librería necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe. Cópiala a library/browser.	Для открытия библиотеки нужен системный диалог файлов, которого на этой платформе пока нет. Скопируйте её в library/browser.
+Abrir librería de preestablecidos	Открыть библиотеку пресетов
+Librerías de preestablecidos de Cinema 4D	Библиотеки пресетов Cinema 4D
+Este preestablecido no es un modelo de Cinema 4D.	Этот пресет не является моделью Cinema 4D.
+No se pudo escribir el archivo temporal en 	Не удалось записать временный файл в 
+Textura que no está en ninguna librería montada: 	Текстура отсутствует во всех подключённых библиотеках: 
+Importar OBJ	Импорт OBJ
+Importar glTF	Импорт glTF
+Escenas y librerías (iron, c4d, obj, glb, lib4d)	Сцены и библиотеки (iron, c4d, obj, glb, lib4d)
+Fusionar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	Для слияния нужен системный диалог файлов, которого на этой платформе пока нет.
+Escenas de Cinema 4D, OBJ, glTF e Iron3D	Сцены Cinema 4D, OBJ, glTF и Iron3D
+Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	Для экспорта нужен системный диалог файлов, которого на этой платформе пока нет.
+La escena está vacía.	Сцена пуста.
+Exportar a Wavefront	Экспорт в Wavefront
+Escena.obj	Scene.obj
+Exportar OBJ	Экспорт OBJ
+Exportar a glTF	Экспорт в glTF
+glTF binario	Двоичный glTF
+Escena.glb	Scene.glb
+Exportar glTF	Экспорт glTF
+Exportar a Cinema 4D	Экспорт в Cinema 4D
+Escena.c4d	Scene.c4d
+Guardar Objetos Seleccionados como	Сохранить выбранные объекты как
+Objetos.c4d	Objects.c4d
+%s\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)	%s\nДобавить объект %s  (Alt+щелчок: как дочерний выделенного)
+%s\nTodavía no implementado en Iron3D	%s\nПока не реализовано в Iron3D
+Sistema de coordenadas: Mundo	Система координат: Мировая
+Sistema de coordenadas: Objeto	Система координат: Объектная
+Activar Eje: se mueve el eje, no el objeto	Включить ось: перемещается ось, а не объект
+Activar Eje: desactivado	Включить ось: выключено
+Fotogramas Clave Automáticos: activados	Автоматические ключи: включены
+Fotogramas Clave Automáticos: desactivados	Автоматические ключи: выключены
+Hacer Editable: selecciona un Cubo, Esfera o Plano (los demás ya son editables o no tienen malla).	Сделать редактируемым: выберите Куб, Сферу или Плоскость (остальные уже редактируемы или не имеют сетки).
+Hacer Editable: 1 objeto convertido a Objeto Poligonal.	Сделать редактируемым: 1 объект преобразован в полигональный объект.
+Hacer Editable: 	Сделать редактируемым: 
+ objetos convertidos a Objeto Poligonal.	 объектов преобразовано в полигональные объекты.
+Animación eliminada.	Анимация удалена.
+Estado Actual a Objeto: 	Текущее состояние в объект: 
+ copia poligonal creada.	 полигональная копия создана.
+ copias poligonales creadas.	 полигональных копий создано.
+Estado Actual a Objeto: la selección no tiene geometría.	Текущее состояние в объект: у выделенного нет геометрии.
+Conectar Objetos: 	Соединить объекты: 
+ mallas unidas en un Objeto Polígono.	 сеток объединено в один полигональный объект.
+Conectar Objetos: la selección no tiene geometría.	Соединить объекты: у выделенного нет геометрии.
+Mayús+H	Shift+H
+Mayús+R	Shift+R
+Ctrl+Mayús+O	Ctrl+Shift+O
+Mayús+F8	Shift+F8
+Mayús+F1	Shift+F1
+Mayús+F	Shift+F
+Mayús+G	Shift+G
+Buscar orden...	Поиск команд...
+Ninguna orden coincide.	Команды не найдены.
+Estado Actual a Objeto	Текущее состояние в объект
+Conectar+Eliminar	Соединить объекты + удалить
+Selección en Vivo	Динамическое выделение
+Selección con Lazo	Выделение лассо
+Ctrl+Mayús+F4	Ctrl+Shift+F4
+Ctrl+Mayús+S	Ctrl+Shift+S
+Guardar incrementalmente...	Сохранить с приращением...
+Esta compilación no lleva el Cineware SDK de MAXON	Эта сборка не содержит SDK Cineware от MAXON
+glTF binario (*.glb)...	Двоичный glTF (*.glb)...
+Archivos recientes	Последние файлы
+Física	Физика
+Selección de Polígono	Выделение полигонов
+Selección de Bucle	Выделение петли
+Selección de Anillo	Выделение кольца
+Seleccionar Conectados	Выделить связанные
+Reducir Selección	Уменьшить выделение
+Eje X / Encabezado	Ось X / Heading
+Eje Y / Inclinación	Ось Y / Pitch
+Eje Z / Alabeo	Ось Z / Bank
+Sistema de Coordenadas de Mundo	Мировая система координат
+Medir y Construir	Измерение и построение
+Organizar Objetos	Расположить объекты
+Simetría de edición	Редактировать симметрию
+Apagada	Выкл.
+Plano X (izquierda/derecha)	Плоскость X (лево/право)
+Plano Y (arriba/abajo)	Плоскость Y (верх/низ)
+Plano Z (delante/detrás)	Плоскость Z (перед/зад)
+Tolerancia (cm)	Допуск (см)
+Cerrar Agujero Poligonal	Закрыть отверстие в полигоне
+Subdividir	Разделить
+Comprobar Malla	Проверить сетку
+Invertir Normales	Обратить нормали
+Alinear Normales	Выровнять нормали
+Mayús+S	Shift+S
+Ir a la Clave Anterior	К предыдущему ключу
+Ir a la Clave Siguiente	К следующему ключу
+Editor de Curvas...	Редактор кривых...
+Claves Seleccionadas	Выбранные ключи
+Eliminar Animación del Objeto	Удалить анимацию объекта
+Fotograma Siguiente	Следующий кадр
+Fotograma Anterior	Предыдущий кадр
+Repetir (Loop)	Повтор (цикл)
+Resolver IK (experimental)	Решить IK (экспериментально)
+ cadenas resueltas.	 цепочек решено.
+IK: ninguna etiqueta IK activa con Punta y Objetivo alcanzables.	IK: нет активного тега IK с достижимым концом и целью.
+Mueve las articulaciones de cada etiqueta IK para que la punta llegue a su objetivo	Перемещает суставы каждого тега IK так, чтобы конец достиг цели
+Articulación	Сустав
+Pesos	Веса
+Renderizar Vista Activa	Рендер активного вида
+Renderizar Seleccionados en Visor de Imágenes	Рендер выделенного в Просмотрщике изображений
+Renderizar en Visor de Imágenes	Рендер в Просмотрщик изображений
+Crear Previsualización...	Создать предпросмотр...
+Añadir a la Cola de Render...	Добавить в очередь рендера...
+Editar Configuración de Render...	Редактировать настройки рендера...
+Tirar	Притянуть
+Amasar	Мять
+Rastreador de Objetos	Трекер объекта
+Intercambiar Clonador-Matriz	Заменить матрицу клонера
+Pintar Pesos	Рисовать веса
+Etiqueta IK	Тег IK
+Ningún plugin cargado	Плагины не загружены
+Buscar Plugins...	Найти плагины...
+Mayús+F10	Shift+F10
+Mayús+F2	Shift+F2
+Mayús+F3	Shift+F3
+Mayús+F5	Shift+F5
+Mayús+F7	Shift+F7
+Navegador de Contenido	Браузер контента
+Mayús+F4	Shift+F4
+Acerca de Iron3D Studio...	О программе Iron3D Studio...
+Arranque	Запуск
+Visualizar	Визуализация
+Deshacer [Ctrl+Z]	Отменить [Ctrl+Z]
+Deshacer la última acción.	Отменить последнее действие.
+Rehacer [Ctrl+Y]	Повторить [Ctrl+Y]
+Rehacer la última acción deshecha.	Повторить последнее отменённое действие.
+Selección en Vivo [Atajo de Teclado 9]	Динамическое выделение [клавиша 9]
+Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.	Динамическое выделение: щёлкните и перетащите для выбора элементов. Удерживайте SHIFT, чтобы добавить к выделению, CTRL — чтобы убрать.
+Herramienta de Mover [Atajo de Teclado E]	Инструмент перемещения [клавиша E]
+Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.	Перемещение: щёлкните и перетащите для перемещения элементов. Удерживайте SHIFT для квантования перемещения / добавления к выделению в режиме точек, CTRL — чтобы убрать.
+Herramienta de Escalar [Atajo de Teclado T]	Инструмент масштабирования [клавиша T]
+Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.	Масштаб: щёлкните и перетащите для масштабирования элементов. Удерживайте SHIFT для квантования масштаба / добавления к выделению в режиме точек, CTRL — чтобы убрать.
+Herramienta de Rotar [Atajo de Teclado R]	Инструмент вращения [клавиша R]
+Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.	Вращение: щёлкните и перетащите для вращения элементов. Удерживайте SHIFT для квантования вращения / добавления к выделению в режиме точек, CTRL — чтобы убрать.
+Eje X / Encabezado [X]\n(todavía no implementado)	Ось X / Heading [X]\n(пока не реализовано)
+Bloqueo de eje X: todavía no implementado.	Блокировка оси X: пока не реализована.
+Eje Y / Inclinación [Y]\n(todavía no implementado)	Ось Y / Pitch [Y]\n(пока не реализовано)
+Bloqueo de eje Y: todavía no implementado.	Блокировка оси Y: пока не реализована.
+Eje Z / Alabeo [Z]\n(todavía no implementado)	Ось Z / Bank [Z]\n(пока не реализовано)
+Bloqueo de eje Z: todavía no implementado.	Блокировка оси Z: пока не реализована.
+Usar Sistema de Coordenadas de Objeto [W]\n(ahora: Mundo)	Использовать систему координат объекта [W]\n(сейчас: Мировая)
+Usar Sistema de Coordenadas de Mundo [W]\n(ahora: Objeto)	Использовать мировую систему координат [W]\n(сейчас: Объектная)
+Cambia los ejes del gizmo entre los del objeto y los del mundo.	Переключает оси манипулятора между осями объекта и мировыми осями.
+Renderizar Vista Activa\nRenderiza la vista activa en el propio visor.\n[Atajo de Teclado Ctrl+R]	Рендер активного вида\nРендерит активный вид прямо в окне просмотра.\n[Клавиша Ctrl+R]
+Renderiza la vista activa en el propio visor.	Рендерит активный вид прямо в окне просмотра.
+Renderizar en Visor de Imágenes [Mayús+R]\nRenderiza la cámara activa con la Configuración de Render.	Рендер в Просмотрщик изображений [Shift+R]\nРендерит активную камеру с настройками рендера.
+Renderiza la cámara activa en el Visor de Imágenes.	Рендерит активную камеру в Просмотрщике изображений.
+Editar Configuración de Render... [Ctrl+B]	Редактировать настройки рендера... [Ctrl+B]
+Resolución, antialiasing y fondo del render.	Разрешение рендера, сглаживание и фон.
+Cubo  (mantener pulsado: más objetos)	Куб  (удерживайте: больше объектов)
+Lápiz  (mantener pulsado: más splines)	Перо  (удерживайте: больше сплайнов)
+Subdivisión Superficie  (mantener pulsado: generadores)	Поверхность подразделения  (удерживайте: генераторы)
+Matriz  (mantener pulsado: modelado)	Массив  (удерживайте: моделирование)
+Doblar  (mantener pulsado: deformadores)	Изгиб  (удерживайте: деформеры)
+Suelo  (mantener pulsado: escena)	Пол  (удерживайте: сцена)
+Cámara  (mantener pulsado: más cámaras)	Камера  (удерживайте: больше камер)
+Luz  (mantener pulsado: más luces)	Свет  (удерживайте: больше источников света)
+Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado.	Щелчок: создать объект. Удержание или правый щелчок: открыть палитру группы. Alt+щелчок: создать как дочерний выделенного.
+Hacer Editable [C]\nConvierte Cubo, Esfera o Plano en un Objeto Poligonal.	Сделать редактируемым [C]\nПреобразует Куб, Сферу или Плоскость в полигональный объект.
+Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.	Сделать редактируемым: преобразует выбранные параметрические объекты в полигональные.
+Usar Modo Modelo	Использовать режим модели
+Modo Modelo: se editan objetos enteros.	Режим модели: редактируются объекты целиком.
+Usar Modo Textura\n(todavía no implementado)	Использовать режим текстуры\n(пока не реализовано)
+Modo Textura: todavía no implementado.	Режим текстуры: пока не реализован.
+Activar Eje [L]	Включить ось [L]
+Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.	Режим оси: перемещение, вращение или масштабирование меняет только ось объекта; редактируемая геометрия и дочерние объекты остаются на месте.
+Usar Modo Puntos	Использовать режим точек
+Modo Puntos: elige y mueve puntos de un objeto editable (C para hacerlo editable).	Режим точек: выбирайте и перемещайте точки редактируемого объекта (C — сделать редактируемым).
+Usar Modo Aristas	Использовать режим рёбер
+Modo Aristas: elige y mueve aristas de un objeto editable.	Режим рёбер: выбирайте и перемещайте рёбра редактируемого объекта.
+Usar Modo Polígonos	Использовать режим полигонов
+Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.	Режим полигонов: выбирайте и перемещайте полигоны (треугольники) редактируемого объекта.
+Modo Ajuste\n(todavía no implementado)	Режим привязки\n(пока не реализовано)
+Modo Ajuste: todavía no implementado.	Режим привязки: пока не реализован.
+Vista Solo\n(todavía no implementado)	Режим Solo\n(пока не реализовано)
+Vista Solo: todavía no implementado.	Режим Solo: пока не реализован.
+Activar Fijación [Mayús+S]\n(todavía no implementado)	Включить привязку [Shift+S]\n(пока не реализовано)
+Fijación: todavía no implementado.	Привязка: пока не реализована.
+Plano de Trabajo\n(todavía no implementado)	Рабочая плоскость\n(пока не реализовано)
+Plano de Trabajo: todavía no implementado.	Рабочая плоскость: пока не реализована.
+Bloquear Plano de Trabajo\n(todavía no implementado)	Заблокировать рабочую плоскость\n(пока не реализовано)
+Bloquear Plano de Trabajo: todavía no implementado.	Заблокировать рабочую плоскость: пока не реализовано.
+Usar como Cámara de Render	Использовать как камеру рендера
+Ctrl+Mayús+Z	Ctrl+Shift+Z
+Ctrl+Mayús+Y	Ctrl+Shift+Y
+Encuadrar Elementos Activos	Показать активные элементы
+Cámara del Editor	Камера редактора
+Axonométrica	Аксонометрия
+OpenGL Mejorado	Расширенный OpenGL
+Ruidos	Шумы
+Mayús+V	Shift+V
+Ejes Globales	Глобальные оси
+Cajas Delimitadoras	Габаритные рамки
+Resaltar Componente	Подсветить компонент
+Resaltar Objeto	Подсветить объект
+Cruz Navegación	Навигационный крест
+Disposición	Макет
+Vista Simple	Один вид
+2 Vistas Apiladas	2 вида друг над другом
+2 Vistas Lado a Lado	2 вида рядом
+Vista 1 (Perspectiva)	Вид 1 (Перспектива)
+Vista 2 (Superior)	Вид 2 (Сверху)
+Vista 3 (Derecha)	Вид 3 (Справа)
+Vista 4 (Frontal)	Вид 4 (Спереди)
+Mover Cámara (arrastrar)	Переместить камеру (перетащите)
+Zoom de Cámara (arrastrar)	Масштабировать камеру (перетащите)
+Rotar Cámara (arrastrar)	Повернуть камеру (перетащите)
+Cambiar Vista (todavía no implementado)	Переключить вид (пока не реализовано)
+Multi-vista: todavía no implementado.	Несколько видов: пока не реализовано.
+Arrastre sobre el icono para navegar por la vista.	Перетаскивайте по значку для навигации по виду.
+Espaciado Cuadrícula : 100 cm	Шаг сетки: 100 см
+\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.	\nВыбранный объект вне поля зрения. Щелчок: переместить камеру к нему.
+Modo Árbol	Режим дерева
+Modo Lista	Режим списка
+Etiqueta de Textura	Тег текстуры
+Buscar (todavía no implementado)	Поиск (пока не реализовано)
+Filtrar (todavía no implementado)	Фильтр (пока не реализован)
+Clic: seleccionar. Ctrl+Clic: anadir o quitar de la seleccion. Doble clic: renombrar. Clic derecho: menú contextual. Arrastre un material aquí para asignarlo.	Щелчок: выбрать. Ctrl+щелчок: добавить к выделению или убрать. Двойной щелчок: переименовать. Правый щелчок: контекстное меню. Перетащите сюда материал, чтобы назначить.
+CINEMA 4D Etiquetas	Теги CINEMA 4D
+Eliminar Etiqueta de Textura	Удалить тег текстуры
+Fong	Phong
+Character Etiquetas	Теги персонажа
+Cineman Etiquetas	Теги Cineman
+Etiqueta UVW	Тег UVW
+Simulación Etiquetas	Теги симуляции
+Sketch Etiquetas	Теги скетча
+Videocámara Etiquetas	Теги камеры движения
+Cargar Etiqueta Preestablecida	Загрузить пресет тега
+ objeto convertido.	 объект преобразован.
+ objetos convertidos.	 объектов преобразовано.
+Añadir Hijo	Добавить дочерний
+Apagado	Выкл.
+Visible en %s: %s\n(clic para cambiar)	Видимость в %s: %s\n(щёлкните, чтобы изменить)
+Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.	Верхняя точка: виден в редакторе. Нижняя точка: виден в рендере. Серый = По умолчанию (наследуется от родителя), зелёный = Вкл., красный = Выкл.
+Etiqueta de Textura [%s]	Тег текстуры [%s]
+%s (todavía no implementado)	%s (пока не реализовано)
+Adelante	Вперёд
+Nuevo Gestor de Atributos	Новый менеджер атрибутов
+Configuración del Proyecto	Настройки проекта
+Escala del Proyecto	Масштаб проекта
+Escalar Proyecto: todavía no implementado en Iron3D.	Масштабировать проект: пока не реализовано в Iron3D.
+Fotogramas por segundo: velocidad de reproducción de la Línea de Tiempo.	Кадров в секунду: скорость воспроизведения шкалы времени.
+Tiempo del Proyecto	Время проекта
+Tiempo Mínimo	Минимальное время
+Tiempo Máximo	Максимальное время
+Tiempo Mínimo de Previo	Мин. время предпросмотра
+Tiempo Máximo de Previo	Макс. время предпросмотра
+Nivel de Detalle del Render en el Editor	Уровень детализации рендера редактора
+Color Objetos por Defecto	Цвет объекта по умолчанию
+Gris-Azul	Серо-синий
+Recortar Vista	Обрезка вида
+Flujo de Trabajo Lineal	Линейный рабочий процесс
+Introducir Perfil de Color	Входной цветовой профиль
+Preestablecidos de proyecto: todavía no implementados en Iron3D.	Пресеты проекта: пока не реализованы в Iron3D.
+Página no disponible	Страница недоступна
+  Todavía no implementado en Iron3D.	  Пока не реализовано в Iron3D.
+Fotométrico	Фотометрические
+Lentes	Объективы
+Visible en Editor	Виден в редакторе
+Visible en Editor (punto superior): Por Defecto hereda del padre, Activado lo muestra siempre, Apagado lo oculta en el visor.	Виден в редакторе (верхняя точка): По умолчанию наследуется от родителя, Вкл. — всегда показывает, Выкл. — скрывает в окне просмотра.
+Visible en Render	Виден в рендере
+Visible en Render (punto inferior): Iron3D todavía no tiene render final; el valor se guarda en la escena.	Виден в рендере (нижняя точка): в Iron3D пока нет финального рендера; значение сохраняется в сцене.
+Usar Color	Использовать цвет
+Congelar Transformación	Заморозить трансформацию
+Foco	Прожектор
+Foco Cuadrado	Квадратный прожектор
+Infinita	Бесконечный
+Foco Paralelo	Параллельный прожектор
+Foco Paralelo Cuadrado	Квадратный параллельный прожектор
+Área	Площадной
+Tipo de luz. En el visor, Tubo, Área e IES iluminan como una Omni; Paralela y Foco Paralelo como una Infinita.	Тип света. В окне просмотра Трубка, Площадной и IES светят как Omni; Параллельный и Параллельный прожектор — как Бесконечный.
+Mapeado (Suave)	Карты теней (мягкие)
+Trazado (Duro)	Трассировка лучей (жёсткие)
+Con sombra activada, la primera luz de la escena que la tenga proyecta sombras en el visor.	При включённых тенях тени в окне просмотра отбрасывает первый источник света сцены, у которого они включены.
+Luz Visible	Видимый свет
+No Ilumina	Без освещения
+Mostrar Iluminación	Показать освещение
+Mostrar Luz Visible	Показать видимый свет
+Iluminación de IG	Освещение GI
+Propiedades del Objeto	Свойства объекта
+Plano de Simetría	Плоскость симметрии
+ZY (refleja X)	ZY (отражает X)
+XZ (refleja Y)	XZ (отражает Y)
+XY (refleja Z)	XY (отражает Z)
+  Refleja al primer hijo con malla; el hijo se edita aparte.	  Отражает первый дочерний объект с сеткой; дочерний объект редактируется отдельно.
+Relación de Aspecto	Соотношение сторон
+Tamaño . X	Размер . X
+Tamaño . Y	Размер . Y
+Tamaño . Z	Размер . Z
+Segmentos en X	Сегменты X
+Segmentos en Y	Сегменты Y
+Segmentos en Z	Сегменты Z
+Superficies Separadas	Отдельные поверхности
+Canto	Скругление
+  Objeto Poligonal (importado o hecho editable con C).	  Полигональный объект (импортирован или сделан редактируемым клавишей C).
+  Puntos, aristas y polígonos: botones de la barra izquierda (Supr borra).	  Точки, рёбра и полигоны: кнопки на левой панели (Del удаляет).
+Perfectos de Render	Идеальный рендер
+Altura	Высота
+Segmentos en la Anchura	Сегменты ширины
+Segmentos en la Altura	Сегменты высоты
+  Para cambiar el tamaño use Escala (Coord.) o el Gestor de Coordenadas.	  Чтобы изменить размер, используйте Масштаб (Коорд.) или Менеджер координат.
+Etiqueta Phong	Тег Phong
+Limitar Ángulo	Предел угла
+Ángulo de Phong	Угол Phong
+Usar Bordes	Использовать рёбра
+Ángulo Interior	Внутренний угол
+Ángulo Exterior	Внешний угол
+Inverso Cuadrado (Físicamente Exacto)	Обратный квадрат (физически точный)
+Escalón	Шаг
+Inverso Cuadrado Limitado	Обратный квадрат с ограничением
+Inverso Limitado	Обратный с ограничением
+Cómo pierde fuerza la luz con la distancia. En las inversas, el Radio es la distancia a la que da el 100 %.	Как свет затухает с расстоянием. Для обратных затуханий Радиус — это расстояние, на котором он даёт 100 %.
+Radio Interior	Внутренний радиус
+Radio/Decaimiento	Радиус/затухание
+Tamaño Horizontal	Горизонтальный размер
+Tamaño Vertical	Вертикальный размер
+Tamaño en Profundidad	Размер по глубине
+  En el visor, las sombras son siempre mapeadas y de una sola luz.	  В окне просмотра тени всегда картируются и создаются одним источником света.
+Especular - Blinn (Heredado)	Блик - Blinn (устаревший)
+Especular - Phong (Heredado)	Блик - Phong (устаревший)
+Irawan (Tejido)	Irawan (тканая ткань)
+ nudos	 узлов
+ capas	 слоёв
+no se evalúa en el visor	не вычисляется в окне просмотра
+Elegir imagen	Выбрать изображение
+Elegir la imagen del canal (sustituye al shader importado).	Выберите изображение канала (заменяет импортированный шейдер).
+Quitar la textura del canal.	Удалить текстуру канала.
+  Hay shaders que el visor todavía no evalúa.	  Некоторые шейдеры пока не вычисляются в окне просмотра.
+Modo de Mezcla	Режим смешивания
+Fuerza de Mezcla	Сила смешивания
+Alfa Suave	Мягкая альфа
+Alfa de Imagen	Альфа изображения
+Lambertiano	Ламбертовский
+Modelo	Модель
+Caída Difusa	Затухание диффузии
+Nivel Difuso	Уровень диффузии
+(ninguna)	(нет)
+  Sin capas importadas: el visor usa Metálico/Rugosidad.	  Нет импортированных слоёв: окно просмотра использует Металличность/Шероховатость.
+Visor (PBR equivalente)	Окно просмотра (эквивалент PBR)
+Metálico	Металличность
+  El visor todavía no pinta cada capa por separado (brillos de color, Atenuación).	  Окно просмотра пока не отрисовывает каждый слой отдельно (цветные блики, Затухание).
+Luminancia	Яркость
+Refracción	Преломление
+  Ningún objeto usa este material. Arrástrelo al Gestor de Objetos.	  Ни один объект не использует этот материал. Перетащите его в Менеджер объектов.
+Etiqueta de Textura [Textura]	Тег текстуры [Текстура]
+Propiedades de Etiqueta	Свойства тега
+Mapeado UVW	Проекция UVW
+Lado	Сторона
+Mezclar Texturas	Смешивать текстуры
+Repetición	Тайлы
+Usar UVW para Relieve	Использовать UVW для рельефа
+Longitud U	Длина U
+Longitud V	Длина V
+Repeticiones U	Тайлы U
+Repeticiones V	Тайлы V
+%zu clave%s seleccionada%s	%zu ключ%s выбрано%s
+Interpolación Spline	Сплайновая интерполяция
+Interpolación Lineal	Линейная интерполяция
+Interpolación Escalón	Ступенчатая интерполяция
+Eliminar Claves	Удалить ключи
+Claves movidas 	Ключи перемещены 
+Eliminadas 	Удалено 
+ clave.	 ключ.
+ claves.	 ключей.
+ en 	 на 
+Editor de Curvas	Редактор кривых
+Esc. X	Масш. X
+Esc. Y	Масш. Y
+Esc. Z	Масш. Z
+%s: sin claves (F9 graba)	%s: нет ключей (F9 записывает)
+Sin objeto activo	Нет активного объекта
+Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.	Шкала времени: щёлкните и перетащите, чтобы изменить текущий кадр.
+Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.	Ключ: щёлкните для выбора (Shift добавляет), перетащите для перемещения, правый щелчок — интерполяция.
+Tiempo Mínimo del proyecto.	Минимальное время проекта.
+Rango de previo (Tiempo Mínimo/Máximo de Previo).	Диапазон предпросмотра (мин./макс. время предпросмотра).
+Tiempo Máximo del proyecto (editable, la regla se reescala).	Максимальное время проекта (редактируется, линейка перемасштабируется).
+Tiempo Máximo de Previo.	Максимальное время предпросмотра.
+Ir al Inicio [Mayús+F]	К началу [Shift+F]
+Ir a la Clave Anterior [Ctrl+F]	К предыдущему ключу [Ctrl+F]
+Ir al Fotograma Anterior [F]	К предыдущему кадру [F]
+Reproducir Hacia Atrás [F6]	Воспроизвести назад [F6]
+Reproducir Hacia Delante [F8]	Воспроизвести вперёд [F8]
+Ir al Fotograma Siguiente [G]	К следующему кадру [G]
+Ir a la Clave Siguiente [Ctrl+G]	К следующему ключу [Ctrl+G]
+Ir al Final [Mayús+G]	К концу [Shift+G]
+Grabar Objetos Activos [F9]	Записать активные объекты [F9]
+Fotogramas Clave Automáticos [Ctrl+F9]	Автоматические ключи [Ctrl+F9]
+Selección de Claves (todavía no implementado)	Выбор ключей (пока не реализовано)
+Grabar Posición	Записать позицию
+Grabar Escala	Записать масштаб
+Grabar Rotación	Записать вращение
+Grabar Parámetro (todavía no implementado)	Записать параметр (пока не реализовано)
+Grabar Nivel de Puntos (todavía no implementado)	Записать анимацию на уровне точек (пока не реализовано)
+Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D	Редактор графиков / Лист экспозиции: пока не реализовано в Iron3D
+Ctrl+Mayús+N	Ctrl+Shift+N
+Guardar Material Preestablecido...	Сохранить пресет материала...
+Eliminar Materiales sin Usar	Удалить неиспользуемые материалы
+Cargar Textura...	Загрузить текстуру...
+Editar Textura...	Редактировать текстуру...
+Clic: seleccionar material. Doble clic: Editor de Material (en el nombre: renombrar). Arrastre a un objeto para asignarlo.	Щелчок: выбрать материал. Двойной щелчок: Редактор материалов (по имени: переименовать). Перетащите на объект, чтобы назначить.
+Doble clic en un espacio vacío del Gestor de Materiales para crear un material nuevo.	Дважды щёлкните пустое место в Менеджере материалов, чтобы создать новый материал.
+Doble clic aquí para crear un material	Дважды щёлкните здесь, чтобы создать материал
+Mundo	Мир
+Sistema de coordenadas de los campos (solo Objeto (Rel) disponible por ahora).	Система координат полей (пока доступна только Объект (отн.)).
+Tamaño: medidas en cm. Escala: multiplicador del objeto.	Размер: размеры в см. Масштаб: множитель объекта.
+Aplicar los valores de los campos al objeto seleccionado.	Применить значения полей к выбранному объекту.
+Selección Rectangular: arrastre para seleccionar los objetos que toque el rectángulo. MAYÚSCULAS añade, CTRL quita.	Выделение рамкой: перетащите, чтобы выбрать объекты, которых касается рамка. SHIFT добавляет, CTRL убирает.
+Selección con Lazo: dibuje una zona para seleccionar los objetos que queden dentro. MAYÚSCULAS añade, CTRL quita.	Выделение лассо: нарисуйте область, чтобы выбрать объекты внутри неё. SHIFT добавляет, CTRL убирает.
+Selección en Vivo: Haga clic para seleccionar elementos.	Динамическое выделение: щёлкните, чтобы выбрать элементы.
+Guardar como	Сохранить как
+Nombre de archivo:	Имя файла:
+Carpeta: %s	Папка: %s
+Cargado: 	Загружено: 
+Error al cargar: 	Ошибка загрузки: 
+Guardado: 	Сохранено: 
+Error al guardar: 	Ошибка сохранения: 
+%s\nDisposición: %s	%s\nМакет: %s
+Colores y disposición de los paneles como en cada programa. Se aplica al momento.	Цвета и расположение панелей как в каждой программе. Применяется сразу.
+Mis presets	Мои пресеты
+Fondo de paneles	Фон панели
+Fondo de campos	Фон поля
+Acento	Акцент
+Azul de herramientas	Синий инструментов
+Fondo del visor	Фон окна просмотра
+Barra superior	Верхняя панель
+Columna lateral	Боковая колонка
+Columna de objetos	Колонка объектов
+Objetos / Atributos	Объекты / Атрибуты
+Fila inferior	Нижний ряд
+Línea de tiempo	Шкала времени
+Pestañas verticales	Вертикальные вкладки
+Redondeo	Скругление
+Personalizado (sin guardar)	Свой (не сохранён)
+Nombre del preset	Название пресета
+Guardar como preset	Сохранить как пресет
+Preset guardado en presets/.	Пресет сохранён в presets/.
+Escriba un nombre válido (letras, números, espacios, - o _).	Введите допустимое название (буквы, цифры, пробелы, - или _).
+Preset eliminado.	Пресет удалён.
+Restablecer	Сбросить
+Vuelve al preset integrado «%s».	Возвращает встроенный пресет "%s".
+Guardado. Se usará al abrir Iron3D.	Сохранено. Будет использовано при запуске Iron3D.
+Error al guardar las preferencias.	Ошибка сохранения настроек.
+Preset activo: %s	Активный пресет: %s
+Backend activo en esta sesión: %s	Бэкенд, активный в этом сеансе: %s
+Backend de render (se aplica al reiniciar):	Бэкенд рендера (применяется после перезапуска):
+Guardado. Reinicie Iron3D Studio para aplicarlo.	Сохранено. Перезапустите Iron3D Studio, чтобы применить.
+Asignación	Назначение
+  Ningún objeto usa este material.	  Ни один объект не использует этот материал.
+Acerca de Iron3D Studio	О программе Iron3D Studio
+Interfaz inspirada en el flujo de trabajo de Cinema 4D R19.	Интерфейс вдохновлён рабочим процессом Cinema 4D R19.
+Cinema 4D es una marca de Maxon; Iron3D no está afiliado a Maxon.	Cinema 4D — товарный знак Maxon; Iron3D не связан с Maxon.
+La importación de archivos .c4d usa el Cineware SDK	Импорт файлов .c4d использует Cineware SDK
+de MAXON Computer GmbH, integrado según su licencia.	от MAXON Computer GmbH, интегрированному по её лицензии.
+No se pudo abrir	Не удалось открыть
+%d objetos, %d con malla, %d materiales, %d luces	%d объектов, %d с сеткой, %d материалов, %d источников света
+%lld puntos, %lld polígonos	%lld точек, %lld полигонов
+%d generadores con la geometría guardada por Cinema 4D	%d генераторов с геометрией, сохранённой Cinema 4D
+%d primitivas reconstruidas desde sus parámetros	%d примитивов восстановлено по их параметрам
+Importado sin avisos.	Импортировано без предупреждений.
+Revisa:	Проверьте:
+Exportado a Cinema 4D	Экспортировано в Cinema 4D
+%d objetos: %d mallas, %d primitivas, %d luces	%d объектов: %d сеток, %d примитивов, %d источников света
+%d materiales, %lld puntos, %lld polígonos	%d материалов, %lld точек, %lld полигонов
+Exportado sin avisos.	Экспортировано без предупреждений.
+Une los puntos que coinciden (misma posición,\nnormal y color) al conectar.	Объединяет совпадающие точки (одинаковые положение,\nнормаль и цвет) при соединении.
+Tolerante	Допускающий
+Se elige todo lo que toque la zona.	Выделяется всё, чего касается область.
+Solo se elige lo que queda dentro entero.	Выделяется только то, что целиком внутри.
+Solo Seleccionar Visibles	Выбирать только видимые элементы
+Puntos, aristas y polígonos tapados por la malla no se eligen.	Точки, рёбра и полигоны, скрытые сеткой, не выделяются.
+También se eligen los tapados (a través de la malla).	Скрытые тоже выделяются (сквозь сетку).
+Guardar render	Сохранить рендер
+Imagen PNG	Изображение PNG
+Render guardado: 	Рендер сохранён: 
+No se pudo guardar el render.	Не удалось сохранить рендер.
+Ajustar a la Ventana	По размеру окна
+Renderizar	Рендер
+Todavía no hay ningún render (Mayús+R).	Рендера пока нет (Shift+R).
+%s · %d x %d · antialiasing %dx%d · %.2f s · %d triángulos	%s · %d x %d · сглаживание %dx%d · %.2f с · %d треугольников
+1080 x 1080 (cuadrado)	1080 x 1080 (квадрат)
+Elegir...	Выбрать...
+Usar el tamaño del visor	Использовать размер окна просмотра
+Anchura (px)	Ширина (px)
+Altura (px)	Высота (px)
+Ninguno (1x1)	Нет (1x1)
+Geometría (2x2)	Геометрия (2x2)
+Mejor (4x4)	Лучшее (4x4)
+Render por CPU con el sombreado de las miniaturas:\nsin sombras ni texturas todavía.	Рендер на CPU с шейдингом миниатюр:\nпока без теней и текстур.
+Malla demasiado grande para dibujar sus componentes.	Сетка слишком велика для отрисовки её компонентов.
+Selecciona un objeto editable y entra en modo Puntos, Aristas o Polígonos.	Выберите редактируемый объект и войдите в режим Точек, Рёбер или Полигонов.
+ seleccionados.	 выбрано.
+Bucle y Anillo funcionan en modo Aristas.	Петля и Кольцо работают в режиме рёбер.
+Comprobar Malla: sin problemas.	Проверка сетки: проблем нет.
+Comprobar Malla: 	Проверка сетки: 
+ aristas abiertas, 	 открытых рёбер, 
+ no manifold, 	 не-манифолдных, 
+ puntos sueltos, 	 свободных точек, 
+ polígonos sin área.	 полигонов с нулевой площадью.
+Puente: selecciona exactamente 2 polígonos (modo Polígonos).	Мост: выберите ровно 2 полигона (режим полигонов).
+Puente: los dos polígonos deben tener el mismo número de lados.	Мост: оба полигона должны иметь одинаковое число сторон.
+Soldar: selecciona al menos 2 puntos.	Объединить: выберите не менее 2 точек.
+Cerrar Agujero: no hay bordes abiertos que toquen la selección.	Закрыть отверстие: нет открытых границ, касающихся выделения.
+Alinear Normales: ya están todas alineadas.	Выровнять нормали: все уже выровнены.
+Triangular: no hay polígonos de más de 3 lados.	Триангуляция: нет полигонов с более чем 3 сторонами.
+Operación desconocida: 	Неизвестная операция: 
+ elemento.	 элемент.
+ elementos.	 элементов.
+Eliminados 	Удалено 
+ polígono.	 полигон.
+ polígonos.	 полигонов.
+: selecciona polígonos de un objeto editable.	: выберите полигоны редактируемого объекта.
+Cuchillo: selecciona un objeto editable (C).	Нож: выберите редактируемый объект (C).
+Cuchillo: la línea no corta ningún polígono.	Нож: линия не пересекает ни одного полигона.
+Cuchillo: 	Нож: 
+ polígono cortado.	 полигон разрезан.
+ polígonos cortados.	 полигонов разрезано.
+Desplazamiento (cm)	Смещение (см)
+Desplazamiento de Inserción (cm)	Смещение вставки (см)
+Extrusión (cm)	Выдавливание (см)
+Solo Visibles	Только видимые
+Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos.	Режим линии: разрезает всё, что пересекает линия.\nПри выделенных полигонах — только их.
+o arrastra en el visor	или перетащите в окне просмотра
+(objeto editable)	(редактируемый объект)
+ vertices sin espejo.	 вершин без зеркальной пары.
+Iron3D Studio - hoja de iconos (%d)	Iron3D Studio - лист значков (%d)
+Resultado de la Búsqueda: "	Результат поиска: "
+Preestablecidos > 	Пресеты > 
+Ya hay una librería con ese nombre en library/browser.	Библиотека с таким именем уже есть в library/browser.
+No se pudo copiar la librería a library/browser: 	Не удалось скопировать библиотеку в library/browser: 
+" es ahora permanente (	" теперь постоянная (
+Librería "	Библиотека "
+" creada en library/browser.	" создана в library/browser.
+Carpeta "	Папка "
+" creada.	" создана.
+No se puede leer 	Не удалось прочитать 
+ modelos y 	 моделей и 
+ archivos añadidos a "	 файлов добавлено в "
+Añadir a la librería	Добавить в библиотеку
+Modelos y texturas	Модели и текстуры
+" eliminado de "	" удалено из "
+; muévela antes de corregir.	; переместите его перед исправлением.
+No se pudo renombrar la librería: 	Не удалось переименовать библиотеку: 
+Url interna corregida (copia de seguridad en 	Внутренний URL исправлен (резервная копия в 
+Eliminar de la Librería	Удалить из библиотеки
+¿Eliminar "%s"%s?	Удалить "%s"%s?
+ y todo su contenido	 и всё его содержимое
+Se borra de la librería (%s).	Будет удалено из библиотеки (%s).
+Nueva Librería de Preestablecidos	Новая библиотека пресетов
+Mover a	Переместить в
+Carpeta de destino (vacío = raíz, "a/b" = subcarpetas):	Папка назначения (пусто = корень, "a/b" = подпапки):
+Ruta no válida (o dentro de sí misma).	Недопустимый путь (или внутри самого себя).
+Sin  / \\ : * ? " < > |	Без  / \ : * ? " < > |
+Se guarda en library/browser: sale siempre.	Сохранено в library/browser: загружается всегда.
+Todavía no implementado	Пока не реализовано
+Nuevo Navegador	Новый браузер
+Abre antes una librería (o una carpeta suya)	Сначала откройте библиотеку (или одну из её папок)
+Añadir Archivos a la Librería...	Добавить файлы в библиотеку...
+Abrir Librería de Preestablecidos...	Открыть библиотеку пресетов...
+Hacer Permanente (copiar a library/browser)	Сделать постоянной (копировать в library/browser)
+Quitar Librería del Navegador	Удалить библиотеку из браузера
+Cargar en la Escena	Загрузить в сцену
+Intro	Enter
+Mostrar Texturas y Archivos	Показать текстуры и файлы
+Ir a	Перейти к
+Busca por nombre en todas las librerías (Intro)	Ищет по имени во всех библиотеках (Enter)
+Librería temporal (solo esta sesión)	Временная библиотека (только этот сеанс)
+Librería permanente	Постоянная библиотека
+Quitar del Navegador	Удалить из браузера
+Corregir Url Interna (archivo renombrado)	Исправить внутренний URL (файл переименован)
+Dentro pone "%s": Cinema 4D no la monta si no coincide con el nombre del archivo.	Внутри указано "%s": Cinema 4D не подключит её, если оно не совпадает с именем файла.
+  (temporal)	  (временная)
+Temporal: solo en esta sesión	Временная: только этот сеанс
+Permanente (library/browser)	Постоянная (library/browser)
+   (ninguna librería)	   (нет библиотек)
+No hay librerías. Abre un .lib4d (Archivo > Abrir) o cópialo a library/browser.	Библиотек нет. Откройте .lib4d (Файл > Открыть) или скопируйте его в library/browser.
+Aún no has cargado ningún preestablecido en esta sesión.	В этом сеансе вы ещё не загружали ни одного пресета.
+Sin resultados.	Нет результатов.
+Carpeta vacía.	Пустая папка.
+Suéltalo en el visor para añadirlo a la escena	Отпустите в окне просмотра, чтобы добавить в сцену
+Mover a...	Переместить в...
+Modelo / escena de Cinema 4D	Модель / сцена Cinema 4D
+Archivo (textura, imagen...)	Файл (текстура, изображение...)
+\nDoble clic o arrastrar al visor: cargar	\nДвойной щелчок или перетаскивание в окно просмотра: загрузить
+\nDoble clic: abrir	\nДвойной щелчок: открыть
+%s\n%d modelos  ·  %s	%s\n%d моделей  ·  %s
+temporal (solo esta sesión)	временная (только этот сеанс)
+  ·  librería temporal (solo esta sesión)	  ·  временная библиотека (только этот сеанс)
+  ·  librería permanente	  ·  постоянная библиотека
+Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. Clic derecho > Corregir Url Interna.	Эта библиотека была переименована вне Cinema 4D: её внутренний URL не совпадает с файлом. Правый щелчок > Исправить внутренний URL.
+%s\n(clic para quitar el aviso)	%s\n(щёлкните, чтобы скрыть предупреждение)
+Guardar como Preestablecido	Сохранить как пресет
+No hay ninguna librería de preestablecidos.	Нет библиотек пресетов.
+Crear "Mis Preestablecidos"	Создать "Мои пресеты"
+Mis Preestablecidos	Мои пресеты
+Librería	Библиотека
+(elige una)	(выберите)
+(raíz de la librería)	(корень библиотеки)
+ objetos	 объектов
+ polígonos	 полигонов
+ materiales	 материалов
+" guardado en "	" сохранено в "
+Tanque de Petróleo	Нефтяная цистерна
+Terreno Fractal	Ландшафт
+Vectorizador	Векторизатор
+Derretir	Плавление
+Envoltura	Обёртка
+Cargar Material Preestablecido	Загрузить пресет материала
+Spline Arco	Инструмент дуговых сплайнов
+Unión de Splines	Объединение сплайнов
+Intersección de Splines	Пересечение сплайнов
+Herramienta de Nubes	Инструмент облака
+Grupo de Nubes	Группа облаков
+Nube	Облако
+Cámara Objetivo	Целевая камера
+Cámara de Movimiento	Камера движения
+Luz Objetivo	Целевой свет
+Luz IES	Свет IES
+Herramienta de Iluminación	Инструмент освещения
+Vista Perspectiva	Вид перспективы
+Vista Superior	Вид сверху
+Vista Derecha	Вид справа
+Vista Frontal	Вид спереди
+Vista Izquierda	Вид слева
+Vista Trasera	Вид сзади
+Vista Inferior	Вид снизу
+Guardar Proyecto	Сохранить проект
+Selección Contorno	Выделение контура
+Aumentar Selección	Расширить выделение
+Fijación 2.5D	Привязка 2,5D
+Construcción de Personaje	Конструктор персонажей
+Objeto %s [%s]	Объект %s [%s]
+Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f	Тон %.0f°  Насыщ. %.0f%%  Ярк. %.0f%%  Яркость %.0f%%  Контраст %.0f%%  Гамма %.2f
+Render: %d x %d en %.2f s	Рендер: %d x %d за %.2f с
+%s: %zu de %zu seleccionados	%s: выбрано %zu из %zu
+%d elementos	%d элементов
+Esquema	Структура
+Espacio de trabajo:	Рабочее пространство:
+Librería de preestablecidos de Cinema 4D	Библиотека пресетов Cinema 4D
+Objeto poligonal	Полигональный объект
+Nulo (vacio)	Нуль (пустой)
+Fotométrica	Фотометрические
+Destriangular	Отменить триангуляцию
+Destriangular: no hay triángulos vecinos que unir.	Отмена триангуляции: нет соседних треугольников для объединения.
+Ocultar Selección	Скрыть выбранное
+Ocultar No Seleccionados	Скрыть невыбранное
+Mostrar Todo	Показать всё
+No se puede ocultar todo el objeto.	Нельзя скрыть весь объект.
+Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio не удалось открыть окно.
+Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	Требуется видеокарта с Vulkan 1.3 или OpenGL 3.3. Попробуйте обновить драйверы видеокарты.
+SMD: %d huesos y %d mallas con pesos; solo la pose actual, sin animación. Cada material de Source necesita su .vmt.	SMD: %d костей и %d сеток с весами; только текущая поза, без анимации. Каждому материалу Source нужен свой .vmt.
+Línea	Линия
+Bucle	Петля
+Cuchillo: no hay ninguna arista bajo el cursor.	Нож: под курсором нет ребра.
+Cuchillo: esa arista no tiene un bucle de cuadriláteros que cortar.	Нож: у этого ребра нет петли четырёхугольников для разреза.
+Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic.	Режим петли: щёлкните ребро; разрезает всё его кольцо\nв точке щелчка.
+Eje	Ось
+Cuchillo: el clic no toca la malla.	Нож: щелчок не касается сетки.
+Cuchillo: el plano no corta ningún polígono.	Нож: плоскость не пересекает ни одного полигона.
+Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	Режим плоскости: щёлкните сетку; разрезает плоскостью,\nперпендикулярной выбранной оси, через эту точку.
+Segmentos de Rotación	Сегменты вращения
+Radio Exterior	Внешний радиус
+Radio del Anillo	Радиус кольца
+Radio del Tubo	Радиус трубы
+Segmentos del Anillo	Сегменты кольца
+Segmentos del Tubo	Сегменты трубы
+Segmentos de la Tapa	Сегменты крышки
+Profundidad	Глубина
+Tetraedro	Тетраэдр
+Octaedro	Октаэдр
+Icosaedro	Икосаэдр
+Dodecaedro	Додекаэдр
+  Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  Параметрический примитив: редактирование сетки (точек, рёбер...) сбрасывает параметры.
+Ángulo	Угол
+  Deforma al primer hijo con malla; el hijo se edita aparte.	  Деформирует первый дочерний объект с сеткой; дочерний объект редактируется отдельно.
+Booleano: Unión (A + B)	Булева: объединение (A + B)
+Booleano: Sustracción (A - B)	Булева: вычитание (A - B)
+Booleano: Intersección (A y B)	Булева: пересечение (A и B)
+Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.	Булева: выберите два объекта (A и B) с помощью Ctrl+щелчок в Менеджере объектов.
+Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).	Булева: у обоих объектов должна быть геометрия (Куб, Сфера, полигон...).
+Booleano: 	Булева: 
+Booleano: objeto creado; A y B quedan ocultos.	Булева: объект создан; A и B скрыты.
+Cantidad	Количество
+Cantidad X	Количество X
+Cantidad Y	Количество Y
+Cantidad Z	Количество Z
+Separación X	Интервал X
+Separación Y	Интервал Y
+Separación Z	Интервал Z
+Paso X	Шаг X
+Paso Y	Шаг Y
+Paso Z	Шаг Z
+Escala por copia	Масштаб на клон
+Giro por copia	Вращение на клон
+  Clona el primer hijo con malla; el hijo se edita aparte.	  Клонирует первый дочерний объект с сеткой; дочерний объект редактируется отдельно.
+copias	клонов
+Efector Aleatorio	Эффектор случайности
+Posición Aleatoria X	Случайная позиция X
+Posición Aleatoria Y	Случайная позиция Y
+Posición Aleatoria Z	Случайная позиция Z
+Giro Aleatorio	Случайное вращение
+Escala Aleatoria	Случайный масштаб
+Semilla	Зерно
+  Modo Objeto: una copia en cada punto del 2.º hijo con malla.	  Режим объекта: один клон в каждой точке 2-го дочернего объекта с сеткой.
+Seleccionar Patrón	Выбрать шаблон
+Patrón: 1 de cada 2	Шаблон: каждый 2-й
+Patrón: 1 de cada 2 (desfasado)	Шаблон: каждый 2-й (со смещением)
+Patrón: 1 de cada 3	Шаблон: каждый 3-й
+Exportar a Source (SMD)	Экспорт в Source (SMD)
+Escena.smd	Scene.smd
+Exportar SMD	Экспорт SMD
+SMD: solo geometría, normales y UV; sin esqueleto ni animación. Cada material de Source necesita su .vmt.	SMD: только геометрия, нормали и UV; без скелета и анимации. Каждому материалу Source нужен свой .vmt.
+Crear Punto	Создать точку
+Cerrar Agujero de Polígonos	Закрыть отверстие в полигоне
+Lápiz Polígonos	Перо полигонов
+Cortar Línea	Разрез линией
+Cortar Plano	Разрез плоскостью
+Cortar Cíclico/Trayectoria	Разрез петлёй/путём
+Magnetismo	Магнит
+Reflejar	Зеркало
+Puntada y Cosido	Сшить и соединить
+Extruir	Выдавить
+Extrusión Interior	Выдавить внутрь
+Extrusión Matriz	Матричное выдавливание
+Suavizar Desplazamiento	Плавное смещение
+Mover Normal	Перемещение по нормали
+Escalar Normal	Масштаб по нормали
+Rotar Normal	Вращение по нормали
+Destriangular...	Отменить триангуляцию...
+Retriangular N-gons	Повторно триангулировать N-угольники
+Eliminar N-gons	Удалить N-угольники
+Clonar	Клонировать
+Desconectar...	Разъединить...
+Separar	Разделить
+Colapso	Схлопнуть
+Conectar	Соединить
+Fundir	Расплавить
+Disolver	Растворить
+Subdividir...	Подразделить...
+Asignar Valor al Punto	Задать значение точки
+Voltear Arista	Повернуть ребро
+Aristas a Spline	Ребро в сплайн
+Cambiar Orden de Puntos	Изменить порядок точек
+Optimizar...	Оптимизировать...
+Restaurar Escala...	Сбросить масштаб...
+Configuración Modelado	Настройки моделирования
+Deshacer (Acción)	Отменить (действие)
+Mayús+Z	Shift+Z
+Encuadrar Elementos Seleccionados	Показать выбранные элементы
+Invertir Órbita	Инвертировать орбиту
+Velocidad Pan	Скорость панорамирования
+Velocidad Muñeca/Zoom	Скорость приближения/масштабирования
+Velocidad Órbita	Скорость орбиты
+Se aplica al momento. Alt+clic orbita, panea y hace zoom; la rueda acerca y aleja.	Применяется сразу. Alt+щелчок вращает, панорамирует и масштабирует; колесо приближает и отдаляет.
+Dispositivos de Entrada	Устройства ввода
+Comunicación	Связь
+Escultura	Скульптинг
+Motor Houdini	Houdini Engine
+Motor Substance	Substance Engine
+Previo del Material	Предпросмотр материала
+Importación/Exportación	Импорт/экспорт
+Colores Esquema	Цвета схемы
+Conversión	Преобразование
+Comandos	Команды
+Herramientas Crear	Инструменты создания
+Herramientas Transformar	Инструменты трансформации
+Interpolación Dura	Жёсткая интерполяция
+Interpolación Suave	Мягкая интерполяция
+Igualar Longitud de Tangentes	Равная длина касательных
+Igualar Dirección de Tangentes	Равное направление касательных
+Unir Segmento	Соединить сегмент
+Romper Segmento	Разорвать сегмент
+Explotar Segmentos	Разбить сегменты
+Asignar Primer Punto	Задать первую точку
+Invertir Secuencia	Обратить порядок
+Mover Secuencia Abajo	Сдвинуть последовательность вниз
+Mover Secuencia Arriba	Сдвинуть последовательность вверх
+Contornear	Контур
+Sección Transversal	Сечение
+Alinear	Выровнять
+Proyectar	Спроецировать
+Redondear	Скруглить
+Unión Spline	Объединение сплайнов
+Intersección Spline	Пересечение сплайнов
+Centrar Ejes	Центрировать ось
+Centrar Eje a Objeto	Центрировать ось по объекту
+Centrar Eje a Selección	Центрировать ось по выделению
+Abrir Carpeta de Preferencias...	Открыть папку настроек...
+Disolver: selecciona aristas, o polígonos vecinos.	Растворение: выберите рёбра или соседние полигоны.
+Disolver: el resultado no sería un polígono convexo.	Растворение: результат не был бы выпуклым плоским полигоном.
+Planchar: no hay puntos que alisar.	Iron: нет точек для сглаживания.
+Voltear Arista: selecciona aristas (modo Aristas).	Поворот ребра: выберите рёбра (режим рёбер).
+Voltear Arista: solo entre dos triángulos y sin cuadrilátero cóncavo.	Поворот ребра: только между двумя треугольниками и без вогнутого четырёхугольника.
+Clonar: selecciona polígonos (modo Polígonos).	Клонирование: выберите полигоны (режим полигонов).
+Conectar: selecciona 2 puntos no vecinos de un mismo polígono.	Соединение: выберите 2 несмежные точки одного полигона.
+Reflejar: no hay polígonos.	Зеркало: нет полигонов.
+Restaurar Escala: el objeto tiene hijos; sus posiciones cambiarían.	Сброс масштаба: у объекта есть дочерние; их положения изменились бы.
+Restaurar Escala: el objeto ya está a escala 1.	Сброс масштаба: у объекта уже масштаб 1.
+Restaurar Escala: hecho.	Сброс масштаба: готово.
+Información del Objeto	Информация об объекте
+No hay ningún objeto seleccionado.	Объект не выбран.
+Hijos	Дочерние
+triángulos	треугольников
+cuadriláteros	четырёхугольников
+Guardado como 	Сохранено как 
+volver al archivo guardado	вернуться к сохранённому файлу
+cerrar el proyecto	закрыть проект
+Subdivisiones	Подразделения
+Objeto de Origen	Исходный объект
+Instancia: selecciona primero el objeto del que quieres una instancia.	Экземпляр: сначала выберите объект, экземпляр которого нужен.
+  Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  Catmull-Clark на первом дочернем объекте с сеткой; дочерний объект — это каркас.
+  Comparte la malla del objeto de origen.	  Использует общую сетку с исходным объектом.
+  No se encuentra el objeto de origen (ruta por nombres).	  Исходный объект не найден (путь по именам).
+Distancia Focal	Фокусное расстояние
+Tamaño del Sensor	Размер сенсора
+Campo de Visión	Поле зрения
+Esquina	Угол
+Color Superior	Верхний цвет
+Color Inferior	Нижний цвет
+  Ruta por nombres del objeto al que mira (vacío = sin objetivo).	  Путь имён объекта, на который он смотрит (пусто = нет цели).
+  Rejilla 2x2x2 sobre la caja del primer hijo; cada esquina se desplaza una fracción del tamaño.	  Решётка 2x2x2 по габариту первого дочернего объекта; каждый угол смещается на долю размера.
+  Mezcla el primer hijo con el segundo (mismo número de puntos).	  Смешивает первый дочерний объект со вторым (одинаковое число точек).
+  Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo).	  Это фон рендера в Просмотрщике изображений (градиент сверху вниз).
+Eje X / Encabezado [X]\n(bloqueado)	Ось X / Heading [X]\n(заблокирована)
+Eje X / Encabezado [X]\n(desbloqueado)	Ось X / Heading [X]\n(разблокирована)
+Bloquea o desbloquea el eje X: un eje bloqueado no cambia al mover, rotar o escalar.	Блокирует или разблокирует ось X: заблокированная ось не меняется при перемещении, вращении и масштабировании.
+Eje Y / Inclinación [Y]\n(bloqueado)	Ось Y / Pitch [Y]\n(заблокирована)
+Eje Y / Inclinación [Y]\n(desbloqueado)	Ось Y / Pitch [Y]\n(разблокирована)
+Bloquea o desbloquea el eje Y: un eje bloqueado no cambia al mover, rotar o escalar.	Блокирует или разблокирует ось Y: заблокированная ось не меняется при перемещении, вращении и масштабировании.
+Eje Z / Alabeo [Z]\n(bloqueado)	Ось Z / Bank [Z]\n(заблокирована)
+Eje Z / Alabeo [Z]\n(desbloqueado)	Ось Z / Bank [Z]\n(разблокирована)
+Bloquea o desbloquea el eje Z: un eje bloqueado no cambia al mover, rotar o escalar.	Блокирует или разблокирует ось Z: заблокированная ось не меняется при перемещении, вращении и масштабировании.
+Desactivar Fijación [Mayús+S]	Отключить привязку [Shift+S]
+Activar Fijación [Mayús+S]	Включить привязку [Shift+S]
+Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).	При привязке перемещение идёт шагами по 100 см (сетка).
+Fijación: activada	Привязка: вкл.
+Fijación: desactivada	Привязка: выкл.
+Buscar por nombre	Поиск по имени
+Filtrar por tipo	Фильтр по типу
+Nombre del objeto...	Имя объекта...
+Geometría	Геометрия
+Luces	Свет
+Otros (Nulos, generadores...)	Прочее (Нули, генераторы...)
+Reflejos de estudio y transparencia	Студийные отражения и прозрачность
+Sombra suave en el suelo	Мягкая тень на полу
+Efectos	Эффекты
+Salir de Vista Solo	Выйти из режима Solo
+Vista Solo	Режим Solo
+Vista Solo: el visor dibuja solo el objeto seleccionado y sus hijos.	Режим Solo: окно просмотра рисует только выбранный объект и его дочерние.
+Salir de Modo Ajuste	Выйти из режима твика
+Modo Ajuste	Режим твика
+Modo Ajuste: sin gizmo, arrastre el objeto directamente con el ratón (usa la herramienta activa: Mover, Rotar o Escalar).	Режим твика: без манипулятора, перетаскивайте объект мышью напрямую (используется активный инструмент: Перемещение, Вращение или Масштаб).
+Desactivar Plano de Trabajo	Отключить рабочую плоскость
+Plano de Trabajo: la cuadrícula del visor en perspectiva toma la posición y orientación del objeto seleccionado.	Рабочая плоскость: сетка перспективного окна принимает положение и ориентацию выбранного объекта.
+Desbloquear Plano de Trabajo	Разблокировать рабочую плоскость
+Bloquear Plano de Trabajo	Заблокировать рабочую плоскость
+Bloquear Plano de Trabajo: la cuadrícula deja de seguir la selección y se queda donde está.	Заблокировать рабочую плоскость: сетка перестаёт следовать за выделением и остаётся на месте.
+Salir de Modo Textura	Выйти из режима текстуры
+Usar Modo Textura	Использовать режим текстуры
+Modo Textura: edita la proyección, el desplazamiento y la longitud de la etiqueta de Textura del objeto seleccionado.	Режим текстуры: редактирует проекцию, смещение и длину тега текстуры выбранного объекта.
+Modo Textura	Режим текстуры
+Seleccione un objeto con geometría.	Выберите объект с геометрией.
+(ninguno)	(нет)
+Esférico	Сферическая
+Cilíndrico	Цилиндрическая
+Cúbico	Кубическая
+Otra	Другая
+Desplazamiento U/V	Смещение U/V
+Longitud U/V	Длина U/V
+Aviso: el visor y el render solo dibujan texturas con proyección UVW.	Примечание: окно просмотра и рендер отображают только текстуры с проекцией UVW.
+Mosaico	Тайл
+Editor de Material  [%s]	Редактор материалов  [%s]

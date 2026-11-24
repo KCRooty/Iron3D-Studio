@@ -481,3 +481,891 @@ Estructura	Struktura
 Capas	Warstwy
 Propiedades	Właściwości
 Transformar	Transformacja
+Importar Cinema 4D	Importuj Cinema 4D
+Grabar Objetos Activos: no hay ningún objeto seleccionado.	Nagraj aktywne obiekty: nie zaznaczono żadnego obiektu.
+Grabar Objetos Activos: Posición, Escala y Rotación están desactivadas.	Nagraj aktywne obiekty: Pozycja, Skala i Rotacja są wyłączone.
+Clave grabada en el fotograma 	Klucz zapisany w klatce 
+ objeto).	 obiekt).
+ objetos).	 obiekty).
+Extrusión Interna	Wytłoczenie wewnętrzne
+Cuchillo	Nóż
+: arrastra en el visor para dibujar la línea de corte.	: przeciągnij w widoku, aby narysować linię cięcia.
+: arrastra en horizontal en el visor (o usa Aplicar).	: przeciągnij poziomo w widoku (lub użyj Zastosuj).
+Trasera	Wstecz
+Parámetro todavía no implementado en Iron3D	Parametr jeszcze nie zaimplementowany w Iron3D
+Clic: mostrar esta página. Mayús+Clic: mostrar varias a la vez.	Klik: pokaż tę stronę. Shift+klik: pokaż kilka naraz.
+Abrir librería	Otwórz bibliotekę
+Abrir una librería necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe. Cópiala a library/browser.	Otwarcie biblioteki wymaga systemowego okna plików, którego ta platforma jeszcze nie ma. Skopiuj ją do library/browser.
+Abrir librería de preestablecidos	Otwórz bibliotekę presetów
+Librerías de preestablecidos de Cinema 4D	Biblioteki presetów Cinema 4D
+Este preestablecido no es un modelo de Cinema 4D.	Ten preset nie jest modelem Cinema 4D.
+No se pudo escribir el archivo temporal en 	Nie można zapisać pliku tymczasowego w 
+Textura que no está en ninguna librería montada: 	Tekstura nie znajduje się w żadnej zamontowanej bibliotece: 
+Importar OBJ	Importuj OBJ
+Importar glTF	Importuj glTF
+Escenas y librerías (iron, c4d, obj, glb, lib4d)	Sceny i biblioteki (iron, c4d, obj, glb, lib4d)
+Fusionar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	Scalanie wymaga systemowego okna plików, którego ta platforma jeszcze nie ma.
+Escenas de Cinema 4D, OBJ, glTF e Iron3D	Sceny Cinema 4D, OBJ, glTF i Iron3D
+Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	Eksport wymaga systemowego okna plików, którego ta platforma jeszcze nie ma.
+La escena está vacía.	Scena jest pusta.
+Exportar a Wavefront	Eksportuj do Wavefront
+Escena.obj	Scene.obj
+Exportar OBJ	Eksportuj OBJ
+Exportar a glTF	Eksportuj do glTF
+glTF binario	Binarny glTF
+Escena.glb	Scene.glb
+Exportar glTF	Eksportuj glTF
+Exportar a Cinema 4D	Eksportuj do Cinema 4D
+Escena.c4d	Scene.c4d
+Guardar Objetos Seleccionados como	Zapisz zaznaczone obiekty jako
+Objetos.c4d	Objects.c4d
+%s\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)	%s\nDodaj obiekt %s  (Alt+klik: jako potomek zaznaczenia)
+%s\nTodavía no implementado en Iron3D	%s\nJeszcze nie zaimplementowano w Iron3D
+Sistema de coordenadas: Mundo	Układ współrzędnych: Świat
+Sistema de coordenadas: Objeto	Układ współrzędnych: Obiekt
+Activar Eje: se mueve el eje, no el objeto	Włącz oś: porusza się oś, nie obiekt
+Activar Eje: desactivado	Włącz oś: wyłączone
+Fotogramas Clave Automáticos: activados	Automatyczne klatki kluczowe: włączone
+Fotogramas Clave Automáticos: desactivados	Automatyczne klatki kluczowe: wyłączone
+Hacer Editable: selecciona un Cubo, Esfera o Plano (los demás ya son editables o no tienen malla).	Uczyń edytowalnym: zaznacz Sześcian, Kulę lub Płaszczyznę (pozostałe są już edytowalne lub nie mają siatki).
+Hacer Editable: 1 objeto convertido a Objeto Poligonal.	Uczyń edytowalnym: 1 obiekt przekonwertowany na Obiekt wielokątowy.
+Hacer Editable: 	Uczyń edytowalnym: 
+ objetos convertidos a Objeto Poligonal.	 obiektów przekonwertowano na Obiekty wielokątowe.
+Animación eliminada.	Animacja usunięta.
+Estado Actual a Objeto: 	Bieżący stan na obiekt: 
+ copia poligonal creada.	 kopia wielokątowa utworzona.
+ copias poligonales creadas.	 kopie wielokątowe utworzone.
+Estado Actual a Objeto: la selección no tiene geometría.	Bieżący stan na obiekt: zaznaczenie nie ma geometrii.
+Conectar Objetos: 	Połącz obiekty: 
+ mallas unidas en un Objeto Polígono.	 siatek połączono w jeden Obiekt wielokątowy.
+Conectar Objetos: la selección no tiene geometría.	Połącz obiekty: zaznaczenie nie ma geometrii.
+Mayús+H	Shift+H
+Mayús+R	Shift+R
+Ctrl+Mayús+O	Ctrl+Shift+O
+Mayús+F8	Shift+F8
+Mayús+F1	Shift+F1
+Mayús+F	Shift+F
+Mayús+G	Shift+G
+Buscar orden...	Szukaj poleceń...
+Ninguna orden coincide.	Żadne polecenie nie pasuje.
+Estado Actual a Objeto	Bieżący stan na obiekt
+Conectar+Eliminar	Połącz obiekty + usuń
+Selección en Vivo	Zaznaczanie na żywo
+Selección con Lazo	Zaznaczanie lassem
+Ctrl+Mayús+F4	Ctrl+Shift+F4
+Ctrl+Mayús+S	Ctrl+Shift+S
+Guardar incrementalmente...	Zapisz przyrostowo...
+Esta compilación no lleva el Cineware SDK de MAXON	Ta kompilacja nie zawiera SDK Cineware firmy MAXON
+glTF binario (*.glb)...	Binarny glTF (*.glb)...
+Archivos recientes	Ostatnie pliki
+Física	Fizyka
+Selección de Polígono	Zaznaczanie wielokątów
+Selección de Bucle	Zaznaczanie pętli
+Selección de Anillo	Zaznaczanie pierścienia
+Seleccionar Conectados	Zaznacz połączone
+Reducir Selección	Zmniejsz zaznaczenie
+Eje X / Encabezado	Oś X / Heading
+Eje Y / Inclinación	Oś Y / Pitch
+Eje Z / Alabeo	Oś Z / Bank
+Sistema de Coordenadas de Mundo	Światowy układ współrzędnych
+Medir y Construir	Pomiary i konstrukcja
+Organizar Objetos	Rozmieść obiekty
+Simetría de edición	Edytuj symetrię
+Apagada	Wył.
+Plano X (izquierda/derecha)	Płaszczyzna X (lewo/prawo)
+Plano Y (arriba/abajo)	Płaszczyzna Y (góra/dół)
+Plano Z (delante/detrás)	Płaszczyzna Z (przód/tył)
+Tolerancia (cm)	Tolerancja (cm)
+Cerrar Agujero Poligonal	Zamknij otwór w wielokącie
+Subdividir	Podziel
+Comprobar Malla	Sprawdź siatkę
+Invertir Normales	Odwróć normalne
+Alinear Normales	Wyrównaj normalne
+Mayús+S	Shift+S
+Ir a la Clave Anterior	Przejdź do poprzedniego klucza
+Ir a la Clave Siguiente	Przejdź do następnego klucza
+Editor de Curvas...	Edytor krzywych...
+Claves Seleccionadas	Zaznaczone klucze
+Eliminar Animación del Objeto	Usuń animację obiektu
+Fotograma Siguiente	Następna klatka
+Fotograma Anterior	Poprzednia klatka
+Repetir (Loop)	Powtarzaj (pętla)
+Resolver IK (experimental)	Rozwiąż IK (eksperymentalne)
+ cadenas resueltas.	 łańcuchów rozwiązano.
+IK: ninguna etiqueta IK activa con Punta y Objetivo alcanzables.	IK: brak aktywnego znacznika IK z osiągalnym końcem i celem.
+Mueve las articulaciones de cada etiqueta IK para que la punta llegue a su objetivo	Przesuwa stawy każdego znacznika IK tak, aby koniec sięgnął celu
+Articulación	Staw
+Pesos	Wagi
+Renderizar Vista Activa	Renderuj aktywny widok
+Renderizar Seleccionados en Visor de Imágenes	Renderuj zaznaczone w Podglądzie obrazu
+Renderizar en Visor de Imágenes	Renderuj do Podglądu obrazu
+Crear Previsualización...	Utwórz podgląd...
+Añadir a la Cola de Render...	Dodaj do kolejki renderowania...
+Editar Configuración de Render...	Edytuj ustawienia renderowania...
+Tirar	Przyciągnij
+Amasar	Ugniataj
+Rastreador de Objetos	Śledzenie obiektu
+Intercambiar Clonador-Matriz	Zamień macierz klonera
+Pintar Pesos	Maluj wagi
+Etiqueta IK	Znacznik IK
+Ningún plugin cargado	Nie załadowano wtyczki
+Buscar Plugins...	Znajdź wtyczki...
+Mayús+F10	Shift+F10
+Mayús+F2	Shift+F2
+Mayús+F3	Shift+F3
+Mayús+F5	Shift+F5
+Mayús+F7	Shift+F7
+Navegador de Contenido	Przeglądarka zawartości
+Mayús+F4	Shift+F4
+Acerca de Iron3D Studio...	O programie Iron3D Studio...
+Arranque	Uruchamianie
+Visualizar	Wizualizuj
+Deshacer [Ctrl+Z]	Cofnij [Ctrl+Z]
+Deshacer la última acción.	Cofnij ostatnią akcję.
+Rehacer [Ctrl+Y]	Ponów [Ctrl+Y]
+Rehacer la última acción deshecha.	Ponów ostatnią cofniętą akcję.
+Selección en Vivo [Atajo de Teclado 9]	Zaznaczanie na żywo [skrót 9]
+Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.	Zaznaczanie na żywo: kliknij i przeciągnij, aby zaznaczyć elementy. Przytrzymaj SHIFT, aby dodać do zaznaczenia, CTRL, aby usunąć.
+Herramienta de Mover [Atajo de Teclado E]	Narzędzie przesuwania [skrót E]
+Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.	Przesuń: kliknij i przeciągnij, aby przesunąć elementy. Przytrzymaj SHIFT, aby kwantyzować ruch / dodać do zaznaczenia w trybie punktów, CTRL, aby usunąć.
+Herramienta de Escalar [Atajo de Teclado T]	Narzędzie skali [skrót T]
+Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.	Skala: kliknij i przeciągnij, aby skalować elementy. Przytrzymaj SHIFT, aby kwantyzować skalowanie / dodać do zaznaczenia w trybie punktów, CTRL, aby usunąć.
+Herramienta de Rotar [Atajo de Teclado R]	Narzędzie obrotu [skrót R]
+Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.	Obrót: kliknij i przeciągnij, aby obracać elementy. Przytrzymaj SHIFT, aby kwantyzować obrót / dodać do zaznaczenia w trybie punktów, CTRL, aby usunąć.
+Eje X / Encabezado [X]\n(todavía no implementado)	Oś X / Heading [X]\n(jeszcze niezaimplementowane)
+Bloqueo de eje X: todavía no implementado.	Blokada osi X: jeszcze niezaimplementowana.
+Eje Y / Inclinación [Y]\n(todavía no implementado)	Oś Y / Pitch [Y]\n(jeszcze niezaimplementowane)
+Bloqueo de eje Y: todavía no implementado.	Blokada osi Y: jeszcze niezaimplementowana.
+Eje Z / Alabeo [Z]\n(todavía no implementado)	Oś Z / Bank [Z]\n(jeszcze niezaimplementowane)
+Bloqueo de eje Z: todavía no implementado.	Blokada osi Z: jeszcze niezaimplementowana.
+Usar Sistema de Coordenadas de Objeto [W]\n(ahora: Mundo)	Użyj układu współrzędnych obiektu [W]\n(teraz: Świat)
+Usar Sistema de Coordenadas de Mundo [W]\n(ahora: Objeto)	Użyj światowego układu współrzędnych [W]\n(teraz: Obiekt)
+Cambia los ejes del gizmo entre los del objeto y los del mundo.	Przełącza osie manipulatora między osiami obiektu a osiami świata.
+Renderizar Vista Activa\nRenderiza la vista activa en el propio visor.\n[Atajo de Teclado Ctrl+R]	Renderuj aktywny widok\nRenderuje aktywny widok w samym widoku.\n[Skrót Ctrl+R]
+Renderiza la vista activa en el propio visor.	Renderuje aktywny widok w samym widoku.
+Renderizar en Visor de Imágenes [Mayús+R]\nRenderiza la cámara activa con la Configuración de Render.	Renderuj do Podglądu obrazu [Shift+R]\nRenderuje aktywną kamerę z ustawieniami renderowania.
+Renderiza la cámara activa en el Visor de Imágenes.	Renderuje aktywną kamerę w Podglądzie obrazu.
+Editar Configuración de Render... [Ctrl+B]	Edytuj ustawienia renderowania... [Ctrl+B]
+Resolución, antialiasing y fondo del render.	Rozdzielczość renderowania, antyaliasing i tło.
+Cubo  (mantener pulsado: más objetos)	Sześcian  (przytrzymaj: więcej obiektów)
+Lápiz  (mantener pulsado: más splines)	Pióro  (przytrzymaj: więcej splajnów)
+Subdivisión Superficie  (mantener pulsado: generadores)	Powierzchnia podziału  (przytrzymaj: generatory)
+Matriz  (mantener pulsado: modelado)	Szyk  (przytrzymaj: modelowanie)
+Doblar  (mantener pulsado: deformadores)	Zgięcie  (przytrzymaj: deformatory)
+Suelo  (mantener pulsado: escena)	Podłoga  (przytrzymaj: scena)
+Cámara  (mantener pulsado: más cámaras)	Kamera  (przytrzymaj: więcej kamer)
+Luz  (mantener pulsado: más luces)	Światło  (przytrzymaj: więcej świateł)
+Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado.	Kliknij: utwórz obiekt. Przytrzymaj lub kliknij prawym: otwórz paletę grupy. Alt+klik: utwórz jako potomka zaznaczenia.
+Hacer Editable [C]\nConvierte Cubo, Esfera o Plano en un Objeto Poligonal.	Uczyń edytowalnym [C]\nKonwertuje Sześcian, Kulę lub Płaszczyznę na Obiekt wielokątowy.
+Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.	Uczyń edytowalnym: konwertuje zaznaczone obiekty parametryczne na Obiekty wielokątowe.
+Usar Modo Modelo	Użyj trybu modelu
+Modo Modelo: se editan objetos enteros.	Tryb modelu: edytowane są całe obiekty.
+Usar Modo Textura\n(todavía no implementado)	Użyj trybu tekstury\n(jeszcze niezaimplementowane)
+Modo Textura: todavía no implementado.	Tryb tekstury: jeszcze niezaimplementowany.
+Activar Eje [L]	Włącz oś [L]
+Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.	Tryb osi: przesuwanie, obracanie lub skalowanie zmienia tylko oś obiektu; edytowalna geometria i potomkowie pozostają na miejscu.
+Usar Modo Puntos	Użyj trybu punktów
+Modo Puntos: elige y mueve puntos de un objeto editable (C para hacerlo editable).	Tryb punktów: wybieraj i przesuwaj punkty obiektu edytowalnego (C, aby uczynić go edytowalnym).
+Usar Modo Aristas	Użyj trybu krawędzi
+Modo Aristas: elige y mueve aristas de un objeto editable.	Tryb krawędzi: wybieraj i przesuwaj krawędzie obiektu edytowalnego.
+Usar Modo Polígonos	Użyj trybu wielokątów
+Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.	Tryb wielokątów: wybieraj i przesuwaj wielokąty (trójkąty) obiektu edytowalnego.
+Modo Ajuste\n(todavía no implementado)	Tryb przyciągania\n(jeszcze niezaimplementowane)
+Modo Ajuste: todavía no implementado.	Tryb przyciągania: jeszcze niezaimplementowany.
+Vista Solo\n(todavía no implementado)	Widok solo\n(jeszcze niezaimplementowane)
+Vista Solo: todavía no implementado.	Widok solo: jeszcze niezaimplementowany.
+Activar Fijación [Mayús+S]\n(todavía no implementado)	Włącz przyciąganie [Shift+S]\n(jeszcze niezaimplementowane)
+Fijación: todavía no implementado.	Przyciąganie: jeszcze niezaimplementowane.
+Plano de Trabajo\n(todavía no implementado)	Płaszczyzna robocza\n(jeszcze niezaimplementowane)
+Plano de Trabajo: todavía no implementado.	Płaszczyzna robocza: jeszcze niezaimplementowana.
+Bloquear Plano de Trabajo\n(todavía no implementado)	Zablokuj płaszczyznę roboczą\n(jeszcze niezaimplementowane)
+Bloquear Plano de Trabajo: todavía no implementado.	Zablokuj płaszczyznę roboczą: jeszcze niezaimplementowane.
+Usar como Cámara de Render	Użyj jako kamery renderowania
+Ctrl+Mayús+Z	Ctrl+Shift+Z
+Ctrl+Mayús+Y	Ctrl+Shift+Y
+Encuadrar Elementos Activos	Kadruj aktywne elementy
+Cámara del Editor	Kamera edytora
+Axonométrica	Aksonometryczny
+OpenGL Mejorado	Rozszerzony OpenGL
+Ruidos	Szumy
+Mayús+V	Shift+V
+Ejes Globales	Osie globalne
+Cajas Delimitadoras	Obwiednie
+Resaltar Componente	Podświetl komponent
+Resaltar Objeto	Podświetl obiekt
+Cruz Navegación	Krzyż nawigacji
+Disposición	Układ
+Vista Simple	Pojedynczy widok
+2 Vistas Apiladas	2 widoki jeden nad drugim
+2 Vistas Lado a Lado	2 widoki obok siebie
+Vista 1 (Perspectiva)	Widok 1 (Perspektywa)
+Vista 2 (Superior)	Widok 2 (Góra)
+Vista 3 (Derecha)	Widok 3 (Prawo)
+Vista 4 (Frontal)	Widok 4 (Przód)
+Mover Cámara (arrastrar)	Przesuń kamerę (przeciągnij)
+Zoom de Cámara (arrastrar)	Przybliż kamerę (przeciągnij)
+Rotar Cámara (arrastrar)	Obróć kamerę (przeciągnij)
+Cambiar Vista (todavía no implementado)	Przełącz widok (jeszcze niezaimplementowane)
+Multi-vista: todavía no implementado.	Wiele widoków: jeszcze niezaimplementowane.
+Arrastre sobre el icono para navegar por la vista.	Przeciągnij nad ikoną, aby nawigować po widoku.
+Espaciado Cuadrícula : 100 cm	Odstęp siatki: 100 cm
+\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.	\nZaznaczony obiekt jest poza widokiem. Kliknij: przenieś do niego kamerę.
+Modo Árbol	Tryb drzewa
+Modo Lista	Tryb listy
+Etiqueta de Textura	Znacznik tekstury
+Buscar (todavía no implementado)	Szukaj (jeszcze niezaimplementowane)
+Filtrar (todavía no implementado)	Filtr (jeszcze niezaimplementowany)
+Clic: seleccionar. Ctrl+Clic: anadir o quitar de la seleccion. Doble clic: renombrar. Clic derecho: menú contextual. Arrastre un material aquí para asignarlo.	Kliknij: zaznacz. Ctrl+klik: dodaj do zaznaczenia lub usuń. Dwukrotne kliknięcie: zmień nazwę. Prawy klik: menu kontekstowe. Przeciągnij tu materiał, aby go przypisać.
+CINEMA 4D Etiquetas	Znaczniki CINEMA 4D
+Eliminar Etiqueta de Textura	Usuń znacznik tekstury
+Fong	Phong
+Character Etiquetas	Znaczniki postaci
+Cineman Etiquetas	Znaczniki Cineman
+Etiqueta UVW	Znacznik UVW
+Simulación Etiquetas	Znaczniki symulacji
+Sketch Etiquetas	Znaczniki szkicu
+Videocámara Etiquetas	Znaczniki kamery ruchu
+Cargar Etiqueta Preestablecida	Wczytaj preset znacznika
+ objeto convertido.	 obiekt przekonwertowany.
+ objetos convertidos.	 obiektów przekonwertowano.
+Añadir Hijo	Dodaj potomka
+Apagado	Wył.
+Visible en %s: %s\n(clic para cambiar)	Widoczny w %s: %s\n(kliknij, aby zmienić)
+Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.	Górna kropka: widoczny w edytorze. Dolna kropka: widoczny w renderze. Szary = Domyślnie (dziedziczy po rodzicu), zielony = Wł., czerwony = Wył.
+Etiqueta de Textura [%s]	Znacznik tekstury [%s]
+%s (todavía no implementado)	%s (jeszcze niezaimplementowane)
+Adelante	Dalej
+Nuevo Gestor de Atributos	Nowy Menedżer atrybutów
+Configuración del Proyecto	Ustawienia projektu
+Escala del Proyecto	Skala projektu
+Escalar Proyecto: todavía no implementado en Iron3D.	Skaluj projekt: jeszcze niezaimplementowane w Iron3D.
+Fotogramas por segundo: velocidad de reproducción de la Línea de Tiempo.	Klatki na sekundę: szybkość odtwarzania Osi czasu.
+Tiempo del Proyecto	Czas projektu
+Tiempo Mínimo	Czas minimalny
+Tiempo Máximo	Czas maksymalny
+Tiempo Mínimo de Previo	Min. czas podglądu
+Tiempo Máximo de Previo	Maks. czas podglądu
+Nivel de Detalle del Render en el Editor	Poziom szczegółowości renderu edytora
+Color Objetos por Defecto	Domyślny kolor obiektu
+Gris-Azul	Szaro-niebieski
+Recortar Vista	Przytnij widok
+Flujo de Trabajo Lineal	Liniowy przepływ pracy
+Introducir Perfil de Color	Wejściowy profil kolorów
+Preestablecidos de proyecto: todavía no implementados en Iron3D.	Presety projektu: jeszcze niezaimplementowane w Iron3D.
+Página no disponible	Strona niedostępna
+  Todavía no implementado en Iron3D.	  Jeszcze niezaimplementowane w Iron3D.
+Fotométrico	Fotometryczne
+Lentes	Obiektywy
+Visible en Editor	Widoczny w edytorze
+Visible en Editor (punto superior): Por Defecto hereda del padre, Activado lo muestra siempre, Apagado lo oculta en el visor.	Widoczny w edytorze (górna kropka): Domyślnie dziedziczy po rodzicu, Wł. zawsze go pokazuje, Wył. ukrywa go w widoku.
+Visible en Render	Widoczny w renderze
+Visible en Render (punto inferior): Iron3D todavía no tiene render final; el valor se guarda en la escena.	Widoczny w renderze (dolna kropka): Iron3D nie ma jeszcze końcowego renderu; wartość jest zapisywana w scenie.
+Usar Color	Użyj koloru
+Congelar Transformación	Zamroź transformację
+Foco	Reflektor
+Foco Cuadrado	Reflektor kwadratowy
+Infinita	Nieskończone
+Foco Paralelo	Reflektor równoległy
+Foco Paralelo Cuadrado	Kwadratowy reflektor równoległy
+Área	Obszarowe
+Tipo de luz. En el visor, Tubo, Área e IES iluminan como una Omni; Paralela y Foco Paralelo como una Infinita.	Typ światła. W widoku Tuba, Obszarowe i IES świecą jak Omni; Równoległe i Reflektor równoległy jak Nieskończone.
+Mapeado (Suave)	Mapy cieni (miękkie)
+Trazado (Duro)	Raytracing (twarde)
+Con sombra activada, la primera luz de la escena que la tenga proyecta sombras en el visor.	Przy włączonych cieniach pierwsze światło w scenie, które je ma, rzuca cienie w widoku.
+Luz Visible	Widoczne światło
+No Ilumina	Brak oświetlenia
+Mostrar Iluminación	Pokaż oświetlenie
+Mostrar Luz Visible	Pokaż widoczne światło
+Iluminación de IG	Oświetlenie GI
+Propiedades del Objeto	Właściwości obiektu
+Plano de Simetría	Płaszczyzna symetrii
+ZY (refleja X)	ZY (odbija X)
+XZ (refleja Y)	XZ (odbija Y)
+XY (refleja Z)	XY (odbija Z)
+  Refleja al primer hijo con malla; el hijo se edita aparte.	  Odbija pierwszego potomka z siatką; potomek jest edytowany osobno.
+Relación de Aspecto	Proporcje
+Tamaño . X	Rozmiar . X
+Tamaño . Y	Rozmiar . Y
+Tamaño . Z	Rozmiar . Z
+Segmentos en X	Segmenty X
+Segmentos en Y	Segmenty Y
+Segmentos en Z	Segmenty Z
+Superficies Separadas	Oddzielne powierzchnie
+Canto	Zaokrąglenie
+  Objeto Poligonal (importado o hecho editable con C).	  Obiekt wielokątowy (zaimportowany lub uczyniony edytowalnym klawiszem C).
+  Puntos, aristas y polígonos: botones de la barra izquierda (Supr borra).	  Punkty, krawędzie i wielokąty: przyciski na lewym pasku (Del usuwa).
+Perfectos de Render	Idealny render
+Altura	Wysokość
+Segmentos en la Anchura	Segmenty szerokości
+Segmentos en la Altura	Segmenty wysokości
+  Para cambiar el tamaño use Escala (Coord.) o el Gestor de Coordenadas.	  Aby zmienić rozmiar, użyj Skali (Współrz.) lub Menedżera współrzędnych.
+Etiqueta Phong	Znacznik Phong
+Limitar Ángulo	Limit kąta
+Ángulo de Phong	Kąt Phonga
+Usar Bordes	Użyj krawędzi
+Ángulo Interior	Kąt wewnętrzny
+Ángulo Exterior	Kąt zewnętrzny
+Inverso Cuadrado (Físicamente Exacto)	Odwrotny kwadrat (fizycznie dokładny)
+Escalón	Krok
+Inverso Cuadrado Limitado	Odwrotny kwadrat ograniczony
+Inverso Limitado	Odwrotny ograniczony
+Cómo pierde fuerza la luz con la distancia. En las inversas, el Radio es la distancia a la que da el 100 %.	Jak światło słabnie z odległością. Dla spadków odwrotnych Promień to odległość, przy której daje 100 %.
+Radio Interior	Promień wewnętrzny
+Radio/Decaimiento	Promień/zanik
+Tamaño Horizontal	Rozmiar poziomy
+Tamaño Vertical	Rozmiar pionowy
+Tamaño en Profundidad	Rozmiar głębi
+  En el visor, las sombras son siempre mapeadas y de una sola luz.	  W widoku cienie są zawsze mapowane i pochodzą z jednego światła.
+Especular - Blinn (Heredado)	Odblask - Blinn (starszy)
+Especular - Phong (Heredado)	Odblask - Phong (starszy)
+Irawan (Tejido)	Irawan (tkanina tkana)
+ nudos	 węzłów
+ capas	 warstw
+no se evalúa en el visor	nie jest obliczane w widoku
+Elegir imagen	Wybierz obraz
+Elegir la imagen del canal (sustituye al shader importado).	Wybierz obraz kanału (zastępuje zaimportowany shader).
+Quitar la textura del canal.	Usuń teksturę kanału.
+  Hay shaders que el visor todavía no evalúa.	  Niektóre shadery nie są jeszcze obliczane w widoku.
+Modo de Mezcla	Tryb mieszania
+Fuerza de Mezcla	Siła mieszania
+Alfa Suave	Miękkie alfa
+Alfa de Imagen	Alfa obrazu
+Lambertiano	Lambertowski
+Modelo	Model
+Caída Difusa	Zanik rozproszenia
+Nivel Difuso	Poziom rozproszenia
+(ninguna)	(brak)
+  Sin capas importadas: el visor usa Metálico/Rugosidad.	  Brak zaimportowanych warstw: widok używa Metaliczności/Chropowatości.
+Visor (PBR equivalente)	Widok (odpowiednik PBR)
+Metálico	Metaliczność
+  El visor todavía no pinta cada capa por separado (brillos de color, Atenuación).	  Widok nie maluje jeszcze każdej warstwy osobno (kolorowe odblaski, Tłumienie).
+Luminancia	Luminancja
+Refracción	Załamanie
+  Ningún objeto usa este material. Arrástrelo al Gestor de Objetos.	  Żaden obiekt nie używa tego materiału. Przeciągnij go do Menedżera obiektów.
+Etiqueta de Textura [Textura]	Znacznik tekstury [Tekstura]
+Propiedades de Etiqueta	Właściwości znacznika
+Mapeado UVW	Mapowanie UVW
+Lado	Strona
+Mezclar Texturas	Mieszaj tekstury
+Repetición	Kafelki
+Usar UVW para Relieve	Użyj UVW dla nierówności
+Longitud U	Długość U
+Longitud V	Długość V
+Repeticiones U	Kafelki U
+Repeticiones V	Kafelki V
+%zu clave%s seleccionada%s	%zu klucz%s zaznaczono%s
+Interpolación Spline	Interpolacja splajnowa
+Interpolación Lineal	Interpolacja liniowa
+Interpolación Escalón	Interpolacja schodkowa
+Eliminar Claves	Usuń klucze
+Claves movidas 	Klucze przesunięto 
+Eliminadas 	Usunięto 
+ clave.	 klucz.
+ claves.	 klucze.
+ en 	 w 
+Editor de Curvas	Edytor krzywych
+Esc. X	Skala X
+Esc. Y	Skala Y
+Esc. Z	Skala Z
+%s: sin claves (F9 graba)	%s: brak kluczy (F9 nagrywa)
+Sin objeto activo	Brak aktywnego obiektu
+Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.	Oś czasu: kliknij i przeciągnij, aby zmienić bieżącą klatkę.
+Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.	Klucz: kliknij, aby zaznaczyć (Shift dodaje), przeciągnij, aby przesunąć, prawy klik – interpolacja.
+Tiempo Mínimo del proyecto.	Czas minimalny projektu.
+Rango de previo (Tiempo Mínimo/Máximo de Previo).	Zakres podglądu (Min./Maks. czas podglądu).
+Tiempo Máximo del proyecto (editable, la regla se reescala).	Czas maksymalny projektu (edytowalny, linijka się przeskalowuje).
+Tiempo Máximo de Previo.	Maksymalny czas podglądu.
+Ir al Inicio [Mayús+F]	Przejdź na początek [Shift+F]
+Ir a la Clave Anterior [Ctrl+F]	Przejdź do poprzedniego klucza [Ctrl+F]
+Ir al Fotograma Anterior [F]	Przejdź do poprzedniej klatki [F]
+Reproducir Hacia Atrás [F6]	Odtwarzaj wstecz [F6]
+Reproducir Hacia Delante [F8]	Odtwarzaj do przodu [F8]
+Ir al Fotograma Siguiente [G]	Przejdź do następnej klatki [G]
+Ir a la Clave Siguiente [Ctrl+G]	Przejdź do następnego klucza [Ctrl+G]
+Ir al Final [Mayús+G]	Przejdź na koniec [Shift+G]
+Grabar Objetos Activos [F9]	Nagraj aktywne obiekty [F9]
+Fotogramas Clave Automáticos [Ctrl+F9]	Automatyczne klatki kluczowe [Ctrl+F9]
+Selección de Claves (todavía no implementado)	Zaznaczanie kluczy (jeszcze niezaimplementowane)
+Grabar Posición	Nagraj pozycję
+Grabar Escala	Nagraj skalę
+Grabar Rotación	Nagraj rotację
+Grabar Parámetro (todavía no implementado)	Nagraj parametr (jeszcze niezaimplementowane)
+Grabar Nivel de Puntos (todavía no implementado)	Nagraj animację na poziomie punktów (jeszcze niezaimplementowane)
+Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D	Edytor wykresów / Arkusz kluczy: jeszcze niezaimplementowane w Iron3D
+Ctrl+Mayús+N	Ctrl+Shift+N
+Guardar Material Preestablecido...	Zapisz preset materiału...
+Eliminar Materiales sin Usar	Usuń nieużywane materiały
+Cargar Textura...	Wczytaj teksturę...
+Editar Textura...	Edytuj teksturę...
+Clic: seleccionar material. Doble clic: Editor de Material (en el nombre: renombrar). Arrastre a un objeto para asignarlo.	Kliknij: zaznacz materiał. Dwukrotne kliknięcie: Edytor materiałów (na nazwie: zmień nazwę). Przeciągnij na obiekt, aby przypisać.
+Doble clic en un espacio vacío del Gestor de Materiales para crear un material nuevo.	Kliknij dwukrotnie puste miejsce w Menedżerze materiałów, aby utworzyć nowy materiał.
+Doble clic aquí para crear un material	Kliknij tu dwukrotnie, aby utworzyć materiał
+Mundo	Świat
+Sistema de coordenadas de los campos (solo Objeto (Rel) disponible por ahora).	Układ współrzędnych pól (na razie dostępny tylko Obiekt (wzgl.)).
+Tamaño: medidas en cm. Escala: multiplicador del objeto.	Rozmiar: wymiary w cm. Skala: mnożnik obiektu.
+Aplicar los valores de los campos al objeto seleccionado.	Zastosuj wartości pól do zaznaczonego obiektu.
+Selección Rectangular: arrastre para seleccionar los objetos que toque el rectángulo. MAYÚSCULAS añade, CTRL quita.	Zaznaczanie prostokątem: przeciągnij, aby zaznaczyć obiekty dotknięte prostokątem. SHIFT dodaje, CTRL usuwa.
+Selección con Lazo: dibuje una zona para seleccionar los objetos que queden dentro. MAYÚSCULAS añade, CTRL quita.	Zaznaczanie lassem: narysuj obszar, aby zaznaczyć obiekty wewnątrz. SHIFT dodaje, CTRL usuwa.
+Selección en Vivo: Haga clic para seleccionar elementos.	Zaznaczanie na żywo: kliknij, aby zaznaczyć elementy.
+Guardar como	Zapisz jako
+Nombre de archivo:	Nazwa pliku:
+Carpeta: %s	Folder: %s
+Cargado: 	Wczytano: 
+Error al cargar: 	Błąd wczytywania: 
+Guardado: 	Zapisano: 
+Error al guardar: 	Błąd zapisu: 
+%s\nDisposición: %s	%s\nUkład: %s
+Colores y disposición de los paneles como en cada programa. Se aplica al momento.	Kolory i układ paneli jak w każdym programie. Stosowane natychmiast.
+Mis presets	Moje presety
+Fondo de paneles	Tło panelu
+Fondo de campos	Tło pola
+Acento	Akcent
+Azul de herramientas	Niebieski narzędzi
+Fondo del visor	Tło widoku
+Barra superior	Górny pasek
+Columna lateral	Kolumna boczna
+Columna de objetos	Kolumna obiektów
+Objetos / Atributos	Obiekty / Atrybuty
+Fila inferior	Dolny rząd
+Línea de tiempo	Oś czasu
+Pestañas verticales	Pionowe karty
+Redondeo	Zaokrąglenie
+Personalizado (sin guardar)	Własny (niezapisany)
+Nombre del preset	Nazwa presetu
+Guardar como preset	Zapisz jako preset
+Preset guardado en presets/.	Preset zapisany w presets/.
+Escriba un nombre válido (letras, números, espacios, - o _).	Wpisz poprawną nazwę (litery, cyfry, spacje, - lub _).
+Preset eliminado.	Preset usunięty.
+Restablecer	Resetuj
+Vuelve al preset integrado «%s».	Wraca do wbudowanego presetu "%s".
+Guardado. Se usará al abrir Iron3D.	Zapisano. Zostanie użyte przy uruchomieniu Iron3D.
+Error al guardar las preferencias.	Błąd zapisu preferencji.
+Preset activo: %s	Aktywny preset: %s
+Backend activo en esta sesión: %s	Backend aktywny w tej sesji: %s
+Backend de render (se aplica al reiniciar):	Backend renderowania (stosowany po restarcie):
+Guardado. Reinicie Iron3D Studio para aplicarlo.	Zapisano. Uruchom ponownie Iron3D Studio, aby zastosować.
+Asignación	Przypisanie
+  Ningún objeto usa este material.	  Żaden obiekt nie używa tego materiału.
+Acerca de Iron3D Studio	O programie Iron3D Studio
+Interfaz inspirada en el flujo de trabajo de Cinema 4D R19.	Interfejs inspirowany przepływem pracy Cinema 4D R19.
+Cinema 4D es una marca de Maxon; Iron3D no está afiliado a Maxon.	Cinema 4D jest znakiem towarowym firmy Maxon; Iron3D nie jest z nią powiązany.
+La importación de archivos .c4d usa el Cineware SDK	Import plików .c4d korzysta z Cineware SDK
+de MAXON Computer GmbH, integrado según su licencia.	firmy MAXON Computer GmbH, zintegrowanego na podstawie jej licencji.
+No se pudo abrir	Nie można otworzyć
+%d objetos, %d con malla, %d materiales, %d luces	%d obiektów, %d z siatką, %d materiałów, %d świateł
+%lld puntos, %lld polígonos	%lld punktów, %lld wielokątów
+%d generadores con la geometría guardada por Cinema 4D	%d generatorów z geometrią zapisaną przez Cinema 4D
+%d primitivas reconstruidas desde sus parámetros	%d prymitywów odtworzonych z ich parametrów
+Importado sin avisos.	Zaimportowano bez ostrzeżeń.
+Revisa:	Sprawdź:
+Exportado a Cinema 4D	Wyeksportowano do Cinema 4D
+%d objetos: %d mallas, %d primitivas, %d luces	%d obiektów: %d siatek, %d prymitywów, %d świateł
+%d materiales, %lld puntos, %lld polígonos	%d materiałów, %lld punktów, %lld wielokątów
+Exportado sin avisos.	Wyeksportowano bez ostrzeżeń.
+Une los puntos que coinciden (misma posición,\nnormal y color) al conectar.	Łączy punkty, które się pokrywają (ta sama pozycja,\nnormalna i kolor) podczas łączenia.
+Tolerante	Tolerancyjny
+Se elige todo lo que toque la zona.	Zaznaczane jest wszystko, czego dotyka obszar.
+Solo se elige lo que queda dentro entero.	Zaznaczane jest tylko to, co leży w całości wewnątrz.
+Solo Seleccionar Visibles	Zaznaczaj tylko widoczne elementy
+Puntos, aristas y polígonos tapados por la malla no se eligen.	Punkty, krawędzie i wielokąty zasłonięte siatką nie są zaznaczane.
+También se eligen los tapados (a través de la malla).	Ukryte też są zaznaczane (przez siatkę).
+Guardar render	Zapisz render
+Imagen PNG	Obraz PNG
+Render guardado: 	Render zapisany: 
+No se pudo guardar el render.	Nie można zapisać renderu.
+Ajustar a la Ventana	Dopasuj do okna
+Renderizar	Render
+Todavía no hay ningún render (Mayús+R).	Nie ma jeszcze renderu (Shift+R).
+%s · %d x %d · antialiasing %dx%d · %.2f s · %d triángulos	%s · %d x %d · antyaliasing %dx%d · %.2f s · %d trójkątów
+1080 x 1080 (cuadrado)	1080 x 1080 (kwadrat)
+Elegir...	Wybierz...
+Usar el tamaño del visor	Użyj rozmiaru widoku
+Anchura (px)	Szerokość (px)
+Altura (px)	Wysokość (px)
+Ninguno (1x1)	Brak (1x1)
+Geometría (2x2)	Geometria (2x2)
+Mejor (4x4)	Najlepsze (4x4)
+Render por CPU con el sombreado de las miniaturas:\nsin sombras ni texturas todavía.	Render na CPU z cieniowaniem miniatur:\njeszcze bez cieni i tekstur.
+Malla demasiado grande para dibujar sus componentes.	Siatka zbyt duża, by narysować jej komponenty.
+Selecciona un objeto editable y entra en modo Puntos, Aristas o Polígonos.	Zaznacz obiekt edytowalny i wejdź w tryb Punktów, Krawędzi lub Wielokątów.
+ seleccionados.	 zaznaczono.
+Bucle y Anillo funcionan en modo Aristas.	Pętla i Pierścień działają w trybie krawędzi.
+Comprobar Malla: sin problemas.	Sprawdź siatkę: brak problemów.
+Comprobar Malla: 	Sprawdź siatkę: 
+ aristas abiertas, 	 otwartych krawędzi, 
+ no manifold, 	 niemanifoldowych, 
+ puntos sueltos, 	 luźnych punktów, 
+ polígonos sin área.	 wielokątów o zerowej powierzchni.
+Puente: selecciona exactamente 2 polígonos (modo Polígonos).	Mostek: zaznacz dokładnie 2 wielokąty (tryb wielokątów).
+Puente: los dos polígonos deben tener el mismo número de lados.	Mostek: oba wielokąty muszą mieć tyle samo boków.
+Soldar: selecciona al menos 2 puntos.	Zespawaj: zaznacz co najmniej 2 punkty.
+Cerrar Agujero: no hay bordes abiertos que toquen la selección.	Zamknij otwór: żadne otwarte brzegi nie dotykają zaznaczenia.
+Alinear Normales: ya están todas alineadas.	Wyrównaj normalne: wszystkie są już wyrównane.
+Triangular: no hay polígonos de más de 3 lados.	Triangulacja: nie ma wielokątów o więcej niż 3 bokach.
+Operación desconocida: 	Nieznana operacja: 
+ elemento.	 element.
+ elementos.	 elementów.
+Eliminados 	Usunięto 
+ polígono.	 wielokąt.
+ polígonos.	 wielokąty.
+: selecciona polígonos de un objeto editable.	: zaznacz wielokąty obiektu edytowalnego.
+Cuchillo: selecciona un objeto editable (C).	Nóż: zaznacz obiekt edytowalny (C).
+Cuchillo: la línea no corta ningún polígono.	Nóż: linia nie przecina żadnego wielokąta.
+Cuchillo: 	Nóż: 
+ polígono cortado.	 wielokąt przecięty.
+ polígonos cortados.	 wielokątów przeciętych.
+Desplazamiento (cm)	Odsunięcie (cm)
+Desplazamiento de Inserción (cm)	Odsunięcie wcięcia (cm)
+Extrusión (cm)	Wytłoczenie (cm)
+Solo Visibles	Tylko widoczne
+Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos.	Tryb linii: tnie wszystko, co linia przecina.\nPrzy zaznaczonych wielokątach tylko te.
+o arrastra en el visor	lub przeciągnij w widoku
+(objeto editable)	(obiekt edytowalny)
+ vertices sin espejo.	 wierzchołków bez lustra.
+Iron3D Studio - hoja de iconos (%d)	Iron3D Studio - arkusz ikon (%d)
+Resultado de la Búsqueda: "	Wynik wyszukiwania: "
+Preestablecidos > 	Presety > 
+Ya hay una librería con ese nombre en library/browser.	Biblioteka o tej nazwie już istnieje w library/browser.
+No se pudo copiar la librería a library/browser: 	Nie można skopiować biblioteki do library/browser: 
+" es ahora permanente (	" jest teraz trwała (
+Librería "	Biblioteka "
+" creada en library/browser.	" utworzona w library/browser.
+Carpeta "	Folder "
+" creada.	" utworzony.
+No se puede leer 	Nie można odczytać 
+ modelos y 	 modeli i 
+ archivos añadidos a "	 plików dodano do "
+Añadir a la librería	Dodaj do biblioteki
+Modelos y texturas	Modele i tekstury
+" eliminado de "	" usunięto z "
+; muévela antes de corregir.	; przenieś go przed naprawą.
+No se pudo renombrar la librería: 	Nie można zmienić nazwy biblioteki: 
+Url interna corregida (copia de seguridad en 	Wewnętrzny URL naprawiony (kopia zapasowa w 
+Eliminar de la Librería	Usuń z biblioteki
+¿Eliminar "%s"%s?	Usunąć "%s"%s?
+ y todo su contenido	 i całą jego zawartość
+Se borra de la librería (%s).	Zostanie usunięty z biblioteki (%s).
+Nueva Librería de Preestablecidos	Nowa biblioteka presetów
+Mover a	Przenieś do
+Carpeta de destino (vacío = raíz, "a/b" = subcarpetas):	Folder docelowy (pusty = katalog główny, "a/b" = podfoldery):
+Ruta no válida (o dentro de sí misma).	Nieprawidłowa ścieżka (lub wewnątrz samego siebie).
+Sin  / \\ : * ? " < > |	Bez  / \ : * ? " < > |
+Se guarda en library/browser: sale siempre.	Zapisane w library/browser: zawsze się wczytuje.
+Todavía no implementado	Jeszcze niezaimplementowane
+Nuevo Navegador	Nowa przeglądarka
+Abre antes una librería (o una carpeta suya)	Najpierw otwórz bibliotekę (lub jeden z jej folderów)
+Añadir Archivos a la Librería...	Dodaj pliki do biblioteki...
+Abrir Librería de Preestablecidos...	Otwórz bibliotekę presetów...
+Hacer Permanente (copiar a library/browser)	Uczyń trwałą (kopiuj do library/browser)
+Quitar Librería del Navegador	Usuń bibliotekę z przeglądarki
+Cargar en la Escena	Wczytaj do sceny
+Intro	Enter
+Mostrar Texturas y Archivos	Pokaż tekstury i pliki
+Ir a	Przejdź do
+Busca por nombre en todas las librerías (Intro)	Szuka po nazwie we wszystkich bibliotekach (Enter)
+Librería temporal (solo esta sesión)	Biblioteka tymczasowa (tylko ta sesja)
+Librería permanente	Biblioteka trwała
+Quitar del Navegador	Usuń z przeglądarki
+Corregir Url Interna (archivo renombrado)	Napraw wewnętrzny URL (zmieniona nazwa pliku)
+Dentro pone "%s": Cinema 4D no la monta si no coincide con el nombre del archivo.	Wewnątrz jest "%s": Cinema 4D nie zamontuje jej, jeśli nie odpowiada nazwie pliku.
+  (temporal)	  (tymczasowa)
+Temporal: solo en esta sesión	Tymczasowa: tylko ta sesja
+Permanente (library/browser)	Trwała (library/browser)
+   (ninguna librería)	   (brak bibliotek)
+No hay librerías. Abre un .lib4d (Archivo > Abrir) o cópialo a library/browser.	Brak bibliotek. Otwórz .lib4d (Plik > Otwórz) lub skopiuj go do library/browser.
+Aún no has cargado ningún preestablecido en esta sesión.	W tej sesji nie wczytano jeszcze żadnego presetu.
+Sin resultados.	Brak wyników.
+Carpeta vacía.	Pusty folder.
+Suéltalo en el visor para añadirlo a la escena	Upuść w widoku, aby dodać do sceny
+Mover a...	Przenieś do...
+Modelo / escena de Cinema 4D	Model / scena Cinema 4D
+Archivo (textura, imagen...)	Plik (tekstura, obraz...)
+\nDoble clic o arrastrar al visor: cargar	\nKliknij dwukrotnie lub przeciągnij do widoku: wczytaj
+\nDoble clic: abrir	\nKliknij dwukrotnie: otwórz
+%s\n%d modelos  ·  %s	%s\n%d modeli  ·  %s
+temporal (solo esta sesión)	tymczasowa (tylko ta sesja)
+  ·  librería temporal (solo esta sesión)	  ·  biblioteka tymczasowa (tylko ta sesja)
+  ·  librería permanente	  ·  biblioteka trwała
+Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. Clic derecho > Corregir Url Interna.	Ta biblioteka została przemianowana poza Cinema 4D: jej wewnętrzny URL nie pasuje do pliku. Prawy klik > Napraw wewnętrzny URL.
+%s\n(clic para quitar el aviso)	%s\n(kliknij, aby zamknąć ostrzeżenie)
+Guardar como Preestablecido	Zapisz jako preset
+No hay ninguna librería de preestablecidos.	Brak bibliotek presetów.
+Crear "Mis Preestablecidos"	Utwórz "Moje presety"
+Mis Preestablecidos	Moje presety
+Librería	Biblioteka
+(elige una)	(wybierz)
+(raíz de la librería)	(katalog główny biblioteki)
+ objetos	 obiektów
+ polígonos	 wielokątów
+ materiales	 materiałów
+" guardado en "	" zapisano w "
+Tanque de Petróleo	Zbiornik na olej
+Terreno Fractal	Krajobraz
+Vectorizador	Wektoryzator
+Derretir	Topnienie
+Envoltura	Owijanie
+Cargar Material Preestablecido	Wczytaj preset materiału
+Spline Arco	Narzędzie splajnu łukowego
+Unión de Splines	Suma splajnów
+Intersección de Splines	Część wspólna splajnów
+Herramienta de Nubes	Narzędzie chmury
+Grupo de Nubes	Grupa chmur
+Nube	Chmura
+Cámara Objetivo	Kamera celowana
+Cámara de Movimiento	Kamera ruchu
+Luz Objetivo	Światło celowane
+Luz IES	Światło IES
+Herramienta de Iluminación	Narzędzie oświetlenia
+Vista Perspectiva	Widok perspektywy
+Vista Superior	Widok z góry
+Vista Derecha	Widok z prawej
+Vista Frontal	Widok z przodu
+Vista Izquierda	Widok z lewej
+Vista Trasera	Widok z tyłu
+Vista Inferior	Widok z dołu
+Guardar Proyecto	Zapisz projekt
+Selección Contorno	Zaznaczanie konturu
+Aumentar Selección	Powiększ zaznaczenie
+Fijación 2.5D	Przyciąganie 2,5D
+Construcción de Personaje	Kreator postaci
+Objeto %s [%s]	Obiekt %s [%s]
+Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f	Odcień %.0f°  Nasyc. %.0f%%  Jasność %.0f%%  Jaskrawość %.0f%%  Kontrast %.0f%%  Gamma %.2f
+Render: %d x %d en %.2f s	Render: %d x %d w %.2f s
+%s: %zu de %zu seleccionados	%s: zaznaczono %zu z %zu
+%d elementos	%d elementów
+Esquema	Konspekt
+Espacio de trabajo:	Obszar roboczy:
+Librería de preestablecidos de Cinema 4D	Biblioteka presetów Cinema 4D
+Objeto poligonal	Obiekt wielokątowy
+Nulo (vacio)	Null (pusty)
+Fotométrica	Fotometryczne
+Destriangular	Cofnij triangulację
+Destriangular: no hay triángulos vecinos que unir.	Cofnij triangulację: brak sąsiednich trójkątów do połączenia.
+Ocultar Selección	Ukryj zaznaczone
+Ocultar No Seleccionados	Ukryj niezaznaczone
+Mostrar Todo	Pokaż wszystko
+No se puede ocultar todo el objeto.	Nie można ukryć całego obiektu.
+Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio nie mogło otworzyć okna.
+Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	Wymaga karty graficznej z Vulkan 1.3 lub OpenGL 3.3. Spróbuj zaktualizować sterowniki grafiki.
+SMD: %d huesos y %d mallas con pesos; solo la pose actual, sin animación. Cada material de Source necesita su .vmt.	SMD: %d kości i %d siatek z wagami; tylko bieżąca poza, bez animacji. Każdy materiał Source potrzebuje swojego .vmt.
+Línea	Linia
+Bucle	Pętla
+Cuchillo: no hay ninguna arista bajo el cursor.	Nóż: brak krawędzi pod kursorem.
+Cuchillo: esa arista no tiene un bucle de cuadriláteros que cortar.	Nóż: ta krawędź nie ma pętli czworokątów do przecięcia.
+Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic.	Tryb pętli: kliknij krawędź; tnie cały jej pierścień\nw miejscu kliknięcia.
+Eje	Oś
+Cuchillo: el clic no toca la malla.	Nóż: kliknięcie nie dotyka siatki.
+Cuchillo: el plano no corta ningún polígono.	Nóż: płaszczyzna nie przecina żadnego wielokąta.
+Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	Tryb płaszczyzny: kliknij siatkę; tnie płaszczyzną\nprostopadłą do wybranej osi przez ten punkt.
+Segmentos de Rotación	Segmenty obrotu
+Radio Exterior	Promień zewnętrzny
+Radio del Anillo	Promień pierścienia
+Radio del Tubo	Promień rury
+Segmentos del Anillo	Segmenty pierścienia
+Segmentos del Tubo	Segmenty rury
+Segmentos de la Tapa	Segmenty zakończenia
+Profundidad	Głębokość
+Tetraedro	Czworościan
+Octaedro	Ośmiościan
+Icosaedro	Dwudziestościan
+Dodecaedro	Dwunastościan
+  Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  Prymityw parametryczny: edycja siatki (punktów, krawędzi...) usuwa parametry.
+Ángulo	Kąt
+  Deforma al primer hijo con malla; el hijo se edita aparte.	  Deformuje pierwszego potomka z siatką; potomek jest edytowany osobno.
+Booleano: Unión (A + B)	Boolean: suma (A + B)
+Booleano: Sustracción (A - B)	Boolean: różnica (A - B)
+Booleano: Intersección (A y B)	Boolean: część wspólna (A i B)
+Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.	Boolean: zaznacz dwa obiekty (A i B) przez Ctrl+klik w Menedżerze obiektów.
+Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).	Boolean: oba obiekty muszą mieć geometrię (Sześcian, Kula, wielokąt...).
+Booleano: 	Boolean: 
+Booleano: objeto creado; A y B quedan ocultos.	Boolean: obiekt utworzony; A i B są ukryte.
+Cantidad	Liczba
+Cantidad X	Liczba X
+Cantidad Y	Liczba Y
+Cantidad Z	Liczba Z
+Separación X	Odstęp X
+Separación Y	Odstęp Y
+Separación Z	Odstęp Z
+Paso X	Krok X
+Paso Y	Krok Y
+Paso Z	Krok Z
+Escala por copia	Skala na klon
+Giro por copia	Obrót na klon
+  Clona el primer hijo con malla; el hijo se edita aparte.	  Klonuje pierwszego potomka z siatką; potomek jest edytowany osobno.
+copias	klonów
+Efector Aleatorio	Efektor losowy
+Posición Aleatoria X	Losowa pozycja X
+Posición Aleatoria Y	Losowa pozycja Y
+Posición Aleatoria Z	Losowa pozycja Z
+Giro Aleatorio	Losowy obrót
+Escala Aleatoria	Losowa skala
+Semilla	Ziarno
+  Modo Objeto: una copia en cada punto del 2.º hijo con malla.	  Tryb obiektu: jeden klon w każdym punkcie 2. potomka z siatką.
+Seleccionar Patrón	Wybierz wzór
+Patrón: 1 de cada 2	Wzór: co drugi
+Patrón: 1 de cada 2 (desfasado)	Wzór: co drugi (przesunięty)
+Patrón: 1 de cada 3	Wzór: co trzeci
+Exportar a Source (SMD)	Eksportuj do Source (SMD)
+Escena.smd	Scene.smd
+Exportar SMD	Eksportuj SMD
+SMD: solo geometría, normales y UV; sin esqueleto ni animación. Cada material de Source necesita su .vmt.	SMD: tylko geometria, normalne i UV; bez szkieletu i animacji. Każdy materiał Source potrzebuje własnego .vmt.
+Crear Punto	Utwórz punkt
+Cerrar Agujero de Polígonos	Zamknij otwór w wielokącie
+Lápiz Polígonos	Pióro wielokątów
+Cortar Línea	Cięcie linią
+Cortar Plano	Cięcie płaszczyzną
+Cortar Cíclico/Trayectoria	Cięcie pętlą/ścieżką
+Magnetismo	Magnes
+Reflejar	Lustro
+Puntada y Cosido	Zszyj i zespól
+Extruir	Wytłocz
+Extrusión Interior	Wytłocz wewnętrznie
+Extrusión Matriz	Wytłoczenie macierzowe
+Suavizar Desplazamiento	Gładkie przesunięcie
+Mover Normal	Przesuń po normalnej
+Escalar Normal	Skaluj po normalnej
+Rotar Normal	Obróć po normalnej
+Destriangular...	Cofnij triangulację...
+Retriangular N-gons	Ponownie trianguluj wielokąty n-boczne
+Eliminar N-gons	Usuń wielokąty n-boczne
+Clonar	Klonuj
+Desconectar...	Rozłącz...
+Separar	Podziel
+Colapso	Zwiń
+Conectar	Połącz
+Fundir	Topnienie
+Disolver	Rozpuść
+Subdividir...	Podziel na mniejsze...
+Asignar Valor al Punto	Ustaw wartość punktu
+Voltear Arista	Obróć krawędź
+Aristas a Spline	Krawędź na splajn
+Cambiar Orden de Puntos	Zmień kolejność punktów
+Optimizar...	Optymalizuj...
+Restaurar Escala...	Resetuj skalę...
+Configuración Modelado	Ustawienia modelowania
+Deshacer (Acción)	Cofnij (akcja)
+Mayús+Z	Shift+Z
+Encuadrar Elementos Seleccionados	Kadruj zaznaczone elementy
+Invertir Órbita	Odwróć orbitowanie
+Velocidad Pan	Szybkość przesuwania
+Velocidad Muñeca/Zoom	Szybkość zbliżania/zoomu
+Velocidad Órbita	Szybkość orbitowania
+Se aplica al momento. Alt+clic orbita, panea y hace zoom; la rueda acerca y aleja.	Stosowane natychmiast. Alt+klik obraca, przesuwa i przybliża; kółko zbliża i oddala.
+Dispositivos de Entrada	Urządzenia wejściowe
+Comunicación	Komunikacja
+Escultura	Rzeźbienie
+Motor Houdini	Houdini Engine
+Motor Substance	Substance Engine
+Previo del Material	Podgląd materiału
+Importación/Exportación	Import/eksport
+Colores Esquema	Kolory schematu
+Conversión	Konwersja
+Comandos	Polecenia
+Herramientas Crear	Narzędzia tworzenia
+Herramientas Transformar	Narzędzia transformacji
+Interpolación Dura	Interpolacja twarda
+Interpolación Suave	Interpolacja miękka
+Igualar Longitud de Tangentes	Równa długość stycznych
+Igualar Dirección de Tangentes	Równy kierunek stycznych
+Unir Segmento	Połącz segment
+Romper Segmento	Przerwij segment
+Explotar Segmentos	Rozbij segmenty
+Asignar Primer Punto	Ustaw pierwszy punkt
+Invertir Secuencia	Odwróć kolejność
+Mover Secuencia Abajo	Przesuń sekwencję w dół
+Mover Secuencia Arriba	Przesuń sekwencję w górę
+Contornear	Kontur
+Sección Transversal	Przekrój
+Alinear	Wyrównaj
+Proyectar	Rzutuj
+Redondear	Zaokrąglij
+Unión Spline	Suma splajnów
+Intersección Spline	Część wspólna splajnów
+Centrar Ejes	Wyśrodkuj oś
+Centrar Eje a Objeto	Wyśrodkuj oś do obiektu
+Centrar Eje a Selección	Wyśrodkuj oś do zaznaczenia
+Abrir Carpeta de Preferencias...	Otwórz folder preferencji...
+Disolver: selecciona aristas, o polígonos vecinos.	Rozpuść: zaznacz krawędzie lub sąsiednie wielokąty.
+Disolver: el resultado no sería un polígono convexo.	Rozpuść: wynik nie byłby wypukłym płaskim wielokątem.
+Planchar: no hay puntos que alisar.	Iron: brak punktów do wygładzenia.
+Voltear Arista: selecciona aristas (modo Aristas).	Obróć krawędź: zaznacz krawędzie (tryb krawędzi).
+Voltear Arista: solo entre dos triángulos y sin cuadrilátero cóncavo.	Obróć krawędź: tylko między dwoma trójkątami i bez wklęsłego czworokąta.
+Clonar: selecciona polígonos (modo Polígonos).	Klonuj: zaznacz wielokąty (tryb wielokątów).
+Conectar: selecciona 2 puntos no vecinos de un mismo polígono.	Połącz: zaznacz 2 niesąsiadujące punkty tego samego wielokąta.
+Reflejar: no hay polígonos.	Lustro: brak wielokątów.
+Restaurar Escala: el objeto tiene hijos; sus posiciones cambiarían.	Resetuj skalę: obiekt ma potomków; ich pozycje by się zmieniły.
+Restaurar Escala: el objeto ya está a escala 1.	Resetuj skalę: obiekt ma już skalę 1.
+Restaurar Escala: hecho.	Resetuj skalę: gotowe.
+Información del Objeto	Informacje o obiekcie
+No hay ningún objeto seleccionado.	Nie zaznaczono obiektu.
+Hijos	Potomkowie
+triángulos	trójkątów
+cuadriláteros	czworokątów
+Guardado como 	Zapisano jako 
+volver al archivo guardado	przywrócić zapisany plik
+cerrar el proyecto	zamknąć projekt
+Subdivisiones	Podziały
+Objeto de Origen	Obiekt źródłowy
+Instancia: selecciona primero el objeto del que quieres una instancia.	Instancja: najpierw zaznacz obiekt, którego instancję chcesz utworzyć.
+  Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  Catmull-Clark na pierwszym potomku z siatką; potomek jest klatką.
+  Comparte la malla del objeto de origen.	  Współdzieli siatkę obiektu źródłowego.
+  No se encuentra el objeto de origen (ruta por nombres).	  Nie znaleziono obiektu źródłowego (ścieżka po nazwach).
+Distancia Focal	Ogniskowa
+Tamaño del Sensor	Rozmiar sensora
+Campo de Visión	Pole widzenia
+Esquina	Narożnik
+Color Superior	Kolor górny
+Color Inferior	Kolor dolny
+  Ruta por nombres del objeto al que mira (vacío = sin objetivo).	  Ścieżka nazw obiektu, na który patrzy (puste = brak celu).
+  Rejilla 2x2x2 sobre la caja del primer hijo; cada esquina se desplaza una fracción del tamaño.	  Siatka 2x2x2 na obwiedni pierwszego potomka; każdy narożnik przesuwa się o ułamek rozmiaru.
+  Mezcla el primer hijo con el segundo (mismo número de puntos).	  Miesza pierwszego potomka z drugim (ta sama liczba punktów).
+  Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo).	  To jest tło renderu w Podglądzie obrazu (gradient od góry do dołu).
+Eje X / Encabezado [X]\n(bloqueado)	Oś X / Heading [X]\n(zablokowana)
+Eje X / Encabezado [X]\n(desbloqueado)	Oś X / Heading [X]\n(odblokowana)
+Bloquea o desbloquea el eje X: un eje bloqueado no cambia al mover, rotar o escalar.	Blokuje lub odblokowuje oś X: zablokowana oś nie zmienia się przy przesuwaniu, obracaniu ani skalowaniu.
+Eje Y / Inclinación [Y]\n(bloqueado)	Oś Y / Pitch [Y]\n(zablokowana)
+Eje Y / Inclinación [Y]\n(desbloqueado)	Oś Y / Pitch [Y]\n(odblokowana)
+Bloquea o desbloquea el eje Y: un eje bloqueado no cambia al mover, rotar o escalar.	Blokuje lub odblokowuje oś Y: zablokowana oś nie zmienia się przy przesuwaniu, obracaniu ani skalowaniu.
+Eje Z / Alabeo [Z]\n(bloqueado)	Oś Z / Bank [Z]\n(zablokowana)
+Eje Z / Alabeo [Z]\n(desbloqueado)	Oś Z / Bank [Z]\n(odblokowana)
+Bloquea o desbloquea el eje Z: un eje bloqueado no cambia al mover, rotar o escalar.	Blokuje lub odblokowuje oś Z: zablokowana oś nie zmienia się przy przesuwaniu, obracaniu ani skalowaniu.
+Desactivar Fijación [Mayús+S]	Wyłącz przyciąganie [Shift+S]
+Activar Fijación [Mayús+S]	Włącz przyciąganie [Shift+S]
+Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).	Przy przyciąganiu przesuwanie skacze co 100 cm (siatka).
+Fijación: activada	Przyciąganie: wł.
+Fijación: desactivada	Przyciąganie: wył.
+Buscar por nombre	Szukaj po nazwie
+Filtrar por tipo	Filtruj według typu
+Nombre del objeto...	Nazwa obiektu...
+Geometría	Geometria
+Luces	Światła
+Otros (Nulos, generadores...)	Inne (Nulle, generatory...)
+Reflejos de estudio y transparencia	Odbicia i przezroczystość studyjne
+Sombra suave en el suelo	Miękki cień na podłodze
+Efectos	Efekty
+Salir de Vista Solo	Wyjdź z widoku solo
+Vista Solo	Widok solo
+Vista Solo: el visor dibuja solo el objeto seleccionado y sus hijos.	Widok solo: widok rysuje tylko zaznaczony obiekt i jego potomków.
+Salir de Modo Ajuste	Wyjdź z trybu korekty
+Modo Ajuste	Tryb korekty
+Modo Ajuste: sin gizmo, arrastre el objeto directamente con el ratón (usa la herramienta activa: Mover, Rotar o Escalar).	Tryb korekty: bez manipulatora, przeciągaj obiekt bezpośrednio myszą (używa aktywnego narzędzia: Przesuń, Obróć lub Skaluj).
+Desactivar Plano de Trabajo	Wyłącz płaszczyznę roboczą
+Plano de Trabajo: la cuadrícula del visor en perspectiva toma la posición y orientación del objeto seleccionado.	Płaszczyzna robocza: siatka widoku perspektywy przyjmuje pozycję i orientację zaznaczonego obiektu.
+Desbloquear Plano de Trabajo	Odblokuj płaszczyznę roboczą
+Bloquear Plano de Trabajo	Zablokuj płaszczyznę roboczą
+Bloquear Plano de Trabajo: la cuadrícula deja de seguir la selección y se queda donde está.	Zablokuj płaszczyznę roboczą: siatka przestaje podążać za zaznaczeniem i zostaje na miejscu.
+Salir de Modo Textura	Wyjdź z trybu tekstury
+Usar Modo Textura	Użyj trybu tekstury
+Modo Textura: edita la proyección, el desplazamiento y la longitud de la etiqueta de Textura del objeto seleccionado.	Tryb tekstury: edytuje rzutowanie, przesunięcie i długość znacznika tekstury zaznaczonego obiektu.
+Modo Textura	Tryb tekstury
+Seleccione un objeto con geometría.	Zaznacz obiekt z geometrią.
+(ninguno)	(brak)
+Esférico	Sferyczne
+Cilíndrico	Cylindryczne
+Cúbico	Sześcienne
+Otra	Inne
+Desplazamiento U/V	Przesunięcie U/V
+Longitud U/V	Długość U/V
+Aviso: el visor y el render solo dibujan texturas con proyección UVW.	Uwaga: widok i render rysują tylko tekstury z rzutowaniem UVW.
+Mosaico	Kafelek
+Editor de Material  [%s]	Edytor materiałów  [%s]

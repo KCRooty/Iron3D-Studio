@@ -490,3 +490,891 @@ Estructura	构造
 Capas	层
 Propiedades	属性
 Transformar	变换
+Importar Cinema 4D	导入 Cinema 4D
+Grabar Objetos Activos: no hay ningún objeto seleccionado.	记录活动对象: 未选择任何对象。
+Grabar Objetos Activos: Posición, Escala y Rotación están desactivadas.	记录活动对象: 位置、缩放和旋转已关闭。
+Clave grabada en el fotograma 	已记录关键帧于帧 
+ objeto).	 个对象)。
+ objetos).	 个对象)。
+Extrusión Interna	内部挤压
+Cuchillo	切割
+: arrastra en el visor para dibujar la línea de corte.	: 在视图中拖动以绘制切割线。
+: arrastra en horizontal en el visor (o usa Aplicar).	: 在视图中水平拖动(或使用应用)。
+Trasera	后退
+Parámetro todavía no implementado en Iron3D	该参数在 Iron3D 中尚未实现
+Clic: mostrar esta página. Mayús+Clic: mostrar varias a la vez.	单击: 显示此页。Shift+单击: 同时显示多页。
+Abrir librería	打开库
+Abrir una librería necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe. Cópiala a library/browser.	打开库需要系统文件对话框,但此平台尚不支持。请将其复制到 library/browser。
+Abrir librería de preestablecidos	打开预设库
+Librerías de preestablecidos de Cinema 4D	Cinema 4D 预设库
+Este preestablecido no es un modelo de Cinema 4D.	此预设不是 Cinema 4D 模型。
+No se pudo escribir el archivo temporal en 	无法写入临时文件于 
+Textura que no está en ninguna librería montada: 	纹理不在任何已挂载的库中: 
+Importar OBJ	导入 OBJ
+Importar glTF	导入 glTF
+Escenas y librerías (iron, c4d, obj, glb, lib4d)	场景和库 (iron, c4d, obj, glb, lib4d)
+Fusionar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	合并需要系统文件对话框,但此平台尚不支持。
+Escenas de Cinema 4D, OBJ, glTF e Iron3D	Cinema 4D、OBJ、glTF 和 Iron3D 场景
+Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe.	导出需要系统文件对话框,但此平台尚不支持。
+La escena está vacía.	场景为空。
+Exportar a Wavefront	导出为 Wavefront
+Escena.obj	Scene.obj
+Exportar OBJ	导出 OBJ
+Exportar a glTF	导出为 glTF
+glTF binario	二进制 glTF
+Escena.glb	Scene.glb
+Exportar glTF	导出 glTF
+Exportar a Cinema 4D	导出为 Cinema 4D
+Escena.c4d	Scene.c4d
+Guardar Objetos Seleccionados como	将选定对象另存为
+Objetos.c4d	Objects.c4d
+%s\nAñadir Objeto %s  (Alt+Clic: como hijo del seleccionado)	%s\n添加对象 %s  (Alt+单击: 作为所选对象的子级)
+%s\nTodavía no implementado en Iron3D	%s\nIron3D 中尚未实现
+Sistema de coordenadas: Mundo	坐标系: 世界
+Sistema de coordenadas: Objeto	坐标系: 对象
+Activar Eje: se mueve el eje, no el objeto	启用轴心: 移动的是轴心,而不是对象
+Activar Eje: desactivado	启用轴心: 关闭
+Fotogramas Clave Automáticos: activados	自动关键帧: 开启
+Fotogramas Clave Automáticos: desactivados	自动关键帧: 关闭
+Hacer Editable: selecciona un Cubo, Esfera o Plano (los demás ya son editables o no tienen malla).	转为可编辑对象: 请选择立方体、球体或平面(其他对象已可编辑或没有网格)。
+Hacer Editable: 1 objeto convertido a Objeto Poligonal.	转为可编辑对象: 1 个对象已转换为多边形对象。
+Hacer Editable: 	转为可编辑对象: 
+ objetos convertidos a Objeto Poligonal.	 个对象已转换为多边形对象。
+Animación eliminada.	动画已删除。
+Estado Actual a Objeto: 	当前状态转对象: 
+ copia poligonal creada.	 个多边形副本已创建。
+ copias poligonales creadas.	 个多边形副本已创建。
+Estado Actual a Objeto: la selección no tiene geometría.	当前状态转对象: 所选内容没有几何体。
+Conectar Objetos: 	连接对象: 
+ mallas unidas en un Objeto Polígono.	 个网格已合并为一个多边形对象。
+Conectar Objetos: la selección no tiene geometría.	连接对象: 所选内容没有几何体。
+Mayús+H	Shift+H
+Mayús+R	Shift+R
+Ctrl+Mayús+O	Ctrl+Shift+O
+Mayús+F8	Shift+F8
+Mayús+F1	Shift+F1
+Mayús+F	Shift+F
+Mayús+G	Shift+G
+Buscar orden...	搜索命令...
+Ninguna orden coincide.	没有匹配的命令。
+Estado Actual a Objeto	当前状态转对象
+Conectar+Eliminar	连接对象 + 删除
+Selección en Vivo	实时选择
+Selección con Lazo	套索选择
+Ctrl+Mayús+F4	Ctrl+Shift+F4
+Ctrl+Mayús+S	Ctrl+Shift+S
+Guardar incrementalmente...	递增保存...
+Esta compilación no lleva el Cineware SDK de MAXON	此版本不包含 MAXON 的 Cineware SDK
+glTF binario (*.glb)...	二进制 glTF (*.glb)...
+Archivos recientes	最近的文件
+Física	物理
+Selección de Polígono	多边形选择
+Selección de Bucle	循环选择
+Selección de Anillo	环状选择
+Seleccionar Conectados	选择相连
+Reducir Selección	缩小选择
+Eje X / Encabezado	X 轴 / 航向
+Eje Y / Inclinación	Y 轴 / 俯仰
+Eje Z / Alabeo	Z 轴 / 倾斜
+Sistema de Coordenadas de Mundo	世界坐标系
+Medir y Construir	测量与构造
+Organizar Objetos	排列对象
+Simetría de edición	编辑对称
+Apagada	关
+Plano X (izquierda/derecha)	X 平面(左/右)
+Plano Y (arriba/abajo)	Y 平面(上/下)
+Plano Z (delante/detrás)	Z 平面(前/后)
+Tolerancia (cm)	容差 (cm)
+Cerrar Agujero Poligonal	封闭多边形孔洞
+Subdividir	细分
+Comprobar Malla	检查网格
+Invertir Normales	反转法线
+Alinear Normales	对齐法线
+Mayús+S	Shift+S
+Ir a la Clave Anterior	转到上一个关键帧
+Ir a la Clave Siguiente	转到下一个关键帧
+Editor de Curvas...	曲线编辑器...
+Claves Seleccionadas	选定的关键帧
+Eliminar Animación del Objeto	删除对象动画
+Fotograma Siguiente	下一帧
+Fotograma Anterior	上一帧
+Repetir (Loop)	重复(循环)
+Resolver IK (experimental)	求解 IK(实验性)
+ cadenas resueltas.	 条链已求解。
+IK: ninguna etiqueta IK activa con Punta y Objetivo alcanzables.	IK: 没有末端和目标可达的活动 IK 标签。
+Mueve las articulaciones de cada etiqueta IK para que la punta llegue a su objetivo	移动每个 IK 标签的关节,使末端到达目标
+Articulación	关节
+Pesos	权重
+Renderizar Vista Activa	渲染活动视图
+Renderizar Seleccionados en Visor de Imágenes	在图像查看器中渲染所选对象
+Renderizar en Visor de Imágenes	渲染到图像查看器
+Crear Previsualización...	创建预览...
+Añadir a la Cola de Render...	添加到渲染队列...
+Editar Configuración de Render...	编辑渲染设置...
+Tirar	拉动
+Amasar	揉捏
+Rastreador de Objetos	对象跟踪
+Intercambiar Clonador-Matriz	交换克隆器矩阵
+Pintar Pesos	绘制权重
+Etiqueta IK	IK 标签
+Ningún plugin cargado	未加载插件
+Buscar Plugins...	查找插件...
+Mayús+F10	Shift+F10
+Mayús+F2	Shift+F2
+Mayús+F3	Shift+F3
+Mayús+F5	Shift+F5
+Mayús+F7	Shift+F7
+Navegador de Contenido	内容浏览器
+Mayús+F4	Shift+F4
+Acerca de Iron3D Studio...	关于 Iron3D Studio...
+Arranque	启动
+Visualizar	可视化
+Deshacer [Ctrl+Z]	撤销 [Ctrl+Z]
+Deshacer la última acción.	撤销上一步操作。
+Rehacer [Ctrl+Y]	重做 [Ctrl+Y]
+Rehacer la última acción deshecha.	重做上一步被撤销的操作。
+Selección en Vivo [Atajo de Teclado 9]	实时选择 [快捷键 9]
+Selección en Vivo: Haga clic para seleccionar elementos. Pulse MAYÚSCULAS para añadir a la selección, CTRL para eliminar.	实时选择: 单击并拖动以选择元素。按住 SHIFT 添加到选择,按住 CTRL 移除。
+Herramienta de Mover [Atajo de Teclado E]	移动工具 [快捷键 E]
+Mover: Haga clic y arrastre para mover elementos. Pulse MAYÚSCULAS para cuantificar el movimiento / añadir a la selección en el modo punto, CTRL para eliminar.	移动: 单击并拖动以移动元素。按住 SHIFT 量化移动 / 在点模式下添加到选择,按住 CTRL 移除。
+Herramienta de Escalar [Atajo de Teclado T]	缩放工具 [快捷键 T]
+Escalar: Haga clic y arrastre para escalar elementos. Pulse MAYÚSCULAS para cuantificar el escalado / añadir a la selección en el modo punto, CTRL para eliminar.	缩放: 单击并拖动以缩放元素。按住 SHIFT 量化缩放 / 在点模式下添加到选择,按住 CTRL 移除。
+Herramienta de Rotar [Atajo de Teclado R]	旋转工具 [快捷键 R]
+Rotar: Haga clic y arrastre para rotar elementos. Pulse MAYÚSCULAS para cuantificar la rotación / añadir a la selección en el modo punto, CTRL para eliminar.	旋转: 单击并拖动以旋转元素。按住 SHIFT 量化旋转 / 在点模式下添加到选择,按住 CTRL 移除。
+Eje X / Encabezado [X]\n(todavía no implementado)	X 轴 / 航向 [X]\n(尚未实现)
+Bloqueo de eje X: todavía no implementado.	X 轴锁定: 尚未实现。
+Eje Y / Inclinación [Y]\n(todavía no implementado)	Y 轴 / 俯仰 [Y]\n(尚未实现)
+Bloqueo de eje Y: todavía no implementado.	Y 轴锁定: 尚未实现。
+Eje Z / Alabeo [Z]\n(todavía no implementado)	Z 轴 / 倾斜 [Z]\n(尚未实现)
+Bloqueo de eje Z: todavía no implementado.	Z 轴锁定: 尚未实现。
+Usar Sistema de Coordenadas de Objeto [W]\n(ahora: Mundo)	使用对象坐标系 [W]\n(当前: 世界)
+Usar Sistema de Coordenadas de Mundo [W]\n(ahora: Objeto)	使用世界坐标系 [W]\n(当前: 对象)
+Cambia los ejes del gizmo entre los del objeto y los del mundo.	在对象轴和世界轴之间切换操纵器轴。
+Renderizar Vista Activa\nRenderiza la vista activa en el propio visor.\n[Atajo de Teclado Ctrl+R]	渲染活动视图\n在视图中直接渲染活动视图。\n[快捷键 Ctrl+R]
+Renderiza la vista activa en el propio visor.	在视图中直接渲染活动视图。
+Renderizar en Visor de Imágenes [Mayús+R]\nRenderiza la cámara activa con la Configuración de Render.	渲染到图像查看器 [Shift+R]\n使用渲染设置渲染活动摄像机。
+Renderiza la cámara activa en el Visor de Imágenes.	在图像查看器中渲染活动摄像机。
+Editar Configuración de Render... [Ctrl+B]	编辑渲染设置... [Ctrl+B]
+Resolución, antialiasing y fondo del render.	渲染分辨率、抗锯齿和背景。
+Cubo  (mantener pulsado: más objetos)	立方体  (按住: 更多对象)
+Lápiz  (mantener pulsado: más splines)	画笔  (按住: 更多样条)
+Subdivisión Superficie  (mantener pulsado: generadores)	细分曲面  (按住: 生成器)
+Matriz  (mantener pulsado: modelado)	阵列  (按住: 建模)
+Doblar  (mantener pulsado: deformadores)	弯曲  (按住: 变形器)
+Suelo  (mantener pulsado: escena)	地面  (按住: 场景)
+Cámara  (mantener pulsado: más cámaras)	摄像机  (按住: 更多摄像机)
+Luz  (mantener pulsado: más luces)	灯光  (按住: 更多灯光)
+Clic: crear el objeto. Mantener pulsado o clic derecho: abrir la paleta del grupo. Alt+Clic: crear como hijo del seleccionado.	单击: 创建对象。按住或右键单击: 打开组面板。Alt+单击: 作为所选对象的子级创建。
+Hacer Editable [C]\nConvierte Cubo, Esfera o Plano en un Objeto Poligonal.	转为可编辑对象 [C]\n将立方体、球体或平面转换为多边形对象。
+Hacer Editable: convierte los objetos paramétricos seleccionados en Objetos Poligonales.	转为可编辑对象: 将所选参数对象转换为多边形对象。
+Usar Modo Modelo	使用模型模式
+Modo Modelo: se editan objetos enteros.	模型模式: 编辑整个对象。
+Usar Modo Textura\n(todavía no implementado)	使用纹理模式\n(尚未实现)
+Modo Textura: todavía no implementado.	纹理模式: 尚未实现。
+Activar Eje [L]	启用轴心 [L]
+Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.	轴心模式: 移动、旋转或缩放仅更改对象的轴心;可编辑几何体和子级保持不动。
+Usar Modo Puntos	使用点模式
+Modo Puntos: elige y mueve puntos de un objeto editable (C para hacerlo editable).	点模式: 选择并移动可编辑对象的点(按 C 转为可编辑)。
+Usar Modo Aristas	使用边模式
+Modo Aristas: elige y mueve aristas de un objeto editable.	边模式: 选择并移动可编辑对象的边。
+Usar Modo Polígonos	使用多边形模式
+Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.	多边形模式: 选择并移动可编辑对象的多边形(三角形)。
+Modo Ajuste\n(todavía no implementado)	捕捉模式\n(尚未实现)
+Modo Ajuste: todavía no implementado.	捕捉模式: 尚未实现。
+Vista Solo\n(todavía no implementado)	独显视图\n(尚未实现)
+Vista Solo: todavía no implementado.	独显视图: 尚未实现。
+Activar Fijación [Mayús+S]\n(todavía no implementado)	启用捕捉 [Shift+S]\n(尚未实现)
+Fijación: todavía no implementado.	捕捉: 尚未实现。
+Plano de Trabajo\n(todavía no implementado)	工作平面\n(尚未实现)
+Plano de Trabajo: todavía no implementado.	工作平面: 尚未实现。
+Bloquear Plano de Trabajo\n(todavía no implementado)	锁定工作平面\n(尚未实现)
+Bloquear Plano de Trabajo: todavía no implementado.	锁定工作平面: 尚未实现。
+Usar como Cámara de Render	用作渲染摄像机
+Ctrl+Mayús+Z	Ctrl+Shift+Z
+Ctrl+Mayús+Y	Ctrl+Shift+Y
+Encuadrar Elementos Activos	框显活动元素
+Cámara del Editor	编辑器摄像机
+Axonométrica	轴测
+OpenGL Mejorado	增强 OpenGL
+Ruidos	噪波
+Mayús+V	Shift+V
+Ejes Globales	全局轴
+Cajas Delimitadoras	边界框
+Resaltar Componente	高亮组件
+Resaltar Objeto	高亮对象
+Cruz Navegación	导航十字
+Disposición	布局
+Vista Simple	单视图
+2 Vistas Apiladas	2 视图(上下)
+2 Vistas Lado a Lado	2 视图(左右)
+Vista 1 (Perspectiva)	视图 1 (透视)
+Vista 2 (Superior)	视图 2 (顶)
+Vista 3 (Derecha)	视图 3 (右)
+Vista 4 (Frontal)	视图 4 (前)
+Mover Cámara (arrastrar)	移动摄像机(拖动)
+Zoom de Cámara (arrastrar)	缩放摄像机(拖动)
+Rotar Cámara (arrastrar)	旋转摄像机(拖动)
+Cambiar Vista (todavía no implementado)	切换视图(尚未实现)
+Multi-vista: todavía no implementado.	多视图: 尚未实现。
+Arrastre sobre el icono para navegar por la vista.	在图标上拖动以导航视图。
+Espaciado Cuadrícula : 100 cm	网格间距: 100 cm
+\nEl objeto seleccionado está fuera de vista. Clic: llevar la cámara hasta él.	\n所选对象在视图之外。单击: 将摄像机移到该对象处。
+Modo Árbol	树模式
+Modo Lista	列表模式
+Etiqueta de Textura	纹理标签
+Buscar (todavía no implementado)	搜索(尚未实现)
+Filtrar (todavía no implementado)	过滤(尚未实现)
+Clic: seleccionar. Ctrl+Clic: anadir o quitar de la seleccion. Doble clic: renombrar. Clic derecho: menú contextual. Arrastre un material aquí para asignarlo.	单击: 选择。Ctrl+单击: 添加到选择或从选择中移除。双击: 重命名。右键单击: 上下文菜单。将材质拖到此处进行指定。
+CINEMA 4D Etiquetas	CINEMA 4D 标签
+Eliminar Etiqueta de Textura	删除纹理标签
+Fong	Phong
+Character Etiquetas	角色标签
+Cineman Etiquetas	Cineman 标签
+Etiqueta UVW	UVW 标签
+Simulación Etiquetas	模拟标签
+Sketch Etiquetas	素描标签
+Videocámara Etiquetas	运动摄像机标签
+Cargar Etiqueta Preestablecida	加载标签预设
+ objeto convertido.	 个对象已转换。
+ objetos convertidos.	 个对象已转换。
+Añadir Hijo	添加子级
+Apagado	关
+Visible en %s: %s\n(clic para cambiar)	在 %s 中可见: %s\n(单击更改)
+Punto superior: visible en el editor. Punto inferior: visible en el render. Gris = Por Defecto (hereda del padre), verde = Activado, rojo = Apagado.	上方圆点: 在编辑器中可见。下方圆点: 在渲染中可见。灰色 = 默认(继承父级),绿色 = 开,红色 = 关。
+Etiqueta de Textura [%s]	纹理标签 [%s]
+%s (todavía no implementado)	%s(尚未实现)
+Adelante	前进
+Nuevo Gestor de Atributos	新建属性管理器
+Configuración del Proyecto	工程设置
+Escala del Proyecto	工程缩放
+Escalar Proyecto: todavía no implementado en Iron3D.	缩放工程: Iron3D 中尚未实现。
+Fotogramas por segundo: velocidad de reproducción de la Línea de Tiempo.	帧率: 时间线的播放速度。
+Tiempo del Proyecto	工程时间
+Tiempo Mínimo	最小时间
+Tiempo Máximo	最大时间
+Tiempo Mínimo de Previo	预览最小时间
+Tiempo Máximo de Previo	预览最大时间
+Nivel de Detalle del Render en el Editor	编辑器渲染细节级别
+Color Objetos por Defecto	默认对象颜色
+Gris-Azul	灰蓝色
+Recortar Vista	裁剪视图
+Flujo de Trabajo Lineal	线性工作流
+Introducir Perfil de Color	输入色彩配置文件
+Preestablecidos de proyecto: todavía no implementados en Iron3D.	工程预设: Iron3D 中尚未实现。
+Página no disponible	页面不可用
+  Todavía no implementado en Iron3D.	  Iron3D 中尚未实现。
+Fotométrico	光度学
+Lentes	镜头
+Visible en Editor	在编辑器中可见
+Visible en Editor (punto superior): Por Defecto hereda del padre, Activado lo muestra siempre, Apagado lo oculta en el visor.	在编辑器中可见(上方圆点): 默认继承父级,开为始终显示,关为在视图中隐藏。
+Visible en Render	在渲染中可见
+Visible en Render (punto inferior): Iron3D todavía no tiene render final; el valor se guarda en la escena.	在渲染中可见(下方圆点): Iron3D 尚无最终渲染;该值保存在场景中。
+Usar Color	使用颜色
+Congelar Transformación	冻结变换
+Foco	聚光灯
+Foco Cuadrado	方形聚光灯
+Infinita	无限光
+Foco Paralelo	平行聚光灯
+Foco Paralelo Cuadrado	方形平行聚光灯
+Área	区域光
+Tipo de luz. En el visor, Tubo, Área e IES iluminan como una Omni; Paralela y Foco Paralelo como una Infinita.	灯光类型。在视图中,管状光、区域光和 IES 的照明效果与泛光灯相同;平行光和平行聚光灯与无限光相同。
+Mapeado (Suave)	阴影贴图(柔和)
+Trazado (Duro)	光线跟踪(硬)
+Con sombra activada, la primera luz de la escena que la tenga proyecta sombras en el visor.	开启阴影后,场景中第一个带阴影的灯光会在视图中投射阴影。
+Luz Visible	可见光
+No Ilumina	无照明
+Mostrar Iluminación	显示照明
+Mostrar Luz Visible	显示可见光
+Iluminación de IG	GI 照明
+Propiedades del Objeto	对象属性
+Plano de Simetría	对称平面
+ZY (refleja X)	ZY(镜像 X)
+XZ (refleja Y)	XZ(镜像 Y)
+XY (refleja Z)	XY(镜像 Z)
+  Refleja al primer hijo con malla; el hijo se edita aparte.	  镜像第一个带网格的子级;子级需单独编辑。
+Relación de Aspecto	宽高比
+Tamaño . X	尺寸 . X
+Tamaño . Y	尺寸 . Y
+Tamaño . Z	尺寸 . Z
+Segmentos en X	分段 X
+Segmentos en Y	分段 Y
+Segmentos en Z	分段 Z
+Superficies Separadas	分离曲面
+Canto	圆角
+  Objeto Poligonal (importado o hecho editable con C).	  多边形对象(导入或用 C 转为可编辑)。
+  Puntos, aristas y polígonos: botones de la barra izquierda (Supr borra).	  点、边和多边形: 左侧栏中的按钮(Del 删除)。
+Perfectos de Render	完美渲染
+Altura	高度
+Segmentos en la Anchura	宽度分段
+Segmentos en la Altura	高度分段
+  Para cambiar el tamaño use Escala (Coord.) o el Gestor de Coordenadas.	  要更改大小,请使用缩放(坐标)或坐标管理器。
+Etiqueta Phong	Phong 标签
+Limitar Ángulo	角度限制
+Ángulo de Phong	Phong 角度
+Usar Bordes	使用边
+Ángulo Interior	内角
+Ángulo Exterior	外角
+Inverso Cuadrado (Físicamente Exacto)	平方反比(物理精确)
+Escalón	阶梯
+Inverso Cuadrado Limitado	平方反比限制
+Inverso Limitado	反比限制
+Cómo pierde fuerza la luz con la distancia. En las inversas, el Radio es la distancia a la que da el 100 %.	光随距离衰减的方式。对于反比衰减,半径是其达到 100 % 的距离。
+Radio Interior	内半径
+Radio/Decaimiento	半径/衰减
+Tamaño Horizontal	水平尺寸
+Tamaño Vertical	垂直尺寸
+Tamaño en Profundidad	深度尺寸
+  En el visor, las sombras son siempre mapeadas y de una sola luz.	  在视图中,阴影始终为贴图方式,且仅来自一盏灯。
+Especular - Blinn (Heredado)	高光 - Blinn(旧版)
+Especular - Phong (Heredado)	高光 - Phong(旧版)
+Irawan (Tejido)	Irawan(编织布料)
+ nudos	 个节点
+ capas	 个图层
+no se evalúa en el visor	不在视图中计算
+Elegir imagen	选择图像
+Elegir la imagen del canal (sustituye al shader importado).	选择通道图像(替换导入的着色器)。
+Quitar la textura del canal.	移除通道纹理。
+  Hay shaders que el visor todavía no evalúa.	  部分着色器尚未在视图中计算。
+Modo de Mezcla	混合模式
+Fuerza de Mezcla	混合强度
+Alfa Suave	柔和 Alpha
+Alfa de Imagen	图像 Alpha
+Lambertiano	朗伯
+Modelo	模型
+Caída Difusa	漫射衰减
+Nivel Difuso	漫射级别
+(ninguna)	(无)
+  Sin capas importadas: el visor usa Metálico/Rugosidad.	  没有导入的图层: 视图使用金属度/粗糙度。
+Visor (PBR equivalente)	视图(PBR 等效)
+Metálico	金属度
+  El visor todavía no pinta cada capa por separado (brillos de color, Atenuación).	  视图尚不能分别绘制每个图层(彩色高光、衰减)。
+Luminancia	亮度
+Refracción	折射
+  Ningún objeto usa este material. Arrástrelo al Gestor de Objetos.	  没有对象使用此材质。请将其拖到对象管理器。
+Etiqueta de Textura [Textura]	纹理标签 [纹理]
+Propiedades de Etiqueta	标签属性
+Mapeado UVW	UVW 贴图
+Lado	面
+Mezclar Texturas	混合纹理
+Repetición	平铺
+Usar UVW para Relieve	凹凸使用 UVW
+Longitud U	长度 U
+Longitud V	长度 V
+Repeticiones U	平铺 U
+Repeticiones V	平铺 V
+%zu clave%s seleccionada%s	已选择 %zu 个关键帧%s%s
+Interpolación Spline	样条插值
+Interpolación Lineal	线性插值
+Interpolación Escalón	阶梯插值
+Eliminar Claves	删除关键帧
+Claves movidas 	关键帧已移动 
+Eliminadas 	已删除 
+ clave.	 个关键帧。
+ claves.	 个关键帧。
+ en 	 于 
+Editor de Curvas	曲线编辑器
+Esc. X	缩放 X
+Esc. Y	缩放 Y
+Esc. Z	缩放 Z
+%s: sin claves (F9 graba)	%s: 没有关键帧(F9 记录)
+Sin objeto activo	没有活动对象
+Línea de Tiempo: haga clic y arrastre para cambiar el fotograma actual.	时间线: 单击并拖动以更改当前帧。
+Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.	关键帧: 单击选择(Shift 添加),拖动移动,右键单击设置插值。
+Tiempo Mínimo del proyecto.	工程最小时间。
+Rango de previo (Tiempo Mínimo/Máximo de Previo).	预览范围(预览最小/最大时间)。
+Tiempo Máximo del proyecto (editable, la regla se reescala).	工程最大时间(可编辑,标尺会重新缩放)。
+Tiempo Máximo de Previo.	预览最大时间。
+Ir al Inicio [Mayús+F]	转到开头 [Shift+F]
+Ir a la Clave Anterior [Ctrl+F]	转到上一个关键帧 [Ctrl+F]
+Ir al Fotograma Anterior [F]	转到上一帧 [F]
+Reproducir Hacia Atrás [F6]	倒放 [F6]
+Reproducir Hacia Delante [F8]	正放 [F8]
+Ir al Fotograma Siguiente [G]	转到下一帧 [G]
+Ir a la Clave Siguiente [Ctrl+G]	转到下一个关键帧 [Ctrl+G]
+Ir al Final [Mayús+G]	转到结尾 [Shift+G]
+Grabar Objetos Activos [F9]	记录活动对象 [F9]
+Fotogramas Clave Automáticos [Ctrl+F9]	自动关键帧 [Ctrl+F9]
+Selección de Claves (todavía no implementado)	关键帧选择(尚未实现)
+Grabar Posición	记录位置
+Grabar Escala	记录缩放
+Grabar Rotación	记录旋转
+Grabar Parámetro (todavía no implementado)	记录参数(尚未实现)
+Grabar Nivel de Puntos (todavía no implementado)	记录点级动画(尚未实现)
+Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D	曲线编辑器 / 摄影表: Iron3D 中尚未实现
+Ctrl+Mayús+N	Ctrl+Shift+N
+Guardar Material Preestablecido...	保存材质预设...
+Eliminar Materiales sin Usar	删除未使用的材质
+Cargar Textura...	加载纹理...
+Editar Textura...	编辑纹理...
+Clic: seleccionar material. Doble clic: Editor de Material (en el nombre: renombrar). Arrastre a un objeto para asignarlo.	单击: 选择材质。双击: 材质编辑器(在名称上: 重命名)。拖到对象上进行指定。
+Doble clic en un espacio vacío del Gestor de Materiales para crear un material nuevo.	双击材质管理器的空白处可创建新材质。
+Doble clic aquí para crear un material	双击此处创建材质
+Mundo	世界
+Sistema de coordenadas de los campos (solo Objeto (Rel) disponible por ahora).	字段的坐标系(目前仅可使用对象(相对))。
+Tamaño: medidas en cm. Escala: multiplicador del objeto.	尺寸: 以 cm 为单位的尺寸。缩放: 对象倍数。
+Aplicar los valores de los campos al objeto seleccionado.	将字段值应用到所选对象。
+Selección Rectangular: arrastre para seleccionar los objetos que toque el rectángulo. MAYÚSCULAS añade, CTRL quita.	矩形选框: 拖动以选择矩形触及的对象。SHIFT 添加,CTRL 移除。
+Selección con Lazo: dibuje una zona para seleccionar los objetos que queden dentro. MAYÚSCULAS añade, CTRL quita.	套索选择: 绘制区域以选择其内部的对象。SHIFT 添加,CTRL 移除。
+Selección en Vivo: Haga clic para seleccionar elementos.	实时选择: 单击以选择元素。
+Guardar como	另存为
+Nombre de archivo:	文件名:
+Carpeta: %s	文件夹: %s
+Cargado: 	已加载: 
+Error al cargar: 	加载错误: 
+Guardado: 	已保存: 
+Error al guardar: 	保存错误: 
+%s\nDisposición: %s	%s\n布局: %s
+Colores y disposición de los paneles como en cada programa. Se aplica al momento.	颜色和面板布局与各程序一致。立即生效。
+Mis presets	我的预设
+Fondo de paneles	面板背景
+Fondo de campos	字段背景
+Acento	强调色
+Azul de herramientas	工具蓝
+Fondo del visor	视图背景
+Barra superior	顶部栏
+Columna lateral	侧栏
+Columna de objetos	对象栏
+Objetos / Atributos	对象 / 属性
+Fila inferior	底部行
+Línea de tiempo	时间线
+Pestañas verticales	垂直选项卡
+Redondeo	圆角
+Personalizado (sin guardar)	自定义(未保存)
+Nombre del preset	预设名称
+Guardar como preset	另存为预设
+Preset guardado en presets/.	预设已保存到 presets/。
+Escriba un nombre válido (letras, números, espacios, - o _).	请输入有效名称(字母、数字、空格、- 或 _)。
+Preset eliminado.	预设已删除。
+Restablecer	重置
+Vuelve al preset integrado «%s».	恢复为内置预设 "%s"。
+Guardado. Se usará al abrir Iron3D.	已保存。将在 Iron3D 启动时使用。
+Error al guardar las preferencias.	保存首选项时出错。
+Preset activo: %s	活动预设: %s
+Backend activo en esta sesión: %s	本次会话启用的后端: %s
+Backend de render (se aplica al reiniciar):	渲染后端(重启后生效):
+Guardado. Reinicie Iron3D Studio para aplicarlo.	已保存。请重启 Iron3D Studio 以生效。
+Asignación	指定
+  Ningún objeto usa este material.	  没有对象使用此材质。
+Acerca de Iron3D Studio	关于 Iron3D Studio
+Interfaz inspirada en el flujo de trabajo de Cinema 4D R19.	界面灵感来自 Cinema 4D R19 的工作流程。
+Cinema 4D es una marca de Maxon; Iron3D no está afiliado a Maxon.	Cinema 4D 是 Maxon 的商标;Iron3D 与 Maxon 无关联。
+La importación de archivos .c4d usa el Cineware SDK	导入 .c4d 文件使用 Cineware SDK
+de MAXON Computer GmbH, integrado según su licencia.	由 MAXON Computer GmbH 提供,按其许可证集成。
+No se pudo abrir	无法打开
+%d objetos, %d con malla, %d materiales, %d luces	%d 个对象,其中 %d 个带网格,%d 个材质,%d 盏灯光
+%lld puntos, %lld polígonos	%lld 个点,%lld 个多边形
+%d generadores con la geometría guardada por Cinema 4D	%d 个生成器,几何体由 Cinema 4D 存储
+%d primitivas reconstruidas desde sus parámetros	%d 个基本体已根据其参数重建
+Importado sin avisos.	导入完成,无警告。
+Revisa:	请检查:
+Exportado a Cinema 4D	已导出到 Cinema 4D
+%d objetos: %d mallas, %d primitivas, %d luces	%d 个对象: %d 个网格,%d 个基本体,%d 盏灯光
+%d materiales, %lld puntos, %lld polígonos	%d 个材质,%lld 个点,%lld 个多边形
+Exportado sin avisos.	导出完成,无警告。
+Une los puntos que coinciden (misma posición,\nnormal y color) al conectar.	连接时合并重合的点(位置、\n法线和颜色相同)。
+Tolerante	宽容
+Se elige todo lo que toque la zona.	选中区域触及的所有内容。
+Solo se elige lo que queda dentro entero.	仅选中完全位于内部的内容。
+Solo Seleccionar Visibles	仅选择可见元素
+Puntos, aristas y polígonos tapados por la malla no se eligen.	被网格遮挡的点、边和多边形不会被选中。
+También se eligen los tapados (a través de la malla).	被遮挡的也会被选中(穿透网格)。
+Guardar render	保存渲染
+Imagen PNG	PNG 图像
+Render guardado: 	渲染已保存: 
+No se pudo guardar el render.	无法保存渲染。
+Ajustar a la Ventana	适合窗口
+Renderizar	渲染
+Todavía no hay ningún render (Mayús+R).	尚无渲染(Shift+R)。
+%s · %d x %d · antialiasing %dx%d · %.2f s · %d triángulos	%s · %d x %d · 抗锯齿 %dx%d · %.2f 秒 · %d 个三角形
+1080 x 1080 (cuadrado)	1080 x 1080(正方形)
+Elegir...	选择...
+Usar el tamaño del visor	使用视图大小
+Anchura (px)	宽度 (px)
+Altura (px)	高度 (px)
+Ninguno (1x1)	无 (1x1)
+Geometría (2x2)	几何体 (2x2)
+Mejor (4x4)	最佳 (4x4)
+Render por CPU con el sombreado de las miniaturas:\nsin sombras ni texturas todavía.	使用缩略图着色的 CPU 渲染:\n暂无阴影和纹理。
+Malla demasiado grande para dibujar sus componentes.	网格过大,无法绘制其组件。
+Selecciona un objeto editable y entra en modo Puntos, Aristas o Polígonos.	请选择可编辑对象并进入点、边或多边形模式。
+ seleccionados.	 已选择。
+Bucle y Anillo funcionan en modo Aristas.	循环和环状选择在边模式下可用。
+Comprobar Malla: sin problemas.	检查网格: 没有问题。
+Comprobar Malla: 	检查网格: 
+ aristas abiertas, 	 条开放边, 
+ no manifold, 	 个非流形, 
+ puntos sueltos, 	 个游离点, 
+ polígonos sin área.	 个零面积多边形。
+Puente: selecciona exactamente 2 polígonos (modo Polígonos).	桥接: 请精确选择 2 个多边形(多边形模式)。
+Puente: los dos polígonos deben tener el mismo número de lados.	桥接: 两个多边形的边数必须相同。
+Soldar: selecciona al menos 2 puntos.	焊接: 请至少选择 2 个点。
+Cerrar Agujero: no hay bordes abiertos que toquen la selección.	封闭孔洞: 没有与所选内容相接的开放边界。
+Alinear Normales: ya están todas alineadas.	对齐法线: 全部已对齐。
+Triangular: no hay polígonos de más de 3 lados.	三角化: 没有边数超过 3 的多边形。
+Operación desconocida: 	未知操作: 
+ elemento.	 个元素。
+ elementos.	 个元素。
+Eliminados 	已删除 
+ polígono.	 个多边形。
+ polígonos.	 个多边形。
+: selecciona polígonos de un objeto editable.	: 请选择可编辑对象的多边形。
+Cuchillo: selecciona un objeto editable (C).	切割: 请选择可编辑对象(C)。
+Cuchillo: la línea no corta ningún polígono.	切割: 该线没有切到任何多边形。
+Cuchillo: 	切割: 
+ polígono cortado.	 个多边形已切割。
+ polígonos cortados.	 个多边形已切割。
+Desplazamiento (cm)	偏移 (cm)
+Desplazamiento de Inserción (cm)	内插偏移 (cm)
+Extrusión (cm)	挤压 (cm)
+Solo Visibles	仅可见
+Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos.	直线模式: 切割直线穿过的所有内容。\n已选中多边形时仅切割这些。
+o arrastra en el visor	或在视图中拖动
+(objeto editable)	(可编辑对象)
+ vertices sin espejo.	 个没有镜像的顶点。
+Iron3D Studio - hoja de iconos (%d)	Iron3D Studio - 图标表 (%d)
+Resultado de la Búsqueda: "	搜索结果: "
+Preestablecidos > 	预设 > 
+Ya hay una librería con ese nombre en library/browser.	library/browser 中已存在同名库。
+No se pudo copiar la librería a library/browser: 	无法将库复制到 library/browser: 
+" es ahora permanente (	" 现已永久保存 (
+Librería "	库 "
+" creada en library/browser.	" 已在 library/browser 中创建。
+Carpeta "	文件夹 "
+" creada.	" 已创建。
+No se puede leer 	无法读取 
+ modelos y 	 个模型和 
+ archivos añadidos a "	 个文件已添加到 "
+Añadir a la librería	添加到库
+Modelos y texturas	模型和纹理
+" eliminado de "	" 已从 "
+; muévela antes de corregir.	;请在修复前先移动它。
+No se pudo renombrar la librería: 	无法重命名库: 
+Url interna corregida (copia de seguridad en 	已修复内部 URL(备份位于 
+Eliminar de la Librería	从库中移除
+¿Eliminar "%s"%s?	删除 "%s"%s?
+ y todo su contenido	 及其所有内容
+Se borra de la librería (%s).	将从库(%s)中删除。
+Nueva Librería de Preestablecidos	新建预设库
+Mover a	移动到
+Carpeta de destino (vacío = raíz, "a/b" = subcarpetas):	目标文件夹(留空 = 根目录,"a/b" = 子文件夹):
+Ruta no válida (o dentro de sí misma).	路径无效(或位于其自身内部)。
+Sin  / \\ : * ? " < > |	不能包含  / \ : * ? " < > |
+Se guarda en library/browser: sale siempre.	已保存在 library/browser 中: 始终加载。
+Todavía no implementado	尚未实现
+Nuevo Navegador	新建浏览器
+Abre antes una librería (o una carpeta suya)	请先打开一个库(或其文件夹)
+Añadir Archivos a la Librería...	向库添加文件...
+Abrir Librería de Preestablecidos...	打开预设库...
+Hacer Permanente (copiar a library/browser)	设为永久(复制到 library/browser)
+Quitar Librería del Navegador	从浏览器中移除库
+Cargar en la Escena	载入场景
+Intro	Enter
+Mostrar Texturas y Archivos	显示纹理和文件
+Ir a	转到
+Busca por nombre en todas las librerías (Intro)	在所有库中按名称搜索(Enter)
+Librería temporal (solo esta sesión)	临时库(仅限本次会话)
+Librería permanente	永久库
+Quitar del Navegador	从浏览器中移除
+Corregir Url Interna (archivo renombrado)	修复内部 URL(文件已重命名)
+Dentro pone "%s": Cinema 4D no la monta si no coincide con el nombre del archivo.	内部名称为 "%s": 若与文件名不一致,Cinema 4D 不会挂载它。
+  (temporal)	  (临时)
+Temporal: solo en esta sesión	临时: 仅限本次会话
+Permanente (library/browser)	永久 (library/browser)
+   (ninguna librería)	   (没有库)
+No hay librerías. Abre un .lib4d (Archivo > Abrir) o cópialo a library/browser.	没有库。请打开 .lib4d(文件 > 打开)或将其复制到 library/browser。
+Aún no has cargado ningún preestablecido en esta sesión.	本次会话尚未加载任何预设。
+Sin resultados.	没有结果。
+Carpeta vacía.	空文件夹。
+Suéltalo en el visor para añadirlo a la escena	拖放到视图中以添加到场景
+Mover a...	移动到...
+Modelo / escena de Cinema 4D	Cinema 4D 模型 / 场景
+Archivo (textura, imagen...)	文件(纹理、图像...)
+\nDoble clic o arrastrar al visor: cargar	\n双击或拖到视图中: 加载
+\nDoble clic: abrir	\n双击: 打开
+%s\n%d modelos  ·  %s	%s\n%d 个模型  ·  %s
+temporal (solo esta sesión)	临时(仅限本次会话)
+  ·  librería temporal (solo esta sesión)	  ·  临时库(仅限本次会话)
+  ·  librería permanente	  ·  永久库
+Esta librería se renombró fuera de Cinema 4D: su url interna no coincide con el archivo. Clic derecho > Corregir Url Interna.	此库在 Cinema 4D 之外被重命名: 其内部 URL 与文件不匹配。右键单击 > 修复内部 URL。
+%s\n(clic para quitar el aviso)	%s\n(单击关闭警告)
+Guardar como Preestablecido	另存为预设
+No hay ninguna librería de preestablecidos.	没有预设库。
+Crear "Mis Preestablecidos"	创建"我的预设"
+Mis Preestablecidos	我的预设
+Librería	库
+(elige una)	(请选择)
+(raíz de la librería)	(库根目录)
+ objetos	 个对象
+ polígonos	 个多边形
+ materiales	 个材质
+" guardado en "	" 已保存到 "
+Tanque de Petróleo	油罐
+Terreno Fractal	地形
+Vectorizador	矢量化器
+Derretir	熔化
+Envoltura	包裹
+Cargar Material Preestablecido	加载材质预设
+Spline Arco	圆弧样条工具
+Unión de Splines	样条并集
+Intersección de Splines	样条交集
+Herramienta de Nubes	云工具
+Grupo de Nubes	云组
+Nube	云
+Cámara Objetivo	目标摄像机
+Cámara de Movimiento	运动摄像机
+Luz Objetivo	目标灯光
+Luz IES	IES 灯光
+Herramienta de Iluminación	灯光工具
+Vista Perspectiva	透视视图
+Vista Superior	顶视图
+Vista Derecha	右视图
+Vista Frontal	前视图
+Vista Izquierda	左视图
+Vista Trasera	后视图
+Vista Inferior	底视图
+Guardar Proyecto	保存工程
+Selección Contorno	轮廓选择
+Aumentar Selección	扩大选择
+Fijación 2.5D	2.5D 捕捉
+Construcción de Personaje	角色构建器
+Objeto %s [%s]	对象 %s [%s]
+Tono %.0f°  Sat %.0f%%  Lum %.0f%%  Brillo %.0f%%  Contraste %.0f%%  Gamma %.2f	色相 %.0f°  饱和度 %.0f%%  明度 %.0f%%  亮度 %.0f%%  对比度 %.0f%%  伽马 %.2f
+Render: %d x %d en %.2f s	渲染: %d x %d,用时 %.2f 秒
+%s: %zu de %zu seleccionados	%s: 已选择 %zu / %zu
+%d elementos	%d 项
+Esquema	大纲
+Espacio de trabajo:	工作区:
+Librería de preestablecidos de Cinema 4D	Cinema 4D 预设库
+Objeto poligonal	多边形对象
+Nulo (vacio)	空对象
+Fotométrica	光度学
+Destriangular	取消三角化
+Destriangular: no hay triángulos vecinos que unir.	取消三角化: 没有可合并的相邻三角形。
+Ocultar Selección	隐藏所选
+Ocultar No Seleccionados	隐藏未选
+Mostrar Todo	全部显示
+No se puede ocultar todo el objeto.	无法隐藏整个对象。
+Iron3D Studio no ha podido abrir su ventana.	Iron3D Studio 无法打开窗口。
+Necesita una tarjeta gráfica con Vulkan 1.3 u OpenGL 3.3. Prueba a actualizar los drivers de la tarjeta gráfica.	需要支持 Vulkan 1.3 或 OpenGL 3.3 的显卡。请尝试更新显卡驱动。
+SMD: %d huesos y %d mallas con pesos; solo la pose actual, sin animación. Cada material de Source necesita su .vmt.	SMD: %d 根骨骼和 %d 个带权重的网格;仅当前姿势,无动画。每个 Source 材质都需要其 .vmt。
+Línea	直线
+Bucle	循环
+Cuchillo: no hay ninguna arista bajo el cursor.	切割: 光标下没有边。
+Cuchillo: esa arista no tiene un bucle de cuadriláteros que cortar.	切割: 该边没有可切割的四边形循环。
+Modo Bucle: clic en una arista; corta todo su anillo\npor el punto donde haces clic.	循环模式: 单击一条边;在单击处\n切割其整个环。
+Eje	轴
+Cuchillo: el clic no toca la malla.	切割: 单击处未触及网格。
+Cuchillo: el plano no corta ningún polígono.	切割: 该平面没有切到任何多边形。
+Modo Plano: clic en la malla; corta con un plano\nperpendicular al eje elegido que pasa por ese punto.	平面模式: 单击网格;使用通过该点\n且垂直于所选轴的平面切割。
+Segmentos de Rotación	旋转分段
+Radio Exterior	外半径
+Radio del Anillo	环半径
+Radio del Tubo	管半径
+Segmentos del Anillo	环分段
+Segmentos del Tubo	管分段
+Segmentos de la Tapa	端盖分段
+Profundidad	深度
+Tetraedro	四面体
+Octaedro	八面体
+Icosaedro	二十面体
+Dodecaedro	十二面体
+  Primitiva paramétrica: al editar la malla (puntos, aristas...) pierde los parámetros.	  参数化基本体: 编辑网格(点、边等)会丢弃参数。
+Ángulo	角度
+  Deforma al primer hijo con malla; el hijo se edita aparte.	  使第一个带网格的子级变形;子级需单独编辑。
+Booleano: Unión (A + B)	布尔: 并集 (A + B)
+Booleano: Sustracción (A - B)	布尔: 差集 (A - B)
+Booleano: Intersección (A y B)	布尔: 交集 (A 和 B)
+Booleano: selecciona dos objetos (A y B) con Ctrl+clic en el Gestor de Objetos.	布尔: 请在对象管理器中用 Ctrl+单击选择两个对象(A 和 B)。
+Booleano: los dos objetos tienen que tener geometría (Cubo, Esfera, polígono...).	布尔: 两个对象都需要有几何体(立方体、球体、多边形等)。
+Booleano: 	布尔: 
+Booleano: objeto creado; A y B quedan ocultos.	布尔: 对象已创建;A 和 B 已隐藏。
+Cantidad	数量
+Cantidad X	数量 X
+Cantidad Y	数量 Y
+Cantidad Z	数量 Z
+Separación X	间距 X
+Separación Y	间距 Y
+Separación Z	间距 Z
+Paso X	步长 X
+Paso Y	步长 Y
+Paso Z	步长 Z
+Escala por copia	每个克隆的缩放
+Giro por copia	每个克隆的旋转
+  Clona el primer hijo con malla; el hijo se edita aparte.	  克隆第一个带网格的子级;子级需单独编辑。
+copias	个克隆
+Efector Aleatorio	随机效果器
+Posición Aleatoria X	随机位置 X
+Posición Aleatoria Y	随机位置 Y
+Posición Aleatoria Z	随机位置 Z
+Giro Aleatorio	随机旋转
+Escala Aleatoria	随机缩放
+Semilla	种子
+  Modo Objeto: una copia en cada punto del 2.º hijo con malla.	  对象模式: 在第二个带网格的子级的每个点上放置一个克隆。
+Seleccionar Patrón	选择图案
+Patrón: 1 de cada 2	图案: 每隔一个
+Patrón: 1 de cada 2 (desfasado)	图案: 每隔一个(偏移)
+Patrón: 1 de cada 3	图案: 每隔两个
+Exportar a Source (SMD)	导出为 Source (SMD)
+Escena.smd	Scene.smd
+Exportar SMD	导出 SMD
+SMD: solo geometría, normales y UV; sin esqueleto ni animación. Cada material de Source necesita su .vmt.	SMD: 仅包含几何体、法线和 UV;无骨架和动画。每个 Source 材质都需要自己的 .vmt。
+Crear Punto	创建点
+Cerrar Agujero de Polígonos	封闭多边形孔洞
+Lápiz Polígonos	多边形画笔
+Cortar Línea	直线切割
+Cortar Plano	平面切割
+Cortar Cíclico/Trayectoria	循环/路径切割
+Magnetismo	磁铁
+Reflejar	镜像
+Puntada y Cosido	缝合
+Extruir	挤压
+Extrusión Interior	内部挤压
+Extrusión Matriz	矩阵挤压
+Suavizar Desplazamiento	平滑偏移
+Mover Normal	沿法线移动
+Escalar Normal	沿法线缩放
+Rotar Normal	沿法线旋转
+Destriangular...	取消三角化...
+Retriangular N-gons	重新三角化 N 边形
+Eliminar N-gons	移除 N 边形
+Clonar	克隆
+Desconectar...	断开...
+Separar	分割
+Colapso	塌陷
+Conectar	连接
+Fundir	熔化
+Disolver	溶解
+Subdividir...	细分...
+Asignar Valor al Punto	设置点值
+Voltear Arista	翻转边
+Aristas a Spline	边转样条
+Cambiar Orden de Puntos	更改点顺序
+Optimizar...	优化...
+Restaurar Escala...	重置缩放...
+Configuración Modelado	建模设置
+Deshacer (Acción)	撤销(操作)
+Mayús+Z	Shift+Z
+Encuadrar Elementos Seleccionados	框显所选元素
+Invertir Órbita	反转环绕
+Velocidad Pan	平移速度
+Velocidad Muñeca/Zoom	推拉/缩放速度
+Velocidad Órbita	环绕速度
+Se aplica al momento. Alt+clic orbita, panea y hace zoom; la rueda acerca y aleja.	立即生效。Alt+单击可环绕、平移和缩放;滚轮可拉近和拉远。
+Dispositivos de Entrada	输入设备
+Comunicación	通信
+Escultura	雕刻
+Motor Houdini	Houdini Engine
+Motor Substance	Substance Engine
+Previo del Material	材质预览
+Importación/Exportación	导入/导出
+Colores Esquema	方案颜色
+Conversión	转换
+Comandos	命令
+Herramientas Crear	创建工具
+Herramientas Transformar	变换工具
+Interpolación Dura	硬插值
+Interpolación Suave	软插值
+Igualar Longitud de Tangentes	等切线长度
+Igualar Dirección de Tangentes	等切线方向
+Unir Segmento	连接线段
+Romper Segmento	断开线段
+Explotar Segmentos	分解线段
+Asignar Primer Punto	设置起点
+Invertir Secuencia	反转顺序
+Mover Secuencia Abajo	下移序列
+Mover Secuencia Arriba	上移序列
+Contornear	轮廓
+Sección Transversal	横截面
+Alinear	对齐
+Proyectar	投射
+Redondear	圆角
+Unión Spline	样条并集
+Intersección Spline	样条交集
+Centrar Ejes	居中轴心
+Centrar Eje a Objeto	轴心居中到对象
+Centrar Eje a Selección	轴心居中到所选内容
+Abrir Carpeta de Preferencias...	打开首选项文件夹...
+Disolver: selecciona aristas, o polígonos vecinos.	溶解: 请选择边或相邻多边形。
+Disolver: el resultado no sería un polígono convexo.	溶解: 结果将不是凸的平面多边形。
+Planchar: no hay puntos que alisar.	Iron: 没有可平滑的点。
+Voltear Arista: selecciona aristas (modo Aristas).	翻转边: 请选择边(边模式)。
+Voltear Arista: solo entre dos triángulos y sin cuadrilátero cóncavo.	翻转边: 仅限两个三角形之间,且不产生凹四边形。
+Clonar: selecciona polígonos (modo Polígonos).	克隆: 请选择多边形(多边形模式)。
+Conectar: selecciona 2 puntos no vecinos de un mismo polígono.	连接: 请选择同一多边形上不相邻的 2 个点。
+Reflejar: no hay polígonos.	镜像: 没有多边形。
+Restaurar Escala: el objeto tiene hijos; sus posiciones cambiarían.	重置缩放: 该对象有子级,其位置会发生变化。
+Restaurar Escala: el objeto ya está a escala 1.	重置缩放: 对象的缩放已为 1。
+Restaurar Escala: hecho.	重置缩放: 完成。
+Información del Objeto	对象信息
+No hay ningún objeto seleccionado.	未选择对象。
+Hijos	子级
+triángulos	三角形
+cuadriláteros	四边形
+Guardado como 	已另存为 
+volver al archivo guardado	还原到已保存的文件
+cerrar el proyecto	关闭工程
+Subdivisiones	细分
+Objeto de Origen	源对象
+Instancia: selecciona primero el objeto del que quieres una instancia.	实例: 请先选择要创建实例的对象。
+  Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  对第一个带网格的子级应用 Catmull-Clark;该子级为控制笼。
+  Comparte la malla del objeto de origen.	  共享源对象的网格。
+  No se encuentra el objeto de origen (ruta por nombres).	  未找到源对象(按名称的路径)。
+Distancia Focal	焦距
+Tamaño del Sensor	传感器尺寸
+Campo de Visión	视野
+Esquina	角点
+Color Superior	顶部颜色
+Color Inferior	底部颜色
+  Ruta por nombres del objeto al que mira (vacío = sin objetivo).	  其注视对象的名称路径(留空 = 无目标)。
+  Rejilla 2x2x2 sobre la caja del primer hijo; cada esquina se desplaza una fracción del tamaño.	  覆盖第一个子级边界框的 2x2x2 晶格;每个角点移动尺寸的一部分。
+  Mezcla el primer hijo con el segundo (mismo número de puntos).	  将第一个子级与第二个子级混合(点数须相同)。
+  Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo).	  这是图像查看器中的渲染背景(从上到下的渐变)。
+Eje X / Encabezado [X]\n(bloqueado)	X 轴 / 航向 [X]\n(已锁定)
+Eje X / Encabezado [X]\n(desbloqueado)	X 轴 / 航向 [X]\n(已解锁)
+Bloquea o desbloquea el eje X: un eje bloqueado no cambia al mover, rotar o escalar.	锁定或解锁 X 轴: 锁定的轴在移动、旋转或缩放时不会改变。
+Eje Y / Inclinación [Y]\n(bloqueado)	Y 轴 / 俯仰 [Y]\n(已锁定)
+Eje Y / Inclinación [Y]\n(desbloqueado)	Y 轴 / 俯仰 [Y]\n(已解锁)
+Bloquea o desbloquea el eje Y: un eje bloqueado no cambia al mover, rotar o escalar.	锁定或解锁 Y 轴: 锁定的轴在移动、旋转或缩放时不会改变。
+Eje Z / Alabeo [Z]\n(bloqueado)	Z 轴 / 倾斜 [Z]\n(已锁定)
+Eje Z / Alabeo [Z]\n(desbloqueado)	Z 轴 / 倾斜 [Z]\n(已解锁)
+Bloquea o desbloquea el eje Z: un eje bloqueado no cambia al mover, rotar o escalar.	锁定或解锁 Z 轴: 锁定的轴在移动、旋转或缩放时不会改变。
+Desactivar Fijación [Mayús+S]	禁用捕捉 [Shift+S]
+Activar Fijación [Mayús+S]	启用捕捉 [Shift+S]
+Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).	启用捕捉后,移动以 100 cm(网格)为步长跳变。
+Fijación: activada	捕捉: 开
+Fijación: desactivada	捕捉: 关
+Buscar por nombre	按名称搜索
+Filtrar por tipo	按类型过滤
+Nombre del objeto...	对象名称...
+Geometría	几何体
+Luces	灯光
+Otros (Nulos, generadores...)	其他(空对象、生成器等)
+Reflejos de estudio y transparencia	摄影棚反射和透明度
+Sombra suave en el suelo	柔和地面阴影
+Efectos	效果
+Salir de Vista Solo	退出独显视图
+Vista Solo	独显视图
+Vista Solo: el visor dibuja solo el objeto seleccionado y sus hijos.	独显视图: 视图仅绘制所选对象及其子级。
+Salir de Modo Ajuste	退出微调模式
+Modo Ajuste	微调模式
+Modo Ajuste: sin gizmo, arrastre el objeto directamente con el ratón (usa la herramienta activa: Mover, Rotar o Escalar).	微调模式: 无操纵器,直接用鼠标拖动对象(使用当前工具: 移动、旋转或缩放)。
+Desactivar Plano de Trabajo	禁用工作平面
+Plano de Trabajo: la cuadrícula del visor en perspectiva toma la posición y orientación del objeto seleccionado.	工作平面: 透视视图的网格采用所选对象的位置和方向。
+Desbloquear Plano de Trabajo	解锁工作平面
+Bloquear Plano de Trabajo	锁定工作平面
+Bloquear Plano de Trabajo: la cuadrícula deja de seguir la selección y se queda donde está.	锁定工作平面: 网格不再跟随所选内容,保持原位。
+Salir de Modo Textura	退出纹理模式
+Usar Modo Textura	使用纹理模式
+Modo Textura: edita la proyección, el desplazamiento y la longitud de la etiqueta de Textura del objeto seleccionado.	纹理模式: 编辑所选对象纹理标签的投射、偏移和长度。
+Modo Textura	纹理模式
+Seleccione un objeto con geometría.	请选择带几何体的对象。
+(ninguno)	(无)
+Esférico	球形
+Cilíndrico	圆柱形
+Cúbico	立方体
+Otra	其他
+Desplazamiento U/V	偏移 U/V
+Longitud U/V	长度 U/V
+Aviso: el visor y el render solo dibujan texturas con proyección UVW.	注意: 视图和渲染仅绘制使用 UVW 投射的纹理。
+Mosaico	平铺
+Editor de Material  [%s]	材质编辑器  [%s]
