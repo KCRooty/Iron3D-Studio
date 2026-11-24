@@ -197,7 +197,7 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
     }
     if (node.env.present)
         out << indent << "  ENV kind=" << node.env.kind << " tr=" << node.env.top.r << " tg=" << node.env.top.g << " tb=" << node.env.top.b
-            << " br=" << node.env.bottom.r << " bg=" << node.env.bottom.g << " bb=" << node.env.bottom.b << " lv=" << node.env.level << "\n";
+            << " br=" << node.env.bottom.r << " bg=" << node.env.bottom.g << " bb=" << node.env.bottom.b << " lv=" << node.env.level << " ph=" << (int)node.env.physical << " hr=" << node.env.hour << "\n";
     if (node.instance.present)
         out << indent << "  INST src=" << quoted(node.instance.source) << "\n";
     if (node.hasHidden()) {
@@ -674,6 +674,8 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
                 else if (k == "bg") node.env.bottom.g = std::stof(v);
                 else if (k == "bb") node.env.bottom.b = std::stof(v);
                 else if (k == "lv") node.env.level = std::stof(v);
+                else if (k == "ph") node.env.physical = v != "0";
+                else if (k == "hr") node.env.hour = std::stof(v);
             });
         } else if (kind == "INST") {
             node.instance.present = true;

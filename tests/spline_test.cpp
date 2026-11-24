@@ -171,7 +171,7 @@ int main() {
               std::fabs(w.vertices[0].position.x - box.vertices[0].position.x) > 1e-3f);
     }
     // Objetos parametricos nuevos (Cubo/Esfera/Plano con medidas, Tanque, Figura, Terreno, Relieve, Poligono)
-    for (int k = 9; k <= 16; ++k) {
+    for (int k = 9; k <= 17; ++k) {
         const MeshData m = buildParamShape(defaultParamShape(k));
         CHECK(validMesh(m) && !m.indices.empty());
     }

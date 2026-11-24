@@ -42,7 +42,7 @@ MeshData makePlaneMesh();
 // No se guarda en la escena (al reabrir, la malla queda como objeto poligonal sin parametros).
 struct ParamShape {
     // 0 ninguno, 1 Cilindro, 2 Cono, 3 Disco, 4 Toroide, 5 Capsula, 6 Tubo, 7 Piramide, 8 Platonico,
-    // 9 Cubo, 10 Esfera, 11 Plano, 12 Tanque de Petroleo, 13 Figura, 14 Terreno Fractal, 15 Relieve, 16 Poligono
+    // 9 Cubo, 10 Esfera, 11 Plano, 12 Tanque de Petroleo, 13 Figura, 14 Terreno Fractal, 15 Relieve, 16 Poligono, 17 Cesped
     int kind = 0;
     float a = 100.0f, b = 100.0f, c = 100.0f;  // medidas en cm (ver paramShapeLabels)
     int seg1 = 24, seg2 = 12, seg3 = 1;
@@ -72,5 +72,6 @@ MeshData makeFigureMesh(float height);
 MeshData makeLandscapeMesh(float w, float d, float h, int sw, int sd, int seed);
 MeshData makeReliefMesh(const std::vector<float>* heights, int hw, int hh, float w, float d, float h, int sw, int sd);
 MeshData makePolygonMesh(float w, float h, bool triangle);
+MeshData makeGrassMesh(float w, float d, float h, int blades, int seed);
 
 } // namespace iron3d

@@ -105,6 +105,26 @@ Las entradas de Deformadores, Modelado y MoGraph que no hacían nada ahora crean
 - La Figura es un maniquí de cajas, sin articulaciones.
 - Sin comprobar a mano en la interfaz; solo compilación, tests y arranque.
 
+### Visor, escena y cámaras (2026-11-24)
+
+**Añadido**
+- Mostrar: Sombreado Gouraud (Líneas), Líneas, Alambre y Caja (las líneas son las aristas de polígono, sin las diagonales de la triangulación; en Gouraud (Líneas) solo las caras que miran a la cámara).
+- Paneles: 2 Vistas Apiladas y 2 Vistas Lado a Lado, además de Vista Simple y 4 Vistas. El icono Cambiar Vista de la esquina alterna entre vista simple y multivista.
+- Cielo Físico: cielo con un Sol (Luz infinita hija) cuyos colores, dirección e intensidad siguen la Hora (0–24 h) del panel.
+- Nube, Herramienta de Nubes, Grupo de Nubes y Unir Nubes: nubes hechas con un generador Metaball y esferas ocultas al azar; Unir Nubes junta las esferas de las nubes seleccionadas en la primera.
+- Césped: briznas al azar (anchura, profundidad, altura, número de briznas y semilla).
+- Grúa: base, Brazo y Cabeza encadenados con una cámara al final.
+- Cámara de Movimiento: cámara con temblor de mano grabado como claves en el rango de previo.
+- Morph de Cámara: con dos o más cámaras seleccionadas, crea una cámara que pasa de una a otra a lo largo del rango de previo.
+- Herramienta de Iluminación: pone un foco en el punto de vista actual apuntando al objeto seleccionado.
+
+**Límites conocidos**
+- Siguen desactivados: Sombreado Rápido/Constante, Líneas Ocultas, Isoparms, Esqueleto, Axonométrica, Estereoscópico y Cámara Estéreo.
+- Las nubes son metaballs opacos, no volumétricos. El Cielo Físico no tiene atmósfera ni nubes propias, y la hora no se puede animar.
+- La Grúa no tiene parámetros propios: se maneja rotando sus nulos.
+- El Morph de Cámara copia las posiciones y rotaciones como claves; si cambias las cámaras de origen después, no se actualiza.
+- Sin comprobar a mano en la interfaz; solo compilación, tests y arranque.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

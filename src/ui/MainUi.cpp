@@ -333,6 +333,7 @@ UiState g;
 // Visor del frame actual (lo fija drawMainUi): selectView lo necesita desde
 // sitios que solo reciben la camara.
 ViewportState* g_vp = nullptr;
+OrbitalCamera* g_cam = nullptr;  // camara del editor de este fotograma (Herramienta de Iluminacion)
 void flashStatus(const std::string& text);
 void collectSelected(SceneNode& node, std::vector<SceneNode*>& out);
 
@@ -432,7 +433,8 @@ void enterQuad(OrbitalCamera& camera, ViewportState& vp) {
         vp.quadCams[i] = camera;  // mismo objetivo y distancia
         if (i != cur) vp.quadCams[i].setView(kQuadViews[i]);
     }
-    vp.quadActive = cur >= 0 ? cur : 0;
+    vp.quadActive = cur >= 0 && cur < quadPanelCount(vp) ? cur : 0;
+    if (cur >= quadPanelCount(vp)) vp.quadCams[0] = camera;  // la vista actual pasa al primer panel
     camera = vp.quadCams[vp.quadActive];
     vp.quad = true;
 }
@@ -441,7 +443,7 @@ void enterQuad(OrbitalCamera& camera, ViewportState& vp) {
 void exitQuad(OrbitalCamera& camera, ViewportState& vp, CamView v) {
     vp.quadCams[vp.quadActive] = camera;
     const int p = quadPanelOf(v);
-    if (p >= 0) camera = vp.quadCams[p];
+    if (p >= 0 && p < quadPanelCount(vp)) camera = vp.quadCams[p];
     else camera.setView(v);
     vp.quad = false;
 }
@@ -2010,8 +2012,8 @@ struct PaletteItem {
 // Primitivas poligonales: se crean ya como Objeto poligonal editable (sin parametros todavia).
 int paramKindFor(const std::string& key) {
     static const char* names[] = {"", "Cilindro", "Cono", "Disco", "Toroide", "Cápsula", "Tubo", "Pirámide", "Platónico",
-                                  "", "", "", "Tanque de Petróleo", "Figura", "Terreno Fractal", "Relieve", "Polígono"};
-    for (int i = 1; i < 17; ++i)
+                                  "", "", "", "Tanque de Petróleo", "Figura", "Terreno Fractal", "Relieve", "Polígono", "Césped"};
+    for (int i = 1; i < 18; ++i)
         if (names[i][0] && key == names[i]) return i;
     return 0;
 }
@@ -2020,6 +2022,45 @@ int paramKindFor(const std::string& key) {
 // y con el nombre del menu, como en C4D ("Foco", "Luz Infinita"...).
 bool isDeformPaletteItem(const PaletteItem* it);
 bool isSplinePaletteItem(const PaletteItem* it);
+// Cielo Fisico: colores del cielo y el sol (primer hijo Luz) a partir de la hora (0..24).
+void applyPhysicalSky(SceneNode& sky) {
+    const float h = sky.env.hour;
+    const float elev = std::sin((h - 6.0f) / 12.0f * 3.14159265f);  // -1..1
+    const float day = std::clamp(elev * 2.5f + 0.3f, 0.0f, 1.0f);
+    const float dusk = std::pow(std::max(0.0f, 1.0f - std::fabs(elev) * 3.0f), 2.0f);
+    sky.env.kind = 1;
+    sky.env.top = glm::mix(glm::vec3(0.01f, 0.015f, 0.05f), glm::vec3(0.18f, 0.4f, 0.85f), day);
+    sky.env.bottom = glm::mix(glm::vec3(0.03f, 0.03f, 0.08f), glm::vec3(0.72f, 0.85f, 1.0f), day) + glm::vec3(0.6f, 0.25f, 0.05f) * dusk;
+    sky.env.bottom = glm::min(sky.env.bottom, glm::vec3(1.0f));
+    for (const auto& c : sky.children())
+        if (c->primitive == PrimitiveType::Light) {
+            c->light.kind = LightKind::Infinite;
+            c->rotationDeg = glm::vec3(-std::max(elev, -0.2f) * 90.0f, 180.0f - (h - 12.0f) * 15.0f, 0.0f);
+            c->light.intensity = std::max(0.0f, elev) * 1.3f;
+            c->light.color = glm::mix(glm::vec3(1.0f, 0.55f, 0.25f), glm::vec3(1.0f, 0.97f, 0.9f), std::clamp(elev * 3.0f, 0.0f, 1.0f));
+            break;
+        }
+}
+
+// Nube: generador Metaball con esferas al azar (las esferas son sus hijos, ocultos).
+SceneNode* makeCloud(SceneNode& parent, const glm::vec3& pos, unsigned seed) {
+    SceneNode* n = parent.addChild(tr("Nube"));
+    n->position = pos;
+    n->deform.present = true;
+    n->deform.kind = 32;
+    n->deform.amount = deformDefaultAmount(32);
+    n->deform.param2 = 12.0f;
+    auto rnd = [&]() { seed = seed * 1664525u + 1013904223u; return (float)((seed >> 8) & 0xFFFF) / 65535.0f; };
+    for (int i = 0; i < 7; ++i) {
+        SceneNode* b = n->addChild(tr("Esfera"), PrimitiveType::Sphere);
+        b->position = glm::vec3((rnd() - 0.5f) * 1.6f, (rnd() - 0.3f) * 0.4f, (rnd() - 0.5f) * 0.8f);
+        const float r = 0.5f + rnd() * 0.6f;
+        b->scale = glm::vec3(r, r * 0.8f, r);
+        b->editorVis = VisMode::Off;
+    }
+    return n;
+}
+
 void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& history, const PaletteItem& it) {
     if (isSplinePaletteItem(&it)) {
         const std::string key = it.name.key;
@@ -2196,6 +2237,151 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
             inst->scale = src->scale;
         }
         return;
+    }
+    {
+        const std::string key = it.name.key;
+        if (key == "Cielo Físico") {
+            SceneNode* en = createObject(root, selected, history, PrimitiveType::None);
+            if (en) {
+                en->setName(tr("Cielo Físico"));
+                en->env.present = true;
+                en->env.physical = true;
+                en->env.hour = 15.0f;
+                SceneNode* sun = en->addChild(tr("Sol"), PrimitiveType::Light);
+                sun->light.shadow = 1;
+                applyPhysicalSky(*en);
+            }
+            return;
+        }
+        if (key == "Nube" || key == "Herramienta de Nubes") {
+            SceneNode* holder = createObject(root, selected, history, PrimitiveType::None);
+            if (holder) {
+                // el objeto creado pasa a ser la nube
+                SceneNode* parent = holder->parent();
+                SceneNode* cl = makeCloud(*parent, glm::vec3(0, 2.0f, 0), (unsigned)holder->id() * 2654435761u);
+                parent->removeChild(holder);
+                selectOnly(selected, cl);
+            }
+            return;
+        }
+        if (key == "Grupo de Nubes") {
+            SceneNode* grp = createObject(root, selected, history, PrimitiveType::None);
+            if (grp) {
+                grp->setName(tr("Grupo de Nubes"));
+                for (int i = 0; i < 4; ++i)
+                    makeCloud(*grp, glm::vec3((i - 1.5f) * 1.6f, 2.0f + (i % 2) * 0.3f, (i % 3) * 0.6f - 0.6f), (unsigned)(grp->id() * 31 + i * 7919));
+                g.collapsed.erase(grp->id());
+            }
+            return;
+        }
+        if (key == "Unir Nubes") {
+            std::vector<SceneNode*> sel;
+            collectSelected(root, sel);
+            std::vector<SceneNode*> clouds;
+            for (SceneNode* n : sel)
+                if (n->deform.present && n->deform.kind == 32 && n->parent()) clouds.push_back(n);
+            if (clouds.size() < 2) {
+                flashStatus(tr("Unir Nubes: selecciona dos o más nubes."));
+                return;
+            }
+            history.commitBefore(root);
+            SceneNode* dst = clouds[0];
+            const glm::mat4 invDst = glm::inverse(dst->worldMatrix());
+            for (size_t i = 1; i < clouds.size(); ++i) {
+                std::vector<SceneNode*> kids;
+                for (const auto& c : clouds[i]->children()) kids.push_back(c.get());
+                for (SceneNode* k : kids) {
+                    const glm::vec3 wp = glm::vec3(k->worldMatrix()[3]);
+                    SceneNode* nk = dst->addChild(k->name(), k->primitive);
+                    nk->position = glm::vec3(invDst * glm::vec4(wp, 1.0f));
+                    nk->scale = k->scale;
+                    nk->editorVis = VisMode::Off;
+                }
+                clouds[i]->parent()->removeChild(clouds[i]);
+            }
+            selectOnly(selected, dst);
+            flashStatus(tr("Unir Nubes: nubes unidas en una."));
+            return;
+        }
+        if (key == "Grúa") {
+            SceneNode* base = createObject(root, selected, history, PrimitiveType::None);
+            if (base) {
+                base->setName(tr("Grúa"));
+                SceneNode* arm = base->addChild(tr("Brazo"));
+                arm->position = glm::vec3(0, 1.0f, 0);
+                arm->rotationDeg = glm::vec3(-20.0f, 0, 0);
+                SceneNode* head = arm->addChild(tr("Cabeza"));
+                head->position = glm::vec3(0, 0, 2.0f);
+                SceneNode* cam = head->addChild(tr("Cámara"), PrimitiveType::Camera);
+                cam->rotationDeg = glm::vec3(-10.0f, 180.0f, 0);
+                g.collapsed.erase(base->id());
+                g.collapsed.erase(arm->id());
+                g.collapsed.erase(head->id());
+                flashStatus(tr("Grúa: gira la base (H), el Brazo (P) y la Cabeza para mover la cámara."));
+            }
+            return;
+        }
+        if (key == "Cámara de Movimiento") {
+            // camara con temblor de mano: claves de posicion y rotacion con ruido suave en el rango de previo
+            SceneNode* cam = createObject(root, selected, history, PrimitiveType::Camera);
+            if (cam) {
+                cam->setName(tr("Cámara de Movimiento"));
+                const glm::vec3 p0 = cam->position, r0 = cam->rotationDeg;
+                unsigned sd = (unsigned)cam->id() * 747796405u;
+                auto rnd = [&]() { sd = sd * 1664525u + 1013904223u; return (float)((sd >> 8) & 0xFFFF) / 65535.0f - 0.5f; };
+                for (int f = g.previewMin; f <= g.previewMax; f += 6) {
+                    cam->animPos.set(f, p0 + glm::vec3(rnd(), rnd(), rnd()) * 0.04f);
+                    cam->animRot.set(f, r0 + glm::vec3(rnd(), rnd(), rnd() * 0.5f) * 1.5f);
+                }
+                flashStatus(tr("Cámara de Movimiento: temblor grabado como claves (bórralas o muévelas en la Hoja de Claves)."));
+            }
+            return;
+        }
+        if (key == "Morph de Cámara") {
+            std::vector<SceneNode*> sel;
+            collectSelected(root, sel);
+            std::vector<SceneNode*> cams;
+            for (SceneNode* n : sel) if (n->primitive == PrimitiveType::Camera) cams.push_back(n);
+            if (cams.size() < 2) {
+                flashStatus(tr("Morph de Cámara: selecciona dos o más cámaras (en orden)."));
+                return;
+            }
+            SceneNode* m = createObject(root, selected, history, PrimitiveType::Camera);
+            if (m) {
+                m->setName(tr("Morph de Cámara"));
+                m->camera = cams[0]->camera;
+                const int span = std::max(1, g.previewMax - g.previewMin);
+                for (size_t i = 0; i < cams.size(); ++i) {
+                    const int f = g.previewMin + (int)std::lround((float)span * i / (cams.size() - 1));
+                    const glm::mat4 w = cams[i]->worldMatrix();
+                    m->animPos.set(f, glm::vec3(w[3]));
+                    m->animRot.set(f, cams[i]->rotationDeg);
+                }
+                m->position = m->animPos.evaluate(g.frame);
+                m->rotationDeg = m->animRot.evaluate(g.frame);
+                flashStatus(tr("Morph de Cámara: pasa de una cámara a otra a lo largo del rango de previo."));
+            }
+            return;
+        }
+        if (key == "Herramienta de Iluminación") {
+            // luz colocada en el punto de vista actual que apunta al objeto seleccionado (o al origen)
+            SceneNode* target = selected;
+            SceneNode* l = createObject(root, selected, history, PrimitiveType::Light);
+            if (l && g_cam) {
+                l->setName(tr("Luz"));
+                l->light.kind = LightKind::Spot;
+                l->light.outerAngleDeg = 40.0f;
+                l->light.shadow = 1;
+                l->position = g_cam->eyePosition();
+                if (target && target != l && target->parent()) l->light.target = nodePathFromRoot(root, *target);
+                else {
+                    const glm::vec3 d = glm::normalize(-l->position + glm::vec3(1e-6f));
+                    l->rotationDeg = glm::vec3(glm::degrees(std::asin(glm::clamp(d.y, -1.0f, 1.0f))), glm::degrees(std::atan2(-d.x, d.z)), 0.0f);
+                }
+                flashStatus(tr("Herramienta de Iluminación: luz puesta en el punto de vista, apuntando al objeto."));
+            }
+            return;
+        }
     }
     if (std::string(it.name.key) == "Suelo") {
         SceneNode* fl = createObject(root, selected, history, PrimitiveType::Plane);
@@ -2468,21 +2654,21 @@ const PaletteItem kScene[] = {
     {"Primer Plano", Icon::SceForeground, kNone, true},
     {"Fondo", Icon::SceBackground, kNone, true},
     {"Escenario", Icon::SceStage, kNone, false},
-    {"Cielo Físico", Icon::ScePhysicalSky, kNone, false},
-    {"Herramienta de Nubes", Icon::SceCloudTool, kNone, false},
-    {"Grupo de Nubes", Icon::SceCloudGroup, kNone, false},
-    {"Nube", Icon::SceCloud, kNone, false},
-    {"Unir Nubes", Icon::SceCloudJoin, kNone, false},
-    {"Césped", Icon::SceGrass, kNone, false},
+    {"Cielo Físico", Icon::ScePhysicalSky, kNone, true},
+    {"Herramienta de Nubes", Icon::SceCloudTool, kNone, true},
+    {"Grupo de Nubes", Icon::SceCloudGroup, kNone, true},
+    {"Nube", Icon::SceCloud, kNone, true},
+    {"Unir Nubes", Icon::SceCloudJoin, kNone, true},
+    {"Césped", Icon::SceGrass, kNone, true},
 };
 
 const PaletteItem kCameras[] = {
     {"Cámara", Icon::Camera, PrimitiveType::Camera, true},
     {"Cámara Objetivo", Icon::CamTarget, PrimitiveType::Camera, true},
     {"Cámara Estéreo", Icon::CamStereo, kNone, false},
-    {"Cámara de Movimiento", Icon::CamMotion, kNone, false},
-    {"Morph de Cámara", Icon::CamMorph, kNone, false},
-    {"Grúa", Icon::CamCrane, kNone, false},
+    {"Cámara de Movimiento", Icon::CamMotion, kNone, true},
+    {"Morph de Cámara", Icon::CamMorph, kNone, true},
+    {"Grúa", Icon::CamCrane, kNone, true},
 };
 
 const PaletteItem kLights[] = {
@@ -2494,7 +2680,7 @@ const PaletteItem kLights[] = {
     {"Luz de Área", Icon::LgtArea, PrimitiveType::Light, true, (int)LightKind::Area},
     {"Luz Solar", Icon::LgtSun, PrimitiveType::Light, true, (int)LightKind::Infinite},
     {"Luz PBR", Icon::LgtPbr, PrimitiveType::Light, true, (int)LightKind::Area},
-    {"Herramienta de Iluminación", Icon::LgtTool, kNone, false},
+    {"Herramienta de Iluminación", Icon::LgtTool, kNone, true},
 };
 
 template <size_t N>
@@ -3960,12 +4146,19 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
             ImGui::EndMenu();
         }
         if (beginMenuDbg(tr("Mostrar"))) {
-            ImGui::MenuItem(tr("Sombreado Gouraud"), "N~A", true);
-            disabledItems({{tr("Sombreado Gouraud (Líneas)"), "N~B"}, {tr("Sombreado Rápido"), "N~C"},
-                           {tr("Sombreado Rápido (Líneas)"), "N~D"}, {tr("Sombreado Constante"), "N~E"},
-                           {tr("Sombreado Constante (Líneas)"), "N~F"}, {tr("Líneas Ocultas"), "N~G"}, {tr("Líneas"), "N~H"},
-                           {nullptr, nullptr}, {tr("Alambre"), "N~I"}, {tr("Isoparms"), "N~J"}, {tr("Caja"), "N~K"},
-                           {tr("Esqueleto"), "N~L"}});
+            auto dm = [&](const char* label, const char* key, int mode) {
+                if (ImGui::MenuItem(label, key, vp.displayMode == mode)) vp.displayMode = mode;
+            };
+            dm(tr("Sombreado Gouraud"), "N~A", 0);
+            dm(tr("Sombreado Gouraud (Líneas)"), "N~B", 1);
+            disabledItems({{tr("Sombreado Rápido"), "N~C"}, {tr("Sombreado Rápido (Líneas)"), "N~D"}, {tr("Sombreado Constante"), "N~E"},
+                           {tr("Sombreado Constante (Líneas)"), "N~F"}, {tr("Líneas Ocultas"), "N~G"}});
+            dm(tr("Líneas"), "N~H", 7);
+            ImGui::Separator();
+            dm(tr("Alambre"), "N~I", 8);
+            ImGui::MenuItem(tr("Isoparms"), "N~J", false, false);
+            dm(tr("Caja"), "N~K", 10);
+            ImGui::MenuItem(tr("Esqueleto"), "N~L", false, false);
             ImGui::EndMenu();
         }
         if (beginMenuDbg(tr("Opciones"))) {
@@ -3999,8 +4192,16 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
             if (ImGui::BeginMenu(tr("Disposición"))) {
                 if (ImGui::MenuItem(tr("Vista Simple"), nullptr, !vp.quad) && vp.quad)
                     exitQuad(camera, vp, camera.view());
-                disabledItems({{tr("2 Vistas Apiladas"), ""}, {tr("2 Vistas Lado a Lado"), ""}});
-                if (ImGui::MenuItem(tr("4 Vistas"), nullptr, vp.quad) && !vp.quad) enterQuad(camera, vp);
+                auto layout = [&](const char* label, int lay) {
+                    if (ImGui::MenuItem(label, nullptr, vp.quad && vp.quadLayout == lay)) {
+                        if (vp.quad) exitQuad(camera, vp, camera.view());
+                        vp.quadLayout = lay;
+                        enterQuad(camera, vp);
+                    }
+                };
+                layout(tr("2 Vistas Apiladas"), 2);
+                layout(tr("2 Vistas Lado a Lado"), 3);
+                layout(tr("4 Vistas"), 4);
                 ImGui::EndMenu();
             }
             ImGui::Separator();
@@ -4027,10 +4228,12 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
             {"npan", Icon::NavPan, 0, tr("Mover Cámara (arrastrar)")},
             {"nzoom", Icon::NavZoom, 1, tr("Zoom de Cámara (arrastrar)")},
             {"nrot", Icon::NavRotate, 2, tr("Rotar Cámara (arrastrar)")},
-            {"nlay", Icon::NavLayout, 3, tr("Cambiar Vista (todavía no implementado)")},
+            {"nlay", Icon::NavLayout, 3, tr("Cambiar Vista: clic alterna entre esta vista y la multivista")},
         };
         for (const auto& n : navs) {
-            iconButton(n.id, n.icon, ib, false, n.op != 3, n.tip, n.op == 3 ? tr("Multi-vista: todavía no implementado.") : tr("Arrastre sobre el icono para navegar por la vista."));
+            const BtnResult br = iconButton(n.id, n.icon, ib, vp.quad && n.op == 3, true, n.tip,
+                                            n.op == 3 ? tr("Cambiar Vista: clic alterna entre la vista simple y la multivista.") : tr("Arrastre sobre el icono para navegar por la vista."));
+            if (n.op == 3 && br == BtnResult::Click) toggleQuad(camera);
             if (ImGui::IsItemActive() && n.op != 3) {
                 if (n.op == 0) camera.pan(io.MouseDelta.x, io.MouseDelta.y);
                 if (n.op == 1) camera.dolly(io.MouseDelta.y - io.MouseDelta.x);
@@ -4139,7 +4342,7 @@ void drawQuadPanels(OrbitalCamera& camera, ViewportState& vp, const SceneNode& r
     const bool click = ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
                        ImGui::IsMouseClicked(ImGuiMouseButton_Middle);
     if (click && !io.WantCaptureMouse) {
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < quadPanelCount(vp); ++i) {
             const QuadRect r = quadPanelRect(vp, i);
             if (i == vp.quadActive || io.MousePos.x < r.x || io.MousePos.y < r.y || io.MousePos.x >= r.x + r.w ||
                 io.MousePos.y >= r.y + r.h)
@@ -4152,7 +4355,7 @@ void drawQuadPanels(OrbitalCamera& camera, ViewportState& vp, const SceneNode& r
         }
     }
     ImDrawList* dl = ImGui::GetBackgroundDrawList();
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < quadPanelCount(vp); ++i) {
         if (i == vp.quadActive) continue;
         const QuadRect r = quadPanelRect(vp, i);
         ViewportState pv = vp;
@@ -5599,6 +5802,17 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
             }
         } else if (node.env.present) {
             sectionHeader(tr("Propiedades del Objeto"));
+            if (node.env.physical) {
+                propLabel(tr("Hora"));
+                ImGui::SetNextItemWidth(-1);
+                float hr = node.env.hour;
+                if (ImGui::SliderFloat("##skyhour", &hr, 0.0f, 24.0f, "%.1f h")) {
+                    if (ImGui::IsItemActivated()) history.commitBefore(root);
+                    node.env.hour = hr;
+                    applyPhysicalSky(node);
+                }
+                ImGui::TextDisabled("%s", tr("  Colores del cielo y sol (primer hijo Luz) según la hora."));
+            }
             if (node.env.kind == 2) {
                 propLabel(tr("Color Ambiente"));
                 ImGui::SetNextItemWidth(-1);
@@ -5794,6 +6008,7 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                     case 14: fl = {{"Anchura", &ps.a, 1.0f, 1000000}, {"Profundidad", &ps.b, 1.0f, 1000000}, {"Altura", &ps.c, 0.0f, 100000}}; break;
                     case 15: fl = {{"Anchura", &ps.a, 1.0f, 1000000}, {"Profundidad", &ps.b, 1.0f, 1000000}, {"Altura", &ps.c, 0.0f, 100000}}; break;
                     case 16: fl = {{"Anchura", &ps.a, 0.1f, 100000}, {"Altura", &ps.b, 0.1f, 100000}}; break;
+                    case 17: fl = {{"Anchura", &ps.a, 1.0f, 1000000}, {"Profundidad", &ps.b, 1.0f, 1000000}, {"Altura de las Briznas", &ps.c, 0.1f, 10000}}; break;
                     default: break;
                 }
                 // enteros con rango propio de los tipos nuevos
@@ -5805,6 +6020,7 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                     case 12: il2 = {{"Segmentos de Rotación", &ps.seg1, 3, 256}}; break;
                     case 14: il2 = {{"Segmentos en la Anchura", &ps.seg1, 1, 500}, {"Segmentos en la Profundidad", &ps.seg2, 1, 500}, {"Semilla", &ps.seg3, 0, 100000}}; break;
                     case 15: il2 = {{"Segmentos en la Anchura", &ps.seg1, 1, 1000}, {"Segmentos en la Profundidad", &ps.seg2, 1, 1000}}; break;
+                    case 17: il2 = {{"Briznas", &ps.seg1, 1, 200000}, {"Semilla", &ps.seg3, 0, 100000}}; break;
                     default: break;
                 }
                 bool changed = false;
@@ -9622,6 +9838,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
                  RendererBackend activeBackend, Preferences& prefs, const std::filesystem::path& prefsPath,
                  std::vector<Material>& materials, OrbitalCamera& camera, ViewportState& viewport) {
     g_vp = &viewport;
+    g_cam = &camera;
     camera.nav.pan = (float)prefs.navPan / 100.0f;
     camera.nav.zoom = (float)prefs.navZoom / 100.0f;
     camera.nav.orbit = (float)prefs.navOrbit / 100.0f;
@@ -10024,6 +10241,14 @@ void loadPresetIntoScene(const PresetLibrary& lib, const PresetItem& item, Scene
 namespace iron3d {
 QuadRect quadPanelRect(const ViewportState& vp, int i) {
     constexpr float gap = 2.0f;
+    if (vp.quadLayout == 2) {  // apiladas
+        const float hh2 = std::max(1.0f, (vp.fullH - gap) * 0.5f);
+        return {vp.fullX, vp.fullY + i * (hh2 + gap), vp.fullW, hh2};
+    }
+    if (vp.quadLayout == 3) {  // lado a lado
+        const float hw2 = std::max(1.0f, (vp.fullW - gap) * 0.5f);
+        return {vp.fullX + i * (hw2 + gap), vp.fullY, hw2, vp.fullH};
+    }
     const float hw = std::max(1.0f, (vp.fullW - gap) * 0.5f);
     const float hh = std::max(1.0f, (vp.fullH - gap) * 0.5f);
     const int col = i % 2, row = i / 2;

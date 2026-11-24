@@ -48,6 +48,11 @@ struct ViewportState {
     // fullX/fullY/fullW/fullH los del visor entero.
     bool quad = false;
     int quadActive = 0;
+    // Disposicion de la multivista (2026-11-24): 4 = 4 Vistas, 2 = 2 Vistas Apiladas, 3 = 2 Vistas Lado a Lado.
+    int quadLayout = 4;
+    // Mostrar (2026-11-24): 0 Gouraud, 1 Gouraud (Lineas), 7 Lineas, 8 Alambre, 10 Caja. Las lineas de los modos
+    // con sombreado solo se dibujan en las caras que miran a la camara.
+    int displayMode = 0;
     // W: ejes del gizmo en el mundo (si no, los del objeto, como C4D por defecto).
     bool worldCoords = false;
     // L "Activar Eje": mover/rotar/escalar cambia solo el eje del objeto; la
@@ -119,6 +124,7 @@ void modelToolMouse(SceneNode& root, SceneNode* selected, const OrbitalCamera& c
 // Rectangulo (coordenadas de ventana) del panel i (0-3) de la vista de 4.
 struct QuadRect { float x, y, w, h; };
 QuadRect quadPanelRect(const ViewportState& vp, int i);
+inline int quadPanelCount(const ViewportState& vp) { return vp.quadLayout == 4 ? 4 : 2; }
 
 // Muestra la ventana con el resultado de importar un .c4d (main.cpp la usa al
 // abrir un .c4d pasado por linea de comandos).

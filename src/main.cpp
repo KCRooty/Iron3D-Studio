@@ -50,6 +50,7 @@ extern "C" __declspec(dllimport) int __stdcall MultiByteToWideChar(unsigned int 
 #include <cstdio>
 #include <memory>
 #include <unordered_map>
+#include <map>
 #include <vector>
 #include <filesystem>
 #include <functional>
@@ -259,6 +260,90 @@ void drawSceneGBuffer(iron3d::IRenderer& renderer, SceneMeshes& meshes, iron3d::
 // uno asignado). La visibilidad del visor es el punto de ARRIBA del Gestor de
 // Objetos (editorVis): Apagado oculta el nodo y a los hijos en Por Defecto,
 // pero un hijo en Activado sigue viendose, igual que en C4D.
+// Lineas de los modos de Mostrar (Gouraud Lineas, Lineas, Alambre, Caja). Aristas de poligono (sin las diagonales
+// de triangulacion), cacheadas por malla; en Gouraud (Lineas) solo las caras que miran a la camara.
+struct WirePoly { glm::vec3 center, normal; std::vector<std::pair<uint32_t, uint32_t>> edges; };
+const std::vector<WirePoly>& wirePolysOf(const std::shared_ptr<const iron3d::MeshData>& m) {
+    static std::map<const iron3d::MeshData*, std::pair<std::weak_ptr<const iron3d::MeshData>, std::vector<WirePoly>>> cache;
+    if (cache.size() > 512)
+        for (auto it = cache.begin(); it != cache.end();) it = it->second.first.expired() ? cache.erase(it) : std::next(it);
+    auto it = cache.find(m.get());
+    if (it != cache.end() && !it->second.first.expired()) return it->second.second;
+    std::vector<WirePoly> polys;
+    const auto& idx = m->indices;
+    const size_t triCount = idx.size() / 3;
+    size_t t = 0, f = 0;
+    while (t < triCount) {
+        const size_t n = f < m->faceTris.size() ? std::max<size_t>(1, m->faceTris[f]) : 1;
+        ++f;
+        std::map<std::pair<uint32_t, uint32_t>, int> cnt;
+        WirePoly wp{glm::vec3(0.0f), glm::vec3(0.0f), {}};
+        int nv = 0;
+        for (size_t k = t; k < std::min(triCount, t + n); ++k) {
+            for (int e = 0; e < 3; ++e) {
+                uint32_t a = idx[k * 3 + e], b = idx[k * 3 + (e + 1) % 3];
+                const glm::vec3 pa = m->vertices[a].position, pb = m->vertices[b].position;
+                // por posicion: los vertices duplicados (costuras de UV) cuentan como el mismo
+                auto key = [&](uint32_t v) { return v; };
+                (void)key;
+                if (pb.x < pa.x || (pb.x == pa.x && (pb.y < pa.y || (pb.y == pa.y && pb.z < pa.z)))) std::swap(a, b);
+                ++cnt[{a, b}];
+            }
+            const glm::vec3 p0 = m->vertices[idx[k * 3]].position, p1 = m->vertices[idx[k * 3 + 1]].position, p2 = m->vertices[idx[k * 3 + 2]].position;
+            wp.normal += glm::cross(p1 - p0, p2 - p0);
+            wp.center += p0 + p1 + p2;
+            nv += 3;
+        }
+        for (const auto& [e, c] : cnt)
+            if (c == 1) wp.edges.push_back(e);
+        wp.center /= (float)std::max(1, nv);
+        polys.push_back(std::move(wp));
+        t += n;
+    }
+    auto& slot = cache[m.get()];
+    slot.first = m;
+    slot.second = std::move(polys);
+    return slot.second;
+}
+
+void buildDisplayLines(iron3d::SceneNode& node, const glm::mat4& parentWorld, bool parentVisible, const glm::vec3& eye, int mode,
+                       const iron3d::SceneNode* selected, std::vector<iron3d::Vertex>& out) {
+    const bool vis = iron3d::resolveVisibility(node.editorVis, parentVisible);
+    const glm::mat4 world = parentWorld * node.localMatrix();
+    if (vis && soloShows(node) && node.mesh && !node.mesh->indices.empty() && node.primitive == iron3d::PrimitiveType::Mesh) {
+        const glm::vec3 col = &node == selected ? glm::vec3(1.0f, 0.65f, 0.2f) : mode == 1 ? glm::vec3(0.1f, 0.1f, 0.1f) : glm::vec3(0.75f, 0.8f, 0.9f);
+        auto line = [&](const glm::vec3& a, const glm::vec3& b) {
+            iron3d::Vertex v{};
+            v.position = a;
+            v.color = col;
+            v.normal = glm::vec3(0, 0, 1);
+            out.push_back(v);
+            v.position = b;
+            out.push_back(v);
+        };
+        if (mode == 10) {
+            const glm::vec3 mn = node.mesh->boundsMin, mx = node.mesh->boundsMax;
+            glm::vec3 c[8];
+            for (int i = 0; i < 8; ++i)
+                c[i] = glm::vec3(world * glm::vec4(i & 1 ? mx.x : mn.x, i & 2 ? mx.y : mn.y, i & 4 ? mx.z : mn.z, 1.0f));
+            const int e[12][2] = {{0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3}, {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+            for (const auto& ed : e) line(c[ed[0]], c[ed[1]]);
+        } else {
+            const glm::mat3 nm = glm::transpose(glm::inverse(glm::mat3(world)));
+            for (const WirePoly& wp : wirePolysOf(node.mesh)) {
+                if (mode == 1) {
+                    const glm::vec3 cw = glm::vec3(world * glm::vec4(wp.center, 1.0f));
+                    if (glm::dot(nm * wp.normal, eye - cw) <= 0.0f) continue;  // cara de espaldas
+                }
+                for (const auto& [a, b] : wp.edges)
+                    line(glm::vec3(world * glm::vec4(node.mesh->vertices[a].position, 1.0f)),
+                         glm::vec3(world * glm::vec4(node.mesh->vertices[b].position, 1.0f)));
+            }
+        }
+    }
+    for (const auto& c : node.children()) buildDisplayLines(*c, world, vis, eye, mode, selected, out);
+}
+
 void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vector<iron3d::Material>& materials,
                iron3d::SceneNode& node, const glm::mat4& parentWorld, const glm::mat4& viewProj,
                bool parentVisible = true, int pass = 0) {
@@ -1202,7 +1287,7 @@ int main(int argc, char** argv) {
         if (viewport.quad) {
             renderer->setViewportRect((int)(viewport.fullX * sx), (int)(viewport.fullY * sy),
                                       (int)(viewport.fullW * sx), (int)(viewport.fullH * sy));
-            for (int i = 0; i < 4; ++i) {
+            for (int i = 0; i < iron3d::quadPanelCount(viewport); ++i) {
                 const QuadRect r = quadPanelRect(viewport, i);
                 const bool act = i == viewport.quadActive;
                 const OrbitalCamera& cam = act ? camera : viewport.quadCams[i];
@@ -1294,8 +1379,16 @@ int main(int argc, char** argv) {
                     const bool useWp = viewport.workplane && pn.kind == iron3d::OrbitalCamera::View::Perspective;
                     renderer->drawGrid(gridVerts, pvp * (useWp ? workplaneMat : glm::mat4(1.0f)) * gridModelFor(pn.kind));
                 }
-                drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), pvp, true, 0);
-                drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), pvp, true, 1);
+                const int dmode = viewport.renderView ? 0 : viewport.displayMode;
+                if (dmode == 0 || dmode == 1) {
+                    drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), pvp, true, 0);
+                    drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), pvp, true, 1);
+                }
+                if (dmode != 0) {
+                    std::vector<Vertex> wire;
+                    buildDisplayLines(sceneRoot, glm::mat4(1.0f), true, pn.eye, dmode, selected, wire);
+                    if (!wire.empty()) renderer->drawGizmo(wire, noTris, pvp);
+                }
 
                 // Gizmo encima de la escena (ningun buffer de profundidad todavia en
                 // Fase 1-2, asi que "despues" ya implica "por encima"). Solo en

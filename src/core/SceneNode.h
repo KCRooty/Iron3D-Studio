@@ -221,6 +221,8 @@ struct EnvData {
     glm::vec3 top{0.2f, 0.2f, 0.25f};
     glm::vec3 bottom{0.2f, 0.2f, 0.25f};
     float level = 1.0f; // Entorno: multiplica el color ambiente
+    bool physical = false;  // Cielo Fisico: colores y sol (primer hijo Luz) segun la hora
+    float hour = 12.0f;
 };
 
 // Clonador (ver Clone.h): copias del primer hijo con malla en modo Lineal, Cuadricula o Radial.

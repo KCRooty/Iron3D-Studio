@@ -260,6 +260,7 @@ ParamShape defaultParamShape(int kind) {
         case 14: p.a = 800; p.b = 800; p.c = 100; p.seg1 = p.seg2 = 60; p.seg3 = 1; break;  // + semilla
         case 15: p.a = 400; p.b = 400; p.c = 50; p.seg1 = p.seg2 = 64; break;
         case 16: p.a = 200; p.b = 200; p.seg1 = 0; break;                 // 0 cuadrado, 1 triangulo
+        case 17: p.a = 400; p.b = 400; p.c = 20; p.seg1 = 2000; p.seg3 = 1; break;  // Cesped: ancho, fondo, altura, briznas, semilla
         default: break;
     }
     return p;
@@ -291,6 +292,7 @@ MeshData buildParamShape(const ParamShape& p) {
         case 14: return makeLandscapeMesh(p.a * k, p.b * k, p.c * k, std::max(1, p.seg1), std::max(1, p.seg2), p.seg3);
         case 15: return makeReliefMesh(p.heights.get(), p.hw, p.hh, p.a * k, p.b * k, p.c * k, std::max(1, p.seg1), std::max(1, p.seg2));
         case 16: return makePolygonMesh(p.a * k, p.b * k, p.seg1 != 0);
+        case 17: return makeGrassMesh(p.a * k, p.b * k, p.c * k, std::clamp(p.seg1, 1, 200000), p.seg3);
         default: return MeshData{};
     }
 }
@@ -470,6 +472,29 @@ MeshData makeReliefMesh(const std::vector<float>* heights, int hw, int hh, float
             v.position.y = h * (*heights)[(size_t)y * hw + x];
         }
         smoothNormals(m);
+    }
+    updateBounds(m);
+    return m;
+}
+
+MeshData makeGrassMesh(float w, float d, float h, int blades, int seed) {
+    // briznas: triangulos finos e inclinados al azar, de pie sobre y = 0, verdes con la punta mas clara
+    MeshData m;
+    for (int i = 0; i < blades; ++i) {
+        const float x = (hash2(i, 1, seed) - 0.5f) * w, z = (hash2(i, 2, seed) - 0.5f) * d;
+        const float ang = hash2(i, 3, seed) * 2 * kPi, bw = h * 0.06f * (0.6f + hash2(i, 4, seed));
+        const float bh = h * (0.6f + 0.8f * hash2(i, 5, seed));
+        const glm::vec3 side(std::cos(ang) * bw, 0, std::sin(ang) * bw);
+        const glm::vec3 lean(-std::sin(ang) * bh * 0.3f * hash2(i, 6, seed), 0, std::cos(ang) * bh * 0.3f * hash2(i, 6, seed));
+        const glm::vec3 base(x, 0, z), tip = base + glm::vec3(0, bh, 0) + lean;
+        const glm::vec3 n = glm::normalize(glm::cross(side, tip - base) + glm::vec3(0, 1e-6f, 0));
+        const uint32_t b0 = (uint32_t)m.vertices.size();
+        Vertex a = pv(base - side, n, {0, 0}), b = pv(base + side, n, {1, 0}), c = pv(tip, n, {0.5f, 1});
+        a.color = b.color = glm::vec3(0.18f, 0.42f, 0.12f);
+        c.color = glm::vec3(0.55f, 0.75f, 0.3f);
+        m.vertices.insert(m.vertices.end(), {a, b, c});
+        m.indices.insert(m.indices.end(), {b0, b0 + 1, b0 + 2});
+        m.faceTris.push_back(1);
     }
     updateBounds(m);
     return m;
