@@ -354,11 +354,20 @@ void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vect
     // dibujado). Los objetos transparentes entre si no se ordenan por distancia todavia.
     auto drawPart = [&](iron3d::MeshHandle mh, const glm::mat4& mdl, const glm::mat4& mp, const iron3d::Material& mat,
                         const iron3d::TexMapping& tx, uint32_t first, uint32_t count) {
-        if (iron3d::materialIsBlended(mat) != (pass == 1)) return;
+        // Usar Color (sin material propio) y Rayos X del panel Basico
+        iron3d::Material over;
+        const iron3d::Material* mp2 = &mat;
+        if ((node.useColor != 0 && node.materialIndex < 0) || node.xray) {
+            over = mat;
+            if (node.useColor != 0 && node.materialIndex < 0) over.baseColor = node.displayColor;
+            if (node.xray) over.transparency = glm::max(over.transparency, glm::vec3(0.5f));
+            mp2 = &over;
+        }
+        if (iron3d::materialIsBlended(*mp2) != (pass == 1)) return;
         // El Fresnel se muestrea por angulo de vision, no por UV: vale con cualquier proyeccion de la etiqueta.
         iron3d::TexMapping tm = tx;
         if (iron3d::channelIsFresnel(mat, iron3d::TexSlot::Color)) tm.enabled = true;
-        renderer.drawMesh(mh, mdl, mp, mat, tm, first, count);
+        renderer.drawMesh(mh, mdl, mp, *mp2, tm, first, count);
     };
 
     using iron3d::PrimitiveType;

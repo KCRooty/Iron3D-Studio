@@ -5257,9 +5257,23 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                  tr("Visible en Editor (punto superior): Por Defecto hereda del padre, Activado lo muestra siempre, Apagado lo oculta en el visor."));
         visCombo(tr("Visible en Render"), "##visrd", node.renderVis,
                  tr("Visible en Render (punto inferior): Iron3D todavía no tiene render final; el valor se guarda en la escena."));
-        roCombo(tr("Usar Color"), tr("Desactivado"));
-        roCheck(tr("Activado"), true);
-        roCheck(tr("Rayos X"), false);
+        {
+            propLabel(tr("Usar Color"));
+            const char* ucs[] = {tr("Desactivado"), tr("Automático"), tr("Activado")};
+            ImGui::SetNextItemWidth(fieldWidth(140));
+            int uc = node.useColor;
+            if (ImGui::Combo("##usecol", &uc, ucs, 3)) { history.commitBefore(root); node.useColor = uc; }
+            setHint(tr("Usar Color: el visor pinta el objeto con el Color de Visualización si no tiene material."));
+            if (node.useColor != 0) {
+                propLabel(tr("Color de Visualización"));
+                ImGui::SetNextItemWidth(fieldWidth(200));
+                ImGui::ColorEdit3("##dispcol", &node.displayColor.x, ImGuiColorEditFlags_NoInputs);
+                trackEdit(history, root);
+            }
+            propLabel(tr("Rayos X"));
+            if (ImGui::Checkbox("##xray", &node.xray)) history.commitBefore(root);
+            setHint(tr("Rayos X: el visor dibuja el objeto semitransparente."));
+        }
     }
     if (tabOn(mask, 1)) {
         sectionHeader(tr("Coordenadas"));
@@ -5939,10 +5953,27 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
             ImGui::TextDisabled(tr("  Refleja al primer hijo con malla; el hijo se edita aparte."));
         } else if (isNull) {
             sectionHeader(tr("Propiedades del Objeto"));
-            roCombo(tr("Mostrar"), tr("Punto"));
-            roFloat(tr("Radio"), 10.0f, tr("%.0f cm"));
-            roFloat(tr("Relación de Aspecto"), 1.0f, "%.2f");
-            roCombo(tr("Orientación"), tr("Cámara"));
+            NullDisplay& nd = node.nullDisplay;
+            const char* shapes[] = {tr("Punto"), tr("Punto (Grande)"), tr("Círculo"), tr("Rectángulo"), tr("Diamante"), tr("Triángulo"),
+                                    tr("Pentágono"), tr("Hexágono"), tr("Octágono"), tr("Estrella"), tr("Eje"), tr("Cubo"),
+                                    tr("Pirámide"), tr("Esfera"), tr("Ninguno")};
+            propLabel(tr("Mostrar"));
+            int sh = nd.shape < 0 || nd.shape > 13 ? 14 : nd.shape;
+            ImGui::SetNextItemWidth(fieldWidth(160));
+            if (ImGui::Combo("##ndshape", &sh, shapes, 15)) { history.commitBefore(root); nd.shape = sh == 14 ? -1 : sh; }
+            propLabel(tr("Radio"));
+            float rcm = nd.radius * kCmPerUnit;
+            ImGui::SetNextItemWidth(fieldWidth());
+            if (ImGui::DragFloat("##ndrad", &rcm, 0.5f, 0.1f, 100000.0f, tr("%.1f cm"))) nd.radius = rcm / kCmPerUnit;
+            trackEdit(history, root);
+            propLabel(tr("Relación de Aspecto"));
+            ImGui::SetNextItemWidth(fieldWidth());
+            ImGui::DragFloat("##ndasp", &nd.aspect, 0.01f, 0.01f, 100.0f, "%.2f");
+            trackEdit(history, root);
+            propLabel(tr("Orientación"));
+            const char* ors[] = {tr("Cámara"), "XY", "ZY", "XZ"};
+            ImGui::SetNextItemWidth(fieldWidth(140));
+            if (ImGui::Combo("##ndor", &nd.orientation, ors, 4)) history.commitBefore(root);
         } else {
             sectionHeader(tr("Propiedades del Objeto"));
             if (isParametric(node.primitive)) {
@@ -6117,9 +6148,18 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
     }
     if (!isNull && !isLight && tabOn(mask, 3)) {
         sectionHeader(tr("Etiqueta Phong"));
-        roCheck(tr("Limitar Ángulo"), true);
-        roFloat(tr("Ángulo de Phong"), 80.0f, "%.0f °");
+        bool phChanged = false;
+        propLabel(tr("Limitar Ángulo"));
+        if (ImGui::Checkbox("##phlim", &node.phongLimit)) { history.commitBefore(root); phChanged = true; }
+        propLabel(tr("Ángulo de Phong"));
+        ImGui::SetNextItemWidth(fieldWidth());
+        if (ImGui::DragFloat("##phang", &node.phongAngle, 0.5f, 0.0f, 180.0f, "%.0f °")) phChanged = true;
+        if (ImGui::IsItemActivated()) history.commitBefore(root);
         roCheck(tr("Usar Bordes"), false);
+        if (phChanged && node.primitive == PrimitiveType::Mesh && node.mesh && !node.param.generated)
+            node.mesh = std::make_shared<const MeshData>(applyPhongAngle(*node.mesh, node.phongAngle, node.phongLimit));
+        if (node.primitive != PrimitiveType::Mesh)
+            ImGui::TextDisabled("%s", tr("  El ángulo se aplica a los objetos poligonales (hazlo editable con C)."));
     }
     if (isLight && tabOn(mask, 3)) {
         LightData& l = node.light;
@@ -6622,18 +6662,43 @@ void drawTagAttributes(SceneNode& node, std::vector<Material>& materials, SceneN
             ImGui::EndCombo();
         }
         roCombo(tr("Selección"), "");
-        roCombo(tr("Proyección"), tr("Mapeado UVW"));
-        roCombo(tr("Lado"), tr("Ambos"));
+        TextureTagData& tt = node.texTag;
+        propLabel(tr("Proyección"));
+        const char* projs[] = {tr("Esférico"), tr("Cilíndrico"), tr("Plano"), tr("Cúbico"), tr("Frontal"), tr("Espacial"),
+                               tr("Mapeado UVW"), tr("Contracción"), tr("Cámara")};
+        ImGui::SetNextItemWidth(fieldWidth(160));
+        if (ImGui::Combo("##tproj", &tt.projection, projs, 9)) history.commitBefore(root);
+        if (tt.projection != 6) ImGui::TextDisabled("%s", tr("  El visor solo aplica la proyección UVW; las demás salen con color plano."));
+        propLabel(tr("Lado"));
+        const char* sides[] = {tr("Ambos"), tr("Frente"), tr("Detrás")};
+        ImGui::SetNextItemWidth(fieldWidth(140));
+        if (ImGui::Combo("##tside", &tt.side, sides, 3)) history.commitBefore(root);
         roCheck(tr("Mezclar Texturas"), false);
-        roCheck(tr("Repetición"), true);
-        roCheck(tr("Sin Costuras"), false);
+        propLabel(tr("Repetición"));
+        if (ImGui::Checkbox("##ttile", &tt.tile)) history.commitBefore(root);
+        propLabel(tr("Sin Costuras"));
+        if (ImGui::Checkbox("##tseam", &tt.seamless)) history.commitBefore(root);
         roCheck(tr("Usar UVW para Relieve"), true);
-        roFloat(tr("Desfase U"), 0, "%.0f %%");
-        roFloat(tr("Desfase V"), 0, "%.0f %%");
-        roFloat(tr("Longitud U"), 100, "%.0f %%");
-        roFloat(tr("Longitud V"), 100, "%.0f %%");
-        roFloat(tr("Repeticiones U"), 1, "%.0f");
-        roFloat(tr("Repeticiones V"), 1, "%.0f");
+        auto pct = [&](const char* label, const char* id, float* v, float mn, float mx) {
+            propLabel(label);
+            float p = *v * 100.0f;
+            ImGui::SetNextItemWidth(fieldWidth());
+            if (ImGui::DragFloat(id, &p, 0.5f, mn, mx, "%.1f %%")) *v = p / 100.0f;
+            trackEdit(history, root);
+        };
+        pct(tr("Desfase U"), "##tou", &tt.offset.x, -10000.0f, 10000.0f);
+        pct(tr("Desfase V"), "##tov", &tt.offset.y, -10000.0f, 10000.0f);
+        pct(tr("Longitud U"), "##tlu", &tt.length.x, 0.01f, 100000.0f);
+        pct(tr("Longitud V"), "##tlv", &tt.length.y, 0.01f, 100000.0f);
+        for (int k = 0; k < 2; ++k) {
+            propLabel(k == 0 ? tr("Repeticiones U") : tr("Repeticiones V"));
+            float rep = 1.0f / std::max(1e-4f, tt.length[k]);
+            ImGui::SetNextItemWidth(fieldWidth());
+            ImGui::PushID(k);
+            if (ImGui::DragFloat("##trep", &rep, 0.01f, 0.001f, 10000.0f, "%.3f")) tt.length[k] = 1.0f / std::max(1e-4f, rep);
+            trackEdit(history, root);
+            ImGui::PopID();
+        }
     }
     if (tabOn(g.tagMask, 2)) {
         sectionHeader(tr("Coordenadas"));

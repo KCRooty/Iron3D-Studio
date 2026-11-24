@@ -130,6 +130,9 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             << " zoom=" << c.zoom << " target=" << quoted(c.target) << "\n";
     }
     if (node.isJoint) out << indent << "  JOINT\n";
+    if (node.useColor != 0 || node.xray || !node.phongLimit || node.phongAngle != 80.0f)
+        out << indent << "  DISP uc=" << node.useColor << " r=" << node.displayColor.r << " g=" << node.displayColor.g
+            << " b=" << node.displayColor.b << " xr=" << (int)node.xray << " pl=" << (int)node.phongLimit << " pa=" << node.phongAngle << "\n";
     if (node.nullDisplay.shape >= 0)
         out << indent << "  NULLSHAPE shape=" << node.nullDisplay.shape << " radius=" << node.nullDisplay.radius
             << " aspect=" << node.nullDisplay.aspect << " orient=" << node.nullDisplay.orientation << "\n";
@@ -521,6 +524,16 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
             });
         } else if (kind == "JOINT") {
             node.isJoint = true;
+        } else if (kind == "DISP") {
+            ok = readAttrs(p, "DISP", err, [&](const std::string& k, const std::string& v) {
+                if (k == "uc") node.useColor = std::clamp(std::stoi(v), 0, 2);
+                else if (k == "r") node.displayColor.r = std::stof(v);
+                else if (k == "g") node.displayColor.g = std::stof(v);
+                else if (k == "b") node.displayColor.b = std::stof(v);
+                else if (k == "xr") node.xray = v != "0";
+                else if (k == "pl") node.phongLimit = v != "0";
+                else if (k == "pa") node.phongAngle = std::stof(v);
+            });
         } else if (kind == "NULLSHAPE") {
             NullDisplay& nd = node.nullDisplay;
             ok = readAttrs(p, "NULLSHAPE", err, [&](const std::string& k, const std::string& v) {

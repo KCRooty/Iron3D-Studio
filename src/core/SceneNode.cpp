@@ -184,6 +184,11 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
     copy->jointLimits = src.jointLimits;
     copy->protection = src.protection;
     copy->nullDisplay = src.nullDisplay;
+    copy->useColor = src.useColor;
+    copy->displayColor = src.displayColor;
+    copy->xray = src.xray;
+    copy->phongLimit = src.phongLimit;
+    copy->phongAngle = src.phongAngle;
     copy->ik = src.ik;
     copy->param = src.param;
     copy->deform.present = src.deform.present;

@@ -195,6 +195,19 @@ int main() {
         for (const Vertex& v : rel.vertices) maxY = std::max(maxY, v.position.y);
         CHECK(std::fabs(maxY - 0.5f) < 1e-5f);
     }
+    {
+        // Phong: con limite de 80 grados el cubo conserva las caras planas; sin limite, las esquinas se suavizan
+        const MeshData b = makeBoxMesh(1, 1, 1, 1, 1, 1);
+        const MeshData hard = applyPhongAngle(b, 80.0f, true);
+        const MeshData soft = applyPhongAngle(b, 80.0f, false);
+        bool flat = true, round = true;
+        for (const Vertex& v : hard.vertices)
+            if (std::fabs(std::fabs(v.normal.x) + std::fabs(v.normal.y) + std::fabs(v.normal.z) - 1.0f) > 1e-4f) flat = false;
+        for (const Vertex& v : soft.vertices)
+            if (std::fabs(std::fabs(v.normal.x) - 0.57735f) > 1e-3f) round = false;
+        CHECK(flat);
+        CHECK(round);
+    }
     std::printf(g_fail ? "spline_test: %d fallos\n" : "spline_test: OK\n", g_fail);
     return g_fail ? 1 : 0;
 }

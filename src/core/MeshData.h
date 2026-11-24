@@ -73,5 +73,9 @@ MeshData makeLandscapeMesh(float w, float d, float h, int sw, int sd, int seed);
 MeshData makeReliefMesh(const std::vector<float>* heights, int hw, int hh, float w, float d, float h, int sw, int sd);
 MeshData makePolygonMesh(float w, float h, bool triangle);
 MeshData makeGrassMesh(float w, float d, float h, int blades, int seed);
+// Etiqueta Phong: cada vertice toma la media de las normales de los triangulos que comparten su posicion y cuya
+// normal no se aparta mas de angleDeg de la de su propio triangulo (sin limite = suavizado total). Respeta la
+// topologia: no parte vertices, asi que una arista dura solo sale donde la malla ya tiene vertices separados.
+MeshData applyPhongAngle(const MeshData& src, float angleDeg, bool limit);
 
 } // namespace iron3d

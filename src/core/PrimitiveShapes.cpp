@@ -4,6 +4,8 @@
 // Cada poligono se orienta hacia fuera segun las normales que se le dan, asi que los generadores no
 // tienen que preocuparse del sentido del recorrido.
 
+#include <unordered_map>
+#include <string>
 #include "MeshData.h"
 
 #include <glm/glm.hpp>
@@ -497,6 +499,49 @@ MeshData makeGrassMesh(float w, float d, float h, int blades, int seed) {
         m.faceTris.push_back(1);
     }
     updateBounds(m);
+    return m;
+}
+
+MeshData applyPhongAngle(const MeshData& src, float angleDeg, bool limit) {
+    MeshData m = src;
+    const size_t nt = m.indices.size() / 3;
+    std::vector<glm::vec3> fn(nt);
+    for (size_t t = 0; t < nt; ++t) {
+        const glm::vec3 a = m.vertices[m.indices[t * 3]].position, b = m.vertices[m.indices[t * 3 + 1]].position,
+                        c = m.vertices[m.indices[t * 3 + 2]].position;
+        const glm::vec3 n = glm::cross(b - a, c - a);
+        fn[t] = glm::length(n) > 1e-20f ? glm::normalize(n) : glm::vec3(0.0f);
+    }
+    // triangulos por posicion (los vertices duplicados por costuras cuentan como el mismo punto)
+    auto keyOf = [](const glm::vec3& p) {
+        const auto q = [](float v) { return (long long)std::llround(v * 1e5); };
+        return std::to_string(q(p.x)) + "," + std::to_string(q(p.y)) + "," + std::to_string(q(p.z));
+    };
+    // cada esquina pesa por su angulo: un cuadrado partido en dos triangulos cuenta igual que uno entero
+    std::unordered_map<std::string, std::vector<std::pair<uint32_t, float>>> trisAt;
+    std::vector<std::vector<uint32_t>> trisOfVert(m.vertices.size());
+    for (size_t t = 0; t < nt; ++t)
+        for (int k = 0; k < 3; ++k) {
+            const uint32_t v = m.indices[t * 3 + k];
+            const glm::vec3 p0 = m.vertices[v].position;
+            const glm::vec3 e1 = m.vertices[m.indices[t * 3 + (k + 1) % 3]].position - p0;
+            const glm::vec3 e2 = m.vertices[m.indices[t * 3 + (k + 2) % 3]].position - p0;
+            const float l = glm::length(e1) * glm::length(e2);
+            const float ang = l > 1e-20f ? std::acos(std::clamp(glm::dot(e1, e2) / l, -1.0f, 1.0f)) : 0.0f;
+            trisAt[keyOf(p0)].push_back({(uint32_t)t, ang});
+            trisOfVert[v].push_back((uint32_t)t);
+        }
+    const float cosLim = std::cos(glm::radians(std::clamp(angleDeg, 0.0f, 180.0f)));
+    for (size_t v = 0; v < m.vertices.size(); ++v) {
+        if (trisOfVert[v].empty()) continue;
+        glm::vec3 own(0.0f);
+        for (uint32_t t : trisOfVert[v]) own += fn[t];
+        own = glm::length(own) > 1e-20f ? glm::normalize(own) : m.vertices[v].normal;
+        glm::vec3 sum(0.0f);
+        for (const auto& [t, ang] : trisAt[keyOf(m.vertices[v].position)])
+            if (!limit || glm::dot(fn[t], own) >= cosLim - 1e-5f) sum += fn[t] * ang;
+        if (glm::length(sum) > 1e-20f) m.vertices[v].normal = glm::normalize(sum);
+    }
     return m;
 }
 

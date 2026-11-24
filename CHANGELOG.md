@@ -125,6 +125,19 @@ Las entradas de Deformadores, Modelado y MoGraph que no hacían nada ahora crean
 - El Morph de Cámara copia las posiciones y rotaciones como claves; si cambias las cámaras de origen después, no se actualiza.
 - Sin comprobar a mano en la interfaz; solo compilación, tests y arranque.
 
+### Panel de atributos: campos que eran de solo lectura (2026-11-24)
+
+**Añadido**
+- Básico: Usar Color (Desactivado/Automático/Activado) con Color de Visualización, que el visor usa en los objetos sin material, y Rayos X, que dibuja el objeto semitransparente. Se guardan en el .iron.
+- Nulo: Mostrar (Punto, Círculo, Rectángulo, Diamante, Triángulo, polígonos, Estrella, Eje, Cubo, Pirámide, Esfera o Ninguno), Radio, Relación de Aspecto y Orientación son editables.
+- Etiqueta Phong: Limitar Ángulo y Ángulo de Phong recalculan las normales de los objetos poligonales. Cada esquina pesa por su ángulo, así que un cuadrado partido en dos triángulos se suaviza igual que uno entero.
+- Etiqueta de Textura: Proyección, Lado, Repetición, Sin Costuras, Desfase U/V, Longitud U/V y Repeticiones U/V son editables.
+
+**Límites conocidos**
+- Phong no parte vértices: una arista dura solo aparece donde la malla ya tiene vértices separados. No se aplica a primitivas paramétricas ni a mallas generadas.
+- El visor solo pinta la proyección UVW; con las demás proyecciones la textura sale con color plano. Siguen desactivados Usar Bordes, Mezclar Texturas, Usar UVW para Relieve y el Orden de rotación.
+- Sin comprobar a mano en la interfaz; solo compilación, tests y arranque.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

@@ -390,6 +390,13 @@ public:
     JointLimits jointLimits;
     ProtectionData protection; // etiqueta Proteccion/Limite
     NullDisplay nullDisplay;
+    // Basico (2026-11-24): Usar Color (0 Desactivado, 1 Automatico, 2 Activado) con su Color de Visualizacion, y
+    // Rayos X (el visor lo dibuja semitransparente). Etiqueta Phong: angulo de suavizado de las normales.
+    int useColor = 0;
+    glm::vec3 displayColor{0.6f, 0.6f, 0.6f};
+    bool xray = false;
+    bool phongLimit = true;
+    float phongAngle = 80.0f;
     IkTagData ik;
     SymmetryData symmetry;
     DeformData deform;
