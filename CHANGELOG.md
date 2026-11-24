@@ -6,6 +6,17 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-24 (48): Etiqueta Límite / Protección de C4D
+
+**Añadido**
+- Iron3D lee la etiqueta **Protección** (la «Límite» de los controladores de los rigs): por cada eje de posición, escala y rotación guarda el modo (Libre, Bloquear o Límite) y el rango mínimo/máximo. Se importa desde .c4d, se guarda en .iron (línea `PROT`) y se copia al duplicar.
+- **Bloquear** impide mover ese eje con el gizmo y con los campos de Coordenadas; **Límite** recorta el valor al rango. Sin «Permitir expresiones», el límite también se aplica a la IK y a lo que mueva la escena en cada fotograma (los canales con animación se respetan).
+- Pestaña de Atributos: sección **Protección** (solo si el objeto la tiene) para cambiar modo y rango por eje.
+
+**Verificado:** el modelo real con 71 etiquetas Protección las importa con sus modos (p. ej. dedos con rotación bloqueada en un eje); pruebas nuevas en `ik_test`; todas las pruebas pasan.
+
+**Límites:** los ids de la etiqueta se han tomado de `tprotection.h`; los modos se ven correctos en el modelo real, pero los rangos Límite no se han contrastado contra R19 (las 71 etiquetas del modelo solo usan Bloquear/Libre). No se puede añadir la etiqueta desde cero en la interfaz (solo editar la importada), y no se exporta de vuelta a .c4d.
+
 ### 2026-11-24 (47): Rutas de objetos con nombres repetidos (IK, Piel, objetivos)
 
 **Corregido**

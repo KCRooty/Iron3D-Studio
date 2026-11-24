@@ -139,6 +139,14 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             << l.minDeg.y << "," << l.minDeg.z << " max=" << l.maxDeg.x << "," << l.maxDeg.y << "," << l.maxDeg.z
             << " strength=" << l.strength << "\n";
     }
+    if (node.protection.present) {
+        const ProtectionData& pr = node.protection;
+        auto modes = [&](const int* m) { return std::to_string(m[0]) + std::to_string(m[1]) + std::to_string(m[2]); };
+        auto v3 = [&](const glm::vec3& v) { return std::to_string(v.x) + "," + std::to_string(v.y) + "," + std::to_string(v.z); };
+        out << indent << "  PROT pm=" << modes(pr.posMode) << " sm=" << modes(pr.sclMode) << " rm=" << modes(pr.rotMode)
+            << " pmin=" << v3(pr.posMin) << " pmax=" << v3(pr.posMax) << " smin=" << v3(pr.sclMin) << " smax=" << v3(pr.sclMax)
+            << " rmin=" << v3(pr.rotMin) << " rmax=" << v3(pr.rotMax) << " expr=" << (int)pr.allowExpressions << "\n";
+    }
     if (node.ik.present)
         out << indent << "  IK enabled=" << (int)node.ik.enabled << " solver=" << node.ik.solver
             << " tip=" << quoted(node.ik.tip) << " target=" << quoted(node.ik.target) << " pole=" << quoted(node.ik.pole) << "\n";
@@ -436,7 +444,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras los atributos de NODE"; return false; }
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
     while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG" ||
-                            p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "IK" || p.peek() == "NULLSHAPE" ||
+                            p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "PROT" || p.peek() == "IK" || p.peek() == "NULLSHAPE" ||
                             p.peek() == "SYM" || p.peek() == "DEF" || p.peek() == "INST" || p.peek() == "ENV" || p.peek() == "CLN" || p.peek() == "HIDDEN")) {
         const std::string kind = p.next();
         bool ok = true;
@@ -495,6 +503,28 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
                 } else if (k == "min") vec3(v, l.minDeg);
                 else if (k == "max") vec3(v, l.maxDeg);
                 else if (k == "strength") l.strength = std::stof(v);
+            });
+        } else if (kind == "PROT") {
+            ProtectionData& pr = node.protection;
+            pr.present = true;
+            auto vec3 = [](const std::string& v, glm::vec3& o) {
+                float a = 0, b = 0, c = 0;
+                if (std::sscanf(v.c_str(), "%f,%f,%f", &a, &b, &c) == 3) o = {a, b, c};
+            };
+            auto modes = [](const std::string& v, int* m) {
+                for (int i = 0; i < 3 && i < (int)v.size(); ++i) m[i] = std::clamp(v[(size_t)i] - '0', 0, 2);
+            };
+            ok = readAttrs(p, "PROT", err, [&](const std::string& k, const std::string& v) {
+                if (k == "pm") modes(v, pr.posMode);
+                else if (k == "sm") modes(v, pr.sclMode);
+                else if (k == "rm") modes(v, pr.rotMode);
+                else if (k == "pmin") vec3(v, pr.posMin);
+                else if (k == "pmax") vec3(v, pr.posMax);
+                else if (k == "smin") vec3(v, pr.sclMin);
+                else if (k == "smax") vec3(v, pr.sclMax);
+                else if (k == "rmin") vec3(v, pr.rotMin);
+                else if (k == "rmax") vec3(v, pr.rotMax);
+                else if (k == "expr") pr.allowExpressions = v != "0";
             });
         } else if (kind == "HIDDEN") {
             ok = readAttrs(p, "HIDDEN", err, [&](const std::string& k, const std::string& v) {
@@ -857,6 +887,7 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.texTag = temp.texTag;
     root.isJoint = temp.isJoint;
     root.jointLimits = temp.jointLimits;
+    root.protection = temp.protection;
     root.ik = temp.ik;
     root.deform.present = temp.deform.present;
     root.deform.kind = temp.deform.kind;

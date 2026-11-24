@@ -65,6 +65,14 @@ static void print(const SceneNode& n, const std::vector<Material>& mats, int dep
                     (int)l.kind, l.color.r, l.color.g, l.color.b, l.intensity, l.shadow, l.falloff, l.falloffRadius,
                     l.innerAngleDeg, l.outerAngleDeg, (int)l.noIllumination, (int)l.diffuse, (int)l.specular);
     }
+    if (n.protection.present) {
+        const ProtectionData& p = n.protection;
+        std::printf("  PROT pm=%d%d%d sm=%d%d%d rm=%d%d%d pmin=(%.3f %.3f %.3f) pmax=(%.3f %.3f %.3f) rmin=(%.1f %.1f %.1f) "
+                    "rmax=(%.1f %.1f %.1f) expr=%d",
+                    p.posMode[0], p.posMode[1], p.posMode[2], p.sclMode[0], p.sclMode[1], p.sclMode[2], p.rotMode[0],
+                    p.rotMode[1], p.rotMode[2], p.posMin.x, p.posMin.y, p.posMin.z, p.posMax.x, p.posMax.y, p.posMax.z,
+                    p.rotMin.x, p.rotMin.y, p.rotMin.z, p.rotMax.x, p.rotMax.y, p.rotMax.z, (int)p.allowExpressions);
+    }
     if (n.primitive == PrimitiveType::Camera)
         std::printf("  camara: proy=%d focal=%.1f sensor=%.1f zoom=%.2f", n.camera.projection, n.camera.focalMm,
                     n.camera.sensorMm, n.camera.zoom);

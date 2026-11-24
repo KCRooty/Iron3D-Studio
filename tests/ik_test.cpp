@@ -151,6 +151,39 @@ int main() {
         dup->jointLimits = j->jointLimits;
         CHECK(dup->jointLimits == j->jointLimits);
     }
+    {
+        // Etiqueta Proteccion/Limite: P.Y bloqueada, P.X limitada a [-1, 1], R.H (y) limitada a [0, 30].
+        SceneNode root("raiz");
+        SceneNode* c = root.addChild("Control");
+        ProtectionData& p = c->protection;
+        p.present = true;
+        p.posMode[1] = ProtectionData::Lock;
+        p.posMode[0] = ProtectionData::Limit;
+        p.posMin = glm::vec3(-1.0f, 0.0f, 0.0f);
+        p.posMax = glm::vec3(1.0f, 0.0f, 0.0f);
+        p.rotMode[1] = ProtectionData::Limit;
+        p.rotMin = glm::vec3(0.0f, 0.0f, 0.0f);
+        p.rotMax = glm::vec3(0.0f, 30.0f, 0.0f);
+        const glm::vec3 bp(0.0f, 2.0f, 0.0f), br(0.0f), bs(1.0f);
+        c->position = glm::vec3(5.0f, 9.0f, 3.0f);
+        c->rotationDeg = glm::vec3(10.0f, 80.0f, 0.0f);
+        CHECK(applyProtection(*c, bp, br, bs) == 3);
+        CHECK(c->position == glm::vec3(1.0f, 2.0f, 3.0f)); // X recortada, Y bloqueada, Z libre
+        CHECK(std::abs(c->rotationDeg.y - 30.0f) < 1e-4f && std::abs(c->rotationDeg.x - 10.0f) < 1e-4f);
+        CHECK(applyProtection(*c, bp, br, bs) == 0);
+        // Sin "Permitir expresiones" tambien limita a la IK/animacion, salvo canales con pistas.
+        c->position = glm::vec3(7.0f, 2.0f, 0.0f);
+        CHECK(clampProtectionLimits(root) == 0); // allowExpressions = true: no actua
+        p.allowExpressions = false;
+        CHECK(clampProtectionLimits(root) == 1);
+        CHECK(c->position.x == 1.0f);
+        c->animPos.set(0, c->position);
+        c->position.x = 9.0f;
+        CHECK(clampProtectionLimits(root) == 0 && c->position.x == 9.0f); // manda la animacion
+        SceneNode* dup = root.addChild("Copia");
+        dup->protection = c->protection;
+        CHECK(dup->protection == c->protection);
+    }
     if (g_fail == 0) std::printf("ik: todo correcto\n");
     return g_fail == 0 ? 0 : 1;
 }

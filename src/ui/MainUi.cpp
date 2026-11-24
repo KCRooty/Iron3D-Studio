@@ -4660,6 +4660,7 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
     }
     if (tabOn(mask, 1)) {
         sectionHeader(tr("Coordenadas"));
+        const glm::vec3 protPos = node.position, protRot = node.rotationDeg, protScl = node.scale;
         if (ImGui::BeginTable("##coord", 3, ImGuiTableFlags_SizingStretchSame)) {
             const char* pl[] = {"P . X", "P . Y", "P . Z"};
             const char* sl[] = {"S . X", "S . Y", "S . Z"};
@@ -4675,24 +4676,62 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                 float cm = node.position[i] * kCmPerUnit;
                 ImGui::SetNextItemWidth(-1);
                 if (ImGui::DragFloat("##p", &cm, 1.0f, 0, 0, tr("%.0f cm"))) node.position[i] = cm / kCmPerUnit;
+                if (node.protection.present) applyProtection(node, protPos, protRot, protScl); // Proteccion/Limite
                 trackEdit(history, root);
                 ImGui::TableNextColumn();
                 ImGui::TextUnformatted(sl[i]);
                 ImGui::SameLine(44);
                 ImGui::SetNextItemWidth(-1);
                 ImGui::DragFloat("##s", &node.scale[i], 0.01f, 0.001f, 1000.0f, "%.3f");
+                if (node.protection.present) applyProtection(node, protPos, protRot, protScl);
                 trackEdit(history, root);
                 ImGui::TableNextColumn();
                 ImGui::TextUnformatted(rl[i]);
                 ImGui::SameLine(44);
                 ImGui::SetNextItemWidth(-1);
                 ImGui::DragFloat("##r", &node.rotationDeg[rotIdx[i]], 0.5f, 0, 0, "%.1f °");
+                if (node.protection.present) applyProtection(node, protPos, protRot, protScl);
                 trackEdit(history, root);
                 ImGui::PopID();
             }
             ImGui::EndTable();
         }
         roCombo(tr("Orden"), tr("HPB"));
+        if (node.protection.present) {
+            // Etiqueta Proteccion/Limite de C4D: modo por eje y, en modo Limite, el rango permitido.
+            sectionHeader(tr("Protección"));
+            ProtectionData& pr = node.protection;
+            static const char* modeNames[] = {tr("Libre"), tr("Bloquear"), tr("Límite")};
+            const char* ax[3][3] = {{"P . X", "P . Y", "P . Z"}, {"S . X", "S . Y", "S . Z"}, {"R . H", "R . P", "R . B"}};
+            const int rotOrder[3] = {1, 0, 2}; // fila H, P, B -> componente de rotationDeg
+            bool changed = false;
+            for (int ch = 0; ch < 3; ++ch)
+                for (int i = 0; i < 3; ++i) {
+                    const int c = ch == 2 ? rotOrder[i] : i;
+                    int* mode = ch == 0 ? &pr.posMode[c] : ch == 1 ? &pr.sclMode[c] : &pr.rotMode[c];
+                    glm::vec3& lo = ch == 0 ? pr.posMin : ch == 1 ? pr.sclMin : pr.rotMin;
+                    glm::vec3& hi = ch == 0 ? pr.posMax : ch == 1 ? pr.sclMax : pr.rotMax;
+                    const float unit = ch == 0 ? kCmPerUnit : 1.0f;
+                    ImGui::PushID(ch * 3 + i);
+                    ImGui::TextUnformatted(ax[ch][i]);
+                    ImGui::SameLine(44);
+                    ImGui::SetNextItemWidth(90);
+                    if (ImGui::Combo("##pm", mode, modeNames, 3)) changed = true;
+                    if (*mode == ProtectionData::Limit) {
+                        float a = lo[c] * unit, b = hi[c] * unit;
+                        ImGui::SameLine();
+                        ImGui::SetNextItemWidth(70);
+                        if (ImGui::DragFloat("##pl", &a, 0.5f, 0, 0, "%.1f")) { lo[c] = a / unit; changed = true; }
+                        ImGui::SameLine();
+                        ImGui::SetNextItemWidth(70);
+                        if (ImGui::DragFloat("##ph", &b, 0.5f, 0, 0, "%.1f")) { hi[c] = b / unit; changed = true; }
+                    }
+                    ImGui::PopID();
+                }
+            if (ImGui::Checkbox(tr("Permitir expresiones"), &pr.allowExpressions)) changed = true;
+            ImGui::TextDisabled(tr("  Bloquear y Límite actúan al editar; sin \"Permitir expresiones\" también limitan a la IK."));
+            if (changed) history.commit(history.snapshot(root));
+        }
         sectionHeader(tr("Congelar Transformación"));
         ImGui::TextDisabled(tr("  Todavía no implementado en Iron3D."));
     }
@@ -8608,6 +8647,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     // IK en vivo: las cadenas con etiqueta IK activa siguen a su objetivo cada fotograma (mover el
     // controlador mueve la cadena, como en C4D). Una cadena ya resuelta converge en una iteracion.
     solveAllIk(root);
+    clampProtectionLimits(root); // etiquetas Proteccion con "Permitir expresiones" apagado: limitan tambien a la IK
     // Piel en vivo: las mallas con pesos siguen a las articulaciones (no hace nada si no se han movido).
     evaluateSkins(root);
     // Objetos Simetria: reflejan a su hijo (despues de la Piel y la animacion, que son las que lo mueven).

@@ -208,6 +208,19 @@ struct JointLimits {
     bool operator==(const JointLimits&) const = default;
 };
 
+// Etiqueta Proteccion de C4D (Tprotection, tprotection.h): por eje de posicion, escala y rotacion, deja
+// el valor libre, lo bloquea o lo limita entre un minimo y un maximo. En los rigs es la etiqueta
+// "Limite" de los controladores. Los datos ya estan en los ejes de Iron3D (x, y, z de position, scale
+// y rotationDeg), en unidades de escena y grados.
+struct ProtectionData {
+    enum Mode { Free = 0, Lock = 1, Limit = 2 };
+    bool present = false;
+    int posMode[3] = {0, 0, 0}, sclMode[3] = {0, 0, 0}, rotMode[3] = {0, 0, 0};
+    glm::vec3 posMin{0.0f}, posMax{0.0f}, sclMin{0.0f}, sclMax{0.0f}, rotMin{0.0f}, rotMax{0.0f};
+    bool allowExpressions = true; // PROTECTION_ALLOW_EXPRESSIONS: la IK y la animacion no se limitan
+    bool operator==(const ProtectionData&) const = default;
+};
+
 // Forma de visualizacion de un Nulo (onull.h: NULLOBJECT_DISPLAY/RADIUS/ASPECTRATIO/ORIENTATION).
 // shape < 0 = sin forma (no se dibuja); si no, un NullShape de core/NullShapes.h. Radio en unidades de escena.
 struct NullDisplay {
@@ -320,6 +333,7 @@ public:
     // Rig: articulacion de C4D (se muestra como Nulo) y etiqueta IK.
     bool isJoint = false;
     JointLimits jointLimits;
+    ProtectionData protection; // etiqueta Proteccion/Limite
     NullDisplay nullDisplay;
     IkTagData ik;
     SymmetryData symmetry;

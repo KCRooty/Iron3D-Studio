@@ -179,6 +179,49 @@ int applyJointLimits(SceneNode& node) {
     return clamped;
 }
 
+namespace {
+
+// Aplica el modo de cada eje de un canal (3 componentes). `restore`: los ejes Bloquear vuelven a `before`.
+int protectChannel(glm::vec3& v, const glm::vec3& before, const int* mode, const glm::vec3& lo, const glm::vec3& hi,
+                   bool restore) {
+    int n = 0;
+    for (int i = 0; i < 3; ++i) {
+        if (mode[i] == ProtectionData::Lock && restore) {
+            if (v[i] != before[i]) { v[i] = before[i]; ++n; }
+        } else if (mode[i] == ProtectionData::Limit) {
+            const float a = std::min(lo[i], hi[i]), b = std::max(lo[i], hi[i]);
+            const float c = std::clamp(v[i], a, b);
+            if (c != v[i]) { v[i] = c; ++n; }
+        }
+    }
+    return n;
+}
+
+int clampLimitsRec(SceneNode& n) {
+    int count = 0;
+    const ProtectionData& p = n.protection;
+    if (p.present && !p.allowExpressions) {
+        if (n.animPos.empty()) count += protectChannel(n.position, n.position, p.posMode, p.posMin, p.posMax, false);
+        if (n.animRot.empty()) count += protectChannel(n.rotationDeg, n.rotationDeg, p.rotMode, p.rotMin, p.rotMax, false);
+        if (n.animScale.empty()) count += protectChannel(n.scale, n.scale, p.sclMode, p.sclMin, p.sclMax, false);
+    }
+    for (const auto& c : n.children()) count += clampLimitsRec(*c);
+    return count;
+}
+
+} // namespace
+
+int applyProtection(SceneNode& node, const glm::vec3& beforePos, const glm::vec3& beforeRot,
+                    const glm::vec3& beforeScl) {
+    const ProtectionData& p = node.protection;
+    if (!p.present) return 0;
+    return protectChannel(node.position, beforePos, p.posMode, p.posMin, p.posMax, true) +
+           protectChannel(node.rotationDeg, beforeRot, p.rotMode, p.rotMin, p.rotMax, true) +
+           protectChannel(node.scale, beforeScl, p.sclMode, p.sclMin, p.sclMax, true);
+}
+
+int clampProtectionLimits(SceneNode& root) { return clampLimitsRec(root); }
+
 int solveAllIk(SceneNode& root) {
     std::vector<SceneNode*> tagged;
     collectIk(root, tagged);

@@ -55,6 +55,7 @@ extern "C" __declspec(dllimport) int __stdcall MultiByteToWideChar(unsigned int 
 #include <functional>
 #include "ui/AppIconData.h"
 #include "core/Skin.h"
+#include "core/IkSolver.h"
 #include "core/NullShapes.h"
 #include "core/LightGizmo.h"
 
@@ -1015,9 +1016,13 @@ int main(int argc, char** argv) {
                     const glm::vec3 beforePos = selected ? glm::vec3(selected->worldMatrix()[3]) : glm::vec3(0.0f);
                     const glm::vec3 beforeRot = selected ? selected->rotationDeg : glm::vec3(0.0f);
                     const glm::vec3 beforeScl = selected ? selected->scale : glm::vec3(1.0f);
+                    const glm::vec3 beforeLocalPos = selected ? selected->position : glm::vec3(0.0f);
                     const glm::mat4 beforeWorld = selected ? selected->worldMatrix() : glm::mat4(1.0f);
                     for (int k = 0; k < 3; ++k) gizmo.axisLocked[k] = viewport.axisLock[k];
                     gizmo.updateDrag(mouseRay, mouseX - viewport.x, mouseY - viewport.y);
+                    // Etiqueta Proteccion/Limite: los ejes bloqueados no se mueven y los limitados se recortan.
+                    if (selected && !compProxy && !viewport.axisMode && selected->protection.present)
+                        iron3d::applyProtection(*selected, beforeLocalPos, beforeRot, beforeScl);
                     if (viewport.snap && selected && gizmo.mode == iron3d::GizmoMode::Translate) {
                         for (int k = 0; k < 3; ++k)
                             if (!viewport.axisLock[k]) selected->position[k] = std::round(selected->position[k] / 0.5f) * 0.5f;

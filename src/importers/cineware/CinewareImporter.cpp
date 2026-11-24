@@ -1141,6 +1141,29 @@ void importObject(BaseObject* op, SceneNode& parent, int inheritedMaterial, cons
             jl.strength = (float)jb->GetFloat(3009, 1.0);
         }
     }
+    // Etiqueta Proteccion/Limite (Tprotection = 5629, tprotection.h): modo por eje (0 libre, 1 bloquear,
+    // 2 limite) y minimos/maximos. ids: P_X=1003 S_X=1006 R_X=1009; MIN/MAX: P 1012/1015, S 1018/1021, R 1024/1027;
+    // ALLOW_EXPRESSIONS=1030. A los ejes de Iron3D: posicion (x, y, -z), rotacion (P, H, -B), angulos en rad.
+    if (BaseTag* pt = op->GetTag(5629)) {
+        const BaseContainer* pb = pt->GetDataInstance();
+        ProtectionData& pr = node->protection;
+        const float kd = 57.29577951f, ku = 1.0f / (float)c4d::kCmPerUnit;
+        auto mode = [&](int id) { return std::clamp((int)pb->GetInt32(id, 0), 0, 2); };
+        auto f = [&](int id) { return (float)pb->GetFloat(id, 0.0); };
+        pr.posMode[0] = mode(1003); pr.posMode[1] = mode(1004); pr.posMode[2] = mode(1005);
+        pr.sclMode[0] = mode(1006); pr.sclMode[1] = mode(1007); pr.sclMode[2] = mode(1008);
+        pr.rotMode[0] = mode(1010); pr.rotMode[1] = mode(1009); pr.rotMode[2] = mode(1011); // P, H, B
+        pr.posMin = {f(1012) * ku, f(1013) * ku, -f(1017) * ku};
+        pr.posMax = {f(1015) * ku, f(1016) * ku, -f(1014) * ku};
+        pr.sclMin = {f(1018), f(1019), f(1020)};
+        pr.sclMax = {f(1021), f(1022), f(1023)};
+        pr.rotMin = {f(1025) * kd, f(1024) * kd, -f(1029) * kd};
+        pr.rotMax = {f(1028) * kd, f(1027) * kd, -f(1026) * kd};
+        pr.allowExpressions = pb->GetBool(1030, true);
+        pr.present = pr.posMode[0] + pr.posMode[1] + pr.posMode[2] + pr.sclMode[0] + pr.sclMode[1] + pr.sclMode[2] +
+                         pr.rotMode[0] + pr.rotMode[1] + pr.rotMode[2] >
+                     0;
+    }
     // Etiqueta IK (tipo 1019561, ID_CA_IK_TAG): enlaces y ajustes basicos.
     if (BaseTag* ikt = op->GetTag(1019561)) {
         BaseContainer* bc = ikt->GetDataInstance();

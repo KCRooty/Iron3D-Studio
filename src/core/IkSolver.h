@@ -47,4 +47,16 @@ int applyJointLimits(SceneNode& node);
 // Devuelve cuantas cadenas se resolvieron.
 int solveAllIk(SceneNode& root);
 
+// Etiqueta Proteccion/Limite (SceneNode::protection) tras una edicion del usuario (gizmo, campos de
+// Coordenadas): los ejes en modo Bloquear vuelven a su valor `before*` y los de modo Limite se recortan a
+// [min, max]. `before*` = position, rotationDeg y scale locales antes de editar. Devuelve cuantos ejes
+// se corrigieron.
+int applyProtection(SceneNode& node, const glm::vec3& beforePos, const glm::vec3& beforeRot,
+                    const glm::vec3& beforeScl);
+
+// Recorta los ejes en modo Limite de las etiquetas con "Permitir expresiones" desactivado, que tambien
+// limitan a la IK; las de expresiones permitidas solo limitan la edicion manual. Los nodos con pistas de
+// animacion en un canal se saltan en ese canal (manda la animacion). Devuelve cuantos ejes se recortaron.
+int clampProtectionLimits(SceneNode& root);
+
 } // namespace iron3d

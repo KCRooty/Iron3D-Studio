@@ -182,6 +182,7 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
     copy->texTag = src.texTag;
     copy->isJoint = src.isJoint;
     copy->jointLimits = src.jointLimits;
+    copy->protection = src.protection;
     copy->nullDisplay = src.nullDisplay;
     copy->ik = src.ik;
     copy->param = src.param;
