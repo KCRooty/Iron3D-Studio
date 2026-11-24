@@ -229,6 +229,19 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             if (k.interp != KeyInterp::Spline) out << " i=" << (k.interp == KeyInterp::Linear ? "l" : "s");
             out << "\n";
         }
+    // Pistas de parametros (ch=a:<id>) y claves de nivel de puntos (PLA).
+    for (const ParamTrack& pt : node.animParams)
+        for (const AnimKey& k : pt.track.keys) {
+            out << indent << "  KEY ch=a:" << pt.id << " f=" << k.frame << " x=" << k.value.x << " y=0 z=0";
+            if (k.interp != KeyInterp::Spline) out << " i=" << (k.interp == KeyInterp::Linear ? "l" : "s");
+            out << "\n";
+        }
+    for (const PlaKey& k : node.animPla) {
+        std::ostringstream pts;
+        pts.imbue(std::locale::classic());
+        for (const glm::vec3& q : k.positions) pts << q.x << " " << q.y << " " << q.z << " ";
+        out << indent << "  PLA f=" << k.frame << " step=" << (int)(k.interp == KeyInterp::Step) << " pts=" << quoted(pts.str()) << "\n";
+    }
     for (const auto& child : node.children()) writeNode(out, *child, depth + 1, meshRefs);
     out << indent << "}\n";
 }
@@ -741,11 +754,38 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
             else if (iv == "s") interp = KeyInterp::Step;
         }
         AnimTrack* track = ch == "p" ? &node.animPos : ch == "r" ? &node.animRot : ch == "s" ? &node.animScale : nullptr;
+        if (!track && ch.rfind("a:", 0) == 0) {
+            const std::string pid = ch.substr(2);
+            auto it = std::find_if(node.animParams.begin(), node.animParams.end(), [&](const ParamTrack& t) { return t.id == pid; });
+            if (it == node.animParams.end()) {
+                node.animParams.push_back({pid, {}});
+                it = node.animParams.end() - 1;
+            }
+            track = &it->track;
+        }
         if (track) {
             track->set(frame, v);
             for (AnimKey& k : track->keys)
                 if (k.frame == frame) k.interp = interp;
         }
+    }
+
+    // Claves de Nivel de Puntos: PLA f=N step=0|1 pts="x y z ..."
+    while (!p.atEnd() && p.peek() == "PLA") {
+        p.next();
+        PlaKey k;
+        const bool okp = readAttrs(p, "PLA", err, [&](const std::string& key, const std::string& val) {
+            if (key == "f") k.frame = std::stoi(val);
+            else if (key == "step") k.interp = val != "0" ? KeyInterp::Step : KeyInterp::Linear;
+            else if (key == "pts") {
+                std::istringstream f(unquote(val));
+                f.imbue(std::locale::classic());
+                glm::vec3 q;
+                while (f >> q.x >> q.y >> q.z) k.positions.push_back(q);
+            }
+        });
+        if (!okp) return false;
+        node.animPla.push_back(std::move(k));
     }
 
     node.setName(name);
@@ -986,6 +1026,8 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.animPos = temp.animPos;
     root.animRot = temp.animRot;
     root.animScale = temp.animScale;
+    root.animParams = temp.animParams;
+    root.animPla = temp.animPla;
     root.clearChildren();
     root.adoptChildrenFrom(temp);
     materials = std::move(tempMaterials);

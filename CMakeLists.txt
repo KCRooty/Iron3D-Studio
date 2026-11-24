@@ -490,6 +490,35 @@ if(MSVC)
     target_compile_options(spline_test PRIVATE /W4 /utf-8)
 endif()
 add_test(NAME spline COMMAND spline_test)
+# Pistas de parametros, Nivel de Puntos y splines por el serializador.
+add_executable(anim_test
+    tests/anim_test.cpp
+    src/core/Skin.cpp
+    src/core/Symmetry.cpp
+    src/core/Deform.cpp
+    src/core/DeformMore.cpp
+    src/core/Spline.cpp
+    src/core/Boolean.cpp
+    src/core/Clone.cpp
+    src/core/NullShapes.cpp
+    src/core/LightGizmo.cpp
+    src/core/MeshData.cpp
+    src/core/PrimitiveShapes.cpp
+    src/core/MeshTopology.cpp
+    src/core/MeshEdit.cpp
+    src/core/SceneNode.cpp
+    src/core/Material.cpp
+    src/core/ShaderTree.cpp
+    src/core/SceneSerializer.cpp
+    src/core/ThumbnailRenderer.cpp
+    src/core/TransformGizmo.cpp)
+target_include_directories(anim_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+target_link_libraries(anim_test PRIVATE iron3d_lib4d)
+target_compile_definitions(anim_test PRIVATE GLM_FORCE_RADIANS)
+if(MSVC)
+    target_compile_options(anim_test PRIVATE /W4 /utf-8)
+endif()
+add_test(NAME anim COMMAND anim_test)
 add_executable(skin_test
     tests/skin_test.cpp
     src/core/Skin.cpp

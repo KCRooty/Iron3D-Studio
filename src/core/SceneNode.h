@@ -70,6 +70,21 @@ struct AnimTrack {
     glm::vec3 evaluate(float frame) const;         // requiere !empty()
 };
 
+// Pista de un parametro (2026-11-24, "Grabar Parametro" de C4D): valor escalar en `track` (componente x).
+// `id` sale de animParamIds(); p. ej. "def.amount", "light.intensity".
+struct ParamTrack {
+    std::string id;
+    AnimTrack track;
+    bool operator==(const ParamTrack& o) const { return id == o.id && track.keys.size() == o.track.keys.size(); }
+};
+// Clave de Nivel de Puntos (PLA): posiciones de todos los vertices de la malla en ese fotograma. Entre dos
+// claves se interpola en linea recta (Escalon si la clave lo dice); con otro numero de vertices no se aplica.
+struct PlaKey {
+    int frame = 0;
+    std::vector<glm::vec3> positions;
+    KeyInterp interp = KeyInterp::Linear;
+};
+
 // Datos de una Luz (2026-11-07), con los mismos valores que la Luz de C4D
 // para que un .c4d vaya y vuelva igual. Las distancias en unidades de Iron3D.
 enum class LightKind {
@@ -383,7 +398,11 @@ public:
 
     // Pistas de animacion (vacias = sin animar).
     AnimTrack animPos, animRot, animScale;
-    bool hasAnimation() const { return !animPos.empty() || !animRot.empty() || !animScale.empty(); }
+    std::vector<ParamTrack> animParams;  // pistas de parametros
+    std::vector<PlaKey> animPla;         // claves de nivel de puntos, ordenadas por fotograma
+    bool hasAnimation() const {
+        return !animPos.empty() || !animRot.empty() || !animScale.empty() || !animParams.empty() || !animPla.empty();
+    }
 
 private:
     int id_;
@@ -406,6 +425,13 @@ void evaluateAnimation(SceneNode& root, float frame);
 // solo en los canales pedidos (como los botones de Grabar Posicion/Escala/
 // Rotacion de C4D).
 void recordKey(SceneNode& node, int frame, bool position, bool rotation, bool scale);
+// Parametros animables del nodo (ids estables y nombre para la interfaz, clave de traduccion).
+std::vector<std::pair<std::string, const char*>> animParamIds(const SceneNode& node);
+float* animParamPtr(SceneNode& node, const std::string& id);
+// Graba clave en todos los parametros animables del nodo (onlyExisting: solo en los que ya tienen pista).
+int recordParamKeys(SceneNode& node, int frame, bool onlyExisting = false);
+// Graba una clave de Nivel de Puntos con la malla actual (false si el nodo no tiene malla editable).
+bool recordPlaKey(SceneNode& node, int frame);
 // Fotogramas con alguna clave en el nodo, ordenados y sin repetir.
 std::vector<int> keyFrames(const SceneNode& node);
 

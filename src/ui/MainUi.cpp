@@ -73,6 +73,7 @@ namespace {
 using icons::Icon;
 
 void drawKeyMenuItems();  // Claves Seleccionadas (Linea de Tiempo), mas abajo
+void trackShowItems();    // Mostrar Pistas / F-Curves (mas abajo)
 
 // --- Paleta (c4d_ui_reference_visual.md SS2) ---------------------------------
 // Ya no son constexpr: applyTheme() las recalcula a partir de UiTheme (ver
@@ -275,6 +276,9 @@ struct UiState {
     // Animacion (F9): canales que se graban, claves automaticas y ultimo
     // fotograma evaluado (al cambiar de fotograma se recalcula la escena).
     bool keyPos = true, keyRot = true, keyScl = true;
+    bool keyParam = false, keyPla = false;  // Grabar Parametro / Grabar Nivel de Puntos
+    bool keySelOnly = false;                // Seleccion de Claves: grabar solo en las pistas que ya existen
+    int dopeRowDrag = -1;                   // hoja de claves: fila de la clave que se arrastra
     bool autoKey = false;
     bool recordRequested = false;
     float lastEvalFrame = -1e9f;
@@ -340,13 +344,19 @@ int recordActiveObjects(SceneNode& root, SceneNode* selected, SceneHistory* hist
         flashStatus(tr("Grabar Objetos Activos: no hay ningún objeto seleccionado."));
         return 0;
     }
-    if (!g.keyPos && !g.keyRot && !g.keyScl) {
-        flashStatus(tr("Grabar Objetos Activos: Posición, Escala y Rotación están desactivadas."));
+    if (!g.keyPos && !g.keyRot && !g.keyScl && !g.keyParam && !g.keyPla) {
+        flashStatus(tr("Grabar Objetos Activos: Posición, Escala, Rotación, Parámetro y Nivel de Puntos están desactivados."));
         return 0;
     }
     if (history) history->commitBefore(root);
     const int f = (int)std::lround(g.frame);
-    for (SceneNode* n : nodes) recordKey(*n, f, g.keyPos, g.keyRot, g.keyScl);
+    for (SceneNode* n : nodes) {
+        const bool only = g.keySelOnly;  // Seleccion de Claves: solo pistas existentes
+        recordKey(*n, f, g.keyPos && (!only || !n->animPos.empty()), g.keyRot && (!only || !n->animRot.empty()),
+                  g.keyScl && (!only || !n->animScale.empty()));
+        if (g.keyParam) recordParamKeys(*n, f, only);
+        if (g.keyPla && (!only || !n->animPla.empty())) recordPlaKey(*n, f);
+    }
     g.lastEvalFrame = g.frame;  // los valores actuales ya son los de este fotograma
     flashStatus(tr("Clave grabada en el fotograma ") + std::to_string(f) + " (" + std::to_string(nodes.size()) +
                 (nodes.size() == 1 ? tr(" objeto).") : tr(" objetos).")));
@@ -3052,7 +3062,7 @@ void drawViewportContextMenu(SceneNode& root, SceneNode*& selected, GizmoMode& m
     if (ImGui::MenuItem(tr("Seleccionar Hijos"), nullptr, false, hasSel && !selected->children().empty()))
         g.pendingCmd = UiCmd::SelectChildren;
     ImGui::Separator();
-    disabledItems({{tr("Mostrar Pistas..."), ""}, {tr("Mostrar F-Curves..."), ""}, {tr("Mostrar Movimientos..."), ""}});
+    trackShowItems();
     ImGui::Separator();
     if (iconMenuItem(Icon::Move, tr("Mover"), "E", !vp.selectTool && mode == GizmoMode::Translate)) {
         mode = GizmoMode::Translate;
@@ -3093,6 +3103,167 @@ void disabledItems(std::initializer_list<std::pair<const char*, const char*>> it
 bool beginMenuDbg(const char* label, bool enabled = true) {
     if (!g.dbgMenus.empty() && g.dbgMenus.count(label) && !ImGui::IsPopupOpen(label)) ImGui::OpenPopup(label);
     return ImGui::BeginMenu(label, enabled);
+}
+
+// Mostrar Pistas / F-Curves / Movimientos: abren el Editor de Curvas (las pistas tambien estan en la Hoja de Claves
+// del panel alto de la Linea de Tiempo).
+void trackShowItems() {
+    if (ImGui::MenuItem(tr("Mostrar Pistas..."))) {
+        g.showCurves = true;
+        flashStatus(tr("Las pistas están en la Hoja de Claves (agranda el panel de la Línea de Tiempo) y en el Editor de Curvas."));
+    }
+    if (ImGui::MenuItem(tr("Mostrar F-Curves..."))) g.showCurves = true;
+    if (ImGui::MenuItem(tr("Mostrar Movimientos..."))) g.showCurves = true;
+}
+
+// Menu Malla > Spline sobre el spline activo (spline libre editable).
+void splineEditMenu(SceneNode& root, SceneNode*& selected, SceneHistory& history) {
+    SceneNode* n = selected;
+    const bool ok = n && n->spline.present && n->spline.kind == 0 && !n->spline.generated;
+    const bool pts = ok && n->spline.points.size() >= 2;
+    SplineData* sp = ok ? &n->spline : nullptr;
+    if (ImGui::MenuItem(tr("Interpolación Dura"), nullptr, ok && sp->interp == 0, ok)) { history.commitBefore(root); sp->interp = 0; }
+    if (ImGui::MenuItem(tr("Interpolación Suave"), nullptr, ok && sp->interp == 1, ok)) { history.commitBefore(root); sp->interp = 1; }
+    ImGui::Separator();
+    ImGui::MenuItem(tr("Igualar Longitud de Tangentes"), nullptr, false, false);
+    ImGui::MenuItem(tr("Igualar Dirección de Tangentes"), nullptr, false, false);
+    ImGui::Separator();
+    if (ImGui::MenuItem(tr("Unir Segmento"), nullptr, false, ok && !sp->extra.empty())) {
+        history.commitBefore(root);
+        for (const auto& e : sp->extra) sp->points.insert(sp->points.end(), e.begin(), e.end());
+        sp->extra.clear();
+        sp->extraClosed.clear();
+    }
+    ImGui::MenuItem(tr("Romper Segmento"), nullptr, false, false);
+    if (ImGui::MenuItem(tr("Explotar Segmentos"), nullptr, false, ok && !sp->extra.empty() && n->parent())) {
+        history.commitBefore(root);
+        SceneNode* parent = n->parent();
+        for (size_t i = 0; i < sp->extra.size(); ++i) {
+            SceneNode* c = parent->addChild(n->name() + "." + std::to_string(i + 1));
+            c->position = n->position;
+            c->rotationDeg = n->rotationDeg;
+            c->scale = n->scale;
+            c->spline = defaultSpline(0);
+            c->spline.interp = sp->interp;
+            c->spline.points = sp->extra[i];
+            c->spline.closed = i < sp->extraClosed.size() && sp->extraClosed[i];
+        }
+        sp->extra.clear();
+        sp->extraClosed.clear();
+    }
+    ImGui::Separator();
+    if (ImGui::MenuItem(tr("Asignar Primer Punto"), nullptr, false, pts && sp->closed)) {
+        // el punto mas cercano al origen del objeto pasa a ser el primero
+        history.commitBefore(root);
+        size_t best = 0;
+        for (size_t i = 1; i < sp->points.size(); ++i)
+            if (glm::length(sp->points[i]) < glm::length(sp->points[best])) best = i;
+        std::rotate(sp->points.begin(), sp->points.begin() + (long)best, sp->points.end());
+    }
+    if (ImGui::MenuItem(tr("Invertir Secuencia"), nullptr, false, pts)) { history.commitBefore(root); std::reverse(sp->points.begin(), sp->points.end()); }
+    if (ImGui::MenuItem(tr("Mover Secuencia Abajo"), nullptr, false, pts)) {
+        history.commitBefore(root);
+        std::rotate(sp->points.begin(), sp->points.begin() + 1, sp->points.end());
+    }
+    if (ImGui::MenuItem(tr("Mover Secuencia Arriba"), nullptr, false, pts)) {
+        history.commitBefore(root);
+        std::rotate(sp->points.rbegin(), sp->points.rbegin() + 1, sp->points.rend());
+    }
+    ImGui::Separator();
+    if (ImGui::MenuItem(tr("Suavizado Spline"), nullptr, false, ok && sp->points.size() >= 3)) {
+        for (const PaletteItem& it : kSplines)
+            if (std::string(it.name.key) == "Suavizado Spline") createPaletteItemOne(root, selected, history, it);
+    }
+    ImGui::MenuItem(tr("Bisel"), nullptr, false, false);
+    if (ImGui::MenuItem(tr("Contornear"), nullptr, false, ok && sp->closed && sp->points.size() >= 3 && n->parent())) {
+        // copia desplazada 20 cm hacia fuera (en el plano del spline)
+        history.commitBefore(root);
+        SplineContour c{sp->points, true};
+        glm::vec3 nrm(0.0f);
+        for (size_t i = 0, j = c.pts.size() - 1; i < c.pts.size(); j = i++) nrm += glm::cross(c.pts[j], c.pts[i]);
+        nrm = glm::length(nrm) > 1e-9f ? glm::normalize(nrm) : glm::vec3(0, 0, 1);
+        std::vector<glm::vec3> off;
+        const size_t m = c.pts.size();
+        for (size_t i = 0; i < m; ++i) {
+            const glm::vec3 a = c.pts[(i + m - 1) % m], b = c.pts[i], d = c.pts[(i + 1) % m];
+            glm::vec3 e1 = glm::normalize(glm::cross(b - a, nrm) + 1e-9f), e2 = glm::normalize(glm::cross(d - b, nrm) + 1e-9f);
+            glm::vec3 dir = glm::normalize(e1 + e2 + 1e-9f);
+            const float cs = std::max(0.3f, glm::dot(dir, e1));
+            off.push_back(b + dir * (20.0f / kCmPerUnit / cs));
+        }
+        SceneNode* cnode = n->parent()->addChild(n->name() + tr(" Contorno"));
+        cnode->position = n->position;
+        cnode->rotationDeg = n->rotationDeg;
+        cnode->scale = n->scale;
+        cnode->spline = *sp;
+        cnode->spline.points = off;
+    }
+    ImGui::MenuItem(tr("Sección Transversal"), nullptr, false, false);
+    if (ImGui::MenuItem(tr("Alinear"), nullptr, false, pts)) {
+        // los puntos quedan en el plano del spline (se aplana la coordenada perpendicular)
+        history.commitBefore(root);
+        const int ax = sp->plane == 0 ? 2 : sp->plane == 1 ? 0 : 1;
+        for (glm::vec3& p : sp->points) p[ax] = 0.0f;
+    }
+    ImGui::MenuItem(tr("Proyectar"), nullptr, false, false);
+    if (ImGui::MenuItem(tr("Redondear"), nullptr, false, ok && sp->points.size() >= 3)) {
+        // cada esquina se sustituye por dos puntos al 25 % de sus aristas (Chaikin)
+        history.commitBefore(root);
+        std::vector<glm::vec3> r;
+        const size_t m = sp->points.size();
+        const size_t segs = sp->closed ? m : m - 1;
+        if (!sp->closed) r.push_back(sp->points.front());
+        for (size_t i = 0; i < segs; ++i) {
+            const glm::vec3 a = sp->points[i], b = sp->points[(i + 1) % m];
+            r.push_back(glm::mix(a, b, 0.25f));
+            r.push_back(glm::mix(a, b, 0.75f));
+        }
+        if (!sp->closed) r.push_back(sp->points.back());
+        sp->points = r;
+    }
+    ImGui::Separator();
+    static const char* bools[] = {"Sustraer Spline", "Unión de Splines", "Spline Y", "Spline O", "Intersección de Splines"};
+    static const char* labels[] = {"Sustraer Spline", "Unión Spline", "Spline Y", "Spline O", "Intersección Spline"};
+    for (int i = 0; i < 5; ++i)
+        if (ImGui::MenuItem(tr(labels[i])))
+            for (const PaletteItem& it : kSplines)
+                if (std::string(it.name.key) == bools[i]) createPaletteItemOne(root, selected, history, it);
+}
+
+// Centrar Eje a Objeto: el eje del objeto pasa al centro de su caja (los puntos se compensan, nada se mueve).
+int centerAxisToObject(SceneNode& root, SceneNode* selected, SceneHistory& history) {
+    std::vector<SceneNode*> nodes;
+    collectSelected(root, nodes);
+    if (nodes.empty() && selected) nodes.push_back(selected);
+    bool committed = false;
+    int n = 0;
+    for (SceneNode* nd : nodes) {
+        glm::vec3 mn(1e30f), mx(-1e30f);
+        const bool isMesh = nd->primitive == PrimitiveType::Mesh && nd->mesh && !nd->mesh->vertices.empty();
+        const bool isSpl = nd->spline.present && nd->spline.kind == 0 && !nd->spline.generated && !nd->spline.points.empty();
+        if (isMesh) for (const Vertex& v : nd->mesh->vertices) { mn = glm::min(mn, v.position); mx = glm::max(mx, v.position); }
+        else if (isSpl) for (const glm::vec3& p : nd->spline.points) { mn = glm::min(mn, p); mx = glm::max(mx, p); }
+        else continue;
+        const glm::vec3 c = 0.5f * (mn + mx);
+        if (glm::length(c) < 1e-7f) continue;
+        if (!committed) { history.commitBefore(root); committed = true; }
+        if (isMesh) {
+            MeshData m = *nd->mesh;
+            for (Vertex& v : m.vertices) v.position -= c;
+            updateBounds(m);
+            nd->mesh = std::make_shared<const MeshData>(std::move(m));
+        } else {
+            for (glm::vec3& p : nd->spline.points) p -= c;
+            for (auto& e : nd->spline.extra) for (glm::vec3& p : e) p -= c;
+        }
+        // el desplazamiento local `c` en el espacio del padre
+        const glm::mat4 lm = nd->localMatrix();
+        const glm::vec3 shift = glm::vec3(lm * glm::vec4(c, 1.0f)) - glm::vec3(lm * glm::vec4(0, 0, 0, 1));
+        nd->position += shift;
+        for (const auto& ch : nd->children()) ch->position -= c;  // los hijos se quedan donde estaban
+        ++n;
+    }
+    return n;
 }
 
 void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneHistory& history,
@@ -3305,15 +3476,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         }
         ImGui::Separator();
         if (beginMenuDbg(tr("Spline"))) {
-            disabledItems({{tr("Interpolación Dura"), ""}, {tr("Interpolación Suave"), ""}, {nullptr, nullptr},
-                           {tr("Igualar Longitud de Tangentes"), ""}, {tr("Igualar Dirección de Tangentes"), ""}, {nullptr, nullptr},
-                           {tr("Unir Segmento"), ""}, {tr("Romper Segmento"), ""}, {tr("Explotar Segmentos"), ""}, {nullptr, nullptr},
-                           {tr("Asignar Primer Punto"), ""}, {tr("Invertir Secuencia"), ""}, {tr("Mover Secuencia Abajo"), ""},
-                           {tr("Mover Secuencia Arriba"), ""}, {nullptr, nullptr},
-                           {tr("Suavizado Spline"), ""}, {tr("Bisel"), ""}, {tr("Contornear"), ""}, {tr("Sección Transversal"), ""},
-                           {tr("Alinear"), ""}, {tr("Proyectar"), ""}, {tr("Redondear"), ""}, {nullptr, nullptr},
-                           {tr("Sustraer Spline"), ""}, {tr("Unión Spline"), ""}, {tr("Spline Y"), ""}, {tr("Spline O"), ""},
-                           {tr("Intersección Spline"), ""}});
+            splineEditMenu(root, selected, history);
             ImGui::EndMenu();
         }
         if (beginMenuDbg(tr("N-Gons"))) {
@@ -3329,7 +3492,11 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
             ImGui::EndMenu();
         }
         if (beginMenuDbg(tr("Centrar Ejes"))) {
-            disabledItems({{tr("Centrar Eje a Objeto"), ""}, {tr("Centrar Eje a Selección"), ""}});
+            if (ImGui::MenuItem(tr("Centrar Eje a Objeto"), nullptr, false, selected != nullptr)) {
+                const int c = centerAxisToObject(root, selected, history);
+                flashStatus(c ? tr("Centrar Eje a Objeto: eje en el centro de la caja.") : tr("Centrar Eje a Objeto: nada que centrar (mallas o splines editables)."));
+            }
+            ImGui::MenuItem(tr("Centrar Eje a Selección"), nullptr, false, false);
             ImGui::EndMenu();
         }
         ImGui::Separator();
@@ -4454,7 +4621,7 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
             if (ImGui::MenuItem(tr("Eliminar Sin Hijos"), nullptr, false, true)) pendingDissolve = node;
             ImGui::MenuItem(tr("Convertir Selección de Objetos a XRef"), nullptr, false, false);
             ImGui::Separator();
-            disabledItems({{tr("Mostrar Pistas..."), ""}, {tr("Mostrar F-Curves..."), ""}, {tr("Mostrar Movimientos..."), ""}});
+            trackShowItems();
             ImGui::Separator();
             if (ImGui::MenuItem(tr("Información del Objeto..."), nullptr, false, true)) g.showObjInfo = true;
             if (iconMenuItem(Icon::MnuProject, tr("Información del Proyecto"), tr("Ctrl+I"))) g.focus = AttrFocus::Project;
@@ -6387,7 +6554,119 @@ void drawCurveEditor(SceneNode* selected) {
     if (!open) g.showCurves = false;
 }
 
-void drawTimeline(ImVec2 pos, ImVec2 size) {
+// Hoja de Claves (panel alto de la Linea de Tiempo): una fila por pista del objeto activo (Posicion, Rotacion,
+// Escala, cada parametro, Nivel de Puntos) con sus claves en las mismas columnas que la regla. Clic selecciona
+// el fotograma de la clave (Mayus anade), arrastrar mueve las seleccionadas, clic en vacio mueve el tiempo,
+// clic derecho = interpolacion / eliminar.
+void drawDopeSheet(SceneNode* selected, ImVec2 pos, ImVec2 size, float x0, float x1) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    dl->AddLine(ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y), kBorderDark);
+    if (!selected) {
+        const char* msg = tr("Hoja de Claves: selecciona un objeto.");
+        const ImVec2 ts = ImGui::CalcTextSize(msg);
+        dl->AddText(ImVec2(pos.x + (size.x - ts.x) * 0.5f, pos.y + (size.y - ts.y) * 0.5f), kTextDim, msg);
+        return;
+    }
+    struct Row { std::string label; std::vector<std::pair<int, KeyInterp>> keys; };
+    std::vector<Row> rows;
+    auto addTrack = [&](const std::string& label, const AnimTrack& t) {
+        if (t.empty()) return;
+        Row r{label, {}};
+        for (const AnimKey& k : t.keys) r.keys.push_back({k.frame, k.interp});
+        rows.push_back(std::move(r));
+    };
+    addTrack(tr("Posición"), selected->animPos);
+    addTrack(tr("Rotación"), selected->animRot);
+    addTrack(tr("Escala"), selected->animScale);
+    for (const ParamTrack& p : selected->animParams) {
+        std::string label = p.id;
+        for (const auto& [id, nm] : animParamIds(*selected))
+            if (id == p.id) label = tr(nm);
+        addTrack(label, p.track);
+    }
+    if (!selected->animPla.empty()) {
+        Row r{tr("Nivel de Puntos"), {}};
+        for (const PlaKey& k : selected->animPla) r.keys.push_back({k.frame, k.interp});
+        rows.push_back(std::move(r));
+    }
+    const float rowH = 18.0f, labelW = std::max(0.0f, x0 - pos.x - 6.0f);
+    const int span = std::max(1, g.maxFrame - g.minFrame);
+    auto fx = [&](float f) { return x0 + (f - (float)g.minFrame) / (float)span * (x1 - x0); };
+    const float pxPerFrame = (x1 - x0) / (float)span;
+    ImGui::SetCursorScreenPos(pos);
+    ImGui::BeginChild("##dope", size, false, ImGuiWindowFlags_NoScrollWithMouse * 0);
+    ImDrawList* cdl = ImGui::GetWindowDrawList();
+    const ImVec2 o = ImGui::GetCursorScreenPos();
+    if (rows.empty()) {
+        cdl->AddText(ImVec2(o.x + 8, o.y + 6), kTextDim, tr("Sin claves. F9 graba (activa Parámetro o Nivel de Puntos para grabar más pistas)."));
+    }
+    for (size_t ri = 0; ri < rows.size(); ++ri) {
+        const float y = o.y + ri * rowH;
+        cdl->AddRectFilled(ImVec2(o.x, y), ImVec2(o.x + size.x, y + rowH - 1), ri % 2 ? IM_COL32(46, 46, 46, 255) : IM_COL32(52, 52, 52, 255));
+        cdl->PushClipRect(ImVec2(o.x, y), ImVec2(o.x + labelW, y + rowH), true);
+        cdl->AddText(ImVec2(o.x + 4, y + 2), kTextCol, rows[ri].label.c_str());
+        cdl->PopClipRect();
+        // tramos entre claves
+        for (size_t k = 0; k + 1 < rows[ri].keys.size(); ++k)
+            cdl->AddLine(ImVec2(fx((float)rows[ri].keys[k].first), y + rowH * 0.5f), ImVec2(fx((float)rows[ri].keys[k + 1].first), y + rowH * 0.5f),
+                         rows[ri].keys[k].second == KeyInterp::Step ? IM_COL32(120, 120, 120, 255) : IM_COL32(90, 120, 170, 255), 1.0f);
+        for (const auto& [kf, ki] : rows[ri].keys) {
+            if (kf < g.minFrame || kf > g.maxFrame) continue;
+            const bool isSel = g.keySel.count(kf) > 0;
+            const float x = fx((float)(kf + (isSel ? g.keyDragDelta : 0))), cy = y + rowH * 0.5f, r = 5.0f;
+            const ImVec2 dia[4] = {ImVec2(x, cy - r), ImVec2(x + r, cy), ImVec2(x, cy + r), ImVec2(x - r, cy)};
+            cdl->AddConvexPolyFilled(dia, 4, isSel ? IM_COL32(255, 150, 40, 255) : ki == KeyInterp::Linear ? IM_COL32(150, 200, 120, 255)
+                                                                                 : ki == KeyInterp::Step  ? IM_COL32(200, 200, 200, 255)
+                                                                                                          : IM_COL32(110, 160, 230, 255));
+            cdl->AddPolyline(dia, 4, IM_COL32(20, 20, 20, 255), ImDrawFlags_Closed, 1.0f);
+            ImGui::PushID((int)(ri * 100000 + (size_t)(kf + 50000)));
+            ImGui::SetCursorScreenPos(ImVec2(x - r - 1, cy - r - 1));
+            ImGui::InvisibleButton("##dk", ImVec2(2 * r + 2, 2 * r + 2));
+            if (ImGui::IsItemHovered()) g.hint = tr("Clave: clic para seleccionar (Mayús añade), arrastrar para moverla, clic derecho para la interpolación.");
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+                if (ImGui::GetIO().KeyShift) {
+                    if (!g.keySel.erase(kf)) g.keySel.insert(kf);
+                } else if (!isSel) {
+                    g.keySel = {kf};
+                }
+                g.keyDragStartX = ImGui::GetIO().MousePos.x;
+                g.keyDragDelta = 0;
+            }
+            if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 2.0f) && g.keySel.count(kf))
+                g.keyDragDelta = (int)std::lround((ImGui::GetIO().MousePos.x - g.keyDragStartX) / std::max(0.01f, pxPerFrame));
+            if (ImGui::IsItemDeactivated() && g.keyDragDelta != 0) {
+                g.keyReq = UiState::KeyReq::Move;
+                g.keyReqDelta = g.keyDragDelta;
+                g.keyDragDelta = 0;
+            }
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+                if (!isSel) g.keySel = {kf};
+                ImGui::OpenPopup("##dopectx");
+            }
+            ImGui::PopID();
+        }
+    }
+    // cursor de tiempo y clic en vacio
+    const float bottom = o.y + std::max(size.y, rows.size() * rowH);
+    cdl->AddLine(ImVec2(fx(g.frame), o.y), ImVec2(fx(g.frame), bottom), kPlayhead, 1.5f);
+    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered()) {
+        const float mx = ImGui::GetIO().MousePos.x;
+        if (mx >= x0 && mx <= x1) {
+            g.frame = std::round(std::clamp((float)g.minFrame + (mx - x0) / std::max(1.0f, x1 - x0) * (float)span, (float)g.minFrame, (float)g.maxFrame));
+            g.playDir = 0;
+        }
+        if (!ImGui::GetIO().KeyShift) g.keySel.clear();
+    }
+    if (ImGui::BeginPopup("##dopectx")) {
+        drawKeyMenuItems();
+        ImGui::EndPopup();
+    }
+    ImGui::SetCursorScreenPos(ImVec2(o.x, o.y + rows.size() * rowH));
+    ImGui::Dummy(ImVec2(1, 1));
+    ImGui::EndChild();
+}
+
+void drawTimeline(SceneNode* selected, ImVec2 pos, ImVec2 size) {
     beginPanel("##timeline", pos, size, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const float rulerH = 22.0f;
@@ -6534,25 +6813,20 @@ void drawTimeline(ImVec2 pos, ImVec2 size) {
     ImGui::SameLine();
     if (tbtn("trec", Icon::Record, false, true, tr("Grabar Objetos Activos [F9]"))) g.recordRequested = true;
     if (tbtn("tauto", Icon::AutoKey, g.autoKey, true, tr("Fotogramas Clave Automáticos [Ctrl+F9]"))) g.autoKey = !g.autoKey;
-    tbtn("tksel", Icon::KeySel, false, false, tr("Selección de Claves (todavía no implementado)"));
+    if (tbtn("tksel", Icon::KeySel, g.keySelOnly, true, tr("Selección de Claves: grabar solo en las pistas que el objeto ya tiene")))
+        g.keySelOnly = !g.keySelOnly;
     toolbarSeparator(true, b);
     ImGui::SameLine();
     if (tbtn("tkpos", Icon::KeyPos, g.keyPos, true, tr("Grabar Posición"))) g.keyPos = !g.keyPos;
     if (tbtn("tkscl", Icon::KeyScale, g.keyScl, true, tr("Grabar Escala"))) g.keyScl = !g.keyScl;
     if (tbtn("tkrot", Icon::KeyRot, g.keyRot, true, tr("Grabar Rotación"))) g.keyRot = !g.keyRot;
-    tbtn("tkpar", Icon::KeyParam, false, false, tr("Grabar Parámetro (todavía no implementado)"));
-    tbtn("tkpla", Icon::KeyPLA, false, false, tr("Grabar Nivel de Puntos (todavía no implementado)"));
+    if (tbtn("tkpar", Icon::KeyParam, g.keyParam, true, tr("Grabar Parámetro (deformadores, splines, luces, cámaras, entorno)")))
+        g.keyParam = !g.keyParam;
+    if (tbtn("tkpla", Icon::KeyPLA, g.keyPla, true, tr("Grabar Nivel de Puntos (forma de la malla)"))) g.keyPla = !g.keyPla;
+    if (tbtn("tcurv", Icon::KeyParam, g.showCurves, true, tr("Editor de Curvas"))) g.showCurves = !g.showCurves;
     ImGui::PopStyleVar();
-    // Panel mas alto que la tira de transporte (SFM): el resto es donde ira
-    // el editor de curvas; de momento se dice tal cual.
-    if (size.y > 110.0f) {
-        const char* msg = tr("Editor de Gráficos / Hoja de Claves: todavía no implementado en Iron3D");
-        const ImVec2 ts = ImGui::CalcTextSize(msg);
-        ImDrawList* tdl = ImGui::GetWindowDrawList();
-        const float top = pos.y + 60.0f;
-        tdl->AddLine(ImVec2(pos.x + 4, top), ImVec2(pos.x + size.x - 4, top), kBorderDark);
-        tdl->AddText(ImVec2(pos.x + (size.x - ts.x) * 0.5f, top + (size.y - 60.0f - ts.y) * 0.5f), kTextDim, msg);
-    }
+    // Panel mas alto que la tira de transporte (SFM): Hoja de Claves del objeto activo.
+    if (size.y > 110.0f) drawDopeSheet(selected, ImVec2(pos.x + 4, pos.y + 60.0f), ImVec2(size.x - 8, size.y - 64.0f), x0, x1);
     ImGui::End();
 }
 
@@ -9432,7 +9706,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
             drawVerticalTabs(L.attrTabs.pos, L.attrTabs.size, pn.sideTabs, pn.sideTabCount, 0);
     }
 
-    drawTimeline(L.timeline.pos, L.timeline.size);
+    drawTimeline(selected, L.timeline.pos, L.timeline.size);
     drawMaterialManager(root, selected, history, materials, L.materials.pos, L.materials.size);
     drawCoordinatesManager(root, selected, history, L.coords.pos, L.coords.size);
 

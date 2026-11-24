@@ -74,6 +74,24 @@ Las entradas de Deformadores, Modelado y MoGraph que no hacían nada ahora crean
 - Sin tangentes Bezier por punto: la interpolación suave es Catmull-Rom.
 - Nada de esto está comprobado a mano en la interfaz todavía; solo compilación, tests y arranque.
 
+### Animación: parámetros, Nivel de Puntos y Hoja de Claves (2026-11-24)
+
+**Añadido**
+- Grabar Parámetro: pistas de Fuerza y Parámetro 2 de los deformadores y generadores, medidas de los splines (A, B, C, ángulos), intensidad, ángulo y color de las luces, distancia focal de la cámara y nivel del Entorno. Se interpolan como las demás pistas (Spline, Lineal, Escalón).
+- Grabar Nivel de Puntos (PLA): guarda la forma de la malla en el fotograma; entre claves interpola cada punto en línea recta (o Escalón).
+- Selección de Claves: con el botón activo, F9 y la clave automática solo graban en las pistas que el objeto ya tiene.
+- Hoja de Claves en el panel alto de la Línea de Tiempo: una fila por pista (Posición, Rotación, Escala, cada parámetro, Nivel de Puntos), claves en rombo con color por interpolación, clic para seleccionar, arrastrar para mover, clic derecho para interpolación o eliminar, clic en vacío para cambiar el fotograma. Botón para abrir el Editor de Curvas.
+- Mostrar Pistas / F-Curves / Movimientos abren el Editor de Curvas.
+- Menú Malla > Spline: Interpolación Dura/Suave, Unir Segmento, Explotar Segmentos, Asignar Primer Punto, Invertir Secuencia, Mover Secuencia Arriba/Abajo, Suavizado Spline, Contornear (copia a 20 cm), Alinear, Redondear y las cinco booleanas.
+- Centrar Eje a Objeto (mallas y splines editables; los hijos no se mueven).
+- Guardado y carga de pistas de parámetros (`KEY ch=a:<id>`) y de claves de Nivel de Puntos (`PLA`).
+- Test `anim_test` (evaluación, mover/interpolación de PLA, ida y vuelta por el guardado de parámetros, PLA y splines).
+
+**Límites conocidos**
+- El Editor de Curvas sigue mostrando solo Posición, Rotación y Escala; las pistas de parámetros y PLA están en la Hoja de Claves.
+- Romper Segmento, Bisel, Sección Transversal, Proyectar, Igualar tangentes y Centrar Eje a Selección siguen desactivados: necesitan selección de puntos de spline o tangentes.
+- Sin comprobar a mano en la interfaz; solo compilación, tests y arranque.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

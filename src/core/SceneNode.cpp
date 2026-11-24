@@ -212,6 +212,8 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
     copy->animPos = src.animPos;
     copy->animRot = src.animRot;
     copy->animScale = src.animScale;
+    copy->animParams = src.animParams;
+    copy->animPla = src.animPla;
     for (const auto& child : src.children()) cloneInto(*copy, *child, child->name());
     return copy;
 }
@@ -266,10 +268,131 @@ glm::vec3 AnimTrack::evaluate(float frame) const {
     return (2 * t3 - 3 * t2 + 1) * a.value + (t3 - 2 * t2 + t) * m0 + (-2 * t3 + 3 * t2) * b.value + (t3 - t2) * m1;
 }
 
+std::vector<std::pair<std::string, const char*>> animParamIds(const SceneNode& node) {
+    std::vector<std::pair<std::string, const char*>> out;
+    if (node.deform.present) {
+        out.push_back({"def.amount", "Fuerza"});
+        out.push_back({"def.param2", "Parámetro 2"});
+    }
+    if (node.spline.present && !node.spline.generated) {
+        out.push_back({"spl.a", "Spline A"});
+        out.push_back({"spl.b", "Spline B"});
+        out.push_back({"spl.c", "Spline C"});
+        out.push_back({"spl.start", "Ángulo Inicial"});
+        out.push_back({"spl.end", "Ángulo Final"});
+    }
+    if (node.primitive == PrimitiveType::Light) {
+        out.push_back({"light.intensity", "Intensidad"});
+        out.push_back({"light.outer", "Ángulo Exterior"});
+        out.push_back({"light.r", "Color R"});
+        out.push_back({"light.g", "Color G"});
+        out.push_back({"light.b", "Color B"});
+    }
+    if (node.primitive == PrimitiveType::Camera) out.push_back({"cam.focal", "Distancia Focal"});
+    if (node.env.present) out.push_back({"env.level", "Nivel"});
+    return out;
+}
+
+float* animParamPtr(SceneNode& n, const std::string& id) {
+    if (id == "def.amount") return &n.deform.amount;
+    if (id == "def.param2") return &n.deform.param2;
+    if (id == "spl.a") return &n.spline.a;
+    if (id == "spl.b") return &n.spline.b;
+    if (id == "spl.c") return &n.spline.c;
+    if (id == "spl.start") return &n.spline.startDeg;
+    if (id == "spl.end") return &n.spline.endDeg;
+    if (id == "light.intensity") return &n.light.intensity;
+    if (id == "light.outer") return &n.light.outerAngleDeg;
+    if (id == "light.r") return &n.light.color.r;
+    if (id == "light.g") return &n.light.color.g;
+    if (id == "light.b") return &n.light.color.b;
+    if (id == "cam.focal") return &n.camera.focalMm;
+    if (id == "env.level") return &n.env.level;
+    return nullptr;
+}
+
+int recordParamKeys(SceneNode& node, int frame, bool onlyExisting) {
+    int n = 0;
+    for (const auto& [id, label] : animParamIds(node)) {
+        (void)label;
+        float* v = animParamPtr(node, id);
+        if (!v) continue;
+        auto it = std::find_if(node.animParams.begin(), node.animParams.end(), [&](const ParamTrack& t) { return t.id == id; });
+        if (it == node.animParams.end()) {
+            if (onlyExisting) continue;
+            node.animParams.push_back({id, {}});
+            it = node.animParams.end() - 1;
+        }
+        it->track.set(frame, glm::vec3(*v, 0.0f, 0.0f));
+        ++n;
+    }
+    return n;
+}
+
+bool recordPlaKey(SceneNode& node, int frame) {
+    if (node.primitive != PrimitiveType::Mesh || !node.mesh || node.mesh->vertices.empty()) return false;
+    PlaKey k;
+    k.frame = frame;
+    for (const Vertex& v : node.mesh->vertices) k.positions.push_back(v.position);
+    auto it = std::find_if(node.animPla.begin(), node.animPla.end(), [&](const PlaKey& p) { return p.frame == frame; });
+    if (it != node.animPla.end()) {
+        k.interp = it->interp;
+        *it = std::move(k);
+    } else {
+        node.animPla.push_back(std::move(k));
+        std::sort(node.animPla.begin(), node.animPla.end(), [](const PlaKey& a, const PlaKey& b) { return a.frame < b.frame; });
+    }
+    return true;
+}
+
+namespace {
+void applyPla(SceneNode& node, float frame) {
+    if (node.animPla.empty() || !node.mesh) return;
+    const size_t nv = node.mesh->vertices.size();
+    const auto& K = node.animPla;
+    const PlaKey* a = &K.front();
+    const PlaKey* b = &K.front();
+    float t = 0.0f;
+    if (frame <= K.front().frame) a = b = &K.front();
+    else if (frame >= K.back().frame) a = b = &K.back();
+    else
+        for (size_t i = 0; i + 1 < K.size(); ++i)
+            if (frame >= K[i].frame && frame <= K[i + 1].frame) {
+                a = &K[i];
+                b = &K[i + 1];
+                t = a->interp == KeyInterp::Step ? 0.0f : (frame - a->frame) / (float)std::max(1, b->frame - a->frame);
+                break;
+            }
+    if (a->positions.size() != nv || b->positions.size() != nv) return;
+    bool same = true;
+    for (size_t i = 0; i < nv && same; ++i)
+        same = node.mesh->vertices[i].position == glm::mix(a->positions[i], b->positions[i], t);
+    if (same) return;
+    MeshData m = *node.mesh;
+    for (size_t i = 0; i < nv; ++i) m.vertices[i].position = glm::mix(a->positions[i], b->positions[i], t);
+    // normales por posicion (las caras comparten vertices solo a veces)
+    for (Vertex& v : m.vertices) v.normal = glm::vec3(0.0f);
+    for (size_t i = 0; i + 2 < m.indices.size(); i += 3) {
+        Vertex &p0 = m.vertices[m.indices[i]], &p1 = m.vertices[m.indices[i + 1]], &p2 = m.vertices[m.indices[i + 2]];
+        const glm::vec3 fn = glm::cross(p1.position - p0.position, p2.position - p0.position);
+        p0.normal += fn;
+        p1.normal += fn;
+        p2.normal += fn;
+    }
+    for (Vertex& v : m.vertices) v.normal = glm::length(v.normal) > 1e-20f ? glm::normalize(v.normal) : glm::vec3(0, 1, 0);
+    updateBounds(m);
+    node.mesh = std::make_shared<const MeshData>(std::move(m));
+}
+} // namespace
+
 void evaluateAnimation(SceneNode& node, float frame) {
     if (!node.animPos.empty()) node.position = node.animPos.evaluate(frame);
     if (!node.animRot.empty()) node.rotationDeg = node.animRot.evaluate(frame);
     if (!node.animScale.empty()) node.scale = node.animScale.evaluate(frame);
+    for (const ParamTrack& p : node.animParams)
+        if (!p.track.empty())
+            if (float* v = animParamPtr(node, p.id)) *v = p.track.evaluate(frame).x;
+    applyPla(node, frame);
     for (const auto& c : node.children()) evaluateAnimation(*c, frame);
 }
 
@@ -283,6 +406,9 @@ std::vector<int> keyFrames(const SceneNode& node) {
     std::vector<int> out;
     for (const AnimTrack* t : {&node.animPos, &node.animRot, &node.animScale})
         for (const AnimKey& k : t->keys) out.push_back(k.frame);
+    for (const ParamTrack& p : node.animParams)
+        for (const AnimKey& k : p.track.keys) out.push_back(k.frame);
+    for (const PlaKey& k : node.animPla) out.push_back(k.frame);
     std::sort(out.begin(), out.end());
     out.erase(std::unique(out.begin(), out.end()), out.end());
     return out;
@@ -291,13 +417,28 @@ std::vector<int> keyFrames(const SceneNode& node) {
 namespace {
 bool inFrames(const std::vector<int>& frames, int f) { return std::find(frames.begin(), frames.end(), f) != frames.end(); }
 
-AnimTrack* tracksOf(SceneNode& n, int i) { return i == 0 ? &n.animPos : i == 1 ? &n.animRot : &n.animScale; }
+AnimTrack* tracksOf(SceneNode& n, int i) {
+    return i == 0 ? &n.animPos : i == 1 ? &n.animRot : i == 2 ? &n.animScale : &n.animParams[(size_t)(i - 3)].track;
+}
+int trackCount(const SceneNode& n) { return 3 + (int)n.animParams.size(); }
 } // namespace
 
 int moveKeys(SceneNode& node, const std::vector<int>& frames, int delta) {
     if (delta == 0) return 0;
     int moved = 0;
-    for (int ti = 0; ti < 3; ++ti) {
+    {
+        std::vector<PlaKey> moving, staying;
+        for (PlaKey& k : node.animPla) (inFrames(frames, k.frame) ? moving : staying).push_back(std::move(k));
+        for (PlaKey& k : moving) k.frame += delta;
+        staying.erase(std::remove_if(staying.begin(), staying.end(), [&](const PlaKey& s2) {
+                          return std::any_of(moving.begin(), moving.end(), [&](const PlaKey& m) { return m.frame == s2.frame; });
+                      }), staying.end());
+        moved += (int)moving.size();
+        for (PlaKey& k : moving) staying.push_back(std::move(k));
+        std::sort(staying.begin(), staying.end(), [](const PlaKey& a, const PlaKey& b) { return a.frame < b.frame; });
+        node.animPla = std::move(staying);
+    }
+    for (int ti = 0; ti < trackCount(node); ++ti) {
         AnimTrack& t = *tracksOf(node, ti);
         std::vector<AnimKey> moving, staying;
         for (const AnimKey& k : t.keys) (inFrames(frames, k.frame) ? moving : staying).push_back(k);
@@ -320,24 +461,37 @@ int moveKeys(SceneNode& node, const std::vector<int>& frames, int delta) {
 
 int deleteKeys(SceneNode& node, const std::vector<int>& frames) {
     int n = 0;
-    for (int ti = 0; ti < 3; ++ti) {
+    {
+        const size_t before = node.animPla.size();
+        node.animPla.erase(std::remove_if(node.animPla.begin(), node.animPla.end(), [&](const PlaKey& k) { return inFrames(frames, k.frame); }),
+                           node.animPla.end());
+        n += (int)(before - node.animPla.size());
+    }
+    for (int ti = 0; ti < trackCount(node); ++ti) {
         auto& keys = tracksOf(node, ti)->keys;
         const size_t before = keys.size();
         keys.erase(std::remove_if(keys.begin(), keys.end(), [&](const AnimKey& k) { return inFrames(frames, k.frame); }),
                    keys.end());
         n += (int)(before - keys.size());
     }
+    node.animParams.erase(std::remove_if(node.animParams.begin(), node.animParams.end(), [](const ParamTrack& p) { return p.track.empty(); }),
+                          node.animParams.end());
     return n;
 }
 
 int setKeyInterp(SceneNode& node, const std::vector<int>& frames, KeyInterp interp) {
     int n = 0;
-    for (int ti = 0; ti < 3; ++ti)
+    for (int ti = 0; ti < trackCount(node); ++ti)
         for (AnimKey& k : tracksOf(node, ti)->keys)
             if (inFrames(frames, k.frame)) {
                 k.interp = interp;
                 ++n;
             }
+    for (PlaKey& k : node.animPla)
+        if (inFrames(frames, k.frame)) {
+            k.interp = interp == KeyInterp::Step ? KeyInterp::Step : KeyInterp::Linear;
+            ++n;
+        }
     return n;
 }
 
