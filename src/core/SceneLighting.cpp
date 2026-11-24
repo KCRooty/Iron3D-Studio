@@ -1,3 +1,4 @@
+#include <functional>
 #include "SceneLighting.h"
 #include "SceneNode.h"
 
@@ -63,6 +64,17 @@ void collect(const SceneNode& node, const glm::mat4& parentWorld, bool parentVis
 SceneLighting collectSceneLights(const SceneNode& root) {
     SceneLighting out;
     for (const auto& c : root.children()) collect(*c, glm::mat4(1.0f), true, out);
+    std::function<bool(const SceneNode&)> findEnv = [&](const SceneNode& n) {
+        if (n.env.present && n.env.kind == 2) {
+            const float lum = 0.2126f * n.env.top.r + 0.7152f * n.env.top.g + 0.0722f * n.env.top.b;
+            out.ambientScale = std::max(0.0f, lum * n.env.level / 0.25f);
+            return true;
+        }
+        for (const auto& c : n.children())
+            if (findEnv(*c)) return true;
+        return false;
+    };
+    findEnv(root);
     return out;
 }
 

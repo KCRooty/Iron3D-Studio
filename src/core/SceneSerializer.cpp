@@ -171,7 +171,7 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
     }
     if (node.env.present)
         out << indent << "  ENV kind=" << node.env.kind << " tr=" << node.env.top.r << " tg=" << node.env.top.g << " tb=" << node.env.top.b
-            << " br=" << node.env.bottom.r << " bg=" << node.env.bottom.g << " bb=" << node.env.bottom.b << "\n";
+            << " br=" << node.env.bottom.r << " bg=" << node.env.bottom.g << " bb=" << node.env.bottom.b << " lv=" << node.env.level << "\n";
     if (node.instance.present)
         out << indent << "  INST src=" << quoted(node.instance.source) << "\n";
     if (node.hasHidden()) {
@@ -582,13 +582,14 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
         } else if (kind == "ENV") {
             node.env.present = true;
             ok = readAttrs(p, "ENV", err, [&](const std::string& k, const std::string& v) {
-                if (k == "kind") node.env.kind = std::clamp(std::stoi(v), 0, 1);
+                if (k == "kind") node.env.kind = std::clamp(std::stoi(v), 0, 2);
                 else if (k == "tr") node.env.top.r = std::stof(v);
                 else if (k == "tg") node.env.top.g = std::stof(v);
                 else if (k == "tb") node.env.top.b = std::stof(v);
                 else if (k == "br") node.env.bottom.r = std::stof(v);
                 else if (k == "bg") node.env.bottom.g = std::stof(v);
                 else if (k == "bb") node.env.bottom.b = std::stof(v);
+                else if (k == "lv") node.env.level = std::stof(v);
             });
         } else if (kind == "INST") {
             node.instance.present = true;

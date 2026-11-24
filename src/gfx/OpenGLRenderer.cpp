@@ -475,7 +475,7 @@ void OpenGLRenderer::drawGrid(const std::vector<Vertex>& lineVerts, const glm::m
 void OpenGLRenderer::setSceneLighting(const SceneLighting& lighting, const glm::mat4& /*lightViewProj*/) {
     lightCount_ = std::min((int)lighting.lights.size(), kMaxViewportLights);
     // Mismo criterio de ambiente que Vulkan (LightsUniform.h), en espacio gamma.
-    ambient_ = lightCount_ > 0 ? 0.04f : 0.15f;
+    ambient_ = (lightCount_ > 0 ? 0.04f : 0.15f) * lighting.ambientScale;
     lightPosType_.resize(lightCount_);
     lightDirFalloff_.resize(lightCount_);
     lightColorRadius_.resize(lightCount_);

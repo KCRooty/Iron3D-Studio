@@ -13,7 +13,7 @@ GpuSceneLights packSceneLights(const SceneLighting& lighting, const glm::mat4& l
     GpuSceneLights g{};
     g.lightViewProj = lightViewProj;
     const int n = std::min((int)lighting.lights.size(), kMaxViewportLights);
-    g.info = glm::vec4((float)n, (float)lighting.shadowLight, n > 0 ? kAmbientSceneLights : kAmbientDefaultLight,
+    g.info = glm::vec4((float)n, (float)lighting.shadowLight, (n > 0 ? kAmbientSceneLights : kAmbientDefaultLight) * lighting.ambientScale,
                        0.0f);
     for (int i = 0; i < n; ++i) {
         const ViewportLight& l = lighting.lights[i];

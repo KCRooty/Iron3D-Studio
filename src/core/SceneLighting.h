@@ -41,6 +41,7 @@ struct ViewportLight {
 struct SceneLighting {
     std::vector<ViewportLight> lights; // vacio = luz por defecto
     int shadowLight = -1;              // indice de la luz que hace el mapa de sombras, o -1
+    float ambientScale = 1.0f;         // objeto Entorno: multiplica el ambiente del visor (1 = el de siempre)
 };
 
 // Recorre la escena con la visibilidad de editor heredada y devuelve hasta

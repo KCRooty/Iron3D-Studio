@@ -19,6 +19,14 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 **Sin probar:** ambas solo se han compilado; no se han ejecutado en la interfaz. Los textos nuevos no están en los archivos de idioma (salen en español).
 **Sigue pendiente:** Entorno, Primer Plano y Jiggle, Selección de Claves, Grabar Parámetro y Nivel de Puntos, Cambiar Vista (multi-vista), Selector Visual, Luz IES con `.ies`, Esculpir y el resto de la lista de límites.
 
+## Objeto Entorno
+
+- **Crear > Escena > Entorno** ya crea un objeto (antes la entrada no hacía nada). Tiene **Color Ambiente** y **Nivel**, y controla la luz ambiente del visor, en Vulkan y en OpenGL: un color más claro o un nivel más alto aclara las zonas en sombra. Con el valor por defecto (gris 0,25, nivel 1) el visor queda como antes.
+- Se guarda y se carga en el `.iron` (campo `lv`), y no cuenta como Fondo o Cielo para el fondo del render.
+
+**Sin probar:** compila y los tests pasan, pero no se ha mirado el efecto en el visor ni hay un test propio del Entorno. No afecta al render por CPU del Visor de Imágenes. Los textos nuevos salen en español en los demás idiomas.
+**Sigue pendiente:** Primer Plano y Jiggle (sin función), y el resto de límites.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

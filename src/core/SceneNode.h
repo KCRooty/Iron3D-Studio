@@ -162,12 +162,13 @@ struct InstanceData {
 };
 
 // Objetos de escena Fondo y Cielo (2026-11-20): colocan el color de fondo del render en el Visor de Imagenes
-// (degradado de `top` a `bottom`). kind: 0 Fondo, 1 Cielo.
+// (degradado de `top` a `bottom`). kind: 0 Fondo, 1 Cielo, 2 Entorno (color y nivel de la luz ambiente del visor).
 struct EnvData {
     bool present = false;
     int kind = 0;
     glm::vec3 top{0.2f, 0.2f, 0.25f};
     glm::vec3 bottom{0.2f, 0.2f, 0.25f};
+    float level = 1.0f; // Entorno: multiplica el color ambiente
 };
 
 // Clonador (ver Clone.h): copias del primer hijo con malla en modo Lineal, Cuadricula o Radial.

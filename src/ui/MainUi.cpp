@@ -2011,6 +2011,17 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
         }
         return;
     }
+    if (std::string(it.name.key) == "Entorno") {
+        SceneNode* en = createObject(root, selected, history, PrimitiveType::None);
+        if (en) {
+            en->setName(tr("Entorno"));
+            en->env.present = true;
+            en->env.kind = 2;
+            en->env.top = glm::vec3(0.25f);
+            en->env.level = 1.0f;
+        }
+        return;
+    }
     if (std::string(it.name.key) == "Fondo" || std::string(it.name.key) == "Cielo") {
         const bool sky = std::string(it.name.key) == "Cielo";
         SceneNode* en = createObject(root, selected, history, PrimitiveType::None);
@@ -2302,7 +2313,7 @@ const PaletteItem kDeformers[] = {
 const PaletteItem kScene[] = {
     {"Suelo", Icon::Floor, PrimitiveType::Plane, true},
     {"Cielo", Icon::SceSky, kNone, true},
-    {"Entorno", Icon::SceEnvironment, kNone, false},
+    {"Entorno", Icon::SceEnvironment, kNone, true},
     {"Primer Plano", Icon::SceForeground, kNone, false},
     {"Fondo", Icon::SceBackground, kNone, true},
     {"Escenario", Icon::SceStage, kNone, false},
@@ -4957,6 +4968,19 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
             }
         } else if (node.env.present) {
             sectionHeader(tr("Propiedades del Objeto"));
+            if (node.env.kind == 2) {
+                propLabel(tr("Color Ambiente"));
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::ColorEdit3("##envamb", &node.env.top.x, ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_PickerHueBar)) {
+                    if (ImGui::IsItemActivated()) history.commitBefore(root);
+                }
+                propLabel(tr("Nivel"));
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::DragFloat("##envlvl", &node.env.level, 0.01f, 0.0f, 10.0f, "%.2f")) {
+                    if (ImGui::IsItemActivated()) history.commitBefore(root);
+                }
+                ImGui::TextDisabled(tr("  Es la luz ambiente del visor: más color y nivel iluminan más las zonas en sombra."));
+            } else {
             propLabel(tr("Color Superior"));
             ImGui::SetNextItemWidth(-1);
             if (ImGui::ColorEdit3("##envtop", &node.env.top.x, ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_PickerHueBar)) {
@@ -4968,6 +4992,7 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                 if (ImGui::IsItemActivated()) history.commitBefore(root);
             }
             ImGui::TextDisabled(tr("  Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo)."));
+            }
         } else if (node.instance.present) {
             sectionHeader(tr("Propiedades del Objeto"));
             propLabel(tr("Objeto de Origen"));
@@ -7345,7 +7370,7 @@ void renderToPictureViewer(const SceneNode& root, const std::vector<Material>& m
     glm::vec3 bgTop(rs.bgTop[0], rs.bgTop[1], rs.bgTop[2]), bgBottom(rs.bgBottom[0], rs.bgBottom[1], rs.bgBottom[2]);
     {
         std::function<const SceneNode*(const SceneNode&)> findEnv = [&](const SceneNode& n) -> const SceneNode* {
-            if (n.env.present) return &n;
+            if (n.env.present && n.env.kind < 2) return &n;
             for (const auto& c : n.children())
                 if (const SceneNode* f = findEnv(*c)) return f;
             return nullptr;
