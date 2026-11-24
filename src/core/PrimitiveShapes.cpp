@@ -545,6 +545,115 @@ MeshData applyPhongAngle(const MeshData& src, float angleDeg, bool limit) {
     return m;
 }
 
+void recomputeVertexNormals(MeshData& m) {
+    std::vector<glm::vec3> acc(m.vertices.size(), glm::vec3(0.0f));
+    for (size_t t = 0; t + 2 < m.indices.size(); t += 3) {
+        const uint32_t a = m.indices[t], b = m.indices[t + 1], c = m.indices[t + 2];
+        const glm::vec3 n = glm::cross(m.vertices[b].position - m.vertices[a].position, m.vertices[c].position - m.vertices[a].position);
+        acc[a] += n;
+        acc[b] += n;
+        acc[c] += n;
+    }
+    for (size_t v = 0; v < m.vertices.size(); ++v)
+        if (glm::length(acc[v]) > 1e-20f) m.vertices[v].normal = glm::normalize(acc[v]);
+}
+
+int sculptStroke(MeshData& m, int brush, const glm::vec3& center, float radius, float amount, const MeshData* orig,
+                 const glm::vec3& grabDelta) {
+    if (radius <= 1e-6f || m.vertices.empty()) return 0;
+    const float r2 = radius * radius;
+    // vertices dentro del radio, con su peso (caida suave)
+    std::vector<std::pair<uint32_t, float>> in;
+    glm::vec3 nrm(0.0f), cen(0.0f);
+    float wsum = 0.0f;
+    for (size_t v = 0; v < m.vertices.size(); ++v) {
+        const glm::vec3 d = m.vertices[v].position - center;
+        const float dd = glm::dot(d, d);
+        if (dd >= r2) continue;
+        const float x = 1.0f - dd / r2;
+        const float w = x * x;
+        in.push_back({(uint32_t)v, w});
+        nrm += m.vertices[v].normal * w;
+        cen += m.vertices[v].position * w;
+        wsum += w;
+    }
+    if (in.empty()) return 0;
+    cen /= wsum;
+    nrm = glm::length(nrm) > 1e-12f ? glm::normalize(nrm) : glm::vec3(0, 1, 0);
+    // normal y vecinos por posicion: los vertices duplicados de una costura se mueven igual
+    auto key = [](const glm::vec3& p) {
+        const auto q = [](float v) { return (long long)std::llround(v * 1e5); };
+        return std::to_string(q(p.x)) + "," + std::to_string(q(p.y)) + "," + std::to_string(q(p.z));
+    };
+    std::unordered_map<std::string, glm::vec3> posNormal, nbSum;
+    std::unordered_map<std::string, int> nbCnt;
+    std::vector<char> inside(m.vertices.size(), 0);
+    for (const auto& [v, w] : in) inside[v] = 1;
+    for (const auto& [v, w] : in) posNormal[key(m.vertices[v].position)] += m.vertices[v].normal;
+    if (brush == SculptSmooth)
+        for (size_t t = 0; t + 2 < m.indices.size(); t += 3)
+            for (int k = 0; k < 3; ++k) {
+                const uint32_t a = m.indices[t + k];
+                if (!inside[a]) continue;
+                const std::string ka = key(m.vertices[a].position);
+                for (int j = 1; j < 3; ++j) {
+                    nbSum[ka] += m.vertices[m.indices[t + (k + j) % 3]].position;
+                    nbCnt[ka] += 1;
+                }
+            }
+    const std::vector<glm::vec3> before = [&] {
+        std::vector<glm::vec3> b;
+        b.reserve(in.size());
+        for (const auto& [v, w] : in) b.push_back(m.vertices[v].position);
+        return b;
+    }();
+    int moved = 0;
+    for (size_t i = 0; i < in.size(); ++i) {
+        const uint32_t v = in[i].first;
+        const float w = in[i].second;
+        const glm::vec3 p = before[i];
+        glm::vec3 pn = posNormal[key(p)];
+        pn = glm::length(pn) > 1e-12f ? glm::normalize(pn) : nrm;
+        const float h = glm::dot(p - cen, nrm);  // altura sobre el plano medio del pincel
+        glm::vec3 q = p;
+        switch (brush) {
+            case SculptPull: q = p + nrm * (amount * w); break;
+            case SculptGrab: q = p + grabDelta * w; break;
+            case SculptSmooth: {
+                const std::string k = key(p);
+                if (nbCnt[k] > 0) q = glm::mix(p, nbSum[k] / (float)nbCnt[k], std::clamp(w * std::fabs(amount) / std::max(radius * 0.05f, 1e-6f), 0.0f, 1.0f));
+                break;
+            }
+            case SculptWax: q = p + nrm * (amount * w * 0.6f) - nrm * (h * w * 0.2f); break;
+            case SculptKnife: {
+                const float wn = w * w;  // mas estrecho
+                q = p - nrm * (amount * wn) + (center - p - nrm * glm::dot(center - p, nrm)) * (wn * 0.3f);
+                break;
+            }
+            case SculptPinch: q = p + (center - p - nrm * glm::dot(center - p, nrm)) * std::clamp(w * std::fabs(amount) / radius * 4.0f, 0.0f, 0.9f) * (amount < 0 ? -1.0f : 1.0f); break;
+            case SculptFlatten: q = p - nrm * (h * std::clamp(w * std::fabs(amount) / radius * 4.0f, 0.0f, 1.0f)); break;
+            case SculptInflate: q = p + pn * (amount * w); break;
+            case SculptAmplify: q = p + nrm * (h * std::clamp(w * amount / radius * 4.0f, -0.9f, 4.0f)); break;
+            case SculptFill: if (h < 0) q = p - nrm * (h * std::clamp(w * std::fabs(amount) / radius * 4.0f, 0.0f, 1.0f)); break;
+            case SculptScrape: if (h > 0) q = p - nrm * (h * std::clamp(w * std::fabs(amount) / radius * 4.0f, 0.0f, 1.0f)); break;
+            case SculptErase:
+                if (orig && orig->vertices.size() == m.vertices.size())
+                    q = glm::mix(p, orig->vertices[v].position, std::clamp(w * std::fabs(amount) / radius * 4.0f, 0.0f, 1.0f));
+                break;
+            default: break;
+        }
+        if (q != p) {
+            m.vertices[v].position = q;
+            ++moved;
+        }
+    }
+    if (moved) {
+        recomputeVertexNormals(m);
+        updateBounds(m);
+    }
+    return moved;
+}
+
 MeshData makePolygonMesh(float w, float h, bool triangle) {
     MeshData m;
     const glm::vec3 n(0, 1, 0);

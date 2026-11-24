@@ -239,7 +239,15 @@ struct UiState {
     std::string compOp;                // Seleccion/Malla sobre componentes (menu o --ui-cmd=meshop=...)
     int compSelectAllRequested = 0;    // --ui-cmd=sel-all-visible|sel-all-through
     // Herramientas de modelado (Malla).
-    enum class ModelTool { None, Extrude, InnerExtrude, Bevel, Knife, SplinePen, SplineSketch, SplineArc };
+    enum class ModelTool { None, Extrude, InnerExtrude, Bevel, Knife, SplinePen, SplineSketch, SplineArc, Sculpt };
+    // Esculpir: pincel activo (SculptBrush), radio en pixeles, intensidad (0..1) y simetria en X local.
+    int sculptBrush = 0;
+    float sculptRadiusPx = 50.0f, sculptStrength = 0.3f;
+    bool sculptSym = false;
+    std::shared_ptr<const MeshData> sculptOrig;  // malla al empezar a esculpir el objeto (para Borrar)
+    int sculptOrigNode = -1;
+    glm::vec3 sculptGrabCenter{0.0f}, sculptGrabPlaneN{0.0f};
+    float sculptGrabRadius = 0.0f;
     ModelTool modelTool = ModelTool::None;
     // Simetria de edicion (como la "True Symmetry" de R19): -1 = apagada, 0/1/2 = plano X/Y/Z local del objeto.
     // Al mover puntos, sus espejos sin seleccionar se mueven reflejados; los que estan sobre el plano no lo abandonan.
@@ -378,6 +386,12 @@ void jumpToKey(int dir) {
     }
 }
 
+const char* sculptBrushName(int b) {
+    static const char* n[] = {"Estirar", "Agarrar", "Suavizar", "Encerar", "Cortar", "Pellizcar", "Achatar",
+                              "Inflar", "Amplificar", "Rellenar", "Repetir", "Raspar", "Borrar"};
+    return b >= 0 && b < SculptBrushCount ? tr(n[b]) : "";
+}
+
 // Abre la ventanita de opciones de una herramienta junto al raton.
 const char* modelToolName(UiState::ModelTool t) {
     switch (t) {
@@ -388,6 +402,7 @@ const char* modelToolName(UiState::ModelTool t) {
         case UiState::ModelTool::SplinePen: return tr("Lápiz");
         case UiState::ModelTool::SplineSketch: return tr("Dibujo");
         case UiState::ModelTool::SplineArc: return tr("Spline Arco");
+        case UiState::ModelTool::Sculpt: return sculptBrushName(g.sculptBrush);
         default: return "";
     }
 }
@@ -399,6 +414,11 @@ void setModelTool(UiState::ModelTool t) {
     if (g_vp) g_vp->selectTool = false;
     // Extruir y Biselar trabajan con poligonos: se pasa a ese modo (como C4D).
     const bool splineTool = t == UiState::ModelTool::SplinePen || t == UiState::ModelTool::SplineSketch || t == UiState::ModelTool::SplineArc;
+    if (t == UiState::ModelTool::Sculpt) {
+        if (g_vp) g_vp->compMode = 0;
+        flashStatus(std::string(modelToolName(t)) + tr(": arrastra sobre un objeto editable (Ctrl invierte; Esc para terminar)."));
+        return;
+    }
     if (splineTool) {
         if (g_vp) g_vp->compMode = 0;
         flashStatus(std::string(modelToolName(t)) + (t == UiState::ModelTool::SplineSketch ? tr(": arrastra en el visor para dibujar el spline (Esc para terminar).")
@@ -3790,15 +3810,21 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         meshItem(tr("Subdividir"), "", "", selected);
         disabledItems({{tr("Reducir"), ""}, {tr("Incrementar"), ""}, {nullptr, nullptr}});
         if (beginMenuDbg(tr("Pinceles"))) {
-            disabledItems({{tr("Estirar"), ""}, {tr("Agarrar"), ""}, {tr("Suavizar"), ""}, {tr("Encerar"), ""}, {tr("Cortar"), ""},
-                           {tr("Pellizcar"), ""}, {tr("Achatar"), ""}, {tr("Inflar"), ""}, {tr("Amplificar"), ""},
-                           {tr("Rellenar"), ""}, {tr("Repetir"), ""}, {tr("Raspar"), ""}, {nullptr, nullptr},
-                           {tr("Borrar"), ""}, {tr("Seleccionar"), ""}});
+            for (int b = 0; b < SculptBrushCount; ++b) {
+                if (b == SculptErase) ImGui::Separator();
+                const bool on = g.modelTool == UiState::ModelTool::Sculpt && g.sculptBrush == b;
+                if (ImGui::MenuItem(sculptBrushName(b), nullptr, on, b != SculptRepeat)) {
+                    g.sculptBrush = b;
+                    setModelTool(UiState::ModelTool::Sculpt);
+                }
+            }
+            ImGui::MenuItem(tr("Seleccionar"), nullptr, false, false);
             ImGui::EndMenu();
         }
         ImGui::BeginMenuEx(tr("Máscara"), kIconGutterText, false);
         ImGui::Separator();
-        disabledItems({{tr("Bakear Objeto Esculpido"), ""}, {tr("Simetría Esculpir"), ""}, {tr("Proyectar Malla"), ""},
+        ImGui::MenuItem(tr("Simetría Esculpir"), nullptr, &g.sculptSym);
+        disabledItems({{tr("Bakear Objeto Esculpido"), ""}, {tr("Proyectar Malla"), ""},
                        {tr("Des-Subdividir"), ""}, {tr("Esculpir a Pose Morph"), ""}});
         ImGui::EndMenu();
     }
@@ -9699,10 +9725,135 @@ void splineToolMouse(SceneNode& root, SceneNode* selected, const OrbitalCamera& 
     d = {};
 }
 
+// Rayo del raton en el espacio local de `node`.
+void localMouseRay(const SceneNode& node, const OrbitalCamera& camera, const ViewportState& vp, float mx, float my, glm::vec3& o,
+                   glm::vec3& dir) {
+    const glm::mat4 view = camera.viewMatrix();
+    const glm::mat4 proj = camera.projectionMatrix(vp.w / std::max(1.0f, vp.h), true);
+    const glm::vec3 eye = glm::vec3(glm::inverse(view)[3]);
+    const Ray ray = TransformGizmo::screenRay(mx - vp.x, my - vp.y, (int)vp.w, (int)vp.h, view, proj, eye);
+    const glm::mat4 invW = glm::inverse(node.worldMatrix());
+    o = glm::vec3(invW * glm::vec4(ray.origin, 1.0f));
+    dir = glm::vec3(invW * glm::vec4(ray.direction, 0.0f));
+}
+
+bool rayMeshLocal(const MeshData& m, const glm::vec3& o, const glm::vec3& dir, glm::vec3& hit) {
+    float best = 1e30f;
+    for (size_t i = 0; i + 2 < m.indices.size(); i += 3) {
+        const glm::vec3 a = m.vertices[m.indices[i]].position, b = m.vertices[m.indices[i + 1]].position,
+                        c = m.vertices[m.indices[i + 2]].position;
+        const glm::vec3 e1 = b - a, e2 = c - a, pv = glm::cross(dir, e2);
+        const float det = glm::dot(e1, pv);
+        if (std::fabs(det) < 1e-12f) continue;
+        const float inv = 1.0f / det;
+        const glm::vec3 tv = o - a;
+        const float u = glm::dot(tv, pv) * inv;
+        if (u < 0 || u > 1) continue;
+        const glm::vec3 qv = glm::cross(tv, e1);
+        const float v = glm::dot(dir, qv) * inv;
+        if (v < 0 || u + v > 1) continue;
+        const float t = glm::dot(e2, qv) * inv;
+        if (t > 1e-6f && t < best) best = t;
+    }
+    if (best >= 1e30f) return false;
+    hit = o + dir * best;
+    return true;
+}
+
+// Punto del rayo del raton en el plano (local) que pasa por `p0` con normal `n`.
+glm::vec3 mouseOnPlane(const SceneNode& node, const OrbitalCamera& camera, const ViewportState& vp, float mx, float my,
+                       const glm::vec3& p0, const glm::vec3& n) {
+    glm::vec3 o, dir;
+    localMouseRay(node, camera, vp, mx, my, o, dir);
+    const float den = glm::dot(dir, n);
+    if (std::fabs(den) < 1e-12f) return p0;
+    return o + dir * (glm::dot(p0 - o, n) / den);
+}
+
+void sculptMouse(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, float mx, float my, bool leftDown,
+                 bool leftPressed, SceneHistory& history) {
+    auto& d = g.tdrag;
+    const ViewportState& vp = *g_vp;
+    if (leftPressed) {
+        d = {};
+        if (!editableMesh(selected)) {
+            flashStatus(tr("Esculpir: selecciona un objeto editable (C)."));
+            return;
+        }
+        if (g.sculptBrush == SculptRepeat) {
+            flashStatus(tr("Repetir: todavía no implementado."));
+            return;
+        }
+        if (g.sculptOrigNode != selected->id() || !g.sculptOrig || g.sculptOrig->vertices.size() != selected->mesh->vertices.size()) {
+            g.sculptOrig = selected->mesh;
+            g.sculptOrigNode = selected->id();
+        }
+        history.commitBefore(root);
+        d.active = true;
+        d.startX = d.curX = mx;
+        d.startY = d.curY = my;
+        d.startMesh = selected->mesh;
+        d.applied = false;
+    }
+    if (!d.active || !selected || !selected->mesh) return;
+    if (!leftDown) {
+        d = {};
+        return;
+    }
+    const bool first = leftPressed;
+    if (!first && std::hypot(mx - d.curX, my - d.curY) < 2.0f && g.sculptBrush != SculptInflate && g.sculptBrush != SculptPull) return;
+    // centro y radio local: el rayo toca la malla; el radio sale de desplazar el raton sculptRadiusPx en pantalla
+    const MeshData& cur = *selected->mesh;
+    glm::vec3 o, dir;
+    MeshData m = (g.sculptBrush == SculptGrab) ? *d.startMesh : cur;
+    if (g.sculptBrush == SculptGrab) {
+        if (first) {
+            localMouseRay(*selected, camera, vp, mx, my, o, dir);
+            glm::vec3 hit;
+            if (!rayMeshLocal(m, o, dir, hit)) { d = {}; return; }
+            g.sculptGrabCenter = hit;
+            g.sculptGrabPlaneN = glm::normalize(-dir);
+            const glm::vec3 edge = mouseOnPlane(*selected, camera, vp, mx + g.sculptRadiusPx, my, hit, g.sculptGrabPlaneN);
+            g.sculptGrabRadius = glm::length(edge - hit);
+            return;
+        }
+        const glm::vec3 now = mouseOnPlane(*selected, camera, vp, mx, my, g.sculptGrabCenter, g.sculptGrabPlaneN);
+        const glm::vec3 delta = (now - g.sculptGrabCenter) * g.sculptStrength / 0.3f;
+        sculptStroke(m, SculptGrab, g.sculptGrabCenter, g.sculptGrabRadius, 0.0f, nullptr, delta);
+        if (g.sculptSym) {
+            const glm::vec3 mc(-g.sculptGrabCenter.x, g.sculptGrabCenter.y, g.sculptGrabCenter.z);
+            sculptStroke(m, SculptGrab, mc, g.sculptGrabRadius, 0.0f, nullptr, glm::vec3(-delta.x, delta.y, delta.z));
+        }
+    } else {
+        localMouseRay(*selected, camera, vp, mx, my, o, dir);
+        glm::vec3 hit;
+        if (!rayMeshLocal(m, o, dir, hit)) {
+            d.curX = mx;
+            d.curY = my;
+            return;
+        }
+        const glm::vec3 edge = mouseOnPlane(*selected, camera, vp, mx + g.sculptRadiusPx, my, hit, glm::normalize(-dir));
+        const float radius = glm::length(edge - hit);
+        float amount = radius * 0.08f * g.sculptStrength;
+        if (ImGui::GetIO().KeyCtrl) amount = -amount;
+        const MeshData* orig = g.sculptOrig.get();
+        sculptStroke(m, g.sculptBrush, hit, radius, amount, orig);
+        if (g.sculptSym) sculptStroke(m, g.sculptBrush, glm::vec3(-hit.x, hit.y, hit.z), radius, amount, orig);
+    }
+    d.curX = mx;
+    d.curY = my;
+    selected->mesh = std::make_shared<const MeshData>(std::move(m));
+    selected->param.generated.reset();
+}
+
 void modelToolMouse(SceneNode& root, SceneNode* selected, const OrbitalCamera& camera, float mx, float my,
                     bool leftDown, bool leftPressed, SceneHistory& history) {
     auto& d = g.tdrag;
     if (!g_vp) return;
+    if (g.modelTool == UiState::ModelTool::Sculpt) {
+        sculptMouse(root, selected, camera, mx, my, leftDown, leftPressed, history);
+        return;
+    }
     if (g.modelTool == UiState::ModelTool::SplinePen || g.modelTool == UiState::ModelTool::SplineSketch ||
         g.modelTool == UiState::ModelTool::SplineArc) {
         splineToolMouse(root, selected, camera, mx, my, leftDown, leftPressed, history);
@@ -9784,7 +9935,17 @@ void drawModelToolUi(SceneNode* selected, const ViewportState& vp) {
     if (ImGui::Begin(title.c_str(), &open,
                      ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings)) {
         ImGui::SetNextItemWidth(120.0f);
-        if (g.modelTool == MT::Extrude) {
+        if (g.modelTool == MT::Sculpt) {
+            ImGui::DragFloat(tr("Tamaño (px)"), &g.sculptRadiusPx, 0.5f, 4.0f, 600.0f, "%.0f");
+            ImGui::SetNextItemWidth(120.0f);
+            ImGui::SliderFloat(tr("Presión"), &g.sculptStrength, 0.01f, 1.0f, "%.2f");
+            ImGui::Checkbox(tr("Simetría X"), &g.sculptSym);
+            ImGui::TextDisabled("%s", tr("Ctrl invierte el pincel. Esc termina."));
+            ImDrawList* fdl = ImGui::GetForegroundDrawList();
+            const ImVec2 mp = ImGui::GetIO().MousePos;
+            if (mp.x >= vp.x && mp.y >= vp.y && mp.x < vp.x + vp.w && mp.y < vp.y + vp.h)
+                fdl->AddCircle(mp, g.sculptRadiusPx, IM_COL32(255, 200, 80, 200), 48, 1.5f);
+        } else if (g.modelTool == MT::Extrude) {
             ImGui::DragFloat(tr("Desplazamiento (cm)"), &g.extrudeCm, 0.5f, -10000.0f, 10000.0f, "%.1f");
         } else if (g.modelTool == MT::InnerExtrude) {
             ImGui::DragFloat(tr("Desplazamiento (cm)"), &g.innerInsetCm, 0.5f, 0.0f, 10000.0f, "%.1f");
@@ -9811,7 +9972,7 @@ void drawModelToolUi(SceneNode* selected, const ViewportState& vp) {
             else
                 ImGui::TextDisabled(tr("Modo Línea: corta lo que cruza la línea.\nCon polígonos seleccionados, solo esos."));
         }
-        if (g.modelTool != MT::Knife) {
+        if (g.modelTool != MT::Knife && g.modelTool != MT::Sculpt) {
             if (ImGui::Button(tr("Aplicar"))) g.toolApplyRequested = true;
             ImGui::SameLine();
             ImGui::TextDisabled(editableMesh(selected) ? tr("o arrastra en el visor") : tr("(objeto editable)"));

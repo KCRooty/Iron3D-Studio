@@ -78,4 +78,16 @@ MeshData makeGrassMesh(float w, float d, float h, int blades, int seed);
 // topologia: no parte vertices, asi que una arista dura solo sale donde la malla ya tiene vertices separados.
 MeshData applyPhongAngle(const MeshData& src, float angleDeg, bool limit);
 
+// Pinceles de Esculpir (2026-11-24). Todo en espacio local de la malla. `amount` = desplazamiento maximo en el
+// centro (unidades), con caida suave hasta `radius`. `orig` (opcional, mismos vertices) es la malla de partida para
+// Borrar; `grabDelta` el desplazamiento de Agarrar. Devuelve cuantos vertices se movieron.
+enum SculptBrush {
+    SculptPull = 0, SculptGrab, SculptSmooth, SculptWax, SculptKnife, SculptPinch, SculptFlatten, SculptInflate,
+    SculptAmplify, SculptFill, SculptRepeat, SculptScrape, SculptErase, SculptBrushCount
+};
+int sculptStroke(MeshData& m, int brush, const glm::vec3& center, float radius, float amount, const MeshData* orig = nullptr,
+                 const glm::vec3& grabDelta = glm::vec3(0.0f));
+// Normales por vertice a partir de sus triangulos (respeta los vertices separados).
+void recomputeVertexNormals(MeshData& m);
+
 } // namespace iron3d

@@ -208,6 +208,32 @@ int main() {
         CHECK(flat);
         CHECK(round);
     }
+    {
+        // Esculpir sobre un plano de 20x20 segmentos (normal +Y)
+        const MeshData base = makeGridPlaneMesh(2, 2, 20, 20, 0);
+        auto maxY = [](const MeshData& m) { float y = -1e9f; for (const Vertex& v : m.vertices) y = std::max(y, v.position.y); return y; };
+        auto minY = [](const MeshData& m) { float y = 1e9f; for (const Vertex& v : m.vertices) y = std::min(y, v.position.y); return y; };
+        MeshData p = base;
+        CHECK(sculptStroke(p, SculptPull, glm::vec3(0), 0.5f, 0.1f) > 0);
+        CHECK(std::fabs(maxY(p) - 0.1f) < 1e-4f);                 // el centro sube lo que pide el pincel
+        CHECK(std::fabs(p.vertices[0].position.y) < 1e-6f);        // la esquina, fuera del radio, no se mueve
+        MeshData inv = base;
+        sculptStroke(inv, SculptPull, glm::vec3(0), 0.5f, -0.1f);
+        CHECK(std::fabs(minY(inv) + 0.1f) < 1e-4f);
+        MeshData fl = p;
+        sculptStroke(fl, SculptFlatten, glm::vec3(0, 0.05f, 0), 0.8f, 0.8f);
+        CHECK(maxY(fl) < maxY(p));                                  // achatar reduce el bulto
+        MeshData sm = p;
+        sculptStroke(sm, SculptSmooth, glm::vec3(0), 0.5f, 0.1f);
+        CHECK(maxY(sm) < maxY(p));                                  // suavizar rebaja el pico
+        MeshData er = p;
+        for (int i = 0; i < 20; ++i) sculptStroke(er, SculptErase, glm::vec3(0), 0.6f, 0.6f, &base);
+        CHECK(maxY(er) < 1e-3f);                                    // borrar vuelve a la malla de partida
+        MeshData gr = base;
+        sculptStroke(gr, SculptGrab, glm::vec3(0), 0.5f, 0.0f, nullptr, glm::vec3(0, 0.3f, 0));
+        CHECK(std::fabs(maxY(gr) - 0.3f) < 1e-4f);
+        CHECK(validMesh(p) && validMesh(gr));
+    }
     std::printf(g_fail ? "spline_test: %d fallos\n" : "spline_test: OK\n", g_fail);
     return g_fail ? 1 : 0;
 }

@@ -138,6 +138,21 @@ Las entradas de Deformadores, Modelado y MoGraph que no hacían nada ahora crean
 - El visor solo pinta la proyección UVW; con las demás proyecciones la textura sale con color plano. Siguen desactivados Usar Bordes, Mezclar Texturas, Usar UVW para Relieve y el Orden de rotación.
 - Sin comprobar a mano en la interfaz; solo compilación, tests y arranque.
 
+### Pinceles de Esculpir (2026-11-24)
+
+**Añadido**
+- Esculpir > Pinceles: Estirar, Agarrar, Suavizar, Encerar, Cortar, Pellizcar, Achatar, Inflar, Amplificar, Rellenar, Raspar y Borrar, sobre objetos editables. Se arrastra en el visor.
+- Ventana del pincel: Tamaño en píxeles (con el círculo junto al ratón), Presión y Simetría X. Ctrl invierte el pincel.
+- Esculpir > Simetría Esculpir activa y desactiva la simetría en X.
+- Borrar devuelve la zona a como estaba la malla al empezar a esculpir ese objeto.
+- Cada trazo se deshace de una vez con Ctrl+Z.
+
+**Límites conocidos**
+- Siguen desactivados el pincel Repetir, Seleccionar, Máscara, Reducir/Incrementar los niveles de subdivisión, Bakear, Proyectar Malla, Des-Subdividir y Esculpir a Pose Morph. No hay niveles de escultura: se esculpe directamente sobre la malla.
+- El pincel busca vértices dentro del radio sin mirar si están conectados con la zona tocada. Un trozo cercano de otra parte de la malla también se mueve.
+- En mallas muy densas cada paso recalcula todas las normales, así que puede ir lento.
+- Sin comprobar a mano en la interfaz; solo compilación, tests (spline_test cubre Estirar, invertir, Achatar, Suavizar, Borrar y Agarrar) y arranque.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**
