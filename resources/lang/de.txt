@@ -1248,6 +1248,20 @@ Color Inferior	Untere Farbe
   Rejilla 2x2x2 sobre la caja del primer hijo; cada esquina se desplaza una fracción del tamaño.	  2x2x2-Gitter über der Box des ersten Kindes; jede Ecke wird um einen Bruchteil der Größe verschoben.
   Mezcla el primer hijo con el segundo (mismo número de puntos).	  Mischt das erste Kind mit dem zweiten (gleiche Punktanzahl).
   Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo).	  Das ist der Render-Hintergrund im Bildbetrachter (Verlauf von oben nach unten).
+Eje X / Encabezado [X]\n(bloqueado)	X-Achse / Heading [X]\n(gesperrt)
+Eje X / Encabezado [X]\n(desbloqueado)	X-Achse / Heading [X]\n(entsperrt)
+Bloquea o desbloquea el eje X: un eje bloqueado no cambia al mover, rotar o escalar.	Sperrt oder entsperrt die X-Achse: eine gesperrte Achse ändert sich beim Verschieben, Drehen und Skalieren nicht.
+Eje Y / Inclinación [Y]\n(bloqueado)	Y-Achse / Pitch [Y]\n(gesperrt)
+Eje Y / Inclinación [Y]\n(desbloqueado)	Y-Achse / Pitch [Y]\n(entsperrt)
+Bloquea o desbloquea el eje Y: un eje bloqueado no cambia al mover, rotar o escalar.	Sperrt oder entsperrt die Y-Achse: eine gesperrte Achse ändert sich beim Verschieben, Drehen und Skalieren nicht.
+Eje Z / Alabeo [Z]\n(bloqueado)	Z-Achse / Bank [Z]\n(gesperrt)
+Eje Z / Alabeo [Z]\n(desbloqueado)	Z-Achse / Bank [Z]\n(entsperrt)
+Bloquea o desbloquea el eje Z: un eje bloqueado no cambia al mover, rotar o escalar.	Sperrt oder entsperrt die Z-Achse: eine gesperrte Achse ändert sich beim Verschieben, Drehen und Skalieren nicht.
+Desactivar Fijación [Mayús+S]	Fangen deaktivieren [Umschalt+S]
+Activar Fijación [Mayús+S]	Fangen aktivieren [Umschalt+S]
+Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).	Mit Fangen springt das Verschieben in 100-cm-Schritten (das Raster).
+Fijación: activada	Fangen: an
+Fijación: desactivada	Fangen: aus
 Polígono Vacío	Leeres Polygon
 Guía	Hilfslinie
 Cápsula	Kapsel

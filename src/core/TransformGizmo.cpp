@@ -487,6 +487,17 @@ bool TransformGizmo::beginDrag(const Ray& ray, SceneNode* node, const glm::vec3&
 
 void TransformGizmo::updateDrag(const Ray& ray, double mouseX, double mouseY) {
     if (!dragging_ || !target_) return;
+    updateDragRaw(ray, mouseX, mouseY);
+    for (int i = 0; i < 3; ++i) {
+        if (!axisLocked[i]) continue;
+        target_->position[i] = startPosition_[i];
+        target_->rotationDeg[i] = startRotationDeg_[i];
+        target_->scale[i] = startScale_[i];
+    }
+}
+
+void TransformGizmo::updateDragRaw(const Ray& ray, double mouseX, double mouseY) {
+    if (!dragging_ || !target_) return;
 
     if (mode == GizmoMode::Rotate && active_ == GizmoAxis::View) {
         glm::vec3 hit;

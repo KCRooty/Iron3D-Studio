@@ -1254,6 +1254,20 @@ Color Inferior	Couleur du bas
   Rejilla 2x2x2 sobre la caja del primer hijo; cada esquina se desplaza una fracción del tamaño.	  Grille 2x2x2 sur la boîte du premier enfant ; chaque coin se déplace d'une fraction de la taille.
   Mezcla el primer hijo con el segundo (mismo número de puntos).	  Mélange le premier enfant avec le second (même nombre de points).
   Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo).	  C'est l'arrière-plan du rendu dans la visionneuse d'images (dégradé de haut en bas).
+Eje X / Encabezado [X]\n(bloqueado)	Axe X / Cap [X]\n(verrouillé)
+Eje X / Encabezado [X]\n(desbloqueado)	Axe X / Cap [X]\n(déverrouillé)
+Bloquea o desbloquea el eje X: un eje bloqueado no cambia al mover, rotar o escalar.	Verrouille ou déverrouille l'axe X : un axe verrouillé ne change pas lors du déplacement, de la rotation ou de la mise à l'échelle.
+Eje Y / Inclinación [Y]\n(bloqueado)	Axe Y / Tangage [Y]\n(verrouillé)
+Eje Y / Inclinación [Y]\n(desbloqueado)	Axe Y / Tangage [Y]\n(déverrouillé)
+Bloquea o desbloquea el eje Y: un eje bloqueado no cambia al mover, rotar o escalar.	Verrouille ou déverrouille l'axe Y : un axe verrouillé ne change pas lors du déplacement, de la rotation ou de la mise à l'échelle.
+Eje Z / Alabeo [Z]\n(bloqueado)	Axe Z / Roulis [Z]\n(verrouillé)
+Eje Z / Alabeo [Z]\n(desbloqueado)	Axe Z / Roulis [Z]\n(déverrouillé)
+Bloquea o desbloquea el eje Z: un eje bloqueado no cambia al mover, rotar o escalar.	Verrouille ou déverrouille l'axe Z : un axe verrouillé ne change pas lors du déplacement, de la rotation ou de la mise à l'échelle.
+Desactivar Fijación [Mayús+S]	Désactiver le magnétisme [Maj+S]
+Activar Fijación [Mayús+S]	Activer le magnétisme [Maj+S]
+Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).	Avec le magnétisme, le déplacement saute par pas de 100 cm (la grille).
+Fijación: activada	Magnétisme : activé
+Fijación: desactivada	Magnétisme : désactivé
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cápsula	Capsule

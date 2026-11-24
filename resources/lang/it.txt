@@ -1221,6 +1221,20 @@ Color Inferior	Colore inferiore
   Rejilla 2x2x2 sobre la caja del primer hijo; cada esquina se desplaza una fracción del tamaño.	  Reticolo 2x2x2 sulla scatola del primo figlio; ogni angolo si sposta di una frazione della dimensione.
   Mezcla el primer hijo con el segundo (mismo número de puntos).	  Fonde il primo figlio con il secondo (stesso numero di punti).
   Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo).	  È lo sfondo del render nel Visualizzatore di immagini (sfumatura dall'alto verso il basso).
+Eje X / Encabezado [X]\n(bloqueado)	Asse X / Heading [X]\n(bloccato)
+Eje X / Encabezado [X]\n(desbloqueado)	Asse X / Heading [X]\n(sbloccato)
+Bloquea o desbloquea el eje X: un eje bloqueado no cambia al mover, rotar o escalar.	Blocca o sblocca l'asse X: un asse bloccato non cambia durante spostamento, rotazione e scala.
+Eje Y / Inclinación [Y]\n(bloqueado)	Asse Y / Pitch [Y]\n(bloccato)
+Eje Y / Inclinación [Y]\n(desbloqueado)	Asse Y / Pitch [Y]\n(sbloccato)
+Bloquea o desbloquea el eje Y: un eje bloqueado no cambia al mover, rotar o escalar.	Blocca o sblocca l'asse Y: un asse bloccato non cambia durante spostamento, rotazione e scala.
+Eje Z / Alabeo [Z]\n(bloqueado)	Asse Z / Bank [Z]\n(bloccato)
+Eje Z / Alabeo [Z]\n(desbloqueado)	Asse Z / Bank [Z]\n(sbloccato)
+Bloquea o desbloquea el eje Z: un eje bloqueado no cambia al mover, rotar o escalar.	Blocca o sblocca l'asse Z: un asse bloccato non cambia durante spostamento, rotazione e scala.
+Desactivar Fijación [Mayús+S]	Disattiva Snap [Maiusc+S]
+Activar Fijación [Mayús+S]	Attiva Snap [Maiusc+S]
+Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).	Con lo Snap, lo spostamento procede a passi di 100 cm (la griglia).
+Fijación: activada	Snap: attivo
+Fijación: desactivada	Snap: disattivo
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula

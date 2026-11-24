@@ -53,6 +53,10 @@ struct ViewportState {
     // L "Activar Eje": mover/rotar/escalar cambia solo el eje del objeto; la
     // geometria (si es un objeto editable) y los hijos se quedan donde estan.
     bool axisMode = false;
+    // Botones X/Y/Z de la barra: true = eje bloqueado (no se puede cambiar). Fijacion (Mayus+S):
+    // mover salta de 100 cm en 100 cm (el espaciado de la cuadricula).
+    bool axisLock[3] = {false, false, false};
+    bool snap = false;
     // Modo de edicion: 0 Modelo, 1 Puntos, 2 Aristas, 3 Poligonos (estos tres
     // solo hacen algo con un objeto editable -- Objeto Poligono --).
     int compMode = 0;

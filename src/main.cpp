@@ -999,7 +999,12 @@ int main(int argc, char** argv) {
                     const glm::vec3 beforeRot = selected ? selected->rotationDeg : glm::vec3(0.0f);
                     const glm::vec3 beforeScl = selected ? selected->scale : glm::vec3(1.0f);
                     const glm::mat4 beforeWorld = selected ? selected->worldMatrix() : glm::mat4(1.0f);
+                    for (int k = 0; k < 3; ++k) gizmo.axisLocked[k] = viewport.axisLock[k];
                     gizmo.updateDrag(mouseRay, mouseX - viewport.x, mouseY - viewport.y);
+                    if (viewport.snap && selected && gizmo.mode == iron3d::GizmoMode::Translate) {
+                        for (int k = 0; k < 3; ++k)
+                            if (!viewport.axisLock[k]) selected->position[k] = std::round(selected->position[k] / 0.5f) * 0.5f;
+                    }
                     if (compProxy) {
                         if (selected) iron3d::applyComponentDrag(*selected);
                     } else if (selected && viewport.axisMode) {

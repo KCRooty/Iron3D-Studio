@@ -2303,6 +2303,10 @@ void handleShortcuts(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Sce
             if (shift) g.renderRequested = true;  // Mayus+R: Renderizar en Visor de Imagenes
             else { mode = GizmoMode::Rotate; vp.selectTool = false; }
         }
+        if (pressed(ImGuiKey_S) && shift) {
+            vp.snap = !vp.snap;
+            flashStatus(vp.snap ? tr("Fijación: activada") : tr("Fijación: desactivada"));
+        }
         if (pressed(ImGuiKey_W) && !shift) {
             vp.worldCoords = !vp.worldCoords;
             flashStatus(vp.worldCoords ? tr("Sistema de coordenadas: Mundo") : tr("Sistema de coordenadas: Objeto"));
@@ -3350,11 +3354,17 @@ void drawTopToolbar(SceneNode& root, SceneNode*& selected, GizmoMode& mode, Scen
 
     // Bloqueo de ejes y sistema de coordenadas: activos por defecto en C4D,
     // todavia sin efecto en el gizmo de Iron3D.
-    iconButton("ax", Icon::AxisX, b, true, false, tr("Eje X / Encabezado [X]\n(todavía no implementado)"), tr("Bloqueo de eje X: todavía no implementado."));
+    if (iconButton("ax", Icon::AxisX, b, !vp.axisLock[0], true, vp.axisLock[0] ? tr("Eje X / Encabezado [X]\n(bloqueado)") : tr("Eje X / Encabezado [X]\n(desbloqueado)"),
+                   tr("Bloquea o desbloquea el eje X: un eje bloqueado no cambia al mover, rotar o escalar.")) == BtnResult::Click)
+        vp.axisLock[0] = !vp.axisLock[0];
     ImGui::SameLine();
-    iconButton("ay", Icon::AxisY, b, true, false, tr("Eje Y / Inclinación [Y]\n(todavía no implementado)"), tr("Bloqueo de eje Y: todavía no implementado."));
+    if (iconButton("ay", Icon::AxisY, b, !vp.axisLock[1], true, vp.axisLock[1] ? tr("Eje Y / Inclinación [Y]\n(bloqueado)") : tr("Eje Y / Inclinación [Y]\n(desbloqueado)"),
+                   tr("Bloquea o desbloquea el eje Y: un eje bloqueado no cambia al mover, rotar o escalar.")) == BtnResult::Click)
+        vp.axisLock[1] = !vp.axisLock[1];
     ImGui::SameLine();
-    iconButton("az", Icon::AxisZ, b, true, false, tr("Eje Z / Alabeo [Z]\n(todavía no implementado)"), tr("Bloqueo de eje Z: todavía no implementado."));
+    if (iconButton("az", Icon::AxisZ, b, !vp.axisLock[2], true, vp.axisLock[2] ? tr("Eje Z / Alabeo [Z]\n(bloqueado)") : tr("Eje Z / Alabeo [Z]\n(desbloqueado)"),
+                   tr("Bloquea o desbloquea el eje Z: un eje bloqueado no cambia al mover, rotar o escalar.")) == BtnResult::Click)
+        vp.axisLock[2] = !vp.axisLock[2];
     ImGui::SameLine();
     if (iconButton("coord", Icon::CoordSystem, b, vp.worldCoords, true,
                    vp.worldCoords ? tr("Usar Sistema de Coordenadas de Objeto [W]\n(ahora: Mundo)")
@@ -3457,7 +3467,11 @@ void drawLeftToolbar(ImVec2 pos, ImVec2 size) {
     iconButton("tweak", Icon::Tweak, b, false, false, tr("Modo Ajuste\n(todavía no implementado)"), tr("Modo Ajuste: todavía no implementado."));
     iconButton("solo", Icon::Solo, b, false, false, tr("Vista Solo\n(todavía no implementado)"), tr("Vista Solo: todavía no implementado."));
     toolbarSeparator(false, b);
-    iconButton("snap", Icon::Snap, b, false, false, tr("Activar Fijación [Mayús+S]\n(todavía no implementado)"), tr("Fijación: todavía no implementado."));
+    static ViewportState noVp;
+    ViewportState& svp = g_vp ? *g_vp : noVp;
+    if (iconButton("snap", Icon::Snap, b, svp.snap, true, svp.snap ? tr("Desactivar Fijación [Mayús+S]") : tr("Activar Fijación [Mayús+S]"),
+                   tr("Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).")) == BtnResult::Click)
+        svp.snap = !svp.snap;
     iconButton("wplane", Icon::Workplane, b, false, false, tr("Plano de Trabajo\n(todavía no implementado)"), tr("Plano de Trabajo: todavía no implementado."));
     iconButton("wlock", Icon::Locked, b, false, false, tr("Bloquear Plano de Trabajo\n(todavía no implementado)"), tr("Bloquear Plano de Trabajo: todavía no implementado."));
     ImGui::End();

@@ -642,6 +642,19 @@ int main() {
                   "gizmo: beginDrag sigue aceptando el clic como Free");
             gz.endDrag();
         }
+        {
+            // Bloqueo de ejes: arrastre libre con X bloqueado no cambia X pero si Y.
+            gz.axisLocked[0] = true;
+            const Ray r0 = TransformGizmo::screenRay(650.0, 120.0, W, H, view, proj, eye);
+            check(gz.beginDrag(r0, &n, eye, 650.0, 120.0, W, H, vp, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0)),
+                  "gizmo: arrastre libre con eje bloqueado empieza");
+            const Ray r1 = TransformGizmo::screenRay(560.0, 40.0, W, H, view, proj, eye);
+            gz.updateDrag(r1, 560.0, 40.0);
+            check(std::fabs(n.position.x) < 1e-6f && std::fabs(n.position.y) > 1e-4f, "gizmo: eje X bloqueado no se mueve y el Y si");
+            gz.endDrag();
+            gz.axisLocked[0] = false;
+            n.position = glm::vec3(0.0f);
+        }
         bool sawX = false;
         for (int dx = 4; dx < 300 && !sawX; dx += 2) sawX = pickAt(gz, 400.0 + dx, 300.0) == GizmoAxis::X;
         check(sawX, "gizmo: la flecha X es handle");

@@ -61,6 +61,10 @@ public:
     bool usePivot = false;
     glm::vec3 pivotWorld{0.0f};
 
+    // Bloqueo de ejes (botones X/Y/Z de la barra): un eje bloqueado no cambia posicion, rotacion
+    // (X=H, Y=P, Z=B) ni escala del objeto durante el arrastre.
+    bool axisLocked[3] = {false, false, false};
+
     glm::vec3 originFor(const SceneNode* node) const;
 
     // Construye el rayo de mundo bajo el cursor (coordenadas de pantalla en
@@ -101,6 +105,7 @@ public:
     // unicamente `ray`.
     void updateDrag(const Ray& ray, double mouseX, double mouseY);
     void endDrag();
+    void updateDragRaw(const Ray& ray, double mouseX, double mouseY);
     bool isDragging() const { return dragging_; }
 
     // Geometria a dibujar este frame para `node` (nullptr -> listas vacias).

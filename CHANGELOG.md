@@ -6,6 +6,18 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-24 (43): Bloqueo de ejes y Fijación
+
+**Añadido**
+- **Bloqueo de ejes** (botones X, Y y Z de la barra): un eje bloqueado no cambia de posición, rotación (X = H, Y = P, Z = B) ni escala al arrastrar el gizmo. Con varios objetos seleccionados el bloqueo también llega a los demás.
+- **Fijación** (botón de la barra o Mayús+S): al mover con el gizmo la posición salta de 100 cm en 100 cm, el espaciado de la cuadrícula.
+- `--ui-cmd=render` renderiza la vista activa sin teclado (para verificar).
+- Traducciones de las cadenas nuevas al inglés, alemán, francés e italiano.
+
+**Límites:** la Fijación solo actúa al mover (no al rotar ni escalar), solo con la cuadrícula de 100 cm y sobre la posición local del objeto; no encaja con puntos ni aristas. Siguen sin implementar Modo Ajuste, Vista Solo, Plano de Trabajo, Modo Textura, Buscar y Filtrar del Gestor de Objetos.
+
+**Verificado con tests:** el bloqueo (arrastre libre con X bloqueado no mueve X y sí Y). **Sin ver en pantalla ni probar con ratón:** la Fijación y los botones. **Verificado por captura** (sobre la 0.3.0-alpha ya publicada): Explosión, Cámara Objetivo, Luz IES, Luz PBR y el render con Cielo (degradado azul de fondo). FFD con los valores por defecto no deforma nada, como se espera.
+
 ### 2026-11-24 (42): Bisel, Explosión, FFD, Morph, objetivos de Cámara y Luz, Luz IES/PBR, Fondo y Cielo
 
 **Añadido**
