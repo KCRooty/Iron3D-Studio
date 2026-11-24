@@ -27,6 +27,14 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 **Sin probar:** compila y los tests pasan, pero no se ha mirado el efecto en el visor ni hay un test propio del Entorno. No afecta al render por CPU del Visor de Imágenes. Los textos nuevos salen en español en los demás idiomas.
 **Sigue pendiente:** Primer Plano y Jiggle (sin función), y el resto de límites.
 
+## Objeto Primer Plano
+
+- **Crear > Escena > Primer Plano** ya crea un objeto (antes la entrada no hacía nada). Mezcla un degradado (color superior e inferior, opacidad ajustable) sobre el render del Visor de Imágenes. Por defecto es negro al 30 %, un viñeteado simple.
+- Se guarda y se carga en el `.iron`.
+
+**Sin probar:** compila, pero no se ha mirado el render con el objeto en la interfaz. No afecta al visor en tiempo real, solo al render del Visor de Imágenes. Los textos nuevos salen en español en los demás idiomas.
+**Sigue pendiente:** Jiggle y el resto de límites.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

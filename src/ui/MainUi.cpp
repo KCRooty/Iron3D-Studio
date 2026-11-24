@@ -2011,6 +2011,18 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
         }
         return;
     }
+    if (std::string(it.name.key) == "Primer Plano") {
+        SceneNode* en = createObject(root, selected, history, PrimitiveType::None);
+        if (en) {
+            en->setName(tr("Primer Plano"));
+            en->env.present = true;
+            en->env.kind = 3;
+            en->env.top = glm::vec3(0.0f);
+            en->env.bottom = glm::vec3(0.0f);
+            en->env.level = 0.3f;
+        }
+        return;
+    }
     if (std::string(it.name.key) == "Entorno") {
         SceneNode* en = createObject(root, selected, history, PrimitiveType::None);
         if (en) {
@@ -2314,7 +2326,7 @@ const PaletteItem kScene[] = {
     {"Suelo", Icon::Floor, PrimitiveType::Plane, true},
     {"Cielo", Icon::SceSky, kNone, true},
     {"Entorno", Icon::SceEnvironment, kNone, true},
-    {"Primer Plano", Icon::SceForeground, kNone, false},
+    {"Primer Plano", Icon::SceForeground, kNone, true},
     {"Fondo", Icon::SceBackground, kNone, true},
     {"Escenario", Icon::SceStage, kNone, false},
     {"Cielo Físico", Icon::ScePhysicalSky, kNone, false},
@@ -4991,6 +5003,14 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
             if (ImGui::ColorEdit3("##envbot", &node.env.bottom.x, ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_PickerHueBar)) {
                 if (ImGui::IsItemActivated()) history.commitBefore(root);
             }
+            if (node.env.kind == 3) {
+                propLabel(tr("Opacidad"));
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::DragFloat("##envop", &node.env.level, 0.005f, 0.0f, 1.0f, "%.2f")) {
+                    if (ImGui::IsItemActivated()) history.commitBefore(root);
+                }
+                ImGui::TextDisabled(tr("  Se mezcla sobre el render del Visor de Imágenes (degradado de arriba abajo)."));
+            } else
             ImGui::TextDisabled(tr("  Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo)."));
             }
         } else if (node.instance.present) {
@@ -7384,6 +7404,25 @@ void renderToPictureViewer(const SceneNode& root, const std::vector<Material>& m
     fx.studio = rs.studio;
     fx.shadow = rs.shadow;
     Thumbnail img = renderCameraImage(root, materials, camera.viewMatrix(), proj, w, h, rs.antialias, bgTop, bgBottom, fx);
+    {  // objeto Primer Plano: degradado con opacidad sobre el render
+        std::function<const SceneNode*(const SceneNode&)> findFg = [&](const SceneNode& n) -> const SceneNode* {
+            if (n.env.present && n.env.kind == 3) return &n;
+            for (const auto& c : n.children())
+                if (const SceneNode* f = findFg(*c)) return f;
+            return nullptr;
+        };
+        if (const SceneNode* fgn = findFg(root)) {
+            const float a = std::clamp(fgn->env.level, 0.0f, 1.0f);
+            for (int y = 0; y < img.height; ++y) {
+                const float t = img.height > 1 ? (float)y / (float)(img.height - 1) : 0.0f;
+                const glm::vec3 c = glm::mix(fgn->env.top, fgn->env.bottom, t) * 255.0f;
+                for (int x = 0; x < img.width; ++x) {
+                    unsigned char* px = &img.rgba[((size_t)y * img.width + x) * 4];
+                    for (int k = 0; k < 3; ++k) px[k] = (unsigned char)std::clamp(px[k] + (c[k] - px[k]) * a + 0.5f, 0.0f, 255.0f);
+                }
+            }
+        }
+    }
     auto& pv = g.pv;
     pv.seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
     pv.aa = rs.antialias;

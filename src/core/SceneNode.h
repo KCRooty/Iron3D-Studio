@@ -162,7 +162,7 @@ struct InstanceData {
 };
 
 // Objetos de escena Fondo y Cielo (2026-11-20): colocan el color de fondo del render en el Visor de Imagenes
-// (degradado de `top` a `bottom`). kind: 0 Fondo, 1 Cielo, 2 Entorno (color y nivel de la luz ambiente del visor).
+// (degradado de `top` a `bottom`). kind: 0 Fondo, 1 Cielo, 2 Entorno (color y nivel de la luz ambiente del visor), 3 Primer Plano (degradado `top`-`bottom` con opacidad `level` sobre el render).
 struct EnvData {
     bool present = false;
     int kind = 0;

@@ -543,7 +543,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
         } else if (kind == "SYM") {
             node.symmetry.present = true;
             ok = readAttrs(p, "SYM", err, [&](const std::string& k, const std::string& v) {
-                if (k == "axis") node.symmetry.axis = std::clamp(std::stoi(v), 0, 2);
+                if (k == "axis") node.symmetry.axis = std::clamp(std::stoi(v), 0, 3);
                 else if (k == "tol") node.symmetry.tolCm = std::stof(v);
             });
         } else if (kind == "CLN") {
