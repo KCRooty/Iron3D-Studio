@@ -19,6 +19,12 @@
 
 namespace iron3d {
 
+// Ajustes del proyecto (Configuracion del Proyecto de C4D, 2026-11-24): apagados, los deformadores y generadores
+// dejan pasar a su primer hijo tal cual; g_lodDetail escala la distancia del LOD (1 = 100 %).
+inline bool g_useDeformers = true;
+inline bool g_useGenerators = true;
+inline float g_lodDetail = 1.0f;
+
 // Tipo de primitiva del nodo (Fase 2c): que malla comun dibuja el bucle
 // principal en este nodo, si alguna. `Light` no ilumina nada todavia (no hay
 // pipeline PBR hasta una fase posterior) -- es solo un icono organizativo de

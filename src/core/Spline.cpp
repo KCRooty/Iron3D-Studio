@@ -1078,6 +1078,26 @@ MeshData sweepContour(const SplineContour& profile, const SplineContour& path, f
     return m;
 }
 
+bool loadGrayImage(const std::string& path, std::vector<float>& out, int& w, int& h, int maxSide) {
+    out.clear();
+    w = h = 0;
+    if (path.empty()) return false;
+    std::ifstream in(path, std::ios::binary);
+    if (!in) return false;
+    std::vector<unsigned char> bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    int iw = 0, ih = 0, ch = 0;
+    unsigned char* px = stbi_load_from_memory(bytes.data(), (int)bytes.size(), &iw, &ih, &ch, 1);
+    if (!px) return false;
+    const int step = std::max(1, std::max(iw, ih) / std::max(1, maxSide));
+    w = iw / step;
+    h = ih / step;
+    out.resize((size_t)w * h);
+    for (int y = 0; y < h; ++y)
+        for (int x = 0; x < w; ++x) out[(size_t)y * w + x] = px[(size_t)(y * step) * iw + x * step] / 255.0f;
+    stbi_image_free(px);
+    return w > 0 && h > 0;
+}
+
 std::vector<SplineContour> vectorizeImage(const std::string& path, float threshold, float width) {
     std::vector<SplineContour> out;
     if (path.empty()) return out;

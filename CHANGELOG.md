@@ -92,6 +92,19 @@ Las entradas de Deformadores, Modelado y MoGraph que no hacían nada ahora crean
 - Romper Segmento, Bisel, Sección Transversal, Proyectar, Igualar tangentes y Centrar Eje a Selección siguen desactivados: necesitan selección de puntos de spline o tangentes.
 - Sin comprobar a mano en la interfaz; solo compilación, tests y arranque.
 
+### Objetos que faltaban y Configuración del Proyecto (2026-11-24)
+
+**Añadido**
+- Cubo, Esfera y Plano con medidas editables: al cambiar Tamaño, Radio, Segmentos u Orientación pasan a primitiva paramétrica (Cubo con segmentos X/Y/Z, Esfera con segmentos, Plano con segmentos y orientación ±X/±Y/±Z).
+- Objetos nuevos en la paleta: Tanque de Petróleo (radio, altura, altura de la tapa), Figura (maniquí de 8 cabezas), Terreno Fractal (ruido fractal con semilla y bordes a nivel), Relieve (alturas desde una imagen), Polígono (cuadrado o triángulo), Polígono Vacío y Guía (línea recta de 20 m).
+- Configuración del Proyecto: Usar Animación, Usar Expresiones (IK y Protección), Usar Generadores y Usar Deformadores ya funcionan (apagados, generadores y deformadores enseñan su primer hijo tal cual). Nivel de Detalle escala la distancia de cambio de nivel de los objetos LOD.
+
+**Límites conocidos**
+- Los parámetros de las primitivas paramétricas no se guardan en el .iron (al cargar vuelven como malla), igual que las demás primitivas paramétricas.
+- La Configuración del Proyecto no se guarda con la escena; Usar Sistema de Movimiento, color por defecto, recorte de vista y flujo lineal siguen desactivados.
+- La Figura es un maniquí de cajas, sin articulaciones.
+- Sin comprobar a mano en la interfaz; solo compilación, tests y arranque.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

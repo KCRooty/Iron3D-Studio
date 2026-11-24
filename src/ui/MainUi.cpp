@@ -277,6 +277,8 @@ struct UiState {
     // fotograma evaluado (al cambiar de fotograma se recalcula la escena).
     bool keyPos = true, keyRot = true, keyScl = true;
     bool keyParam = false, keyPla = false;  // Grabar Parametro / Grabar Nivel de Puntos
+    bool useAnimation = true, useExpressions = true;  // Configuracion del Proyecto
+    float lodPct = 100.0f;
     bool keySelOnly = false;                // Seleccion de Claves: grabar solo en las pistas que ya existen
     int dopeRowDrag = -1;                   // hoja de claves: fila de la clave que se arrastra
     bool autoKey = false;
@@ -2007,9 +2009,10 @@ struct PaletteItem {
 
 // Primitivas poligonales: se crean ya como Objeto poligonal editable (sin parametros todavia).
 int paramKindFor(const std::string& key) {
-    static const char* names[] = {"", "Cilindro", "Cono", "Disco", "Toroide", "Cápsula", "Tubo", "Pirámide", "Platónico"};
-    for (int i = 1; i < 9; ++i)
-        if (key == names[i]) return i;
+    static const char* names[] = {"", "Cilindro", "Cono", "Disco", "Toroide", "Cápsula", "Tubo", "Pirámide", "Platónico",
+                                  "", "", "", "Tanque de Petróleo", "Figura", "Terreno Fractal", "Relieve", "Polígono"};
+    for (int i = 1; i < 17; ++i)
+        if (names[i][0] && key == names[i]) return i;
     return 0;
 }
 
@@ -2092,6 +2095,25 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
             selected->setName(tr("Simetría"));
             selected->symmetry.present = true;
             g.collapsed.erase(selected->id());
+        }
+        return;
+    }
+    if (std::string(it.name.key) == "Polígono Vacío") {
+        SceneNode* pn = createObject(root, selected, history, PrimitiveType::Mesh);
+        if (pn) {
+            pn->mesh = std::make_shared<const MeshData>();
+            pn->setName(tr("Polígono Vacío"));
+        }
+        return;
+    }
+    if (std::string(it.name.key) == "Guía") {
+        // Guia: linea recta de 20 m en X (spline lineal que no se renderiza)
+        SceneNode* pn = createObject(root, selected, history, PrimitiveType::None);
+        if (pn) {
+            pn->spline = defaultSpline(0);
+            pn->spline.interp = 0;
+            pn->spline.points = {glm::vec3(-10.0f, 0, 0), glm::vec3(10.0f, 0, 0)};
+            pn->setName(tr("Guía"));
         }
         return;
     }
@@ -2317,24 +2339,24 @@ constexpr PrimitiveType kNone = PrimitiveType::None;
 // Polygono Vacio no esta en la paleta de R19: solo en Crear > Objeto.
 const PaletteItem kPrimitives[] = {
     {"Nulo", Icon::Null, kNone, true},
-    {"Polígono Vacío", Icon::EmptyPolygon, kNone, false},
-    {"Guía", Icon::Guide, kNone, false},
+    {"Polígono Vacío", Icon::EmptyPolygon, kNone, true},
+    {"Guía", Icon::Guide, kNone, true},
     {"Cono", Icon::Cone, kNone, true},
     {"Cubo", Icon::Cube, PrimitiveType::Cube, true},
     {"Cilindro", Icon::Cylinder, kNone, true},
     {"Disco", Icon::Disc, kNone, true},
     {"Plano", Icon::Plane, PrimitiveType::Plane, true},
-    {"Polígono", Icon::Polygon, kNone, false},
+    {"Polígono", Icon::Polygon, kNone, true},
     {"Esfera", Icon::Sphere, PrimitiveType::Sphere, true},
     {"Toroide", Icon::Torus, kNone, true},
     {"Cápsula", Icon::Capsule, kNone, true},
-    {"Tanque de Petróleo", Icon::OilTank, kNone, false},
+    {"Tanque de Petróleo", Icon::OilTank, kNone, true},
     {"Tubo", Icon::Tube, kNone, true},
     {"Pirámide", Icon::Pyramid, kNone, true},
     {"Platónico", Icon::Platonic, kNone, true},
-    {"Figura", Icon::Figure, kNone, false},
-    {"Terreno Fractal", Icon::Landscape, kNone, false},
-    {"Relieve", Icon::Relief, kNone, false},
+    {"Figura", Icon::Figure, kNone, true},
+    {"Terreno Fractal", Icon::Landscape, kNone, true},
+    {"Relieve", Icon::Relief, kNone, true},
 };
 
 const PaletteItem kSplines[] = {
@@ -4947,13 +4969,24 @@ void drawProjectSettings(SceneNode& root, SceneHistory& history) {
             ImGui::EndDisabled();
             setHint(tr("Parámetro todavía no implementado en Iron3D"));
         };
-        col(0); roFloatN(tr("Nivel de Detalle"), 100.0f, "%.0f %%");
+        auto chk = [&](const char* label, bool* v, const char* hint) {
+            propLabel(label, false);
+            ImGui::PushID(label);
+            if (ImGui::Checkbox("##c", v)) g.lastEvalFrame = -1e9f;
+            ImGui::PopID();
+            setHint(hint);
+        };
+        col(0);
+        propLabel(tr("Nivel de Detalle"), false);
+        ImGui::SetNextItemWidth(numW);
+        if (ImGui::DragFloat("##lod", &g.lodPct, 0.5f, 1.0f, 100.0f, "%.0f %%")) g_lodDetail = g.lodPct / 100.0f;
+        setHint(tr("Nivel de Detalle: acerca o aleja los cambios de nivel de los objetos LOD."));
         col(1); roCheck(tr("Nivel de Detalle del Render en el Editor"), false, false);
         ImGui::Separator();
-        col(0); roCheck(tr("Usar Animación"), true, false);
-        col(1); roCheck(tr("Usar Expresiones"), true, false);
-        col(0); roCheck(tr("Usar Generadores"), true, false);
-        col(1); roCheck(tr("Usar Deformadores"), true, false);
+        col(0); chk(tr("Usar Animación"), &g.useAnimation, tr("Apagado, las pistas no mueven la escena al cambiar de fotograma."));
+        col(1); chk(tr("Usar Expresiones"), &g.useExpressions, tr("Apagado, no se resuelven la IK ni las etiquetas Protección."));
+        col(0); chk(tr("Usar Generadores"), &g_useGenerators, tr("Apagado, los generadores muestran su primer hijo tal cual."));
+        col(1); chk(tr("Usar Deformadores"), &g_useDeformers, tr("Apagado, los deformadores dejan pasar la malla sin deformar."));
         col(0); roCheck(tr("Usar Sistema de Movimiento"), true, false);
         ImGui::Separator();
 
@@ -5698,15 +5731,48 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
             roCombo(tr("Orientación"), tr("Cámara"));
         } else {
             sectionHeader(tr("Propiedades del Objeto"));
-            if (node.primitive == PrimitiveType::Cube) {
-                roFloat(tr("Tamaño . X"), 200, tr("%.0f cm"));
-                roFloat(tr("Tamaño . Y"), 200, tr("%.0f cm"));
-                roFloat(tr("Tamaño . Z"), 200, tr("%.0f cm"));
-                roFloat(tr("Segmentos en X"), 1, "%.0f");
-                roFloat(tr("Segmentos en Y"), 1, "%.0f");
-                roFloat(tr("Segmentos en Z"), 1, "%.0f");
-                roCheck(tr("Superficies Separadas"), false);
-                roCheck(tr("Canto"), false);
+            if (isParametric(node.primitive)) {
+                // Cubo, Esfera y Plano: al tocar una medida pasan a primitiva parametrica (con medidas y segmentos)
+                const int kind = node.primitive == PrimitiveType::Cube ? 9 : node.primitive == PrimitiveType::Sphere ? 10 : 11;
+                ParamShape ps = defaultParamShape(kind);
+                if (kind == 11) { ps.a = ps.b = 200; ps.seg1 = ps.seg2 = 1; }
+                if (kind == 9) { ps.seg1 = ps.seg2 = ps.seg3 = 1; }
+                if (kind == 10) ps.seg1 = 18;
+                bool changed = false;
+                auto fld = [&](const char* label, float* v, int id) {
+                    propLabel(tr(label));
+                    ImGui::SetNextItemWidth(fieldWidth());
+                    ImGui::PushID(id);
+                    if (ImGui::DragFloat("##pp", v, 0.5f, 0.1f, 100000.0f, tr("%.1f cm"))) changed = true;
+                    ImGui::PopID();
+                };
+                auto ifl = [&](const char* label, int* v, int mn, int mx, int id) {
+                    propLabel(tr(label));
+                    ImGui::SetNextItemWidth(fieldWidth());
+                    ImGui::PushID(id);
+                    if (ImGui::DragInt("##pp", v, 0.2f, mn, mx)) changed = true;
+                    ImGui::PopID();
+                };
+                if (kind == 9) {
+                    fld("Tamaño . X", &ps.a, 1); fld("Tamaño . Y", &ps.b, 2); fld("Tamaño . Z", &ps.c, 3);
+                    ifl("Segmentos en X", &ps.seg1, 1, 200, 4); ifl("Segmentos en Y", &ps.seg2, 1, 200, 5); ifl("Segmentos en Z", &ps.seg3, 1, 200, 6);
+                } else if (kind == 10) {
+                    fld("Radio", &ps.a, 1); ifl("Segmentos", &ps.seg1, 4, 256, 2);
+                } else {
+                    fld("Anchura", &ps.a, 1); fld("Altura", &ps.b, 2);
+                    ifl("Segmentos en la Anchura", &ps.seg1, 1, 500, 3); ifl("Segmentos en la Altura", &ps.seg2, 1, 500, 4);
+                    propLabel(tr("Orientación"));
+                    const char* ors[] = {"+Y", "-Y", "+X", "-X", "+Z", "-Z"};
+                    ImGui::SetNextItemWidth(fieldWidth());
+                    if (ImGui::Combo("##por", &ps.seg3, ors, 6)) changed = true;
+                }
+                if (changed) {
+                    history.commitBefore(root);
+                    node.param = ps;
+                    node.primitive = PrimitiveType::Mesh;
+                    node.mesh = std::make_shared<const MeshData>(buildParamShape(node.param));
+                    node.param.generated = node.mesh;
+                }
             } else if (node.primitive == PrimitiveType::Mesh && node.param.kind != 0 && node.mesh == node.param.generated) {
                 ParamShape& ps = node.param;
                 struct Field { const char* label; float* v; float mn, mx; };
@@ -5720,6 +5786,25 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                     case 6: fl = {{"Radio Interior", &ps.a, 0.1f, 5000}, {"Radio Exterior", &ps.b, 0.2f, 5000}, {"Altura", &ps.c, 0.1f, 5000}}; il = {{"Segmentos de Rotación", &ps.seg1}}; break;
                     case 7: fl = {{"Anchura", &ps.a, 0.1f, 5000}, {"Profundidad", &ps.b, 0.1f, 5000}, {"Altura", &ps.c, 0.1f, 5000}}; break;
                     case 8: fl = {{"Radio", &ps.a, 0.1f, 5000}}; break;
+                    case 9: fl = {{"Tamaño . X", &ps.a, 0.1f, 100000}, {"Tamaño . Y", &ps.b, 0.1f, 100000}, {"Tamaño . Z", &ps.c, 0.1f, 100000}}; break;
+                    case 10: fl = {{"Radio", &ps.a, 0.1f, 100000}}; break;
+                    case 11: fl = {{"Anchura", &ps.a, 0.1f, 100000}, {"Altura", &ps.b, 0.1f, 100000}}; break;
+                    case 12: fl = {{"Radio", &ps.a, 0.1f, 100000}, {"Altura", &ps.b, 0.1f, 100000}, {"Altura de la Tapa", &ps.c, 0.0f, 100000}}; break;
+                    case 13: fl = {{"Altura", &ps.a, 1.0f, 100000}}; break;
+                    case 14: fl = {{"Anchura", &ps.a, 1.0f, 1000000}, {"Profundidad", &ps.b, 1.0f, 1000000}, {"Altura", &ps.c, 0.0f, 100000}}; break;
+                    case 15: fl = {{"Anchura", &ps.a, 1.0f, 1000000}, {"Profundidad", &ps.b, 1.0f, 1000000}, {"Altura", &ps.c, 0.0f, 100000}}; break;
+                    case 16: fl = {{"Anchura", &ps.a, 0.1f, 100000}, {"Altura", &ps.b, 0.1f, 100000}}; break;
+                    default: break;
+                }
+                // enteros con rango propio de los tipos nuevos
+                std::vector<std::tuple<const char*, int*, int, int>> il2;
+                switch (ps.kind) {
+                    case 9: il2 = {{"Segmentos en X", &ps.seg1, 1, 200}, {"Segmentos en Y", &ps.seg2, 1, 200}, {"Segmentos en Z", &ps.seg3, 1, 200}}; break;
+                    case 10: il2 = {{"Segmentos", &ps.seg1, 4, 256}}; break;
+                    case 11: il2 = {{"Segmentos en la Anchura", &ps.seg1, 1, 500}, {"Segmentos en la Altura", &ps.seg2, 1, 500}}; break;
+                    case 12: il2 = {{"Segmentos de Rotación", &ps.seg1, 3, 256}}; break;
+                    case 14: il2 = {{"Segmentos en la Anchura", &ps.seg1, 1, 500}, {"Segmentos en la Profundidad", &ps.seg2, 1, 500}, {"Semilla", &ps.seg3, 0, 100000}}; break;
+                    case 15: il2 = {{"Segmentos en la Anchura", &ps.seg1, 1, 1000}, {"Segmentos en la Profundidad", &ps.seg2, 1, 1000}}; break;
                     default: break;
                 }
                 bool changed = false;
@@ -5739,6 +5824,46 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
                     if (ImGui::DragInt("##pi", f.second, 0.2f, 3, 128)) { *f.second = std::clamp(*f.second, 3, 128); changed = true; }
                     trackEdit(history, root);
                     ImGui::PopID();
+                }
+                for (auto& [lab, pv, mn, mx] : il2) {
+                    propLabel(tr(lab));
+                    ImGui::SetNextItemWidth(fieldWidth());
+                    ImGui::PushID(id++);
+                    if (ImGui::DragInt("##pi2", pv, 0.2f, mn, mx)) { *pv = std::clamp(*pv, mn, mx); changed = true; }
+                    trackEdit(history, root);
+                    ImGui::PopID();
+                }
+                if (ps.kind == 11) {
+                    propLabel(tr("Orientación"));
+                    const char* ors[] = {"+Y", "-Y", "+X", "-X", "+Z", "-Z"};
+                    ImGui::SetNextItemWidth(fieldWidth());
+                    if (ImGui::Combo("##por2", &ps.seg3, ors, 6)) { history.commitBefore(root); changed = true; }
+                }
+                if (ps.kind == 16) {
+                    propLabel(tr("Triángulo"));
+                    bool tri = ps.seg1 != 0;
+                    if (ImGui::Checkbox("##ptri", &tri)) { history.commitBefore(root); ps.seg1 = tri ? 1 : 0; changed = true; }
+                }
+                if (ps.kind == 15) {
+                    propLabel(tr("Imagen"));
+                    char ib[512];
+                    std::snprintf(ib, sizeof ib, "%s", ps.image.c_str());
+                    ImGui::SetNextItemWidth(fieldWidth());
+                    bool load = false;
+                    if (ImGui::InputText("##pimg", ib, sizeof ib, ImGuiInputTextFlags_EnterReturnsTrue)) { ps.image = ib; load = true; }
+                    if (nativeFileDialogAvailable() && ImGui::Button(tr("Elegir Imagen..."), ImVec2(-1, 0)))
+                        if (auto pth = openFileDialog(tr("Relieve"), {{tr("Imágenes"), "*.png;*.jpg;*.jpeg;*.bmp;*.tga"}})) {
+                            ps.image = pth->string();
+                            load = true;
+                        }
+                    if (load) {
+                        history.commitBefore(root);
+                        auto hts = std::make_shared<std::vector<float>>();
+                        if (loadGrayImage(ps.image, *hts, ps.hw, ps.hh)) ps.heights = hts;
+                        else { ps.heights.reset(); flashStatus(tr("Relieve: no se pudo leer la imagen.")); }
+                        changed = true;
+                    }
+                    if (!ps.heights) ImGui::TextDisabled("%s", tr("  Sin imagen: plano. Lo claro sube, lo oscuro baja."));
                 }
                 if (ps.kind == 8) {
                     propLabel(tr("Tipo"));
@@ -9536,13 +9661,15 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     // Animacion: al cambiar de fotograma la escena toma los valores de sus
     // pistas (lo que se haya movido sin grabar se pierde, como en C4D).
     if (g.frame != g.lastEvalFrame) {
-        evaluateAnimation(root, g.frame);
+        if (g.useAnimation) evaluateAnimation(root, g.frame);
         g.lastEvalFrame = g.frame;
     }
     // IK en vivo: las cadenas con etiqueta IK activa siguen a su objetivo cada fotograma (mover el
     // controlador mueve la cadena, como en C4D). Una cadena ya resuelta converge en una iteracion.
-    solveAllIk(root);
-    clampProtectionLimits(root); // etiquetas Proteccion con "Permitir expresiones" apagado: limitan tambien a la IK
+    if (g.useExpressions) {
+        solveAllIk(root);
+        clampProtectionLimits(root);
+    } // etiquetas Proteccion con "Permitir expresiones" apagado: limitan tambien a la IK
     // Piel en vivo: las mallas con pesos siguen a las articulaciones (no hace nada si no se han movido).
     evaluateSkins(root);
     // Objetos Simetria: reflejan a su hijo (despues de la Piel y la animacion, que son las que lo mueven).

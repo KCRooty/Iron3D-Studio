@@ -814,7 +814,7 @@ MeshData deformMore(MeshData out, int kind, int axis, float amount, const Deform
         }
         case 33: {  // LOD
             if (in.all.empty()) break;
-            const float d = glm::length(in.viewPointNode) * kCm;
+            const float d = glm::length(in.viewPointNode) * kCm / std::max(0.01f, g_lodDetail);
             const size_t lvl = std::min(in.all.size() - 1, (size_t)std::max(0.0f, d / std::max(amount, 1.0f)));
             MeshData r;
             appendMesh(r, *in.all[lvl].first, in.all[lvl].second);

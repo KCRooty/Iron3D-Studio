@@ -130,11 +130,36 @@ SceneNode* secondMeshChild(SceneNode& node, const SceneNode* first) {
     return nullptr;
 }
 
+
+MeshData passThroughMesh(const MeshData& src, const glm::mat4& cm) {
+    MeshData out = src;
+    const glm::mat3 nm = glm::transpose(glm::inverse(glm::mat3(cm)));
+    for (Vertex& v : out.vertices) {
+        v.position = glm::vec3(cm * glm::vec4(v.position, 1.0f));
+        v.normal = glm::normalize(nm * v.normal);
+    }
+    updateBounds(out);
+    return out;
+}
+
 void walk(SceneNode& node, int& count) {
     for (const auto& c : node.children()) walk(*c, count);  // primero los hijos: un clonador anidado ya esta al dia
     if (!node.clone.present) return;
     CloneData& d = node.clone;
     bakeParametricChildren(node);
+    if (SceneNode* child = firstMeshChild(node); child && !g_useGenerators) {
+        const glm::mat4 cm = child->localMatrix();
+        if (d.lastMode == -1 && d.lastSource == child->mesh && d.lastChildMatrix == cm && node.mesh == d.output) return;
+        auto m = std::make_shared<const MeshData>(passThroughMesh(*child->mesh, cm));
+        node.mesh = m;
+        node.primitive = PrimitiveType::Mesh;
+        d.output = m;
+        d.lastSource = child->mesh;
+        d.lastChildMatrix = cm;
+        d.lastMode = -1;  // fuerza el recalculo al volver a activar los generadores
+        ++count;
+        return;
+    }
     if (SceneNode* child = firstMeshChild(node)) {
         const glm::mat4 cm = child->localMatrix();
         SceneNode* other = d.mode == 3 ? secondMeshChild(node, child) : nullptr;

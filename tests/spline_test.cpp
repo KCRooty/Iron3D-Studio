@@ -170,6 +170,31 @@ int main() {
         CHECK(std::fabs(w.vertices[0].position.y - box.vertices[0].position.y) > 1e-3f ||
               std::fabs(w.vertices[0].position.x - box.vertices[0].position.x) > 1e-3f);
     }
+    // Objetos parametricos nuevos (Cubo/Esfera/Plano con medidas, Tanque, Figura, Terreno, Relieve, Poligono)
+    for (int k = 9; k <= 16; ++k) {
+        const MeshData m = buildParamShape(defaultParamShape(k));
+        CHECK(validMesh(m) && !m.indices.empty());
+    }
+    {
+        const MeshData b = makeBoxMesh(1, 1, 1, 2, 3, 4);
+        CHECK(std::fabs(meshArea(b) - 6.0f) < 1e-3f);
+        CHECK(b.faceTris.size() == (size_t)(2 * (2 * 3 + 4 * 3 + 2 * 4)));
+        // las normales de las caras apuntan hacia fuera
+        for (size_t t = 0; t + 2 < b.indices.size(); t += 3) {
+            const glm::vec3 p0 = b.vertices[b.indices[t]].position, p1 = b.vertices[b.indices[t + 1]].position, p2 = b.vertices[b.indices[t + 2]].position;
+            CHECK(glm::dot(glm::cross(p1 - p0, p2 - p0), (p0 + p1 + p2) / 3.0f) > 0);
+        }
+        for (int o = 0; o < 6; ++o) {
+            const MeshData pl = makeGridPlaneMesh(1, 1, 2, 2, o);
+            const glm::vec3 p0 = pl.vertices[pl.indices[0]].position, p1 = pl.vertices[pl.indices[1]].position, p2 = pl.vertices[pl.indices[2]].position;
+            CHECK(glm::length(glm::normalize(glm::cross(p1 - p0, p2 - p0)) - pl.vertices[0].normal) < 1e-3f);
+        }
+        std::vector<float> hts = {0, 1, 0, 1};
+        const MeshData rel = makeReliefMesh(&hts, 2, 2, 1, 1, 0.5f, 1, 1);
+        float maxY = 0;
+        for (const Vertex& v : rel.vertices) maxY = std::max(maxY, v.position.y);
+        CHECK(std::fabs(maxY - 0.5f) < 1e-5f);
+    }
     std::printf(g_fail ? "spline_test: %d fallos\n" : "spline_test: OK\n", g_fail);
     return g_fail ? 1 : 0;
 }

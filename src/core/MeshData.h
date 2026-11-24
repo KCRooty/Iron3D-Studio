@@ -11,6 +11,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace iron3d {
@@ -40,10 +41,14 @@ MeshData makePlaneMesh();
 // regenera. En cuanto se edita la malla, el puntero deja de coincidir y se vuelve a un objeto normal.
 // No se guarda en la escena (al reabrir, la malla queda como objeto poligonal sin parametros).
 struct ParamShape {
-    // 0 ninguno, 1 Cilindro, 2 Cono, 3 Disco, 4 Toroide, 5 Capsula, 6 Tubo, 7 Piramide, 8 Platonico
+    // 0 ninguno, 1 Cilindro, 2 Cono, 3 Disco, 4 Toroide, 5 Capsula, 6 Tubo, 7 Piramide, 8 Platonico,
+    // 9 Cubo, 10 Esfera, 11 Plano, 12 Tanque de Petroleo, 13 Figura, 14 Terreno Fractal, 15 Relieve, 16 Poligono
     int kind = 0;
     float a = 100.0f, b = 100.0f, c = 100.0f;  // medidas en cm (ver paramShapeLabels)
-    int seg1 = 24, seg2 = 12;
+    int seg1 = 24, seg2 = 12, seg3 = 1;
+    std::string image;                                  // Relieve: ruta de la imagen
+    std::shared_ptr<const std::vector<float>> heights;  // Relieve: alturas 0..1 de la imagen (hw x hh)
+    int hw = 0, hh = 0;
     std::shared_ptr<const MeshData> generated;
 };
 ParamShape defaultParamShape(int kind);
@@ -59,5 +64,13 @@ MeshData makeTubeMesh(float inner = 0.3f, float outer = 0.5f, float height = 1.0
 MeshData makePyramidMesh(float width = 1.0f, float depth = 1.0f, float height = 1.0f);
 // kind: 0 tetraedro, 1 octaedro, 2 icosaedro, 3 dodecaedro
 MeshData makePlatonicMesh(int kind = 0, float radius = 0.5f);
+// 2026-11-24: Cubo, Esfera y Plano con medidas y segmentos, y los objetos que faltaban.
+MeshData makeBoxMesh(float w, float h, float d, int sx, int sy, int sz);
+MeshData makeGridPlaneMesh(float w, float d, int sw, int sd, int orient);  // orient 0 +Y, 1 -Y, 2 +X, 3 -X, 4 +Z, 5 -Z
+MeshData makeOilTankMesh(float radius, float height, float capHeight, int seg);
+MeshData makeFigureMesh(float height);
+MeshData makeLandscapeMesh(float w, float d, float h, int sw, int sd, int seed);
+MeshData makeReliefMesh(const std::vector<float>* heights, int hw, int hh, float w, float d, float h, int sw, int sd);
+MeshData makePolygonMesh(float w, float h, bool triangle);
 
 } // namespace iron3d

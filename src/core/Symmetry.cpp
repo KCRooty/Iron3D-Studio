@@ -35,11 +35,36 @@ SceneNode* firstMeshChild(SceneNode& node) {
     return nullptr;
 }
 
+
+MeshData passThroughMesh(const MeshData& src, const glm::mat4& cm) {
+    MeshData out = src;
+    const glm::mat3 nm = glm::transpose(glm::inverse(glm::mat3(cm)));
+    for (Vertex& v : out.vertices) {
+        v.position = glm::vec3(cm * glm::vec4(v.position, 1.0f));
+        v.normal = glm::normalize(nm * v.normal);
+    }
+    updateBounds(out);
+    return out;
+}
+
 void walk(SceneNode& node, int& count) {
     if (node.symmetry.present) {
         SymmetryData& s = node.symmetry;
         bakeParametricChildren(node);
-        if (SceneNode* child = firstMeshChild(node)) {
+        SceneNode* pchild = g_useGenerators ? nullptr : firstMeshChild(node);
+        if (pchild) {
+            const glm::mat4 cm = pchild->localMatrix();
+            if (!(s.lastAxis == -1 && s.lastSource == pchild->mesh && s.lastChildMatrix == cm && node.mesh == s.output)) {
+                auto m = std::make_shared<const MeshData>(passThroughMesh(*pchild->mesh, cm));
+                node.mesh = m;
+                node.primitive = PrimitiveType::Mesh;
+                s.output = m;
+                s.lastSource = pchild->mesh;
+                s.lastChildMatrix = cm;
+                s.lastAxis = -1;
+                ++count;
+            }
+        } else if (SceneNode* child = firstMeshChild(node)) {
             glm::mat4 cm = child->localMatrix();
             const bool same = s.lastSource == child->mesh && s.lastChildMatrix == cm && s.lastAxis == s.axis &&
                               s.lastTolCm == s.tolCm && node.mesh == s.output;

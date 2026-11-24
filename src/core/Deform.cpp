@@ -451,8 +451,17 @@ void walkMore(SceneNode& node, int& count) {
     ++count;
 }
 
+bool kindIsDeformer(int k) { return k <= 27 || k == 49 || k == 50; }
+
 void walk(SceneNode& node, int& count) {
-    if (node.deform.present && node.deform.kind >= 13) {
+    if (node.deform.present && !(kindIsDeformer(node.deform.kind) ? g_useDeformers : g_useGenerators)) {
+        // apagado en el proyecto: pasa el primer hijo tal cual (Correccion)
+        bakeParametricChildren(node);
+        const int real = node.deform.kind;
+        node.deform.kind = 16;
+        walkMore(node, count);
+        node.deform.kind = real;
+    } else if (node.deform.present && node.deform.kind >= 13) {
         bakeParametricChildren(node);
         walkMore(node, count);
     } else if (node.deform.present) {

@@ -63,6 +63,9 @@ glm::vec3 contourPointAt(const SplineContour& c, float t, glm::vec3* tangent = n
 // Parte de un contorno desde `t0` hasta `t1` (0..1).
 SplineContour contourPart(const SplineContour& c, float t0, float t1);
 
+// Imagen en escala de grises 0..1 (Relieve). false si no se puede leer.
+bool loadGrayImage(const std::string& path, std::vector<float>& out, int& w, int& h, int maxSide = 512);
+
 // Contorno de una imagen (Vectorizador): umbral de luminancia 0..1. Vacio si no se puede leer.
 std::vector<SplineContour> vectorizeImage(const std::string& path, float threshold, float width);
 
