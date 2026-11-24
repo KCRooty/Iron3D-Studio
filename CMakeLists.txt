@@ -520,5 +520,12 @@ endif()
 
 # Icono del ejecutable (logo I3DS)
 if(WIN32)
-    target_sources(Iron3DStudio PRIVATE resources/iron3d.rc)
+    # Version unica del programa: sale de aqui hacia el exe (Propiedades > Detalles); hay que igualarla en
+    # installer/iron3d_setup.iss (MyAppVersion).
+    set(IRON3D_VERSION_MAJOR 0)
+    set(IRON3D_VERSION_MINOR 3)
+    set(IRON3D_VERSION_PATCH 0)
+    set(IRON3D_VERSION_STRING "0.3.0-alpha")
+    configure_file(resources/iron3d.rc.in ${CMAKE_BINARY_DIR}/iron3d.rc @ONLY)
+    target_sources(Iron3DStudio PRIVATE ${CMAKE_BINARY_DIR}/iron3d.rc)
 endif()

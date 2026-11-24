@@ -6,6 +6,16 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-24 (46): Información de versión en el exe y en el instalador
+
+**Añadido**
+- `Iron3DStudio.exe` lleva ahora, en Propiedades → Detalles: descripción, versión del archivo y del producto, nombre del producto, empresa, copyright e idioma (español e inglés). La versión sale de un único sitio, `IRON3D_VERSION_*` en `CMakeLists.txt`, y se genera `iron3d.rc` desde `resources/iron3d.rc.in`.
+- El instalador `Iron3DStudio-Setup-<versión>.exe` también lleva descripción, versión, empresa y copyright.
+
+**Límites:** al subir de versión hay que igualar a mano `IRON3D_VERSION_*` (CMake) y `MyAppVersion` (`installer/iron3d_setup.iss`). La 0.3.0-alpha ya publicada no lleva estos datos; saldrán en la próxima release.
+
+**Verificado:** leyendo `VersionInfo` del exe y del instalador compilados.
+
 ### 2026-11-24 (45): Vista Solo, Modo Ajuste, Plano de Trabajo y Modo Textura
 
 **Añadido**

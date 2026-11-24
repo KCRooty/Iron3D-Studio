@@ -28,6 +28,16 @@ AppId={{DA8F4478-DF87-4033-8C76-13616F7E4B6E}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+; Propiedades > Detalles del propio instalador (version, copyright, descripcion). MyAppVersion se iguala
+; con IRON3D_VERSION_* de CMakeLists.txt.
+VersionInfoVersion=0.3.0.0
+VersionInfoProductVersion=0.3.0.0
+VersionInfoProductTextVersion={#MyAppVersion}
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoProductName={#MyAppName}
+VersionInfoDescription={#MyAppName} - instalador / installer
+VersionInfoCopyright=Copyright (c) 2026 Static Forge
+AppCopyright=Copyright (c) 2026 Static Forge
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
