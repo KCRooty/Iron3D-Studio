@@ -139,7 +139,7 @@ struct SymmetryData {
 struct DeformData {
     bool present = false;
     int kind = 0;       // 0 Doblar, 1 Enroscar, 2 Afilar, 3 Hinchar, 4 Sesgar, 5 Aplastar, 6 Esferizar, 7 Derretir, 8 Subdivision,
-                        // 9 Explosion, 10 Morph (2.o hijo = destino), 11 FFD (rejilla 2x2x2), 12 Bisel
+                        // 9 Explosion, 10 Morph (2.o hijo = destino), 11 FFD (rejilla 2x2x2), 12 Bisel; 13..40 en DeformMore.h
     int axis = 1;       // eje del nodo a lo largo del cual actua (0 X, 1 Y, 2 Z)
     float amount = 45;  // grados (Doblar, Enroscar) o % (Afilar, Hinchar, Sesgar)
     std::shared_ptr<const MeshData> output, lastSource;
@@ -152,6 +152,15 @@ struct DeformData {
     std::shared_ptr<const MeshData> lastSource2;
     glm::mat4 lastChildMatrix2{1.0f};
     glm::vec3 lastFfd[8] = {};
+    // Tipos de DeformMore.h (2026-11-24): segundo parametro, formula y jaula en reposo (deformador Malla).
+    float param2 = 1.0f;
+    std::string formula = "sin((u+t)*2*pi)*0.2";
+    std::shared_ptr<const MeshData> bindRest;
+    float lastParam2 = 1e9f, lastFrame = -1e9f;
+    std::string lastFormula;
+    std::vector<std::shared_ptr<const MeshData>> lastAllMeshes;
+    std::vector<glm::mat4> lastAllMats;
+    glm::vec3 lastView{1e9f};
 };
 
 // Objeto Instancia (2026-11-20): comparte la malla de otro objeto (ruta por nombres desde la raiz, como

@@ -35,6 +35,23 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 **Sin probar:** compila, pero no se ha mirado el render con el objeto en la interfaz. No afecta al visor en tiempo real, solo al render del Visor de Imágenes. Los textos nuevos salen en español en los demás idiomas.
 **Sigue pendiente:** Jiggle y el resto de límites.
 
+## 27 deformadores y generadores nuevos
+
+Las entradas de Deformadores, Modelado y MoGraph que no hacían nada ahora crean objetos que funcionan. Todos siguen el patrón de los deformadores existentes: actúan sobre el primer hijo con malla (o sobre todos los hijos, según el tipo), son no destructivos y se recalculan al cambiar el hijo o un parámetro.
+
+- **Deformadores:** Jiggle (muelle sobre la posición animada del hijo), FX Explosión, Romper, Corrección, Cubrir, Superficie, Envoltura, Cámara (rejilla de 4 esquinas), Colisión, Desplazador (ruido 3D), Fórmula (con su propio intérprete: x y z u v t, sin cos tan sqrt abs exp log noise pi), Viento, Suavizado y Malla (jaula: el segundo hijo deforma al primero).
+- **Modelado:** Matriz, Formación de Átomos, Booleano (unión, sustracción, intersección entre los dos primeros hijos), Conector (une y suelda las mallas hijas), LOD (por distancia a la cámara), Reducción de Polígonos y Metaball (tetraedros en marcha sobre los hijos).
+- **MoGraph:** Matriz MoGraph, Fractura, Fractura Voronoi, MoInstance (estela de la posición animada), MoExtrude y PolyFX.
+- Se guardan en el `.iron`: segundo parámetro, fórmula y jaula en reposo del deformador Malla.
+- Test nuevo `deform_more_test`: comprueba que todos los tipos dan una malla válida y mide el efecto de 12 de ellos.
+
+**Límites:**
+- Fractura Voronoi no pone tapas en los cortes.
+- Colisión y Cubrir comparan contra todos los triángulos del otro objeto; con mallas muy grandes no hacen nada.
+- Metaball trata cada hijo como una esfera del tamaño de su caja.
+- El deformador Spline y Rail/Envolver Spline siguen deshabilitados: necesitan splines.
+- Nada de esto se ha mirado todavía en la interfaz; solo compila y pasa los tests.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

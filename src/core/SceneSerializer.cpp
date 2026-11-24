@@ -167,6 +167,17 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             for (int i = 0; i < 8; ++i) f << (i ? " " : "") << node.deform.ffd[i].x << " " << node.deform.ffd[i].y << " " << node.deform.ffd[i].z;
             out << " ffd=" << quoted(f.str());
         }
+        if (node.deform.kind == 20) {
+            std::ostringstream f;
+            for (int i = 0; i < 4; ++i) f << (i ? " " : "") << node.deform.ffd[i].x << " " << node.deform.ffd[i].y << " " << node.deform.ffd[i].z;
+            out << " ffd=" << quoted(f.str());
+        }
+        if (node.deform.kind >= 13) out << " p2=" << node.deform.param2 << " formula=" << quoted(node.deform.formula);
+        if (node.deform.kind == 26 && node.deform.bindRest) {
+            std::ostringstream f;
+            for (const Vertex& v : node.deform.bindRest->vertices) f << v.position.x << " " << v.position.y << " " << v.position.z << " ";
+            out << " rest=" << quoted(f.str());
+        }
         out << "\n";
     }
     if (node.env.present)
@@ -571,12 +582,20 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
         } else if (kind == "DEF") {
             node.deform.present = true;
             ok = readAttrs(p, "DEF", err, [&](const std::string& k, const std::string& v) {
-                if (k == "kind") node.deform.kind = std::clamp(std::stoi(v), 0, 12);
+                if (k == "kind") node.deform.kind = std::clamp(std::stoi(v), 0, 40);
                 else if (k == "axis") node.deform.axis = std::clamp(std::stoi(v), 0, 2);
                 else if (k == "amount") node.deform.amount = std::stof(v);
                 else if (k == "ffd") {
                     std::istringstream f(unquote(v));
                     for (int i = 0; i < 8; ++i) f >> node.deform.ffd[i].x >> node.deform.ffd[i].y >> node.deform.ffd[i].z;
+                } else if (k == "p2") node.deform.param2 = std::stof(v);
+                else if (k == "formula") node.deform.formula = unquote(v);
+                else if (k == "rest") {
+                    std::istringstream f(unquote(v));
+                    MeshData rm;
+                    glm::vec3 q;
+                    while (f >> q.x >> q.y >> q.z) rm.vertices.push_back({q, glm::vec3(0.8f), glm::vec3(0, 1, 0), glm::vec2(0.0f)});
+                    node.deform.bindRest = std::make_shared<const MeshData>(std::move(rm));
                 }
             });
         } else if (kind == "ENV") {

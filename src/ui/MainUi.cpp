@@ -31,6 +31,7 @@
 #include "core/Boolean.h"
 #include "core/Clone.h"
 #include "core/Deform.h"
+#include "core/DeformMore.h"
 #include "core/Symmetry.h"
 #include "importers/lib4d/PresetTextures.h"
 #include "core/ChannelBake.h"
@@ -1970,6 +1971,7 @@ int paramKindFor(const std::string& key) {
 
 // Crea el objeto de un elemento de menu/paleta; las luces salen con su tipo
 // y con el nombre del menu, como en C4D ("Foco", "Luz Infinita"...).
+bool isDeformPaletteItem(const PaletteItem* it);
 void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& history, const PaletteItem& it) {
     // Simetria (generador): un Nulo con SymmetryData; si hay un objeto con malla seleccionado se mete dentro.
     if (std::string(it.name.key) == "Simetría") {
@@ -2073,12 +2075,11 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
         return;
     }
     {
-        static const char* defNames[] = {"Doblar", "Enroscar", "Afilar", "Hinchar", "Sesgar",
-                                         "Aplastar y Estirar", "Esferizar", "Derretir", "Subdivisión Superficie",
-                                         "Explosión", "Morph", "FFD", "Bisel"};
         int dk = -1;
-        for (int i = 0; i < 13; ++i)
-            if (std::string(it.name.key) == defNames[i]) dk = i;
+        const bool inDefGroup = isDeformPaletteItem(&it);
+        if (inDefGroup && it.type == PrimitiveType::None)
+            for (int i = 0; i < kDeformKindCount; ++i)
+                if (std::string(it.name.key) == deformKindName(i)) dk = i;
         if (dk >= 0) {
             SceneNode* sel = selected;
             const bool wrap = sel && (sel->mesh || isParametric(sel->primitive)) && sel->parent();
@@ -2089,7 +2090,8 @@ void createPaletteItemOne(SceneNode& root, SceneNode*& selected, SceneHistory& h
                 selected->setName(tr(it.name.key));
                 selected->deform.present = true;
                 selected->deform.kind = dk;
-                selected->deform.amount = dk == 8 ? 2.0f : dk <= 1 ? 45.0f : dk == 9 ? 20.0f : dk == 12 ? 30.0f : 50.0f;
+                selected->deform.amount = dk == 8 ? 2.0f : dk <= 1 ? 45.0f : dk == 9 ? 20.0f : dk == 12 ? 30.0f : dk >= 13 ? deformDefaultAmount(dk) : 50.0f;
+                selected->deform.param2 = deformDefaultParam2(dk);
                 g.collapsed.erase(selected->id());
                 if (child) child->editorVis = VisMode::Off;  // la copia deformada la dibuja el nodo
             }
@@ -2264,30 +2266,30 @@ const PaletteItem kGenerators[] = {
 
 // Grupo "Modelado" de la barra de R19 (icono de Matriz).
 const PaletteItem kModeling[] = {
-    {"Matriz", Icon::ModArray, kNone, false},
-    {"Formación de Átomos", Icon::ModAtomArray, kNone, false},
-    {"Booleano", Icon::ModBoole, kNone, false},
+    {"Matriz", Icon::ModArray, kNone, true},
+    {"Formación de Átomos", Icon::ModAtomArray, kNone, true},
+    {"Booleano", Icon::ModBoole, kNone, true},
     {"Máscara de Spline", Icon::ModSplineMask, kNone, false},
-    {"Conector", Icon::ModConnect, kNone, false},
+    {"Conector", Icon::ModConnect, kNone, true},
     {"Simetría", Icon::ModSymmetry, kNone, true},
     {"Generador Python", Icon::ModPython, kNone, false},
-    {"LOD", Icon::ModLod, kNone, false},
-    {"Reducción de Polígonos", Icon::ModPolyReduction, kNone, false},
+    {"LOD", Icon::ModLod, kNone, true},
+    {"Reducción de Polígonos", Icon::ModPolyReduction, kNone, true},
     {"Instancia", Icon::ModInstance, kNone, true},
-    {"Metaball", Icon::ModMetaball, kNone, false},
+    {"Metaball", Icon::ModMetaball, kNone, true},
 };
 
 const PaletteItem kMoGraph[] = {
     {"Clonador", Icon::MoCloner, kNone, true},
-    {"Matriz", Icon::MoMatrix, kNone, false},
-    {"Fractura", Icon::MoFracture, kNone, false},
-    {"Fractura Voronoi", Icon::MoVoronoi, kNone, false},
-    {"MoInstance", Icon::MoInstance, kNone, false},
+    {"Matriz MoGraph", Icon::MoMatrix, kNone, true},
+    {"Fractura", Icon::MoFracture, kNone, true},
+    {"Fractura Voronoi", Icon::MoVoronoi, kNone, true},
+    {"MoInstance", Icon::MoInstance, kNone, true},
     {"MoText", Icon::MoText, kNone, false},
     {"Trazador", Icon::MoTracer, kNone, false},
     {"MoSpline", Icon::MoSpline, kNone, false},
-    {"MoExtrude", Icon::MoExtrude, kNone, false},
-    {"PolyFX", Icon::MoPolyFx, kNone, false},
+    {"MoExtrude", Icon::MoExtrude, kNone, true},
+    {"PolyFX", Icon::MoPolyFx, kNone, true},
 };
 
 const PaletteItem kDeformers[] = {
@@ -2297,30 +2299,35 @@ const PaletteItem kDeformers[] = {
     {"Afilar", Icon::DefTaper, kNone, true},
     {"Enroscar", Icon::DefTwist, kNone, true},
     {"FFD", Icon::DefFfd, kNone, true},
-    {"Malla", Icon::DefMesh, kNone, false},
+    {"Malla", Icon::DefMesh, kNone, true},
     {"Aplastar y Estirar", Icon::DefSquash, kNone, true},
     {"Derretir", Icon::DefMelt, kNone, true},
     {"Explosión", Icon::DefExplosion, kNone, true},
-    {"FX Explosión", Icon::DefExplosionFx, kNone, false},
-    {"Romper", Icon::DefShatter, kNone, false},
-    {"Corrección", Icon::DefCorrection, kNone, false},
-    {"Jiggle", Icon::DefJiggle, kNone, false},
+    {"FX Explosión", Icon::DefExplosionFx, kNone, true},
+    {"Romper", Icon::DefShatter, kNone, true},
+    {"Corrección", Icon::DefCorrection, kNone, true},
+    {"Jiggle", Icon::DefJiggle, kNone, true},
     {"Morph", Icon::DefMorph, kNone, true},
-    {"Cubrir", Icon::DefShrinkWrap, kNone, false},
+    {"Cubrir", Icon::DefShrinkWrap, kNone, true},
     {"Esferizar", Icon::DefSpherify, kNone, true},
-    {"Superficie", Icon::DefSurface, kNone, false},
-    {"Envoltura", Icon::DefWrap, kNone, false},
+    {"Superficie", Icon::DefSurface, kNone, true},
+    {"Envoltura", Icon::DefWrap, kNone, true},
     {"Spline", Icon::DefSpline, kNone, false},
     {"Rail de Splines", Icon::DefSplineRail, kNone, false},
     {"Envolver Spline", Icon::DefSplineWrap, kNone, false},
-    {"Cámara", Icon::DefCamera, kNone, false},
-    {"Colisión", Icon::DefCollision, kNone, false},
-    {"Desplazador", Icon::DefDisplacer, kNone, false},
-    {"Fórmula", Icon::DefFormula, kNone, false},
-    {"Viento", Icon::DefWind, kNone, false},
-    {"Suavizado", Icon::DefSmoothing, kNone, false},
+    {"Cámara", Icon::DefCamera, kNone, true},
+    {"Colisión", Icon::DefCollision, kNone, true},
+    {"Desplazador", Icon::DefDisplacer, kNone, true},
+    {"Fórmula", Icon::DefFormula, kNone, true},
+    {"Viento", Icon::DefWind, kNone, true},
+    {"Suavizado", Icon::DefSmoothing, kNone, true},
     {"Bisel", Icon::DefBevel, kNone, true},
 };
+
+bool isDeformPaletteItem(const PaletteItem* it) {
+    return (it >= std::begin(kDeformers) && it < std::end(kDeformers)) || (it >= std::begin(kModeling) && it < std::end(kModeling)) ||
+           (it >= std::begin(kMoGraph) && it < std::end(kMoGraph));
+}
 
 const PaletteItem kScene[] = {
     {"Suelo", Icon::Floor, PrimitiveType::Plane, true},
@@ -4924,17 +4931,129 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
         } else if (node.deform.present) {
             sectionHeader(tr("Propiedades del Objeto"));
             propLabel(tr("Tipo"));
-            const char* kinds[] = {tr("Doblar"), tr("Enroscar"), tr("Afilar"), tr("Hinchar"), tr("Sesgar"),
-                                   tr("Aplastar y Estirar"), tr("Esferizar"), tr("Derretir"), tr("Subdivisión Superficie"),
-                                   tr("Explosión"), tr("Morph"), tr("FFD"), tr("Bisel")};
+            const char* kinds[kDeformKindCount];
+            for (int i = 0; i < kDeformKindCount; ++i) kinds[i] = tr(deformKindName(i));
             ImGui::SetNextItemWidth(-1);
             int kd = node.deform.kind;
-            if (ImGui::Combo("##defkind", &kd, kinds, 13)) {
+            if (ImGui::Combo("##defkind", &kd, kinds, kDeformKindCount, 16)) {
                 history.commitBefore(root);
                 node.deform.kind = kd;
                 if (kd == 8) node.deform.amount = std::clamp(std::round(node.deform.amount), 1.0f, 4.0f);
+                if (kd >= 13) {
+                    node.deform.amount = deformDefaultAmount(kd);
+                    node.deform.param2 = deformDefaultParam2(kd);
+                }
             }
-            if (node.deform.kind == 8) {
+            if (node.deform.kind >= 13) {
+                DeformData& dd = node.deform;
+                const int k = dd.kind;
+                if (k != 28 && k != 29 && k != 30 && k != 32 && k != 33 && k != 35 && k != 36 && k != 37 && k != 38 && k != 39) {
+                    propLabel(tr("Eje"));
+                    const char* axes[] = {"X", "Y", "Z"};
+                    int dax = dd.axis;
+                    ImGui::SetNextItemWidth(-1);
+                    if (ImGui::Combo("##defaxis2", &dax, axes, 3)) {
+                        history.commitBefore(root);
+                        dd.axis = dax;
+                    }
+                }
+                if (const char* al = deformAmountLabel(k)) {
+                    propLabel(tr(al));
+                    const bool cm = k == 22 || k == 29 || k == 31 || k == 33 || k == 34 || k == 35 || k == 36 || k == 37 || k == 39;
+                    ImGui::SetNextItemWidth(-1);
+                    if (ImGui::DragFloat("##defamt2", &dd.amount, cm ? 0.5f : 0.5f, k == 38 ? 0.1f : -10000.0f, 100000.0f,
+                                         k == 38 ? "%.1f" : cm ? "%.1f cm" : "%.1f %%")) {
+                        if (ImGui::IsItemActivated()) history.commitBefore(root);
+                    }
+                }
+                if (const char* pl = deformParam2Label(k)) {
+                    propLabel(tr(pl));
+                    ImGui::SetNextItemWidth(-1);
+                    if (k == 28) {
+                        const char* ops[] = {tr("A unir B"), tr("A sustraer B"), tr("A intersección B")};
+                        int op = std::clamp((int)std::lround(dd.param2), 0, 2);
+                        if (ImGui::Combo("##defbool", &op, ops, 3)) {
+                            history.commitBefore(root);
+                            dd.param2 = (float)op;
+                        }
+                    } else if (k == 25 || k == 34 || k == 35 || k == 37 || k == 38 || k == 39) {
+                        int iv = (int)std::lround(dd.param2);
+                        if (ImGui::DragInt("##defp2i", &iv, 0.2f, 1, k == 35 ? 30 : 500)) {
+                            if (ImGui::IsItemActivated()) history.commitBefore(root);
+                            dd.param2 = (float)iv;
+                        }
+                    } else {
+                        const bool cm = k == 22 || k == 31 || k == 32;
+                        if (ImGui::DragFloat("##defp2", &dd.param2, 0.05f, 0.01f, 100000.0f, cm ? "%.1f cm" : k == 13 ? "%.2f Hz" : "%.2f")) {
+                            if (ImGui::IsItemActivated()) history.commitBefore(root);
+                        }
+                    }
+                }
+                if (k == 23) {
+                    propLabel(tr("Fórmula"));
+                    char fbuf[256];
+                    std::snprintf(fbuf, sizeof fbuf, "%s", dd.formula.c_str());
+                    ImGui::SetNextItemWidth(-1);
+                    if (ImGui::InputText("##defform", fbuf, sizeof fbuf)) {
+                        if (ImGui::IsItemActivated()) history.commitBefore(root);
+                        dd.formula = fbuf;
+                    }
+                    float tmp;
+                    std::string ferr;
+                    if (!evalFormula(dd.formula, 0, 0, 0, 0, 0, 0, tmp, &ferr))
+                        ImGui::TextColored(ImVec4(0.95f, 0.5f, 0.4f, 1), "  %s: %s", tr("Error en la fórmula"), ferr.c_str());
+                    ImGui::TextDisabled(tr("  Variables: x y z (-1..1 en la caja), u v (0..1), t (segundos). sin cos tan sqrt abs exp log noise pi."));
+                }
+                if (k == 20) {
+                    for (int i = 0; i < 4; ++i) {
+                        char lbl[48];
+                        std::snprintf(lbl, sizeof lbl, "%s %c%c", tr("Esquina"), (i & 1) ? '+' : '-', (i & 2) ? '+' : '-');
+                        propLabel(lbl);
+                        ImGui::SetNextItemWidth(-1);
+                        char id[16];
+                        std::snprintf(id, sizeof id, "##cam%d", i);
+                        if (ImGui::DragFloat2(id, &dd.ffd[i].x, 0.005f, -2.0f, 2.0f, "%.2f")) {
+                            if (ImGui::IsItemActivated()) history.commitBefore(root);
+                        }
+                    }
+                }
+                if (k == 26 && ImGui::Button(tr("Volver a Fijar la Jaula"), ImVec2(-1, 0))) {
+                    history.commitBefore(root);
+                    dd.bindRest.reset();
+                }
+                static const char* help[kDeformKindCount] = {};
+                if (!help[13]) {
+                    help[13] = "  Retrasa la parte alta del primer hijo cuando su posición está animada (efecto muelle).";
+                    help[14] = "  Los polígonos salen despedidos, giran y caen; anima el Tiempo de 0 a 100 %.";
+                    help[15] = "  Los polígonos caen al suelo del objeto con retardo aleatorio; anima el Tiempo.";
+                    help[16] = "  Deja pasar la malla del hijo; usa Hacer Editable para corregir puntos a mano.";
+                    help[17] = "  Lleva cada punto a la superficie más cercana del segundo hijo.";
+                    help[18] = "  Proyecta los puntos a lo largo del eje sobre el segundo hijo (se adapta al terreno).";
+                    help[19] = "  Enrolla el objeto en un cilindro alrededor del eje (100 % = vuelta completa).";
+                    help[20] = "  Rejilla de 4 esquinas en el plano perpendicular al eje.";
+                    help[21] = "  Saca fuera del segundo hijo los puntos que entran en él (malla cerrada).";
+                    help[22] = "  Ruido 3D a lo largo de la normal.";
+                    help[23] = "  Desplaza a lo largo de la normal según la fórmula.";
+                    help[24] = "  Onda que recorre el objeto con el tiempo (reproduce la animación).";
+                    help[25] = "  Relaja los puntos hacia la media de sus vecinos.";
+                    help[26] = "  El segundo hijo es la jaula: al editar sus puntos se deforma el primero.";
+                    help[28] = "  Booleano entre los dos primeros hijos con malla (cerradas).";
+                    help[29] = "  Une todas las mallas hijas en una y suelda los puntos cercanos.";
+                    help[30] = "  Reduce los polígonos del primer hijo al porcentaje indicado.";
+                    help[31] = "  Esferas en los puntos y cilindros en las aristas del primer hijo.";
+                    help[32] = "  Superficie que envuelve a todos los hijos (cada uno cuenta como una esfera).";
+                    help[33] = "  Muestra el 1.er hijo de cerca, el 2.o más lejos... según la distancia a la cámara.";
+                    help[34] = "  Copias del primer hijo en círculo alrededor del eje.";
+                    help[35] = "  Rejilla de cubos (no necesita hijos).";
+                    help[36] = "  Separa las piezas sueltas del primer hijo y las aleja del centro.";
+                    help[37] = "  Trocea el primer hijo en celdas de Voronoi y las separa (sin tapas en los cortes).";
+                    help[38] = "  Estela con copias del primer hijo en fotogramas anteriores (posición animada).";
+                    help[39] = "  Extruye todos los polígonos del primer hijo.";
+                    help[40] = "  Cada polígono se separa y se desplaza y gira al azar.";
+                    help[27] = "  Necesita splines.";
+                }
+                if (help[k]) ImGui::TextDisabled("%s", tr(help[k]));
+            } else if (node.deform.kind == 8) {
                 propLabel(tr("Subdivisiones"));
                 int lv = (int)std::lround(node.deform.amount);
                 ImGui::SetNextItemWidth(-1);
@@ -8786,6 +8905,8 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     evaluateSkins(root);
     // Objetos Simetria: reflejan a su hijo (despues de la Piel y la animacion, que son las que lo mueven).
     evaluateSymmetry(root);
+    setDeformTime(g.frame, (float)g.fps);
+    setLodViewPoint(camera.eyePosition());
     evaluateDeformers(root);
     evaluateCloners(root);
     evaluateInstances(root);

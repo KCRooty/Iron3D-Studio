@@ -1,4 +1,5 @@
 #include "Deform.h"
+#include "DeformMore.h"
 #include "MeshEdit.h"
 #include "MeshTopology.h"
 #include "Symmetry.h"
@@ -317,8 +318,102 @@ bool sameFfd(const glm::vec3* a, const glm::vec3* b) {
     return true;
 }
 
+float g_evalFrame = 0.0f, g_evalFps = 30.0f;
+
+std::shared_ptr<const MeshData> meshInNodeSpace(const MeshData& m, const glm::mat4& cm) {
+    MeshData out = m;
+    const glm::mat3 nm = glm::mat3(cm);
+    for (Vertex& v : out.vertices) {
+        v.position = glm::vec3(cm * glm::vec4(v.position, 1.0f));
+        v.normal = nm * v.normal;
+        if (glm::length(v.normal) > 1e-12f) v.normal = glm::normalize(v.normal);
+    }
+    return std::make_shared<const MeshData>(std::move(out));
+}
+
+void walkMore(SceneNode& node, int& count) {
+    DeformData& d = node.deform;
+    SceneNode* child = firstMeshChild(node);
+    if (!child && !deformKindNeedsNoChild(d.kind)) {
+        if (node.mesh) { node.mesh.reset(); d.output.reset(); d.lastSource.reset(); }
+        return;
+    }
+    const glm::mat4 cm = child ? child->localMatrix() : glm::mat4(1.0f);
+    SceneNode* child2 = child ? secondMeshChild(node, child) : nullptr;
+    const glm::mat4 cm2 = child2 ? child2->localMatrix() : glm::mat4(1.0f);
+    const std::shared_ptr<const MeshData> mesh2 = child2 ? child2->mesh : nullptr;
+    std::vector<std::shared_ptr<const MeshData>> allMeshes;
+    std::vector<glm::mat4> allMats;
+    if (deformKindUsesAllChildren(d.kind)) {
+        for (const auto& c : node.children()) {
+            allMats.push_back(c->localMatrix());
+            allMeshes.push_back(c->mesh);
+        }
+    }
+    const bool timeDep = deformKindUsesTime(d.kind);
+    glm::vec3 view(0.0f);
+    if (d.kind == 33) view = glm::vec3(glm::inverse(node.worldMatrix()) * glm::vec4(lodViewPoint(), 1.0f));
+    if (d.kind == 26 && mesh2 && (!d.bindRest || d.bindRest->vertices.size() != mesh2->vertices.size())) d.bindRest = mesh2;
+    const bool same = d.lastSource == (child ? child->mesh : nullptr) && d.lastChildMatrix == cm && d.lastKind == d.kind &&
+                      d.lastAxis == d.axis && d.lastAmount == d.amount && node.mesh == d.output && d.output &&
+                      d.lastSource2 == mesh2 && d.lastChildMatrix2 == cm2 && sameFfd(d.lastFfd, d.ffd) &&
+                      d.lastParam2 == d.param2 && d.lastFormula == d.formula && (!timeDep || d.lastFrame == g_evalFrame) &&
+                      d.lastAllMeshes == allMeshes && d.lastAllMats == allMats && d.lastView == view;
+    if (same) return;
+    DeformMoreInput in;
+    in.frame = g_evalFrame;
+    in.fps = g_evalFps;
+    in.param2 = d.param2;
+    in.motion = child ? &child->animPos : nullptr;
+    in.second = mesh2.get();
+    in.secondMatrix = cm2;
+    in.ffd = d.ffd;
+    in.formula = &d.formula;
+    in.rest = d.bindRest.get();
+    for (size_t i = 0; i < allMeshes.size(); ++i)
+        if (allMeshes[i]) in.all.push_back({allMeshes[i].get(), allMats[i]});
+    if (d.kind == 32) {
+        for (const auto& c : node.children()) {
+            const glm::mat4 m = c->localMatrix();
+            float r = 0.25f;
+            if (c->mesh) r = 0.5f * glm::length(c->mesh->boundsMax - c->mesh->boundsMin) * 0.5f;
+            const float s = std::max({glm::length(glm::vec3(m[0])), glm::length(glm::vec3(m[1])), glm::length(glm::vec3(m[2]))});
+            in.spheres.push_back({glm::vec3(m[3]), std::max(r * s, 1e-3f)});
+        }
+    }
+    in.viewPointNode = view;
+    MeshData src;
+    if (child) src = *meshInNodeSpace(*child->mesh, cm);
+    auto m = std::make_shared<const MeshData>(deformMore(std::move(src), d.kind, d.axis, d.amount, in));
+    node.mesh = m;
+    node.primitive = PrimitiveType::Mesh;
+    if (child) {
+        node.materialIndex = child->materialIndex;
+        node.texTag = child->texTag;
+    }
+    d.output = m;
+    d.lastSource = child ? child->mesh : nullptr;
+    d.lastChildMatrix = cm;
+    d.lastKind = d.kind;
+    d.lastAxis = d.axis;
+    d.lastAmount = d.amount;
+    d.lastSource2 = mesh2;
+    d.lastChildMatrix2 = cm2;
+    for (int i = 0; i < 8; ++i) d.lastFfd[i] = d.ffd[i];
+    d.lastParam2 = d.param2;
+    d.lastFormula = d.formula;
+    d.lastFrame = g_evalFrame;
+    d.lastAllMeshes = allMeshes;
+    d.lastAllMats = allMats;
+    d.lastView = view;
+    ++count;
+}
+
 void walk(SceneNode& node, int& count) {
-    if (node.deform.present) {
+    if (node.deform.present && node.deform.kind >= 13) {
+        bakeParametricChildren(node);
+        walkMore(node, count);
+    } else if (node.deform.present) {
         DeformData& d = node.deform;
         bakeParametricChildren(node);
         if (SceneNode* child = firstMeshChild(node)) {
@@ -359,6 +454,11 @@ void walk(SceneNode& node, int& count) {
     for (const auto& c : node.children()) walk(*c, count);
 }
 } // namespace
+
+void setDeformTime(float frame, float fps) {
+    g_evalFrame = frame;
+    g_evalFps = fps;
+}
 
 int evaluateDeformers(SceneNode& root) {
     int n = 0;

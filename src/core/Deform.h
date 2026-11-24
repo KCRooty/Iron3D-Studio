@@ -34,6 +34,8 @@ MeshData subdivideCatmullClark(const MeshData& src, int levels);
 std::string nodePathFromRoot(const SceneNode& root, const SceneNode& node);
 
 // Pone al dia el mesh de cada nodo deformador (no hace nada si nada ha cambiado). Devuelve cuantos se recalcularon.
+// Fotograma y FPS para los tipos que dependen del tiempo (Jiggle, Formula, Viento, MoInstance).
+void setDeformTime(float frame, float fps);
 int evaluateDeformers(SceneNode& root);
 
 // Pone al dia las Instancias (comparten la malla de su objeto de origen).
