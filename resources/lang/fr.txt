@@ -13,7 +13,6 @@ Cuchillo	Couteau
 : arrastra en horizontal en el visor (o usa Aplicar).	: faites glisser horizontalement dans la vue (ou utilisez Appliquer).
 Superior	Haut
 Derecha	Droite
-Frontal	Face
 Izquierda	Gauche
 Trasera	Retour
 Inferior	Bas
@@ -187,7 +186,7 @@ Activar Fijación	Activer le Magnétisme
 Mayús+S	Maj+S
 Fijación 2D	Magnétisme 2D
 Fijación 3D	Magnétisme 3D
-Plano de Trabajo	Grille
+Plano de Trabajo	Plan de travail
 Animación	Animation
 Grabar Objetos Activos	Enregistrer les objets actifs
 Fotogramas Clave Automáticos	Clés automatiques
@@ -1277,6 +1276,31 @@ Otros (Nulos, generadores...)	Autres (Nuls, générateurs...)
 Reflejos de estudio y transparencia	Reflets de studio et transparence
 Sombra suave en el suelo	Ombre douce au sol
 Efectos	Effets
+Salir de Vista Solo	Quitter la vue Solo
+Vista Solo	Vue Solo
+Vista Solo: el visor dibuja solo el objeto seleccionado y sus hijos.	Vue Solo : la vue ne dessine que l'objet sélectionné et ses enfants.
+Salir de Modo Ajuste	Quitter le mode Ajustement
+Modo Ajuste	Mode Ajustement
+Modo Ajuste: sin gizmo, arrastre el objeto directamente con el ratón (usa la herramienta activa: Mover, Rotar o Escalar).	Mode Ajustement : sans manipulateur, faites glisser l'objet directement à la souris (utilise l'outil actif : Déplacer, Pivoter ou Échelle).
+Desactivar Plano de Trabajo	Désactiver le plan de travail
+Plano de Trabajo: la cuadrícula del visor en perspectiva toma la posición y orientación del objeto seleccionado.	Plan de travail : la grille de la vue en perspective prend la position et l'orientation de l'objet sélectionné.
+Desbloquear Plano de Trabajo	Déverrouiller le plan de travail
+Bloquear Plano de Trabajo	Verrouiller le plan de travail
+Bloquear Plano de Trabajo: la cuadrícula deja de seguir la selección y se queda donde está.	Verrouiller le plan de travail : la grille ne suit plus la sélection et reste où elle est.
+Salir de Modo Textura	Quitter le mode Texture
+Usar Modo Textura	Utiliser le mode Texture
+Modo Textura: edita la proyección, el desplazamiento y la longitud de la etiqueta de Textura del objeto seleccionado.	Mode Texture : modifie la projection, le décalage et la longueur de l'étiquette Texture de l'objet sélectionné.
+Modo Textura	Mode Texture
+Seleccione un objeto con geometría.	Sélectionnez un objet avec géométrie.
+(ninguno)	(aucun)
+Esférico	Sphérique
+Cilíndrico	Cylindrique
+Cúbico	Cubique
+Otra	Autre
+Desplazamiento U/V	Décalage U/V
+Longitud U/V	Longueur U/V
+Aviso: el visor y el render solo dibujan texturas con proyección UVW.	Remarque : la vue et le rendu ne dessinent que les textures en projection UVW.
+Mosaico	Mosaïque
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cápsula	Capsule

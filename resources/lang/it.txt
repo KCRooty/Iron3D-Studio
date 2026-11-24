@@ -184,7 +184,7 @@ Activar Fijación	Abilita Snap
 Mayús+S	Maiusc+S
 Fijación 2D	Snap 2D
 Fijación 3D	Snap 3D
-Plano de Trabajo	Piano di Lavoro
+Plano de Trabajo	Piano di lavoro
 Animación	Animazione
 Grabar Objetos Activos	Registra Oggetti Attivi
 Fotogramas Clave Automáticos	Auto-Registrazione
@@ -1244,6 +1244,30 @@ Otros (Nulos, generadores...)	Altri (Null, generatori...)
 Reflejos de estudio y transparencia	Riflessi da studio e trasparenza
 Sombra suave en el suelo	Ombra morbida sul pavimento
 Efectos	Effetti
+Salir de Vista Solo	Esci da Vista Solo
+Vista Solo: el visor dibuja solo el objeto seleccionado y sus hijos.	Vista Solo: la vista disegna solo l'oggetto selezionato e i suoi figli.
+Salir de Modo Ajuste	Esci da Modalità Ritocco
+Modo Ajuste	Modalità Ritocco
+Modo Ajuste: sin gizmo, arrastre el objeto directamente con el ratón (usa la herramienta activa: Mover, Rotar o Escalar).	Modalità Ritocco: senza gizmo, trascina l'oggetto direttamente con il mouse (usa lo strumento attivo: Sposta, Ruota o Scala).
+Desactivar Plano de Trabajo	Disattiva Piano di lavoro
+Plano de Trabajo: la cuadrícula del visor en perspectiva toma la posición y orientación del objeto seleccionado.	Piano di lavoro: la griglia della vista prospettica assume posizione e orientamento dell'oggetto selezionato.
+Desbloquear Plano de Trabajo	Sblocca Piano di lavoro
+Bloquear Plano de Trabajo	Blocca Piano di lavoro
+Bloquear Plano de Trabajo: la cuadrícula deja de seguir la selección y se queda donde está.	Blocca Piano di lavoro: la griglia non segue più la selezione e resta dove si trova.
+Salir de Modo Textura	Esci da Modalità Texture
+Usar Modo Textura	Usa Modalità Texture
+Modo Textura: edita la proyección, el desplazamiento y la longitud de la etiqueta de Textura del objeto seleccionado.	Modalità Texture: modifica proiezione, offset e lunghezza del tag Texture dell'oggetto selezionato.
+Modo Textura	Modalità Texture
+Seleccione un objeto con geometría.	Seleziona un oggetto con geometria.
+(ninguno)	(nessuno)
+Esférico	Sferico
+Cilíndrico	Cilindrico
+Cúbico	Cubico
+Otra	Altra
+Desplazamiento U/V	Offset U/V
+Longitud U/V	Lunghezza U/V
+Aviso: el visor y el render solo dibujan texturas con proyección UVW.	Nota: la vista e il render disegnano solo texture con proiezione UVW.
+Mosaico	Ripetizione
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula

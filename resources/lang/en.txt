@@ -1239,6 +1239,31 @@ Otros (Nulos, generadores...)	Others (Nulls, generators...)
 Reflejos de estudio y transparencia	Studio reflections and transparency
 Sombra suave en el suelo	Soft floor shadow
 Efectos	Effects
+Salir de Vista Solo	Exit Solo View
+Vista Solo	Solo View
+Vista Solo: el visor dibuja solo el objeto seleccionado y sus hijos.	Solo View: the viewport draws only the selected object and its children.
+Salir de Modo Ajuste	Exit Tweak Mode
+Modo Ajuste	Tweak Mode
+Modo Ajuste: sin gizmo, arrastre el objeto directamente con el ratón (usa la herramienta activa: Mover, Rotar o Escalar).	Tweak Mode: no gizmo, drag the object directly with the mouse (uses the active tool: Move, Rotate or Scale).
+Desactivar Plano de Trabajo	Disable Workplane
+Plano de Trabajo: la cuadrícula del visor en perspectiva toma la posición y orientación del objeto seleccionado.	Workplane: the perspective viewport grid takes the position and orientation of the selected object.
+Desbloquear Plano de Trabajo	Unlock Workplane
+Bloquear Plano de Trabajo	Lock Workplane
+Bloquear Plano de Trabajo: la cuadrícula deja de seguir la selección y se queda donde está.	Lock Workplane: the grid stops following the selection and stays where it is.
+Salir de Modo Textura	Exit Texture Mode
+Usar Modo Textura	Use Texture Mode
+Modo Textura: edita la proyección, el desplazamiento y la longitud de la etiqueta de Textura del objeto seleccionado.	Texture Mode: edits the projection, offset and length of the selected object's Texture tag.
+Modo Textura	Texture Mode
+Seleccione un objeto con geometría.	Select an object with geometry.
+(ninguno)	(none)
+Esférico	Spherical
+Cilíndrico	Cylindrical
+Cúbico	Cubic
+Otra	Other
+Desplazamiento U/V	Offset U/V
+Longitud U/V	Length U/V
+Aviso: el visor y el render solo dibujan texturas con proyección UVW.	Note: the viewport and render only draw textures with UVW projection.
+Mosaico	Tile
 Polígono Vacío	Empty Polygon
 Guía	Guide
 Cápsula	Capsule

@@ -57,6 +57,17 @@ struct ViewportState {
     // mover salta de 100 cm en 100 cm (el espaciado de la cuadricula).
     bool axisLock[3] = {false, false, false};
     bool snap = false;
+    // Vista Solo: el visor dibuja solo el objeto seleccionado y sus hijos (si no hay seleccion, todo).
+    bool solo = false;
+    // Modo Ajuste: sin gizmo, se arrastra el objeto (o los componentes) directamente con el raton.
+    bool tweak = false;
+    // Plano de Trabajo: la cuadricula (en las vistas en perspectiva) se coloca con la posicion y la orientacion del objeto
+    // seleccionado. Bloquear Plano de Trabajo deja de seguir la seleccion y se queda con el ultimo.
+    bool workplane = false;
+    // Modo Textura: panel flotante con la proyeccion, el desplazamiento y la longitud de la etiqueta de Textura
+    // del objeto seleccionado.
+    bool texMode = false;
+    bool workplaneLock = false;
     // Modo de edicion: 0 Modelo, 1 Puntos, 2 Aristas, 3 Poligonos (estos tres
     // solo hacen algo con un objeto editable -- Objeto Poligono --).
     int compMode = 0;

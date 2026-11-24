@@ -14,6 +14,7 @@ extern "C" __declspec(dllimport) int __stdcall MessageBoxW(void* hWnd, const wch
 extern "C" __declspec(dllimport) int __stdcall MultiByteToWideChar(unsigned int cp, unsigned long flags, const char* src,
                                                                  int srcLen, wchar_t* dst, int dstLen);
 #endif
+#include <unordered_set>
 #include <GLFW/glfw3.h>
 #include "core/WindowSize.h"
 
@@ -199,6 +200,20 @@ glm::mat4 computeLightViewProj(const glm::vec3& lightPos) {
     return lightProj * lightView;
 }
 
+// Vista Solo (2026-11-24): con el boton activo solo se dibujan (y se pueden elegir) los objetos
+// seleccionados y sus descendientes. Se recalcula cada fotograma con markSolo().
+glm::mat4 workplaneMat(1.0f);   // Plano de Trabajo: matriz de la rejilla
+bool g_soloOn = false;
+std::unordered_set<int> g_soloShown;
+
+bool soloShows(const iron3d::SceneNode& n) { return !g_soloOn || g_soloShown.count(n.id()) > 0; }
+
+void markSolo(const iron3d::SceneNode& n, bool parentShown) {
+    const bool shown = parentShown || iron3d::viewportSelectionContains(&n);
+    if (shown) g_soloShown.insert(n.id());
+    for (const auto& c : n.children()) markSolo(*c, shown);
+}
+
 // Recorrido de solo-profundidad para el mapa de sombras (Fase render 2):
 // mismo grafo que drawScene() pero sin materiales (no hace falta mas que la
 // geometria) y sin el icono de Luz (un marcador decorativo proyectando su
@@ -208,7 +223,7 @@ void drawSceneShadow(iron3d::IRenderer& renderer, SceneMeshes& meshes, iron3d::S
     const bool vis = iron3d::resolveVisibility(node.editorVis, parentVisible);
     const glm::mat4 world = parentWorld * node.localMatrix();
 
-    if (vis && node.primitive != iron3d::PrimitiveType::Light) {
+    if (vis && soloShows(node) && node.primitive != iron3d::PrimitiveType::Light) {
         const iron3d::MeshHandle h = meshes.forNode(node);
         if (h != iron3d::kInvalidMesh) renderer.drawMeshShadow(h, world);
     }
@@ -226,7 +241,7 @@ void drawSceneGBuffer(iron3d::IRenderer& renderer, SceneMeshes& meshes, iron3d::
     const bool vis = iron3d::resolveVisibility(node.editorVis, parentVisible);
     const glm::mat4 world = parentWorld * node.localMatrix();
 
-    if (vis && node.primitive != iron3d::PrimitiveType::Light) {
+    if (vis && soloShows(node) && node.primitive != iron3d::PrimitiveType::Light) {
         const iron3d::MeshHandle h = meshes.forNode(node);
         if (h != iron3d::kInvalidMesh) renderer.drawMeshGBuffer(h, world);
     }
@@ -260,7 +275,7 @@ void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vect
     };
 
     using iron3d::PrimitiveType;
-    switch (vis ? node.primitive : PrimitiveType::None) {
+    switch (vis && soloShows(node) ? node.primitive : PrimitiveType::None) {
         case PrimitiveType::Cube:
         case PrimitiveType::Sphere:
         case PrimitiveType::Plane:
@@ -429,7 +444,7 @@ void pickNode(iron3d::SceneNode& node, const glm::mat4& parentWorld, const iron3
               iron3d::SceneNode*& best, float& bestDist, bool parentVisible = true) {
     const bool vis = iron3d::resolveVisibility(node.editorVis, parentVisible);
     const glm::mat4 world = parentWorld * node.localMatrix();
-    if (vis && node.primitive != iron3d::PrimitiveType::None) {
+    if (vis && soloShows(node) && node.primitive != iron3d::PrimitiveType::None) {
         glm::mat4 m = world;
         if (node.primitive == iron3d::PrimitiveType::Light) {
             // Mismo icono de tamano fijo que dibuja drawScene().
@@ -971,6 +986,8 @@ int main(int argc, char** argv) {
             gizmoTarget = compProxy;
             gizmo.usePivot = false;
         }
+        // Modo Ajuste: sin handles; el clic agarra el objeto y lo arrastra (rama de arrastre Free).
+        if (viewport.tweak) gizmoTarget = nullptr;
         // Extruir / Biselar / Cuchillo: sin gizmo, el raton es de la herramienta.
         const bool modelTool = iron3d::modelToolActive() && !gizmo.isDragging();
         if (modelTool) {
@@ -1141,7 +1158,7 @@ int main(int argc, char** argv) {
         ImGui::Render();
         if (viewport.requestQuit) glfwSetWindowShouldClose(window, GLFW_TRUE);
 
-        gizmo.buildGeometry(viewport.selectTool || modelTool ? nullptr : (compProxy ? compProxy : selected), eye, gizmoLineVerts,
+        gizmo.buildGeometry(viewport.selectTool || viewport.tweak || modelTool ? nullptr : (compProxy ? compProxy : selected), eye, gizmoLineVerts,
                             gizmoTriVerts);
 
         // Rectangulo del visor en pixeles de framebuffer (puede diferir de las
@@ -1201,6 +1218,12 @@ int main(int argc, char** argv) {
             // principal -- en Vulkan ambas pasadas comparten el mismo command
             // buffer y no se puede anidar/cambiar de render pass sin cerrar el
             // actual (ver SwapchainWindow::beginFrame()/beginRenderPass()).
+            g_soloOn = viewport.solo;
+            g_soloShown.clear();
+            if (g_soloOn) {
+                if (iron3d::selectionCount() > 0) markSolo(sceneRoot, false);
+                else g_soloOn = false;
+            }
             renderer->beginShadowPass(lightViewProj);
             drawSceneShadow(*renderer, meshes, sceneRoot, glm::mat4(1.0f));
             renderer->endShadowPass();
@@ -1229,8 +1252,23 @@ int main(int argc, char** argv) {
                 renderer->setDrawRect(pn.x, pn.y, pn.w, pn.h);
                 renderer->setEyePosition(pn.eye);
                 const glm::mat4 pvp = pn.proj * pn.view;
-                if (viewport.showGrid && !viewport.renderView)
-                    renderer->drawGrid(gridVerts, pvp * gridModelFor(pn.kind));
+                if (viewport.showGrid && !viewport.renderView) {
+                    // Plano de Trabajo: la rejilla sigue al objeto seleccionado (solo en perspectiva).
+                    if (viewport.workplane && !viewport.workplaneLock) {
+                        workplaneMat = glm::mat4(1.0f);
+                        if (selected) {
+                            const glm::mat4 w = selected->worldMatrix();
+                            for (int k = 0; k < 3; ++k) {
+                                const glm::vec3 col(w[k]);
+                                const float len = glm::length(col);
+                                workplaneMat[k] = glm::vec4(len > 1e-8f ? col / len : glm::vec3(k == 0, k == 1, k == 2), 0.0f);
+                            }
+                            workplaneMat[3] = w[3];
+                        }
+                    }
+                    const bool useWp = viewport.workplane && pn.kind == iron3d::OrbitalCamera::View::Perspective;
+                    renderer->drawGrid(gridVerts, pvp * (useWp ? workplaneMat : glm::mat4(1.0f)) * gridModelFor(pn.kind));
+                }
                 drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), pvp, true, 0);
                 drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), pvp, true, 1);
 

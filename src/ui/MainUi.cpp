@@ -3454,7 +3454,11 @@ void drawLeftToolbar(ImVec2 pos, ImVec2 size) {
     if (iconButton("model", Icon::ModelMode, b, cm == 0, true, tr("Usar Modo Modelo"), tr("Modo Modelo: se editan objetos enteros.")) ==
             BtnResult::Click && g_vp)
         g_vp->compMode = 0;
-    iconButton("texmode", Icon::TextureMode, b, false, false, tr("Usar Modo Textura\n(todavía no implementado)"), tr("Modo Textura: todavía no implementado."));
+    static ViewportState noVpT;
+    ViewportState& xvp = g_vp ? *g_vp : noVpT;
+    if (iconButton("texmode", Icon::TextureMode, b, xvp.texMode, true, xvp.texMode ? tr("Salir de Modo Textura") : tr("Usar Modo Textura"),
+                   tr("Modo Textura: edita la proyección, el desplazamiento y la longitud de la etiqueta de Textura del objeto seleccionado.")) == BtnResult::Click)
+        xvp.texMode = !xvp.texMode;
     if (iconButton("axmode", Icon::AxisMode, b, g_vp && g_vp->axisMode, g_vp != nullptr, tr("Activar Eje [L]"),
                    tr("Modo Eje: mover, rotar o escalar cambia solo el eje del objeto; la geometría editable y los hijos se quedan en su sitio.")) ==
             BtnResult::Click &&
@@ -3471,16 +3475,26 @@ void drawLeftToolbar(ImVec2 pos, ImVec2 size) {
                    tr("Modo Polígonos: elige y mueve polígonos (triángulos) de un objeto editable.")) == BtnResult::Click && g_vp)
         g_vp->compMode = 3;
     toolbarSeparator(false, b);
-    iconButton("tweak", Icon::Tweak, b, false, false, tr("Modo Ajuste\n(todavía no implementado)"), tr("Modo Ajuste: todavía no implementado."));
-    iconButton("solo", Icon::Solo, b, false, false, tr("Vista Solo\n(todavía no implementado)"), tr("Vista Solo: todavía no implementado."));
-    toolbarSeparator(false, b);
+    static ViewportState noVp0;
+    ViewportState& tvp = g_vp ? *g_vp : noVp0;
+    if (iconButton("tweak", Icon::Tweak, b, tvp.tweak, true, tvp.tweak ? tr("Salir de Modo Ajuste") : tr("Modo Ajuste"),
+                   tr("Modo Ajuste: sin gizmo, arrastre el objeto directamente con el ratón (usa la herramienta activa: Mover, Rotar o Escalar).")) == BtnResult::Click)
+        tvp.tweak = !tvp.tweak;
     static ViewportState noVp;
     ViewportState& svp = g_vp ? *g_vp : noVp;
+    if (iconButton("solo", Icon::Solo, b, svp.solo, true, svp.solo ? tr("Salir de Vista Solo") : tr("Vista Solo"),
+                   tr("Vista Solo: el visor dibuja solo el objeto seleccionado y sus hijos.")) == BtnResult::Click)
+        svp.solo = !svp.solo;
+    toolbarSeparator(false, b);
     if (iconButton("snap", Icon::Snap, b, svp.snap, true, svp.snap ? tr("Desactivar Fijación [Mayús+S]") : tr("Activar Fijación [Mayús+S]"),
                    tr("Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).")) == BtnResult::Click)
         svp.snap = !svp.snap;
-    iconButton("wplane", Icon::Workplane, b, false, false, tr("Plano de Trabajo\n(todavía no implementado)"), tr("Plano de Trabajo: todavía no implementado."));
-    iconButton("wlock", Icon::Locked, b, false, false, tr("Bloquear Plano de Trabajo\n(todavía no implementado)"), tr("Bloquear Plano de Trabajo: todavía no implementado."));
+    if (iconButton("wplane", Icon::Workplane, b, svp.workplane, true, svp.workplane ? tr("Desactivar Plano de Trabajo") : tr("Plano de Trabajo"),
+                   tr("Plano de Trabajo: la cuadrícula del visor en perspectiva toma la posición y orientación del objeto seleccionado.")) == BtnResult::Click)
+        svp.workplane = !svp.workplane;
+    if (iconButton("wlock", Icon::Locked, b, svp.workplaneLock, svp.workplane, svp.workplaneLock ? tr("Desbloquear Plano de Trabajo") : tr("Bloquear Plano de Trabajo"),
+                   tr("Bloquear Plano de Trabajo: la cuadrícula deja de seguir la selección y se queda donde está.")) == BtnResult::Click)
+        svp.workplaneLock = !svp.workplaneLock;
     ImGui::End();
     ImGui::PopStyleVar(2);
 }
@@ -7321,6 +7335,47 @@ void drawPictureViewer(const SceneNode& root, const std::vector<Material>& mater
     ImGui::End();
 }
 
+// Modo Textura: panel con la etiqueta de Textura (proyeccion, desplazamiento y longitud) del objeto seleccionado.
+// No hay manipulador en el visor; solo estos campos.
+void drawTextureMode(SceneNode& root, SceneNode* selected, SceneHistory& history, ViewportState& vp, const std::vector<Material>& materials) {
+    if (!vp.texMode) return;
+    ImGui::SetNextWindowSize(ImVec2(360, 0), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin(tr("Modo Textura"), &vp.texMode, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::End();
+        return;
+    }
+    if (!selected || !hasGeometry(selected->primitive)) {
+        ImGui::TextUnformatted(tr("Seleccione un objeto con geometría."));
+        ImGui::End();
+        return;
+    }
+    TextureTagData& t = selected->texTag;
+    ImGui::Text("%s: %s", tr("Objeto"), selected->name().c_str());
+    ImGui::Text("%s: %s", tr("Material"),
+                (selected->materialIndex >= 0 && (size_t)selected->materialIndex < materials.size())
+                    ? materials[(size_t)selected->materialIndex].name.c_str()
+                    : tr("(ninguno)"));
+    struct Proj { int id; const char* name; };
+    const Proj projs[] = {{6, tr("UVW")}, {0, tr("Esférico")}, {1, tr("Cilíndrico")}, {2, tr("Plano")}, {3, tr("Cúbico")}, {4, tr("Frontal")}};
+    const char* cur = tr("Otra");
+    for (const Proj& p : projs) if (p.id == t.projection) cur = p.name;
+    if (ImGui::BeginCombo(tr("Proyección"), cur)) {
+        for (const Proj& p : projs)
+            if (ImGui::Selectable(p.name, p.id == t.projection)) { history.commitBefore(root); t.projection = p.id; }
+        ImGui::EndCombo();
+    }
+    bool changed = false;
+    changed |= ImGui::DragFloat2(tr("Desplazamiento U/V"), &t.offset.x, 0.005f, -100.0f, 100.0f, "%.3f");
+    if (ImGui::IsItemActivated()) history.commitBefore(root);  // un paso de deshacer por arrastre
+    changed |= ImGui::DragFloat2(tr("Longitud U/V"), &t.length.x, 0.005f, 0.001f, 1000.0f, "%.3f");
+    if (ImGui::IsItemActivated()) history.commitBefore(root);
+    if (changed) { t.length.x = std::max(t.length.x, 0.001f); t.length.y = std::max(t.length.y, 0.001f); }
+    if (t.projection != 6) ImGui::TextWrapped("%s", tr("Aviso: el visor y el render solo dibujan texturas con proyección UVW."));
+    ImGui::Checkbox(tr("Mosaico"), &t.tile);
+    if (ImGui::Button(tr("Restablecer"))) { history.commitBefore(root); t.offset = glm::vec2(0.0f); t.length = glm::vec2(1.0f); }
+    ImGui::End();
+}
+
 void drawRenderSettings() {
     if (!g.showRenderSettings) return;
     auto& rs = g.render;
@@ -8758,6 +8813,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
         renderToPictureViewer(root, materials, camera, viewport);
     }
     drawRenderSettings();
+    drawTextureMode(root, selected, history, viewport, materials);
     drawPictureViewer(root, materials, camera, viewport);
     drawToolOptions();
 

@@ -6,6 +6,19 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-24 (45): Vista Solo, Modo Ajuste, Plano de Trabajo y Modo Textura
+
+**Añadido**
+- **Vista Solo**: el visor dibuja solo el objeto seleccionado y sus descendientes (también para sombras y para elegir con el ratón). Sin selección se ve todo.
+- **Modo Ajuste**: oculta el gizmo; el clic agarra el objeto (o los componentes) y lo arrastra directamente, con la herramienta activa (Mover, Rotar o Escalar).
+- **Plano de Trabajo**: la cuadrícula de la vista en perspectiva toma la posición y la orientación del objeto seleccionado. **Bloquear Plano de Trabajo** la deja donde está.
+- **Modo Textura**: panel flotante con la proyección, el desplazamiento U/V, la longitud U/V y el mosaico de la etiqueta de Textura del objeto seleccionado, con deshacer.
+- Traducciones de las cadenas nuevas al inglés, alemán, francés e italiano.
+
+**Límites:** Vista Solo no oculta las luces ni los iconos de cámara. El Modo Ajuste no agarra ejes ni planos concretos; usa el arrastre libre. El Plano de Trabajo solo mueve la cuadrícula: crear, mover o fijar objetos no se apoya en él, y las vistas ortogonales mantienen su plano. El Modo Textura no tiene manipulador en el visor; solo campos numéricos, y el visor y el render solo dibujan texturas con proyección UVW.
+
+**Verificado con tests:** compila y los tests existentes pasan. **Sin ver en pantalla ni probar con ratón:** los cuatro botones.
+
 ### 2026-11-24 (44): Buscar y Filtrar del Gestor de Objetos, y efectos de estudio en el render
 
 **Añadido**

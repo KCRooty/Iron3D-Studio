@@ -13,7 +13,6 @@ Cuchillo	Messer
 : arrastra en horizontal en el visor (o usa Aplicar).	: Im Viewport horizontal ziehen (oder Anwenden verwenden).
 Superior	Oben
 Derecha	Rechts
-Frontal	Vorne
 Izquierda	Links
 Trasera	Zurück
 Inferior	Unten
@@ -1271,6 +1270,31 @@ Otros (Nulos, generadores...)	Andere (Null-Objekte, Generatoren...)
 Reflejos de estudio y transparencia	Studio-Reflexionen und Transparenz
 Sombra suave en el suelo	Weicher Bodenschatten
 Efectos	Effekte
+Salir de Vista Solo	Solo-Ansicht beenden
+Vista Solo	Solo-Ansicht
+Vista Solo: el visor dibuja solo el objeto seleccionado y sus hijos.	Solo-Ansicht: Der Viewport zeichnet nur das gewählte Objekt und seine Kinder.
+Salir de Modo Ajuste	Anpassen-Modus beenden
+Modo Ajuste	Anpassen-Modus
+Modo Ajuste: sin gizmo, arrastre el objeto directamente con el ratón (usa la herramienta activa: Mover, Rotar o Escalar).	Anpassen-Modus: ohne Gizmo, das Objekt direkt mit der Maus ziehen (nutzt das aktive Werkzeug: Verschieben, Drehen oder Skalieren).
+Desactivar Plano de Trabajo	Arbeitsebene deaktivieren
+Plano de Trabajo: la cuadrícula del visor en perspectiva toma la posición y orientación del objeto seleccionado.	Arbeitsebene: Das Raster der Perspektivansicht übernimmt Position und Ausrichtung des gewählten Objekts.
+Desbloquear Plano de Trabajo	Arbeitsebene entsperren
+Bloquear Plano de Trabajo	Arbeitsebene sperren
+Bloquear Plano de Trabajo: la cuadrícula deja de seguir la selección y se queda donde está.	Arbeitsebene sperren: Das Raster folgt der Auswahl nicht mehr und bleibt, wo es ist.
+Salir de Modo Textura	Textur-Modus beenden
+Usar Modo Textura	Textur-Modus verwenden
+Modo Textura: edita la proyección, el desplazamiento y la longitud de la etiqueta de Textura del objeto seleccionado.	Textur-Modus: Bearbeitet Projektion, Versatz und Länge des Textur-Tags des gewählten Objekts.
+Modo Textura	Textur-Modus
+Seleccione un objeto con geometría.	Wählen Sie ein Objekt mit Geometrie.
+(ninguno)	(keines)
+Esférico	Sphärisch
+Cilíndrico	Zylindrisch
+Cúbico	Kubisch
+Otra	Andere
+Desplazamiento U/V	Versatz U/V
+Longitud U/V	Länge U/V
+Aviso: el visor y el render solo dibujan texturas con proyección UVW.	Hinweis: Viewport und Render zeichnen Texturen nur mit UVW-Projektion.
+Mosaico	Kacheln
 Polígono Vacío	Leeres Polygon
 Guía	Hilfslinie
 Cápsula	Kapsel
