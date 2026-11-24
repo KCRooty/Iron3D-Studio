@@ -11,6 +11,14 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 - Polaco, checo, ruso, japonés, coreano y chino tenían ~890 textos sin traducir (menús, tooltips, mensajes, atributos, biblioteca, modelado, render); ahora los 11 idiomas cubren el 100 % de la interfaz.
 - Cada traducción se validó contra el original: mismos marcadores `%s/%d/%lld`, mismos saltos `\n` y mismos sufijos `##id`.
 
+## Escalar Proyecto y Guardar Proyecto con su Contenido
+
+- **Escalar Proyecto…** (Ajustes del Proyecto) ya funciona: multiplica por el factor la posición y la escala de los objetos de primer nivel y las claves de posición y escala; se puede deshacer.
+- **Guardar Proyecto con su Contenido…** (menú Archivo) ya funciona: guarda el `.iron` y copia las texturas usadas a una carpeta `tex` junto a él; los materiales quedan apuntando al nombre del archivo.
+
+**Sin probar:** ambas solo se han compilado; no se han ejecutado en la interfaz. Los textos nuevos no están en los archivos de idioma (salen en español).
+**Sigue pendiente:** Entorno, Primer Plano y Jiggle, Selección de Claves, Grabar Parámetro y Nivel de Puntos, Cambiar Vista (multi-vista), Selector Visual, Luz IES con `.ies`, Esculpir y el resto de la lista de límites.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

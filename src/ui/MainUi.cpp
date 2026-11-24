@@ -1120,6 +1120,48 @@ bool saveDocument(SceneNode& root, SceneHistory& history, std::vector<Material>&
     return true;
 }
 
+// Guardar Proyecto con su Contenido: guarda el .iron y copia cada textura usada a la carpeta "tex" junto a el,
+// dejando en el material solo el nombre del archivo (como C4D). true = guardado.
+bool saveProjectWithAssets(SceneNode& root, SceneHistory& history, std::vector<Material>& materials) {
+    if (!nativeFileDialogAvailable()) {
+        reportNamedError(tr("Guardar Proyecto con su Contenido"),
+                         tr("Necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe."));
+        return false;
+    }
+    const auto p = saveFileDialog(tr("Guardar Proyecto con su Contenido"), {{"Iron3D", "*.iron"}},
+                                  g.docPath.empty() ? std::string("Sin Nombre 1.iron") : g.docPath.filename().string(), "iron");
+    if (!p) return false;
+    const std::filesystem::path dir = p->parent_path();
+    const std::filesystem::path texDir = dir / "tex";
+    std::error_code ec;
+    int copied = 0, missing = 0;
+    const std::string oldBase = g.docPath.empty() ? std::string() : g.docPath.parent_path().string();
+    for (Material& m : materials) {
+        for (int k = 0; k < kTexSlotCount; ++k) {
+            std::string& t = m.textures[k];
+            if (t.empty()) continue;
+            const std::string real = resolveTexturePath(t, oldBase.empty() ? dir.string() : oldBase);
+            if (real.empty()) { ++missing; continue; }
+            std::filesystem::create_directories(texDir, ec);
+            const std::filesystem::path name = std::filesystem::path(real).filename();
+            const std::filesystem::path dst = texDir / name;
+            if (!std::filesystem::exists(dst, ec) || !std::filesystem::equivalent(real, dst, ec))
+                std::filesystem::copy_file(real, dst, std::filesystem::copy_options::overwrite_existing, ec);
+            if (!ec) { t = name.string(); ++copied; }
+        }
+    }
+    std::string err;
+    if (!saveScene(*p, root, materials, &err)) {
+        reportFileError(*p, err);
+        return false;
+    }
+    g.docPath = *p;
+    g.cleanSnap = history.snapshot(root);
+    g.cleanInit = true;
+    (void)copied; (void)missing;
+    return true;
+}
+
 // Guardar incrementalmente: guarda con el siguiente numero libre junto al archivo actual (nombre_001.iron...) y
 // el documento pasa a ser ese. Sin ruta todavia no hace nada. true = guardado.
 bool saveIncremental(SceneNode& root, SceneHistory& history, std::vector<Material>& materials) {
@@ -2961,7 +3003,7 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
         if (ImGui::MenuItemEx(tr("Guardar incrementalmente..."), kIconGutterText, "", false, !g.docPath.empty()))
             saveIncremental(root, history, materials);
         if (ImGui::MenuItemEx(tr("Guardar Todo"), kIconGutterText, "")) saveDocument(root, history, materials, false);
-        disabledItems({{tr("Guardar Proyecto con su Contenido..."), ""}});
+        if (ImGui::MenuItemEx(tr("Guardar Proyecto con su Contenido..."), kIconGutterText, "")) saveProjectWithAssets(root, history, materials);
         if (ImGui::MenuItemEx(tr("Guardar Objetos Seleccionados como..."), kIconGutterText, nullptr, false,
                               selected != nullptr && cinewareAvailable()))
             exportSelectedC4D(root, selected, materials);
@@ -4522,7 +4564,17 @@ void titleLine(Icon icon, const char* title) {
     ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 22));
 }
 
-void drawProjectSettings() {
+void scaleProject(SceneNode& root, float f) {
+    for (const auto& cu : root.children()) {
+        SceneNode* c = cu.get();
+        c->position *= f;
+        c->scale *= f;
+        for (AnimKey& k : c->animPos.keys) k.value *= f;
+        for (AnimKey& k : c->animScale.keys) k.value *= f;
+    }
+}
+
+void drawProjectSettings(SceneNode& root, SceneHistory& history) {
     titleLine(Icon::Gear, tr("Proyecto"));
     static unsigned mask = 1u;
     const char* tabs[] = {tr("Configuración del Proyecto"), tr("Información"), tr("Dinámicas"), tr("Referenciar"), tr("A Realizar"),
@@ -4545,16 +4597,19 @@ void drawProjectSettings() {
 
         g_labelW = std::floor(colW * 0.58f);
         propLabel(tr("Escala del Proyecto"), false);
-        ImGui::BeginDisabled();
-        ImGui::SetNextItemWidth(50);
-        float one = 1.0f;
-        ImGui::DragFloat("##scale", &one, 1, 0, 0, "%.0f");
+        static float scaleFactor = 1.0f;
+        ImGui::SetNextItemWidth(70);
+        ImGui::DragFloat("##scale", &scaleFactor, 0.01f, 0.001f, 1000.0f, "%.3f");
         ImGui::SameLine();
-        ImGui::SetNextItemWidth(std::min(110.0f, ImGui::GetContentRegionAvail().x - 4.0f));
-        if (ImGui::BeginCombo("##unit", tr("Centímetros"))) ImGui::EndCombo();
-        ImGui::Button(tr("Escalar Proyecto..."), ImVec2(std::min(fullW - 8.0f, 260.0f), 0));
-        ImGui::EndDisabled();
-        setHint(tr("Escalar Proyecto: todavía no implementado en Iron3D."));
+        ImGui::TextDisabled("%s", tr("Centímetros"));
+        if (ImGui::Button(tr("Escalar Proyecto..."), ImVec2(std::min(fullW - 8.0f, 260.0f), 0)) && scaleFactor > 0.0f &&
+            std::fabs(scaleFactor - 1.0f) > 1e-6f) {
+            const std::string before = history.snapshot(root);
+            scaleProject(root, scaleFactor);
+            history.commit(before);
+            scaleFactor = 1.0f;
+        }
+        setHint(tr("Escalar Proyecto: multiplica por el factor las posiciones y el tamaño de todos los objetos."));
         ImGui::Separator();
 
         col(0);
@@ -5645,13 +5700,13 @@ void drawAttributesManager(SceneNode& root, SceneNode* selected, SceneHistory& h
     g_labelW = std::clamp(ImGui::GetContentRegionAvail().x * 0.42f, 120.0f, 220.0f);
     switch (g.focus) {
         case AttrFocus::Project:
-            drawProjectSettings();
+            drawProjectSettings(root, history);
             break;
         case AttrFocus::Material:
             if (g.selectedMat >= 0 && (size_t)g.selectedMat < materials.size())
                 drawMaterialAttributes(materials[(size_t)g.selectedMat], g.selectedMat, root, history);
             else
-                drawProjectSettings();
+                drawProjectSettings(root, history);
             break;
         case AttrFocus::Tag:
             if (selected && selected->materialIndex >= 0) {
@@ -5662,7 +5717,7 @@ void drawAttributesManager(SceneNode& root, SceneNode* selected, SceneHistory& h
         case AttrFocus::Object:
             // Sin seleccion: Configuracion del Proyecto (seccion 15), nunca un panel vacio.
             if (selected) drawObjectAttributes(*selected, root, history);
-            else drawProjectSettings();
+            else drawProjectSettings(root, history);
             break;
     }
     ImGui::End();
