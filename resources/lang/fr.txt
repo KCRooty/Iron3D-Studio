@@ -929,7 +929,7 @@ Hacer Permanente (copiar a library/browser)	Rendre permanente (copier dans libra
 Quitar Librería del Navegador	Retirer la bibliothèque du navigateur
 Cargar en la Escena	Charger dans la scène
 Intro	Entrée
-Borrar	Supprimer
+Borrar	Effacer
 Renombrar...	Renommer...
 Iconos Pequeños	Petites icônes
 Iconos Medianos	Moyennes icônes
@@ -1268,6 +1268,15 @@ Activar Fijación [Mayús+S]	Activer le magnétisme [Maj+S]
 Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).	Avec le magnétisme, le déplacement saute par pas de 100 cm (la grille).
 Fijación: activada	Magnétisme : activé
 Fijación: desactivada	Magnétisme : désactivé
+Buscar por nombre	Rechercher par nom
+Filtrar por tipo	Filtrer par type
+Nombre del objeto...	Nom de l'objet...
+Geometría	Géométrie
+Luces	Lumières
+Otros (Nulos, generadores...)	Autres (Nuls, générateurs...)
+Reflejos de estudio y transparencia	Reflets de studio et transparence
+Sombra suave en el suelo	Ombre douce au sol
+Efectos	Effets
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cápsula	Capsule

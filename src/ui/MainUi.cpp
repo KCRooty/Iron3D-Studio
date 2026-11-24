@@ -180,6 +180,9 @@ struct UiState {
     int renamingNodeId = -1;
     int renamingMat = -1;
     char renameBuf[128] = {};
+    // Buscar y Filtrar del Gestor de Objetos: texto (sin distinguir mayusculas) y tipos que se muestran.
+    char omSearch[64] = {};
+    bool omShowGeom = true, omShowLight = true, omShowCamera = true, omShowOther = true;
     bool renameFocus = false;
 
     std::unordered_set<int> collapsed;
@@ -3963,10 +3966,36 @@ struct TreeRow {
     int depth;
 };
 
+bool omFilterActive() {
+    return g.omSearch[0] != 0 || !g.omShowGeom || !g.omShowLight || !g.omShowCamera || !g.omShowOther;
+}
+
+bool omNodeMatches(const SceneNode& n) {
+    const PrimitiveType t = n.primitive;
+    const bool typeOk = hasGeometry(t) ? g.omShowGeom : t == PrimitiveType::Light ? g.omShowLight
+                        : t == PrimitiveType::Camera ? g.omShowCamera : g.omShowOther;
+    if (!typeOk) return false;
+    if (!g.omSearch[0]) return true;
+    std::string a = n.name(), b = g.omSearch;
+    for (char& ch : a) ch = (char)std::tolower((unsigned char)ch);
+    for (char& ch : b) ch = (char)std::tolower((unsigned char)ch);
+    return a.find(b) != std::string::npos;
+}
+
+// Con filtro activo un objeto se muestra si cumple o si lo cumple algun descendiente (para no perder el camino).
+bool omSubtreeMatches(const SceneNode& n) {
+    if (omNodeMatches(n)) return true;
+    for (const auto& c : n.children())
+        if (omSubtreeMatches(*c)) return true;
+    return false;
+}
+
 void collectRows(SceneNode& node, int depth, std::vector<TreeRow>& out) {
+    const bool filtering = omFilterActive();
     for (const auto& c : node.children()) {
+        if (filtering && !omSubtreeMatches(*c)) continue;
         out.push_back({c.get(), depth});
-        if (!c->children().empty() && !g.collapsed.count(c->id())) collectRows(*c, depth + 1, out);
+        if (!c->children().empty() && (filtering || !g.collapsed.count(c->id()))) collectRows(*c, depth + 1, out);
     }
 }
 
@@ -4044,9 +4073,26 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
         ImGui::BeginMenu(tr("Favoritos"), false);
         const float ib = ImGui::GetFrameHeight() - 4.0f;
         ImGui::SameLine(ImGui::GetWindowWidth() - 2 * (ib + 4) - 8);
-        iconButton("omsearch", Icon::Search, ib, false, false, tr("Buscar (todavía no implementado)"), nullptr);
+        if (iconButton("omsearch", Icon::Search, ib, g.omSearch[0] != 0, true, tr("Buscar por nombre"), nullptr) == BtnResult::Click)
+            ImGui::OpenPopup("##omsearchpop");
         ImGui::SameLine(0, 4);
-        iconButton("omfilter", Icon::Filter, ib, false, false, tr("Filtrar (todavía no implementado)"), nullptr);
+        if (iconButton("omfilter", Icon::Filter, ib, !(g.omShowGeom && g.omShowLight && g.omShowCamera && g.omShowOther), true,
+                       tr("Filtrar por tipo"), nullptr) == BtnResult::Click)
+            ImGui::OpenPopup("##omfilterpop");
+        if (ImGui::BeginPopup("##omsearchpop")) {
+            ImGui::SetNextItemWidth(180);
+            if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
+            ImGui::InputTextWithHint("##omq", tr("Nombre del objeto..."), g.omSearch, sizeof(g.omSearch));
+            if (g.omSearch[0] && ImGui::SmallButton(tr("Borrar"))) g.omSearch[0] = 0;
+            ImGui::EndPopup();
+        }
+        if (ImGui::BeginPopup("##omfilterpop")) {
+            ImGui::Checkbox(tr("Geometría"), &g.omShowGeom);
+            ImGui::Checkbox(tr("Luces"), &g.omShowLight);
+            ImGui::Checkbox(tr("Cámaras"), &g.omShowCamera);
+            ImGui::Checkbox(tr("Otros (Nulos, generadores...)"), &g.omShowOther);
+            ImGui::EndPopup();
+        }
         ImGui::EndMenuBar();
     }
 

@@ -1235,6 +1235,15 @@ Activar Fijación [Mayús+S]	Attiva Snap [Maiusc+S]
 Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).	Con lo Snap, lo spostamento procede a passi di 100 cm (la griglia).
 Fijación: activada	Snap: attivo
 Fijación: desactivada	Snap: disattivo
+Buscar por nombre	Cerca per nome
+Filtrar por tipo	Filtra per tipo
+Nombre del objeto...	Nome dell'oggetto...
+Geometría	Geometria
+Luces	Luci
+Otros (Nulos, generadores...)	Altri (Null, generatori...)
+Reflejos de estudio y transparencia	Riflessi da studio e trasparenza
+Sombra suave en el suelo	Ombra morbida sul pavimento
+Efectos	Effetti
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula

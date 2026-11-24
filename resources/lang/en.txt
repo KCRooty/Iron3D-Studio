@@ -1230,6 +1230,15 @@ Activar Fijación [Mayús+S]	Enable Snapping [Shift+S]
 Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).	With Snapping, moving jumps in steps of 100 cm (the grid).
 Fijación: activada	Snapping: on
 Fijación: desactivada	Snapping: off
+Buscar por nombre	Search by name
+Filtrar por tipo	Filter by type
+Nombre del objeto...	Object name...
+Geometría	Geometry
+Luces	Lights
+Otros (Nulos, generadores...)	Others (Nulls, generators...)
+Reflejos de estudio y transparencia	Studio reflections and transparency
+Sombra suave en el suelo	Soft floor shadow
+Efectos	Effects
 Polígono Vacío	Empty Polygon
 Guía	Guide
 Cápsula	Capsule

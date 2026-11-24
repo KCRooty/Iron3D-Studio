@@ -6,6 +6,19 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-24 (44): Buscar y Filtrar del Gestor de Objetos, y efectos de estudio en el render
+
+**Añadido**
+- **Buscar** (lupa del Gestor de Objetos): filtra la lista por nombre, sin distinguir mayúsculas. Se muestran también los padres de lo que coincide.
+- **Filtrar** (embudo): muestra u oculta Geometría, Luces, Cámaras y Otros.
+- **Efectos del render por CPU** (Configuración de Render → Efectos): reflejos de estudio con Fresnel, Transparencia del material (los triángulos transparentes se ordenan y se mezclan) y sombra suave en el suelo.
+- `--ui-cmd=render-fx` activa los efectos y `--ui-cmd=render-save=...` guarda el render en PNG sin interfaz (para verificar).
+- Traducciones de las cadenas nuevas al inglés, alemán, francés e italiano.
+
+**Límites:** el filtro no oculta nada en el visor 3D, solo en la lista. Los efectos son una aproximación: sin refracción, sin reflejos del propio objeto y sin sombras de objetos entre sí; el cristal oscuro sale lavado. Solo afectan al render del Visor de Imágenes, no al visor interactivo.
+
+**Verificado con tests:** compila y los tests existentes pasan. **Verificado por captura:** los renders de logos de cristal. **Sin ver en pantalla:** Buscar y Filtrar.
+
 ### 2026-11-24 (43): Bloqueo de ejes y Fijación
 
 **Añadido**

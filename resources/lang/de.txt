@@ -1262,6 +1262,15 @@ Activar Fijación [Mayús+S]	Fangen aktivieren [Umschalt+S]
 Con la Fijación, mover salta de 100 cm en 100 cm (la cuadrícula).	Mit Fangen springt das Verschieben in 100-cm-Schritten (das Raster).
 Fijación: activada	Fangen: an
 Fijación: desactivada	Fangen: aus
+Buscar por nombre	Nach Name suchen
+Filtrar por tipo	Nach Typ filtern
+Nombre del objeto...	Objektname...
+Geometría	Geometrie
+Luces	Lichter
+Otros (Nulos, generadores...)	Andere (Null-Objekte, Generatoren...)
+Reflejos de estudio y transparencia	Studio-Reflexionen und Transparenz
+Sombra suave en el suelo	Weicher Bodenschatten
+Efectos	Effekte
 Polígono Vacío	Leeres Polygon
 Guía	Hilfslinie
 Cápsula	Kapsel
