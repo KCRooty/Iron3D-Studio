@@ -6,6 +6,23 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-24 (42): Bisel, Explosión, FFD, Morph, objetivos de Cámara y Luz, Luz IES/PBR, Fondo y Cielo
+
+**Añadido**
+- **Deformadores nuevos**: **Bisel** (achaflana aristas y vértices; un cubo pasa a 26 polígonos), **Explosión** (separa los triángulos a lo largo de su normal), **Morph** (mezcla el primer hijo con el segundo si tienen los mismos puntos) y **FFD** (rejilla 2x2x2 con las ocho esquinas editables). Se guardan en el `.iron`.
+- **Cámara Objetivo** y **Luz Objetivo**: crean el objeto y un Nulo «Objetivo»; el objeto se orienta solo hacia él. La ruta del objetivo se guarda y se edita en el Gestor de Atributos.
+- **Luz IES** (foco con decaimiento cuadrático) y **Luz PBR** (área con decaimiento físico y sombra).
+- **Fondo** y **Cielo**: objetos de escena que ponen el degradado de fondo del render en el Visor de Imágenes (color superior e inferior editables).
+- Panel de atributos de la **Cámara**: proyección, distancia focal, tamaño del sensor, campo de visión y objetivo.
+- Traducciones de las cadenas nuevas al inglés, alemán, francés e italiano.
+
+**Corregido**
+- El objetivo de cámaras y luces miraba al lado contrario (el motor mira por -Z).
+
+**Límites:** Luz IES no carga perfiles `.ies`; Luz Solar no es un sol físico; Fondo y Cielo solo afectan al render del Visor de Imágenes, no al visor interactivo; **siguen sin hacer nada**: Entorno, Primer Plano y Jiggle. Polaco, checo, ruso, japonés, coreano y chino tienen traducidas solo unas 480 cadenas; el resto sale en inglés. Esculpir y las herramientas interactivas de Malla siguen sin estar, y varios botones de la barra siguen marcados «todavía no implementado».
+
+**Verificado por captura:** Bisel y Luz Objetivo (el foco ilumina la cima del cubo). **Verificado con tests:** Explosión, FFD, Morph, Bisel, orientación de la cámara hacia su objetivo y guardado y lectura de Fondo/Cielo, FFD y objetivo de luz. **Sin ver en pantalla:** Explosión, FFD, Morph, Cámara Objetivo, Luz IES, Luz PBR y el render con Fondo/Cielo.
+
 ### 2026-11-20 (41): Subdivisión Superficie, Instancia, deformadores nuevos, Cámara, Luz Solar y Suelo
 
 **Añadido**

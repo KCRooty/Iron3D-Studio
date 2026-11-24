@@ -22,7 +22,7 @@ compatibilidad con `.c4d`/`.lib4d` y plugins de R19.
 Documento Maestro del proyecto en `V:\ObsidianVault\14-Iron3D-CoalMix\Iron3D_CoalMix_Documento_Maestro_2026-10-27.pdf`
 (resumen en `estado.md` de esa misma carpeta).
 
-Estado (2026-11-20): en desarrollo temprano, sin versión publicada (hay una demo 0.2.0 repartida a testers). Fases 1 y 2 hechas
+Estado (2026-11-24): alpha 0.3.0 publicada (en desarrollo temprano; notas en `docs/releases/v0.3.0-alpha.md`). Fases 1 y 2 hechas
 (grafo de escena, Gestor de Objetos, gizmo mover/rotar/escalar). Desde entonces: render
 PBR con sombras y SSAO (Vulkan), selección múltiple, modos libres del gizmo, 222 iconos
 propios, presets de interfaz (Cinema 4D, Blender, Maya, 3ds Max, Source Filmmaker),

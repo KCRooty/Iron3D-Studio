@@ -35,6 +35,11 @@ MeshEditResult extrudePolygons(const MeshData& mesh, const MeshTopology& topo, c
 MeshEditResult bevelPolygons(const MeshData& mesh, const MeshTopology& topo, const std::set<int>& polys, float inset,
                              float extrusion);
 
+// Biselar todas las aristas: cada poligono se encoge `inset` (distancia por esquina) y las aristas y los
+// puntos se rellenan con tiras y tapas. Malla plana con vertices propios por cara; las aristas abiertas se
+// quedan sin tira.
+MeshData chamferMesh(const MeshData& mesh, float inset);
+
 // Cuchillo en modo Linea: corta por el plano (planePoint, planeNormal), en
 // espacio local, los poligonos que cruza. Solo se corta un poligono si
 // `allowed` lo deja (puede ser vacio = todos) y si los dos puntos de corte

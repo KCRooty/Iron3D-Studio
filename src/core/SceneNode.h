@@ -93,6 +93,8 @@ struct LightData {
     bool noIllumination = false;
     bool diffuse = true;
     bool specular = true;
+    // Etiqueta Objetivo: ruta por nombres desde la raiz; la luz se orienta hacia ese objeto (vacia = sin objetivo).
+    std::string target;
     bool operator==(const LightData&) const = default;
 };
 
@@ -136,13 +138,20 @@ struct SymmetryData {
 // Esferizar, Derretir o Subdivision Superficie (kind 8, amount = subdivisiones).
 struct DeformData {
     bool present = false;
-    int kind = 0;       // 0 Doblar, 1 Enroscar, 2 Afilar, 3 Hinchar, 4 Sesgar, 5 Aplastar, 6 Esferizar, 7 Derretir, 8 Subdivision
+    int kind = 0;       // 0 Doblar, 1 Enroscar, 2 Afilar, 3 Hinchar, 4 Sesgar, 5 Aplastar, 6 Esferizar, 7 Derretir, 8 Subdivision,
+                        // 9 Explosion, 10 Morph (2.o hijo = destino), 11 FFD (rejilla 2x2x2), 12 Bisel
     int axis = 1;       // eje del nodo a lo largo del cual actua (0 X, 1 Y, 2 Z)
     float amount = 45;  // grados (Doblar, Enroscar) o % (Afilar, Hinchar, Sesgar)
     std::shared_ptr<const MeshData> output, lastSource;
     glm::mat4 lastChildMatrix{1.0f};
     int lastKind = -1, lastAxis = -1;
     float lastAmount = 1e9f;
+    // FFD: desplazamiento de las 8 esquinas de la caja, como fraccion de su tamano (indice = x + 2y + 4z).
+    glm::vec3 ffd[8] = {};
+    // Morph: cache del segundo hijo y de la rejilla.
+    std::shared_ptr<const MeshData> lastSource2;
+    glm::mat4 lastChildMatrix2{1.0f};
+    glm::vec3 lastFfd[8] = {};
 };
 
 // Objeto Instancia (2026-11-20): comparte la malla de otro objeto (ruta por nombres desde la raiz, como
@@ -150,6 +159,15 @@ struct DeformData {
 struct InstanceData {
     bool present = false;
     std::string source;
+};
+
+// Objetos de escena Fondo y Cielo (2026-11-20): colocan el color de fondo del render en el Visor de Imagenes
+// (degradado de `top` a `bottom`). kind: 0 Fondo, 1 Cielo.
+struct EnvData {
+    bool present = false;
+    int kind = 0;
+    glm::vec3 top{0.2f, 0.2f, 0.25f};
+    glm::vec3 bottom{0.2f, 0.2f, 0.25f};
 };
 
 // Clonador (ver Clone.h): copias del primer hijo con malla en modo Lineal, Cuadricula o Radial.
@@ -307,6 +325,7 @@ public:
     SymmetryData symmetry;
     DeformData deform;
     InstanceData instance;
+    EnvData env;
     CloneData clone;
     ParamShape param;  // primitiva poligonal con parametros editables (ver MeshData.h)
     // Solo con primitive == Mesh: partes con su propio material, ordenadas por

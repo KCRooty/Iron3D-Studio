@@ -844,6 +844,34 @@ int main() {
             bool snorm = true;
             for (const Vertex& v : s2.vertices) snorm = snorm && std::fabs(glm::length(v.normal) - 1.0f) < 1e-3f;
             check(snorm, "subdivision superficie: normales unitarias");
+            const MeshData ex9 = deformMeshData(cb, 9, 1, 100.0f, id);
+            check(ex9.vertices.size() == 36 && std::fabs(ex9.boundsMax.x - (0.5f + 0.5f * 1.7320508f)) < 1e-3f,
+                  "explosion 100 %: cada cara se aleja medio diagonal");
+            const MeshData bv = deformMeshData(cb, 12, 1, 50.0f, id);
+            check(buildMeshTopology(bv).polys.size() == 26, "bisel: el cubo pasa a 6 caras + 12 tiras + 8 tapas");
+            DeformExtra fx;
+            glm::vec3 ffdPts[8] = {};
+            ffdPts[7] = glm::vec3(0.5f, 0.0f, 0.0f);
+            fx.ffd = ffdPts;
+            const MeshData ff = deformMeshData(cb, 11, 1, 0.0f, id, &fx);
+            check(std::fabs(ff.boundsMax.x - 1.0f) < 1e-3f && std::fabs(ff.boundsMin.x + 0.5f) < 1e-3f, "FFD: mover una esquina arrastra solo su lado");
+            MeshData cb2 = cb;
+            for (Vertex& v : cb2.vertices) v.position *= 2.0f;
+            DeformExtra mx;
+            mx.second = &cb2;
+            const MeshData mm = deformMeshData(cb, 10, 1, 50.0f, id, &mx);
+            check(std::fabs(mm.boundsMax.x - 0.75f) < 1e-3f, "morph 50 %: a medio camino entre las dos mallas");
+            {
+                SceneNode tr0("r");
+                SceneNode* cam = tr0.addChild("Cam", PrimitiveType::Camera);
+                SceneNode* tg = tr0.addChild("Obj", PrimitiveType::None);
+                cam->position = glm::vec3(0.0f, 2.0f, -2.0f);
+                cam->camera.target = "Obj";
+                evaluateInstances(tr0);
+                const glm::vec3 fwd = hpbToMat3(cam->rotationDeg) * glm::vec3(0.0f, 0.0f, -1.0f);
+                const glm::vec3 want = glm::normalize(glm::vec3(0.0f, -2.0f, 2.0f));
+                check(glm::length(fwd - want) < 1e-3f && tg != nullptr, "objetivo de camara: mira al objeto");
+            }
             {
                 SceneNode ir("r");
                 SceneNode* orig = ir.addChild("Cubo", PrimitiveType::Mesh);
@@ -868,6 +896,34 @@ int main() {
                 ins->instance.source = "NoExiste";
                 evaluateInstances(ir);
                 check(!ins->mesh, "instancia: sin origen no dibuja nada");
+            }
+            {
+                SceneNode er("r");
+                SceneNode* fo = er.addChild("Fondo", PrimitiveType::None);
+                fo->env.present = true;
+                fo->env.kind = 1;
+                fo->env.top = glm::vec3(0.1f, 0.2f, 0.3f);
+                fo->env.bottom = glm::vec3(0.7f, 0.8f, 0.9f);
+                SceneNode* df = er.addChild("FFD", PrimitiveType::None);
+                df->deform.present = true;
+                df->deform.kind = 11;
+                df->deform.ffd[5] = glm::vec3(0.25f, -0.5f, 0.125f);
+                SceneNode* lt = er.addChild("Luz", PrimitiveType::Light);
+                lt->light.target = "Fondo";
+                std::vector<Material> em;
+                const std::string etxt = serializeScene(er, em);
+                SceneNode eb("x");
+                std::string eerr;
+                check(deserializeScene(etxt, eb, em, &eerr), "ENV/FFD/objetivo: el .iron se vuelve a leer");
+                bool envOk = false, ffdOk = false, tgtOk = false;
+                for (const auto& c : eb.children()) {
+                    if (c->env.present && c->env.kind == 1 && std::fabs(c->env.top.g - 0.2f) < 1e-5f && std::fabs(c->env.bottom.b - 0.9f) < 1e-5f) envOk = true;
+                    if (c->deform.present && c->deform.kind == 11 && std::fabs(c->deform.ffd[5].y + 0.5f) < 1e-5f && std::fabs(c->deform.ffd[5].z - 0.125f) < 1e-5f) ffdOk = true;
+                    if (c->primitive == PrimitiveType::Light && c->light.target == "Fondo") tgtOk = true;
+                }
+                check(envOk, "ENV: Fondo/Cielo guardado y leido");
+                check(ffdOk, "DEF: FFD guarda las 8 esquinas");
+                check(tgtOk, "LIGHT: objetivo guardado y leido");
             }
 
             SceneNode root("r");

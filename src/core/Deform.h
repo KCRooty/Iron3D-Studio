@@ -17,7 +17,14 @@ namespace iron3d {
 // `axis` (0 X, 1 Y, 2 Z del nodo) es el eje a lo largo del cual actua. `amount` va en grados
 // (Doblar, Enroscar) o en porcentaje (Afilar, Hinchar, Sesgar). `toParent` lleva los puntos del hijo
 // al espacio del nodo deformador.
-MeshData deformMeshData(const MeshData& src, int kind, int axis, float amount, const glm::mat4& toParent);
+// Datos extra de algunos tipos: Morph (malla destino y su matriz) y FFD (8 esquinas).
+struct DeformExtra {
+    const MeshData* second = nullptr;
+    glm::mat4 secondMatrix{1.0f};
+    const glm::vec3* ffd = nullptr;  // 8 desplazamientos, fraccion del tamano de la caja
+};
+MeshData deformMeshData(const MeshData& src, int kind, int axis, float amount, const glm::mat4& toParent,
+                        const DeformExtra* extra = nullptr);
 
 // Subdivision Catmull-Clark: cada poligono de n lados pasa a n cuadrilateros y la malla se suaviza
 // (los bordes abiertos se quedan como curva, no se encogen). Normales suaves; conserva color y UV de los puntos.

@@ -1211,6 +1211,16 @@ Instancia: selecciona primero el objeto del que quieres una instancia.	Istanza: 
   Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  Catmull-Clark sul primo figlio con mesh; il figlio è la gabbia.
   Comparte la malla del objeto de origen.	  Condivide la mesh dell'oggetto di origine.
   No se encuentra el objeto de origen (ruta por nombres).	  Oggetto di origine non trovato (percorso per nomi).
+Distancia Focal	Lunghezza focale
+Tamaño del Sensor	Dimensione del sensore
+Campo de Visión	Campo visivo
+Esquina	Angolo
+Color Superior	Colore superiore
+Color Inferior	Colore inferiore
+  Ruta por nombres del objeto al que mira (vacío = sin objetivo).	  Percorso per nomi dell'oggetto che guarda (vuoto = nessun bersaglio).
+  Rejilla 2x2x2 sobre la caja del primer hijo; cada esquina se desplaza una fracción del tamaño.	  Reticolo 2x2x2 sulla scatola del primo figlio; ogni angolo si sposta di una frazione della dimensione.
+  Mezcla el primer hijo con el segundo (mismo número de puntos).	  Fonde il primo figlio con il secondo (stesso numero di punti).
+  Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo).	  È lo sfondo del render nel Visualizzatore di immagini (sfumatura dall'alto verso il basso).
 Polígono Vacío	Poligono Vuoto
 Guía	Guide
 Cápsula	Capsula

@@ -1,4 +1,5 @@
 #include "Deform.h"
+#include "MeshEdit.h"
 #include "MeshTopology.h"
 #include "Symmetry.h"
 
@@ -125,7 +126,8 @@ std::string nodePathFromRoot(const SceneNode& root, const SceneNode& node) {
     return path;
 }
 
-MeshData deformMeshData(const MeshData& src, int kind, int axis, float amount, const glm::mat4& toParent) {
+MeshData deformMeshData(const MeshData& src, int kind, int axis, float amount, const glm::mat4& toParent,
+                        const DeformExtra* extra) {
     const int a = std::clamp(axis, 0, 2), b = (a + 1) % 3, c = (a + 2) % 3;
     MeshData out;
     out.vertices = src.vertices;
@@ -142,6 +144,66 @@ MeshData deformMeshData(const MeshData& src, int kind, int axis, float amount, c
     }
     if (out.vertices.empty()) return out;
     if (kind == 8) return subdivideCatmullClark(out, (int)std::lround(amount));
+    if (kind == 12) {  // Bisel: todas las aristas; 100 % = la mitad de la arista mas corta
+        const MeshTopology t = buildMeshTopology(out);
+        float minEdge = 1e30f;
+        for (const auto& e : t.edges) minEdge = std::min(minEdge, glm::length(t.points[(size_t)e.first] - t.points[(size_t)e.second]));
+        if (minEdge > 1e29f || amount <= 0.0f) return out;
+        return chamferMesh(out, std::clamp(amount / 100.0f, 0.0f, 1.0f) * 0.5f * minEdge);
+    }
+    if (kind == 9) {  // Explosion: cada poligono se aleja por su normal (100 % = medio tamano del objeto)
+        const MeshTopology t = buildMeshTopology(out);
+        glm::vec3 mn(1e30f), mx(-1e30f);
+        for (const Vertex& v : out.vertices) { mn = glm::min(mn, v.position); mx = glm::max(mx, v.position); }
+        const float shift = amount / 100.0f * 0.5f * glm::length(mx - mn);
+        MeshData r;
+        r.faceTris = out.faceTris;
+        for (size_t tri = 0; tri * 3 + 2 < out.indices.size(); ++tri) {
+            const int poly = tri < t.triPoly.size() ? t.triPoly[tri] : -1;
+            const glm::vec3 off = poly >= 0 ? t.polyNormals[(size_t)poly] * shift : glm::vec3(0.0f);
+            for (size_t k = 0; k < 3; ++k) {
+                Vertex v = out.vertices[out.indices[tri * 3 + k]];
+                v.position += off;
+                r.indices.push_back((uint32_t)r.vertices.size());
+                r.vertices.push_back(v);
+            }
+        }
+        updateBounds(r);
+        return r;
+    }
+    if (kind == 10) {  // Morph: mezcla con la malla del segundo hijo (mismo numero de vertices)
+        if (extra && extra->second && extra->second->vertices.size() == out.vertices.size()) {
+            const float k = std::clamp(amount / 100.0f, 0.0f, 1.0f);
+            const glm::mat3 m2 = glm::mat3(extra->secondMatrix);
+            for (size_t i = 0; i < out.vertices.size(); ++i) {
+                Vertex& v = out.vertices[i];
+                const Vertex& w = extra->second->vertices[i];
+                v.position = glm::mix(v.position, glm::vec3(extra->secondMatrix * glm::vec4(w.position, 1.0f)), k);
+                const glm::vec3 n = glm::mix(v.normal, m2 * w.normal, k);
+                if (glm::length(n) > 1e-12f) v.normal = glm::normalize(n);
+            }
+        }
+        updateBounds(out);
+        return out;
+    }
+    if (kind == 11) {  // FFD: rejilla 2x2x2 sobre la caja del objeto, interpolacion trilineal
+        if (extra && extra->ffd) {
+            glm::vec3 mn(1e30f), mx(-1e30f);
+            for (const Vertex& v : out.vertices) { mn = glm::min(mn, v.position); mx = glm::max(mx, v.position); }
+            const glm::vec3 size = glm::max(mx - mn, glm::vec3(1e-6f));
+            for (Vertex& v : out.vertices) {
+                const glm::vec3 u = (v.position - mn) / size;
+                glm::vec3 off(0.0f);
+                for (int i = 0; i < 8; ++i) {
+                    const float wx = (i & 1) ? u.x : 1.0f - u.x, wy = (i & 2) ? u.y : 1.0f - u.y, wz = (i & 4) ? u.z : 1.0f - u.z;
+                    off += extra->ffd[i] * (wx * wy * wz);
+                }
+                v.position += off * size;
+            }
+        }
+        updateBounds(out);
+        return out;
+    }
     glm::vec3 ctr(0.0f);
     float rad = 0.0f;
     if (kind == 6) {  // Esferizar: centro y radio medio de la malla
@@ -240,16 +302,39 @@ SceneNode* firstMeshChild(SceneNode& node) {
     return nullptr;
 }
 
+SceneNode* secondMeshChild(SceneNode& node, const SceneNode* first) {
+    for (const auto& c : node.children())
+        if (c.get() != first && c->mesh && !c->symmetry.present && !c->deform.present) return c.get();
+    return nullptr;
+}
+
+bool sameFfd(const glm::vec3* a, const glm::vec3* b) {
+    for (int i = 0; i < 8; ++i)
+        if (a[i] != b[i]) return false;
+    return true;
+}
+
 void walk(SceneNode& node, int& count) {
     if (node.deform.present) {
         DeformData& d = node.deform;
         bakeParametricChildren(node);
         if (SceneNode* child = firstMeshChild(node)) {
             const glm::mat4 cm = child->localMatrix();
+            SceneNode* child2 = d.kind == 10 ? secondMeshChild(node, child) : nullptr;
+            const glm::mat4 cm2 = child2 ? child2->localMatrix() : glm::mat4(1.0f);
+            const std::shared_ptr<const MeshData> mesh2 = child2 ? child2->mesh : nullptr;
             const bool same = d.lastSource == child->mesh && d.lastChildMatrix == cm && d.lastKind == d.kind &&
-                              d.lastAxis == d.axis && d.lastAmount == d.amount && node.mesh == d.output;
+                              d.lastAxis == d.axis && d.lastAmount == d.amount && node.mesh == d.output &&
+                              d.lastSource2 == mesh2 && d.lastChildMatrix2 == cm2 && sameFfd(d.lastFfd, d.ffd);
             if (!same) {
-                auto m = std::make_shared<const MeshData>(deformMeshData(*child->mesh, d.kind, d.axis, d.amount, cm));
+                DeformExtra ex;
+                ex.second = mesh2.get();
+                ex.secondMatrix = cm2;
+                ex.ffd = d.ffd;
+                auto m = std::make_shared<const MeshData>(deformMeshData(*child->mesh, d.kind, d.axis, d.amount, cm, &ex));
+                d.lastSource2 = mesh2;
+                d.lastChildMatrix2 = cm2;
+                for (int i = 0; i < 8; ++i) d.lastFfd[i] = d.ffd[i];
                 node.mesh = m;
                 node.primitive = PrimitiveType::Mesh;
                 node.materialIndex = child->materialIndex;
@@ -320,6 +405,33 @@ void walkInstances(SceneNode& root, SceneNode& node) {
 }
 } // namespace
 
-void evaluateInstances(SceneNode& root) { walkInstances(root, root); }
+namespace {
+// Orienta el nodo (mira por -Z local, como SceneLighting) hacia el objeto `target`.
+void aimAt(SceneNode& root, SceneNode& node, const std::string& target) {
+    SceneNode* t = resolveNodePath(root, target);
+    if (!t || t == &node) return;
+    const glm::vec3 from = glm::vec3(node.worldMatrix()[3]), to = glm::vec3(t->worldMatrix()[3]);
+    const glm::vec3 dirWorld = to - from;
+    if (glm::length(dirWorld) < 1e-6f) return;
+    const glm::mat3 pw = glm::mat3(node.parentWorldMatrix());
+    if (std::fabs(glm::determinant(pw)) < 1e-12f) return;
+    const glm::vec3 z = -glm::normalize(glm::inverse(pw) * dirWorld);  // el motor mira por -Z
+    const glm::vec3 upRef = std::fabs(z.y) > 0.999f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+    const glm::vec3 x = glm::normalize(glm::cross(upRef, z));
+    const glm::vec3 y = glm::cross(z, x);
+    node.rotationDeg = mat3ToHpb(glm::mat3(x, y, z));
+}
+
+void walkTargets(SceneNode& root, SceneNode& node) {
+    if (node.primitive == PrimitiveType::Camera && !node.camera.target.empty()) aimAt(root, node, node.camera.target);
+    if (node.primitive == PrimitiveType::Light && !node.light.target.empty()) aimAt(root, node, node.light.target);
+    for (const auto& c : node.children()) walkTargets(root, *c);
+}
+} // namespace
+
+void evaluateInstances(SceneNode& root) {
+    walkInstances(root, root);
+    walkTargets(root, root);
+}
 
 } // namespace iron3d

@@ -1206,6 +1206,16 @@ Instancia: selecciona primero el objeto del que quieres una instancia.	Instance:
   Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  Catmull-Clark on the first child with a mesh; the child is the cage.
   Comparte la malla del objeto de origen.	  Shares the mesh of the source object.
   No se encuentra el objeto de origen (ruta por nombres).	  Source object not found (path by names).
+Distancia Focal	Focal Length
+Tamaño del Sensor	Sensor Size
+Campo de Visión	Field of View
+Esquina	Corner
+Color Superior	Top Color
+Color Inferior	Bottom Color
+  Ruta por nombres del objeto al que mira (vacío = sin objetivo).	  Name path of the object it looks at (empty = no target).
+  Rejilla 2x2x2 sobre la caja del primer hijo; cada esquina se desplaza una fracción del tamaño.	  2x2x2 lattice over the box of the first child; each corner moves a fraction of the size.
+  Mezcla el primer hijo con el segundo (mismo número de puntos).	  Blends the first child with the second (same point count).
+  Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo).	  This is the render background in the Picture Viewer (gradient from top to bottom).
 Polígono Vacío	Empty Polygon
 Guía	Guide
 Cápsula	Capsule

@@ -381,6 +381,7 @@ Cicloide	Cykloida
 Superficie	Povrch
 Cielo	Obloha
 Vista 3D	3D pohled
+FFD	VPD
 Polígono Vacío	Prázdný polygon
 Guía	Vodítko
 Cápsula	Kapsle
@@ -417,7 +418,6 @@ Instancia	Instance
 Fractura	Fraktura
 Trazador	Vykreslení
 MoExtrude	Vytažení
-FFD	VPD
 Aplastar y Estirar	ZmáčknoutNatáhnout
 Explosión	Exploze
 FX Explosión	Exploze FX

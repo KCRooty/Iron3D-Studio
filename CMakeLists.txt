@@ -224,6 +224,7 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         src/core/Skin.cpp
         src/core/Symmetry.cpp
         src/core/Deform.cpp
+        src/core/MeshEdit.cpp
         src/core/Clone.cpp
         src/importers/cineware/CinewareExporter.cpp
         src/importers/c4d_compat/C4DGeometry.cpp

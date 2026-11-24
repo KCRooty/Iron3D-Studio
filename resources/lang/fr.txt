@@ -1244,6 +1244,16 @@ Instancia: selecciona primero el objeto del que quieres una instancia.	Instance 
   Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  Catmull-Clark sur le premier enfant avec un maillage ; l'enfant est la cage.
   Comparte la malla del objeto de origen.	  Partage le maillage de l'objet d'origine.
   No se encuentra el objeto de origen (ruta por nombres).	  Objet d'origine introuvable (chemin par noms).
+Distancia Focal	Distance focale
+Tamaño del Sensor	Taille du capteur
+Campo de Visión	Champ de vision
+Esquina	Coin
+Color Superior	Couleur du haut
+Color Inferior	Couleur du bas
+  Ruta por nombres del objeto al que mira (vacío = sin objetivo).	  Chemin par noms de l'objet visé (vide = sans cible).
+  Rejilla 2x2x2 sobre la caja del primer hijo; cada esquina se desplaza una fracción del tamaño.	  Grille 2x2x2 sur la boîte du premier enfant ; chaque coin se déplace d'une fraction de la taille.
+  Mezcla el primer hijo con el segundo (mismo número de puntos).	  Mélange le premier enfant avec le second (même nombre de points).
+  Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo).	  C'est l'arrière-plan du rendu dans la visionneuse d'images (dégradé de haut en bas).
 Polígono Vacío	Polygone vide
 Guía	Guide
 Cápsula	Capsule
@@ -1280,7 +1290,6 @@ Reducción de Polígonos	Réduction de polygones
 Instancia	Instance
 Fractura	Fracture
 Trazador	Traceur
-FFD	Déformation libre
 Aplastar y Estirar	Écraser  Étirer
 Explosión	Explosion
 FX Explosión	Explosion FX

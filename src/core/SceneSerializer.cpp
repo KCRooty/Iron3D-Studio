@@ -122,7 +122,7 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             << " shadow=" << l.shadow << " falloff=" << l.falloff << " radius=" << l.falloffRadius
             << " iradius=" << l.innerRadius << " shape=" << l.areaShape << " ax=" << l.areaSize.x
             << " ay=" << l.areaSize.y << " az=" << l.areaSize.z << " noillum=" << (int)l.noIllumination
-            << " diff=" << (int)l.diffuse << " spec=" << (int)l.specular << "\n";
+            << " diff=" << (int)l.diffuse << " spec=" << (int)l.specular << " target=" << quoted(l.target) << "\n";
     }
     if (node.primitive == PrimitiveType::Camera) {
         const CameraData& c = node.camera;
@@ -152,8 +152,18 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             << " rpy=" << c.randPosCm.y << " rpz=" << c.randPosCm.z << " rrot=" << c.randRotDeg << " rscale=" << c.randScalePct
             << " seed=" << c.seed << "\n";
     }
-    if (node.deform.present)
-        out << indent << "  DEF kind=" << node.deform.kind << " axis=" << node.deform.axis << " amount=" << node.deform.amount << "\n";
+    if (node.deform.present) {
+        out << indent << "  DEF kind=" << node.deform.kind << " axis=" << node.deform.axis << " amount=" << node.deform.amount;
+        if (node.deform.kind == 11) {
+            std::ostringstream f;
+            for (int i = 0; i < 8; ++i) f << (i ? " " : "") << node.deform.ffd[i].x << " " << node.deform.ffd[i].y << " " << node.deform.ffd[i].z;
+            out << " ffd=" << quoted(f.str());
+        }
+        out << "\n";
+    }
+    if (node.env.present)
+        out << indent << "  ENV kind=" << node.env.kind << " tr=" << node.env.top.r << " tg=" << node.env.top.g << " tb=" << node.env.top.b
+            << " br=" << node.env.bottom.r << " bg=" << node.env.bottom.g << " bb=" << node.env.bottom.b << "\n";
     if (node.instance.present)
         out << indent << "  INST src=" << quoted(node.instance.source) << "\n";
     if (node.hasHidden()) {
@@ -427,7 +437,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
     while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG" ||
                             p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "IK" || p.peek() == "NULLSHAPE" ||
-                            p.peek() == "SYM" || p.peek() == "DEF" || p.peek() == "INST" || p.peek() == "CLN" || p.peek() == "HIDDEN")) {
+                            p.peek() == "SYM" || p.peek() == "DEF" || p.peek() == "INST" || p.peek() == "ENV" || p.peek() == "CLN" || p.peek() == "HIDDEN")) {
         const std::string kind = p.next();
         bool ok = true;
         if (kind == "LIGHT") {
@@ -451,6 +461,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
                 else if (k == "ax") l.areaSize.x = std::stof(v);
                 else if (k == "ay") l.areaSize.y = std::stof(v);
                 else if (k == "az") l.areaSize.z = std::stof(v);
+                else if (k == "target") l.target = unquote(v);
             });
         } else if (kind == "CAMERA") {
             CameraData& c = node.camera;
@@ -530,9 +541,24 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
         } else if (kind == "DEF") {
             node.deform.present = true;
             ok = readAttrs(p, "DEF", err, [&](const std::string& k, const std::string& v) {
-                if (k == "kind") node.deform.kind = std::clamp(std::stoi(v), 0, 8);
+                if (k == "kind") node.deform.kind = std::clamp(std::stoi(v), 0, 12);
                 else if (k == "axis") node.deform.axis = std::clamp(std::stoi(v), 0, 2);
                 else if (k == "amount") node.deform.amount = std::stof(v);
+                else if (k == "ffd") {
+                    std::istringstream f(unquote(v));
+                    for (int i = 0; i < 8; ++i) f >> node.deform.ffd[i].x >> node.deform.ffd[i].y >> node.deform.ffd[i].z;
+                }
+            });
+        } else if (kind == "ENV") {
+            node.env.present = true;
+            ok = readAttrs(p, "ENV", err, [&](const std::string& k, const std::string& v) {
+                if (k == "kind") node.env.kind = std::clamp(std::stoi(v), 0, 1);
+                else if (k == "tr") node.env.top.r = std::stof(v);
+                else if (k == "tg") node.env.top.g = std::stof(v);
+                else if (k == "tb") node.env.top.b = std::stof(v);
+                else if (k == "br") node.env.bottom.r = std::stof(v);
+                else if (k == "bg") node.env.bottom.g = std::stof(v);
+                else if (k == "bb") node.env.bottom.b = std::stof(v);
             });
         } else if (kind == "INST") {
             node.instance.present = true;
@@ -836,7 +862,9 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.deform.kind = temp.deform.kind;
     root.deform.axis = temp.deform.axis;
     root.deform.amount = temp.deform.amount;
+    for (int i = 0; i < 8; ++i) root.deform.ffd[i] = temp.deform.ffd[i];
     root.instance = temp.instance;
+    root.env = temp.env;
     {
         const CloneData& s = temp.clone;
         CloneData& d = root.clone;

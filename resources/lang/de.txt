@@ -1238,6 +1238,16 @@ Instancia: selecciona primero el objeto del que quieres una instancia.	Instanz: 
   Catmull-Clark sobre el primer hijo con malla; el hijo es la jaula.	  Catmull-Clark auf das erste Kind mit Netz; das Kind ist der Käfig.
   Comparte la malla del objeto de origen.	  Teilt das Netz des Quellobjekts.
   No se encuentra el objeto de origen (ruta por nombres).	  Quellobjekt nicht gefunden (Pfad über Namen).
+Distancia Focal	Brennweite
+Tamaño del Sensor	Sensorgröße
+Campo de Visión	Sichtfeld
+Esquina	Ecke
+Color Superior	Obere Farbe
+Color Inferior	Untere Farbe
+  Ruta por nombres del objeto al que mira (vacío = sin objetivo).	  Namenspfad des Objekts, auf das es zeigt (leer = kein Ziel).
+  Rejilla 2x2x2 sobre la caja del primer hijo; cada esquina se desplaza una fracción del tamaño.	  2x2x2-Gitter über der Box des ersten Kindes; jede Ecke wird um einen Bruchteil der Größe verschoben.
+  Mezcla el primer hijo con el segundo (mismo número de puntos).	  Mischt das erste Kind mit dem zweiten (gleiche Punktanzahl).
+  Es el fondo del render en el Visor de Imágenes (degradado de arriba abajo).	  Das ist der Render-Hintergrund im Bildbetrachter (Verlauf von oben nach unten).
 Polígono Vacío	Leeres Polygon
 Guía	Hilfslinie
 Cápsula	Kapsel

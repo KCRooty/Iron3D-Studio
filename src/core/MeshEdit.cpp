@@ -175,6 +175,78 @@ MeshEditResult bevelPolygons(const MeshData& mesh, const MeshTopology& topo, con
     return finish(std::move(verts), faces, changed);
 }
 
+MeshData chamferMesh(const MeshData& mesh, float inset) {
+    const MeshTopology topo = buildMeshTopology(mesh);
+    const size_t np = topo.polys.size();
+    MeshData empty;
+    if (np == 0) return mesh;
+    const glm::vec3 col = mesh.vertices.empty() ? glm::vec3(1.0f) : mesh.vertices.front().color;
+    std::vector<std::vector<glm::vec3>> sp(np);
+    std::vector<Vertex> verts;
+    std::vector<Face> faces;
+    inset = std::max(0.0f, inset);
+    for (size_t p = 0; p < np; ++p) {
+        const glm::vec3 c = polyCenter(topo, (int)p);
+        for (int q : topo.polys[p]) {
+            const glm::vec3 P = topo.points[(size_t)q];
+            const glm::vec3 d = c - P;
+            const float len = glm::length(d);
+            const float s = len > 1e-9f ? std::min(inset, 0.95f * len) / len : 0.0f;
+            sp[p].push_back(P + d * s);
+        }
+        faces.push_back(flatFace(verts, sp[p], col, topo.polyNormals[p]));
+    }
+    // aristas -> (poligono, posicion del primer punto en su contorno)
+    std::map<std::pair<int, int>, std::vector<std::pair<int, int>>> edgePolys;
+    std::map<int, std::vector<std::pair<int, int>>> pointPolys;
+    for (size_t p = 0; p < np; ++p) {
+        const auto& pl = topo.polys[p];
+        for (size_t k = 0; k < pl.size(); ++k) {
+            const int a = pl[k], b = pl[(k + 1) % pl.size()];
+            edgePolys[{std::min(a, b), std::max(a, b)}].push_back({(int)p, (int)k});
+            pointPolys[a].push_back({(int)p, (int)k});
+        }
+    }
+    for (const auto& [key, list] : edgePolys) {
+        if (list.size() != 2) continue;
+        const int p = list[0].first, ip = list[0].second, q = list[1].first;
+        const auto& pl = topo.polys[(size_t)p];
+        const auto& ql = topo.polys[(size_t)q];
+        const int a = pl[(size_t)ip], b = pl[(size_t)(ip + 1) % pl.size()];
+        const auto ia = std::find(ql.begin(), ql.end(), a) - ql.begin();
+        const auto ib = std::find(ql.begin(), ql.end(), b) - ql.begin();
+        const glm::vec3 pa = sp[(size_t)p][(size_t)ip], pb = sp[(size_t)p][(size_t)(ip + 1) % pl.size()];
+        const glm::vec3 qa = sp[(size_t)q][(size_t)ia], qb = sp[(size_t)q][(size_t)ib];
+        faces.push_back(flatFace(verts, {pb, pa, qa, qb}, col, topo.polyNormals[(size_t)p]));
+    }
+    for (const auto& [pt, list] : pointPolys) {
+        std::vector<glm::vec3> ring;
+        glm::vec3 navg(0.0f);
+        int cur = list[0].first, idx = list[0].second;
+        const int start = cur;
+        bool ok = true;
+        for (size_t guard = 0; guard <= list.size() + 1; ++guard) {
+            const auto& pl = topo.polys[(size_t)cur];
+            ring.push_back(sp[(size_t)cur][(size_t)idx]);
+            navg += topo.polyNormals[(size_t)cur];
+            const int nxt = pl[(size_t)(idx + 1) % pl.size()];
+            const auto it = edgePolys.find({std::min(pt, nxt), std::max(pt, nxt)});
+            if (it == edgePolys.end() || it->second.size() != 2) { ok = false; break; }
+            const int other = it->second[0].first == cur ? it->second[1].first : it->second[0].first;
+            const auto& ol = topo.polys[(size_t)other];
+            const auto at = std::find(ol.begin(), ol.end(), pt);
+            if (at == ol.end()) { ok = false; break; }
+            cur = other;
+            idx = (int)(at - ol.begin());
+            if (cur == start) break;
+        }
+        if (!ok || cur != start || ring.size() != list.size() || ring.size() < 3) continue;
+        if (glm::dot(newellNormal(ring), navg) < 0.0f) std::reverse(ring.begin(), ring.end());
+        faces.push_back(flatFace(verts, ring, col, glm::normalize(navg)));
+    }
+    return finish(std::move(verts), faces, 0).mesh;
+}
+
 MeshEditResult knifeCut(const MeshData& mesh, const MeshTopology& topo, const glm::vec3& planePoint,
                         const glm::vec3& planeNormal, const std::vector<char>& allowed,
                         const std::function<bool(const glm::vec3&)>& inRange) {
