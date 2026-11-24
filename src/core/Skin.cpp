@@ -13,10 +13,7 @@ SceneNode* byPath(SceneNode& any, const std::string& path) {
     while (cur && a <= path.size()) {
         const size_t b = path.find('/', a);
         const std::string part = path.substr(a, b == std::string::npos ? std::string::npos : b - a);
-        SceneNode* next = nullptr;
-        for (const auto& c : cur->children())
-            if (c->name() == part) { next = c.get(); break; }
-        cur = next;
+        cur = childByPathSegment(*cur, part);
         if (b == std::string::npos) break;
         a = b + 1;
     }

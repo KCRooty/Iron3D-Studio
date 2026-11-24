@@ -4,6 +4,7 @@
 //
 //   c4d_probe.exe archivo.c4d [--save salida.iron]
 
+#include "core/IkSolver.h"
 #include "core/MeshTopology.h"
 #include "core/Paths.h"
 #include "core/SceneSerializer.h"
@@ -13,6 +14,7 @@
 #include "importers/lib4d/PresetTextures.h"
 
 #include <fstream>
+#include <functional>
 #include <map>
 
 #include <cstdio>
@@ -23,6 +25,24 @@
 #endif
 
 using namespace iron3d;
+
+// IRON3D_IK_TEST=1: por cada etiqueta IK, la cadena y la distancia punta->objetivo antes/despues de resolver.
+static void ikReport(SceneNode& n, bool after) {
+    if (n.ik.present) {
+        SceneNode* tip = findNodeByPath(n, n.ik.tip);
+        SceneNode* goal = findNodeByPath(n, n.ik.target);
+        std::printf("[ik %s] '%s' on=%d tip=%s goal=%s", after ? "despues" : "antes", n.name().c_str(), (int)n.ik.enabled,
+                    tip ? "ok" : "NO", goal ? "ok" : "NO");
+        if (tip && goal) {
+            const auto chain = chainBetween(n, *tip);
+            const glm::vec3 a(tip->worldMatrix()[3]), b(goal->worldMatrix()[3]);
+            float bone = chain.size() >= 2 ? glm::length(glm::vec3(chain[1]->worldMatrix()[3]) - glm::vec3(chain[0]->worldMatrix()[3])) : 0.f;
+            std::printf(" cadena=%zu hueso0=%.4f dist=%.4f", chain.size(), bone, glm::length(a - b));
+        }
+        std::printf("\n");
+    }
+    for (const auto& c : n.children()) ikReport(*c, after);
+}
 
 static void print(const SceneNode& n, const std::vector<Material>& mats, int depth) {
     std::printf("%*s- %s [%s]", depth * 2, "", n.name().c_str(), primitiveTypeName(n.primitive));
@@ -204,6 +224,23 @@ int wmain(int argc, wchar_t** argv) {
     if (!importC4D(std::filesystem::path(argv[1]), root, mats, rep, &err)) {
         std::printf("ERROR: %s\n", err.c_str());
         return 1;
+    }
+    if (std::getenv("IRON3D_IK_TEST")) {
+        ikReport(root, false);
+        const int ok = solveAllIk(root);
+        std::printf("solveAllIk resueltas=%d\n", ok);
+        ikReport(root, true);
+        // Mover cada controlador y comprobar que la punta lo sigue.
+        std::function<void(SceneNode&)> move = [&](SceneNode& n) {
+            if (n.ik.present)
+                if (SceneNode* goal = findNodeByPath(n, n.ik.target)) goal->position.x += 0.02f;
+            for (const auto& c : n.children()) move(*c);
+        };
+        move(root);
+        const int ok2 = solveAllIk(root);
+        std::printf("tras mover los controladores: resueltas=%d\n", ok2);
+        ikReport(root, true);
+        return 0;
     }
     print(root, mats, 0);
     std::printf("\n%s: %d objetos, %d con malla, %d materiales, %d luces, %lld puntos, %lld poligonos\n",

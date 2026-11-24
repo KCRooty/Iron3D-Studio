@@ -122,7 +122,10 @@ MeshData subdivideCatmullClark(const MeshData& src, int levels) {
 
 std::string nodePathFromRoot(const SceneNode& root, const SceneNode& node) {
     std::string path;
-    for (const SceneNode* n = &node; n && n != &root; n = n->parent()) path = path.empty() ? n->name() : n->name() + "/" + path;
+    for (const SceneNode* n = &node; n && n != &root; n = n->parent()) {
+        const std::string seg = pathSegmentOf(*n);
+        path = path.empty() ? seg : seg + "/" + path;
+    }
     return path;
 }
 
@@ -370,9 +373,7 @@ SceneNode* resolveNodePath(SceneNode& root, const std::string& path) {
     std::stringstream ss(path);
     std::string part;
     while (std::getline(ss, part, '/')) {
-        SceneNode* next = nullptr;
-        for (const auto& c : cur->children())
-            if (c->name() == part) { next = c.get(); break; }
+        SceneNode* next = childByPathSegment(*cur, part);
         if (!next) return nullptr;
         cur = next;
     }

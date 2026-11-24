@@ -17,7 +17,11 @@
 namespace iron3d {
 
 // Ruta por nombres desde la raiz de la escena ("Grupo/Cubo") -> nodo (nullptr si no existe).
+// Con hermanos del mismo nombre (muy comun en rigs de C4D) el 2.o, 3.o... llevan el sufijo "~#2", "~#3":
+// "Brazo/Hueso~#2" es el segundo hijo de "Brazo" llamado "Hueso".
 SceneNode* findNodeByPath(SceneNode& anyNode, const std::string& path);
+
+// (childByPathSegment / pathSegmentOf / pathSegmentFor, en SceneNode.h, son las piezas de estas rutas.)
 
 // Cadena desde `root` hasta `tip` (ambos incluidos), o vacia si `tip` no cuelga de `root`.
 std::vector<SceneNode*> chainBetween(SceneNode& root, SceneNode& tip);

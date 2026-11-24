@@ -6,6 +6,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
+#include <string>
 
 namespace iron3d {
 
@@ -49,12 +51,7 @@ SceneNode* findNodeByPath(SceneNode& anyNode, const std::string& path) {
     while (cur && a <= path.size()) {
         const size_t b = path.find('/', a);
         const std::string part = path.substr(a, b == std::string::npos ? std::string::npos : b - a);
-        SceneNode* next = nullptr;
-        for (const auto& c : cur->children())
-            if (c->name() == part) {
-                next = c.get();
-                break;
-            }
+        SceneNode* next = childByPathSegment(*cur, part);
         cur = next;
         if (b == std::string::npos) break;
         a = b + 1;

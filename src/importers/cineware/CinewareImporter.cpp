@@ -911,8 +911,16 @@ CameraData cameraFrom(BaseObject* op) {
 
 // Ruta por nombres desde la raiz del documento ("Grupo/Cubo").
 std::string namePath(BaseObject* op) {
+    // Con hermanos del mismo nombre, el 2.o, 3.o... llevan "~#N" (ver pathSegmentFor en SceneNode.h).
     std::string path;
-    for (BaseObject* o = op; o; o = o->GetUp()) path = utf8(o->GetName()) + (path.empty() ? "" : "/" + path);
+    for (BaseObject* o = op; o; o = o->GetUp()) {
+        const std::string name = utf8(o->GetName());
+        int occurrence = 1;
+        for (BaseObject* p = o->GetPred(); p; p = p->GetPred())
+            if (utf8(p->GetName()) == name) ++occurrence;
+        const std::string seg = iron3d::pathSegmentFor(name, occurrence);
+        path = seg + (path.empty() ? "" : "/" + path);
+    }
     return path;
 }
 
@@ -1389,8 +1397,16 @@ bool importC4D(const std::filesystem::path& file, SceneNode& parent, std::vector
         else if (t.kind == 2) t.camera->ik.target = path;
         else t.camera->ik.pole = path;
     }
-    if (ctx.ikTags)
-        ctx.warn("Etiquetas IK: se conservan (cadena, objetivo, polo) pero Iron3D todavía no resuelve la IK");
+    if (std::getenv("IRON3D_DUMP_TAGS"))
+        for (const PendingTarget& t : targets)
+            if (t.kind != 0)
+            {
+                std::string own;
+                for (const SceneNode* s = t.camera; s && s->parent(); s = s->parent()) own = s->name() + (own.empty() ? "" : "/" + own);
+                std::fprintf(stderr, "[ik] nodo='%s' %s='%s' mismo=%d\n", own.c_str(),
+                             t.kind == 1 ? "tip" : t.kind == 2 ? "target" : "pole", namePath(t.target).c_str(),
+                             (int)(own == namePath(t.target)));
+            }
     BaseDocument::Free(doc);
 
     for (const auto& w : ctx.warnings)

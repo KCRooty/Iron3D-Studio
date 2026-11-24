@@ -1,4 +1,5 @@
-// Prueba del solver IK (core/IkSolver): longitudes de hueso, alcance, polo y etiqueta IK. Sin GPU.
+// Prueba del solver IK (core/IkSolver): longitudes de hueso, alcance, polo, etiqueta IK y rutas con
+// hermanos del mismo nombre. Sin GPU.
 
 #include "core/IkSolver.h"
 
@@ -100,6 +101,37 @@ int main() {
         CHECK(findNodeByPath(root, "J0/J1") == j1);
         CHECK(findNodeByPath(root, "J0/nada") == nullptr);
         CHECK(chainBetween(*j2, *j0).empty());
+    }
+    {
+        // Hermanos con el mismo nombre (rigs de C4D): "~#2" apunta al segundo, y la IK actua sobre el correcto.
+        SceneNode root("raiz");
+        SceneNode* r = root.addChild("Raiz");
+        SceneNode* a = r->addChild("Hueso");
+        SceneNode* b = r->addChild("Hueso");
+        SceneNode* c = r->addChild("Hueso");
+        SceneNode* aTip = a->addChild("Punta");
+        SceneNode* bTip = b->addChild("Punta");
+        aTip->position = bTip->position = glm::vec3(0, 10, 0);
+        a->isJoint = b->isJoint = true;
+        CHECK(pathSegmentOf(*a) == "Hueso");
+        CHECK(pathSegmentOf(*b) == "Hueso~#2");
+        CHECK(pathSegmentOf(*c) == "Hueso~#3");
+        CHECK(findNodeByPath(root, "Raiz/Hueso") == a);
+        CHECK(findNodeByPath(root, "Raiz/Hueso~#2") == b);
+        CHECK(findNodeByPath(root, "Raiz/Hueso~#3") == c);
+        CHECK(findNodeByPath(root, "Raiz/Hueso~#4") == nullptr);
+        CHECK(findNodeByPath(root, "Raiz/Hueso~#2/Punta") == bTip);
+        SceneNode* goal = root.addChild("Control");
+        goal->position = glm::vec3(10, 0, 0);
+        b->ik.present = true;
+        b->ik.tip = "Raiz/Hueso~#2/Punta";
+        b->ik.target = "Control";
+        CHECK(solveAllIk(root) == 1);
+        CHECK(near(wp(*bTip), wp(*goal)));
+        CHECK(near(wp(*aTip), glm::vec3(0, 10, 0))); // el primero no se toca
+        // Un nombre que de verdad acaba en "~#2" sigue encontrandose por su nombre exacto.
+        SceneNode* raro = root.addChild("Raro~#2");
+        CHECK(findNodeByPath(root, "Raro~#2") == raro);
     }
     {
         // Limites de rotacion: H entre -10 y 10 grados, P libre.

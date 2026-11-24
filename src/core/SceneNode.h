@@ -370,4 +370,13 @@ int moveKeys(SceneNode& node, const std::vector<int>& frames, int delta);
 int deleteKeys(SceneNode& node, const std::vector<int>& frames);
 int setKeyInterp(SceneNode& node, const std::vector<int>& frames, KeyInterp interp);
 
+// Rutas por nombres ("Grupo/Hueso~#2"). Con hermanos del mismo nombre (muy comun en rigs de C4D) el 2.o,
+// 3.o... llevan el sufijo "~#2", "~#3", para que la ruta apunte siempre a un unico nodo.
+// Segmento de ruta para el N-esimo (desde 1) hermano llamado `name`.
+std::string pathSegmentFor(const std::string& name, int occurrence);
+// Segmento de ruta de un nodo (su nombre, con "~#N" si es el N-esimo hermano con ese nombre).
+std::string pathSegmentOf(const SceneNode& node);
+// Hijo de `parent` que corresponde a un segmento (con o sin sufijo), o nullptr.
+SceneNode* childByPathSegment(const SceneNode& parent, const std::string& segment);
+
 } // namespace iron3d

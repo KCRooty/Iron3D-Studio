@@ -6,6 +6,19 @@ Las notas largas, en tono de blog, están en [`docs/devlog/`](docs/devlog/).
 
 ## Sin publicar
 
+### 2026-11-24 (47): Rutas de objetos con nombres repetidos (IK, Piel, objetivos)
+
+**Corregido**
+- Las rutas por nombre que usan las etiquetas IK (cadena, objetivo, polo), la Piel (articulaciones), los objetivos de cámara y luz y las instancias apuntaban siempre al **primer** hermano con ese nombre. En rigs de C4D es habitual que varios hermanos se llamen igual, y entonces la cadena IK o la articulación de la Piel quedaban atadas al objeto equivocado y no hacían nada. Ahora el 2.º, 3.º… hermano homónimo se escribe `Nombre~#2`, `Nombre~#3`, y todos los puntos que resuelven rutas (IK, Piel, Deform, exportar a .c4d) usan la misma regla. Los `.iron` antiguos siguen abriéndose (sin sufijo = el primero).
+- El aviso al importar «Iron3D todavía no resuelve la IK» ya no sale: la IK se resuelve desde 2026-11-19.
+
+**Herramientas**
+- `c4d_probe` con `IRON3D_IK_TEST=1` resuelve las etiquetas IK de un .c4d, mueve los controladores y mide si la punta los sigue; `IRON3D_DUMP_TAGS=1` lista tip/objetivo/polo de cada IK.
+
+**Verificado:** con un .c4d real (dos cadenas IK de ojos) la punta sigue al controlador movido (error 0,0005 sobre un hueso de 0,36); pruebas nuevas de nombres repetidos en `ik_test`; todas las pruebas pasan.
+
+**Límites:** no he podido reproducir el fallo exacto del modelo que importó Rooty (no sé cuál era); el arreglo cubre la causa que he encontrado (nombres repetidos). Siguen sin hacerse: IK 2D/3D distinguidas por solver, etiqueta Límite de C4D, Selector Visual y alternar IK/FK.
+
 ### 2026-11-24 (46): Información de versión en el exe y en el instalador
 
 **Añadido**

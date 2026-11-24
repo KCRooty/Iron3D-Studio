@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 
 namespace iron3d {
 
@@ -358,6 +359,37 @@ float CameraData::fovDeg() const {
 
 SceneNode* duplicateSubtree(SceneNode& parent, const SceneNode& src) {
     return cloneInto(parent, src, src.name() + " copia");
+}
+
+std::string pathSegmentFor(const std::string& name, int occurrence) {
+    return occurrence >= 2 ? name + "~#" + std::to_string(occurrence) : name;
+}
+
+std::string pathSegmentOf(const SceneNode& node) {
+    int occurrence = 1;
+    if (const SceneNode* p = node.parent())
+        for (const auto& c : p->children()) {
+            if (c.get() == &node) break;
+            if (c->name() == node.name()) ++occurrence;
+        }
+    return pathSegmentFor(node.name(), occurrence);
+}
+
+SceneNode* childByPathSegment(const SceneNode& parent, const std::string& segment) {
+    // Con sufijo "~#N": el N-esimo hijo con ese nombre.
+    const size_t h = segment.rfind("~#");
+    if (h != std::string::npos && h + 2 < segment.size() &&
+        segment.find_first_not_of("0123456789", h + 2) == std::string::npos) {
+        const std::string base = segment.substr(0, h);
+        const int want = std::atoi(segment.c_str() + h + 2);
+        int seen = 0;
+        for (const auto& c : parent.children())
+            if (c->name() == base && ++seen == want) return c.get();
+    }
+    // Sin sufijo (o un nombre que casualmente lo lleva): el primero con ese nombre exacto.
+    for (const auto& c : parent.children())
+        if (c->name() == segment) return c.get();
+    return nullptr;
 }
 
 } // namespace iron3d
