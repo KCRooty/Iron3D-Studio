@@ -124,7 +124,9 @@ struct UiState {
     std::vector<ImVec2> marqueePts;
     bool showCommander = false;  // Mayus+C
     std::string commanderPreset; // texto inicial (solo --ui-cmd=commander:texto)
-    int renderIn = 0;  // --ui-cmd=render: frames que faltan para renderizar
+    int renderIn = 0;
+    std::string renderSave;  // --ui-cmd=render-save=...
+    int renderSaveIn = 0;  // --ui-cmd=render: frames que faltan para renderizar
     int openVpMenu = 0;          // --ui-cmd=vp-menu: frames que faltan para abrirlo
     char commanderBuf[96] = {};
     int commanderSel = 0;
@@ -8673,6 +8675,30 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     drawCommander(root, selected, gizmoMode, history, materials, camera, viewport);
     drawCurveEditor(selected);
     if (g.renderIn > 0 && --g.renderIn == 0) g.renderRequested = true;  // --ui-cmd=render: espera a que los create= anteriores existan
+    // --ui-cmd=render-save=W,H,yaw,pitch,dist,tx,ty,tz,ruta.png: renderiza con esa camara, guarda el PNG y sale.
+    if (g.renderSaveIn > 0 && --g.renderSaveIn == 0) {
+        int w = 1000, h = 1000;
+        float yaw = 0, pitch = 0, dist = 4, tx = 0, ty = 0, tz = 0;
+        int used = 0;
+        if (std::sscanf(g.renderSave.c_str(), "%d,%d,%f,%f,%f,%f,%f,%f,%n", &w, &h, &yaw, &pitch, &dist, &tx, &ty, &tz, &used) >= 8 && used > 0) {
+            OrbitalCamera::ViewState vs;
+            vs.view = OrbitalCamera::View::Perspective;
+            vs.target = glm::vec3(tx, ty, tz);
+            vs.distance = dist;
+            vs.yaw = glm::radians(yaw);
+            vs.pitch = glm::radians(pitch);
+            camera.restoreView(vs);
+            g.render.width = w;
+            g.render.height = h;
+            g.render.useViewportSize = false;
+            g.render.antialias = 3;
+            renderToPictureViewer(root, materials, camera, viewport);
+            const bool ok = savePng(std::filesystem::path(g.renderSave.substr((size_t)used)), g.pv.image);
+            std::fprintf(stderr, "[Iron3D] render-save %s\n", ok ? "ok" : "ERROR");
+            std::fflush(stderr);
+            std::exit(ok ? 0 : 3);
+        }
+    }
     if (g.renderRequested) {
         g.renderRequested = false;
         renderToPictureViewer(root, materials, camera, viewport);
@@ -8737,6 +8763,7 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "view-bottom") g.cmdQueue.push_back(UiCmd::ViewBottom);
     else if (cmd == "view-quad") g.cmdQueue.push_back(UiCmd::ViewQuad);
     else if (cmd == "render-pv") g.renderRequested = true;
+    else if (cmd.rfind("render-save=", 0) == 0) { g.renderSave = cmd.substr(12); g.renderSaveIn = 25; }
     else if (cmd == "key") g.recordRequested = true;
     else if (cmd == "curves") g.showCurves = true;
     else if (cmd == "keys-del") g.keyReq = UiState::KeyReq::Delete;
