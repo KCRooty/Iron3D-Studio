@@ -124,6 +124,7 @@ struct UiState {
     std::vector<ImVec2> marqueePts;
     bool showCommander = false;  // Mayus+C
     std::string commanderPreset; // texto inicial (solo --ui-cmd=commander:texto)
+    int renderIn = 0;  // --ui-cmd=render: frames que faltan para renderizar
     int openVpMenu = 0;          // --ui-cmd=vp-menu: frames que faltan para abrirlo
     char commanderBuf[96] = {};
     int commanderSel = 0;
@@ -8657,6 +8658,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     drawSavePresetDialog();
     drawCommander(root, selected, gizmoMode, history, materials, camera, viewport);
     drawCurveEditor(selected);
+    if (g.renderIn > 0 && --g.renderIn == 0) g.renderRequested = true;  // --ui-cmd=render: espera a que los create= anteriores existan
     if (g.renderRequested) {
         g.renderRequested = false;
         renderToPictureViewer(root, materials, camera, viewport);
@@ -8787,6 +8789,7 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "world-coords") { if (g_vp) g_vp->worldCoords = true; else g.pendingWorldCoords = true; }
     else if (cmd == "axis-mode") { if (g_vp) g_vp->axisMode = true; else g.pendingAxisMode = true; }
     else if (cmd == "vp-menu") g.openVpMenu = 30;
+    else if (cmd == "render") g.renderIn = 20;  // verificacion: Renderizar Vista Activa sin teclado
     else if (cmd == "close-report") g.showImport = false; // verificacion: el informe de importacion tapa el visor
     else if (cmd.rfind("commander", 0) == 0) {
         g.showCommander = true;
