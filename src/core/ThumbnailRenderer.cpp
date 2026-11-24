@@ -78,6 +78,7 @@ struct Tri {
     glm::vec3 color;
     glm::vec3 emission;
     float metallic, roughness;
+    float opacity = 1.0f;            // 1 - Transparencia del material (solo cuenta con los efectos de estudio)
     const Image* tex = nullptr;      // textura de Color (vive en la cache)
     glm::vec2 texOffset{0.0f}, texLength{1.0f};
     bool texTile = true;
@@ -133,6 +134,7 @@ void collect(const SceneNode& node, const glm::mat4& parentWorld, bool parentVis
                 t.texTile = node.texTag.tile;
                 t.metallic = m.metallic;
                 t.roughness = m.roughness;
+                t.opacity = 1.0f - std::clamp((m.transparency.r + m.transparency.g + m.transparency.b) / 3.0f, 0.0f, 1.0f);
                 out.push_back(t);
             }
         }
@@ -165,7 +167,26 @@ struct Shading {
     glm::vec3 viewDir;    // ortografica: direccion hacia la camara
     bool ortho = false;
     glm::vec3 key, fill;  // luces direccionales (hacia la luz)
+    bool studio = false;  // reflejos de estudio + transparencia (RenderFx)
+    glm::vec3 camRight{1, 0, 0}, camUp{0, 1, 0}, toEye{0, 0, 1};
 };
+
+// Entorno de estudio procedural, en el sistema de la camara (x derecha, y arriba, z hacia el ojo): cielo claro
+// con degradado, suelo oscuro con horizonte casi nitido (la linea que parte la esfera en el logo) y dos cajas de
+// luz suaves, una grande arriba a la izquierda y otra pequena a la derecha.
+glm::vec3 studioEnv(const glm::vec3& r) {
+    const float y = r.y;
+    const glm::vec3 sky = glm::mix(glm::vec3(0.95f, 0.97f, 1.0f), glm::vec3(1.6f, 1.65f, 1.7f), std::clamp(y, 0.0f, 1.0f));
+    const glm::vec3 ground = glm::vec3(0.10f, 0.12f, 0.10f) * (1.0f + 0.8f * std::clamp(-y, 0.0f, 1.0f));
+    const float h = std::clamp((y + 0.02f) / 0.04f, 0.0f, 1.0f);
+    glm::vec3 c = glm::mix(ground, sky, h * h * (3.0f - 2.0f * h));
+    const glm::vec3 k1 = glm::normalize(glm::vec3(-0.6f, 0.68f, 0.45f));
+    const glm::vec3 k2 = glm::normalize(glm::vec3(0.78f, 0.25f, 0.35f));
+    const glm::vec3 d1 = r - k1, d2 = r - k2;
+    c += glm::vec3(9.0f) * std::exp(-glm::dot(d1, d1) / 0.045f);
+    c += glm::vec3(1.0f) * std::exp(-glm::dot(d2, d2) / 0.03f);
+    return c;
+}
 
 struct ClipVert {
     glm::vec4 c;  // espacio de recorte
@@ -173,7 +194,7 @@ struct ClipVert {
     glm::vec2 uv;
 };
 
-void shadeTriangle(Canvas& cv, const ClipVert (&v)[3], const Tri& t, const Shading& sh) {
+void shadeTriangle(Canvas& cv, const ClipVert (&v)[3], const Tri& t, const Shading& sh, bool blend = false) {
     const int W = cv.w, H = cv.h;
     glm::vec3 s[3];
     for (int k = 0; k < 3; ++k) {
@@ -202,14 +223,15 @@ void shadeTriangle(Canvas& cv, const ClipVert (&v)[3], const Tri& t, const Shadi
             const float z = w0 * s[0].z + w1 * s[1].z + w2 * s[2].z;
             const size_t i = (size_t)y * (size_t)W + (size_t)x;
             if (z < -1.0f || z > 1.0f || z >= cv.depth[i]) continue;
-            cv.depth[i] = z;
+            if (!blend) cv.depth[i] = z;
 
             glm::vec3 n = w0 * v[0].n + w1 * v[1].n + w2 * v[2].n;
             const float nl = glm::length(n);
             n = nl > 1e-12f ? n / nl : faceN;
             const glm::vec3 p = w0 * v[0].p + w1 * v[1].p + w2 * v[2].p;
             const glm::vec3 vd = sh.ortho ? sh.viewDir : glm::normalize(sh.eye - p);
-            if (glm::dot(n, vd) < 0.0f) n = -n; // Iron3D dibuja las dos caras
+            const bool backSide = glm::dot(n, vd) < 0.0f;
+            if (backSide) n = -n; // Iron3D dibuja las dos caras
             const float dk = std::max(0.0f, glm::dot(n, sh.key));
             const float df = std::max(0.0f, glm::dot(n, sh.fill));
             const float shin = 4.0f + (1.0f - t.roughness) * (1.0f - t.roughness) * 120.0f;
@@ -227,8 +249,32 @@ void shadeTriangle(Canvas& cv, const ClipVert (&v)[3], const Tri& t, const Shadi
             }
             const glm::vec3 diffuse = base * (1.0f - t.metallic);
             const glm::vec3 specColor = glm::mix(glm::vec3(0.06f), base, t.metallic);
-            cv.color[i] = diffuse * (0.16f + 0.86f * dk + 0.28f * df) +
-                          specColor * (spec * 1.6f + 0.25f * t.metallic) + glm::vec3(rim) + t.emission;
+            glm::vec3 lit = diffuse * (0.16f + 0.86f * dk + 0.28f * df) +
+                            specColor * (spec * 1.6f + 0.25f * t.metallic) + glm::vec3(rim) + t.emission;
+            if (!sh.studio) {
+                cv.color[i] = lit;
+                continue;
+            }
+            // Reflejo de estudio con Fresnel; el metal lo tine con su color. En la cara interior de un cristal
+            // el reflejo se atenua para no duplicar las luces de la cara delantera.
+            const float cosv = std::max(0.0f, glm::dot(n, vd));
+            const glm::vec3 refl = glm::reflect(-vd, n);
+            const glm::vec3 rc(glm::dot(refl, sh.camRight), glm::dot(refl, sh.camUp), glm::dot(refl, sh.toEye));
+            const float f0 = glm::mix(t.opacity < 0.999f ? 0.05f : 0.16f, 1.0f, t.metallic);
+            const float fres = f0 + (1.0f - f0) * std::pow(1.0f - cosv, 5.0f);
+            const float gloss = std::pow(std::max(0.0f, 1.0f - t.roughness), 1.5f);
+            glm::vec3 tint = glm::mix(glm::vec3(1.0f), base, t.metallic);
+            glm::vec3 add = studioEnv(rc) * tint * (fres * gloss) * (backSide ? 0.25f : 1.0f);
+            if (t.opacity < 0.999f) {
+                // Cristal: lo que hay detras se ve a traves, teñido por el color del material.
+                const float a = std::clamp(t.opacity, 0.0f, 1.0f);
+                const glm::vec3 dst = cv.color[i];
+                const glm::vec3 body = backSide ? glm::vec3(0.0f) : diffuse * (0.10f + 0.50f * dk + 0.16f * df) * a;
+                cv.color[i] = dst * glm::mix(glm::vec3(1.0f), base, a) * (1.0f - a * 0.30f) + body + add +
+                              specColor * (spec * 1.6f) + t.emission;
+            } else {
+                cv.color[i] = lit + add;
+            }
         }
     }
 }
@@ -239,7 +285,20 @@ void shadeTriangle(Canvas& cv, const ClipVert (&v)[3], const Tri& t, const Shadi
 int rasterize(Canvas& cv, const std::vector<Tri>& tris, const glm::mat4& vp, const Shading& sh) {
     constexpr float kEps = 1e-4f;
     int drawn = 0;
-    for (const Tri& t : tris) {
+    // Con los efectos de estudio primero se dibuja lo opaco y luego lo transparente, de lejos a cerca.
+    std::vector<const Tri*> order, glass;
+    order.reserve(tris.size());
+    for (const Tri& t : tris) (sh.studio && t.opacity < 0.999f ? glass : order).push_back(&t);
+    std::sort(glass.begin(), glass.end(), [&](const Tri* a, const Tri* b) {
+        const glm::vec3 ca = (a->p[0] + a->p[1] + a->p[2]) / 3.0f, cb = (b->p[0] + b->p[1] + b->p[2]) / 3.0f;
+        return glm::dot(ca - sh.eye, ca - sh.eye) > glm::dot(cb - sh.eye, cb - sh.eye);
+    });
+    const size_t nOpaque = order.size();
+    order.insert(order.end(), glass.begin(), glass.end());
+    size_t idxTri = 0;
+    for (const Tri* tp : order) {
+        const Tri& t = *tp;
+        const bool blendPass = idxTri++ >= nOpaque;
         ClipVert in[3];
         int behind = 0;
         for (int k = 0; k < 3; ++k) {
@@ -267,7 +326,7 @@ int rasterize(Canvas& cv, const std::vector<Tri>& tris, const glm::mat4& vp, con
         ++drawn;
         for (int k = 1; k + 1 < np; ++k) {
             const ClipVert tri[3] = {poly[0], poly[k], poly[k + 1]};
-            shadeTriangle(cv, tri, t, sh);
+            shadeTriangle(cv, tri, t, sh, blendPass);
         }
     }
     return drawn;
@@ -380,6 +439,12 @@ Thumbnail renderThumbnail(const std::vector<const SceneNode*>& roots, const std:
 Thumbnail renderCameraImage(const SceneNode& root, const std::vector<Material>& materials, const glm::mat4& view,
                             const glm::mat4& proj, int width, int height, int supersample,
                             const glm::vec3& bgTop, const glm::vec3& bgBottom) {
+    return renderCameraImage(root, materials, view, proj, width, height, supersample, bgTop, bgBottom, RenderFx{});
+}
+
+Thumbnail renderCameraImage(const SceneNode& root, const std::vector<Material>& materials, const glm::mat4& view,
+                            const glm::mat4& proj, int width, int height, int supersample,
+                            const glm::vec3& bgTop, const glm::vec3& bgBottom, const RenderFx& fx) {
     width = std::clamp(width, 16, 8192);
     height = std::clamp(height, 16, 8192);
     supersample = std::clamp(supersample, 1, 4);
@@ -393,8 +458,39 @@ Thumbnail renderCameraImage(const SceneNode& root, const std::vector<Material>& 
     sh.ortho = std::fabs(proj[3][3] - 1.0f) < 1e-6f;
     sh.viewDir = glm::normalize(glm::vec3(inv[2]));  // +Z de la camara = hacia el ojo
     cameraLights(sh.viewDir, glm::vec3(inv[0]), sh);
+    sh.studio = fx.studio;
+    sh.camRight = glm::normalize(glm::vec3(inv[0]));
+    sh.camUp = glm::normalize(glm::vec3(inv[1]));
+    sh.toEye = sh.viewDir;
+    const glm::mat4 vp = proj * view;
+    if (fx.shadow && !tris.empty()) {
+        // Sombra suave en el suelo: una elipse difusa bajo la caja de contorno de la escena, en pantalla.
+        glm::vec3 lo(1e30f), hi(-1e30f);
+        for (const Tri& t : tris)
+            for (int k = 0; k < 3; ++k) { lo = glm::min(lo, t.p[k]); hi = glm::max(hi, t.p[k]); }
+        float minX = 1e30f, maxX = -1e30f, maxY = -1e30f;
+        for (int c = 0; c < 8; ++c) {
+            const glm::vec4 q = vp * glm::vec4((c & 1) ? hi.x : lo.x, (c & 2) ? hi.y : lo.y, (c & 4) ? hi.z : lo.z, 1.0f);
+            if (q.w <= 1e-4f) continue;
+            const float sx = (q.x / q.w * 0.5f + 0.5f) * (float)cv.w, sy = (0.5f - q.y / q.w * 0.5f) * (float)cv.h;
+            minX = std::min(minX, sx); maxX = std::max(maxX, sx); maxY = std::max(maxY, sy);
+        }
+        if (maxX > minX) {
+            const float cx = (minX + maxX) * 0.5f, bw = maxX - minX;
+            const float cy = maxY + bw * 0.04f, sxs = bw * 0.34f, sys = bw * 0.042f;
+            const int y0 = std::max(0, (int)(cy - sys * 3.2f)), y1 = std::min(cv.h - 1, (int)(cy + sys * 3.2f));
+            const int x0 = std::max(0, (int)(cx - sxs * 3.2f)), x1 = std::min(cv.w - 1, (int)(cx + sxs * 3.2f));
+            for (int y = y0; y <= y1; ++y)
+                for (int x = x0; x <= x1; ++x) {
+                    const float dx = ((float)x - cx) / sxs, dy = ((float)y - cy) / sys;
+                    const float a = 0.62f * std::exp(-0.5f * (dx * dx + dy * dy));
+                    glm::vec3& px = cv.color[(size_t)y * (size_t)cv.w + (size_t)x];
+                    px *= glm::vec3(1.0f - a, 1.0f - a * 0.97f, 1.0f - a * 0.9f);
+                }
+        }
+    }
     Thumbnail out;
-    out.triangles = rasterize(cv, tris, proj * view, sh);
+    out.triangles = rasterize(cv, tris, vp, sh);
     resolve(cv, supersample, out);
     return out;
 }

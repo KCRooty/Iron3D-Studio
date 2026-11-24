@@ -345,8 +345,8 @@ class Scene:
         self.nodes = []
         self.bg = (bg_top, bg_bottom)
 
-    def mat(self, name, color, metallic=0.0, roughness=0.5, emission=(0, 0, 0)):
-        self.mats.append((name, color, metallic, roughness, emission))
+    def mat(self, name, color, metallic=0.0, roughness=0.5, emission=(0, 0, 0), transparency=0.0):
+        self.mats.append((name, color, metallic, roughness, emission, transparency))
         return len(self.mats) - 1
 
     def add(self, name, mesh, material, pos=(0, 0, 0), rot=(0, 0, 0), scale=(1, 1, 1)):
@@ -356,8 +356,8 @@ class Scene:
         o = []
         o.append("IRON3D_SCENE 9")
         o.append("MATERIALS {")
-        for (n, c, me, ro, em) in self.mats:
-            o.append('  MATERIAL name="%s" br=%.5f bg=%.5f bb=%.5f metallic=%.4f roughness=%.4f er=%.4f eg=%.4f eb=%.4f {' % ((n,) + tuple(c) + (me, ro) + tuple(em)))
+        for (n, c, me, ro, em, tr) in self.mats:
+            o.append('  MATERIAL name="%s" br=%.5f bg=%.5f bb=%.5f metallic=%.4f roughness=%.4f er=%.4f eg=%.4f eb=%.4f tr=%.4f tg=%.4f tb=%.4f ut=%d {' % ((n,) + tuple(c) + (me, ro) + tuple(em) + (tr, tr, tr, 1 if tr > 0 else 0)))
             o.append("  }")
         o.append("}")
         o.append('NODE name="Escena" primitive=none px=0 py=0 pz=0 rx=0 ry=0 rz=0 sx=1 sy=1 sz=1 editorVis=0 renderVis=0 materialIndex=-1 {')
@@ -413,6 +413,83 @@ def badge(out, text, face, rim, ink, bg=None, shape="disc", font="black", glow=N
     s.write(out)
 
 
+def roundrect(w, h, r, seg=14):
+    """Rectangulo de esquinas redondas, CCW (y arriba), centrado en el origen."""
+    pts = []
+    corners = [(w / 2 - r, h / 2 - r, 0), (-w / 2 + r, h / 2 - r, 90), (-w / 2 + r, -h / 2 + r, 180), (w / 2 - r, -h / 2 + r, 270)]
+    for cx, cy, a0 in corners:
+        for s in range(seg + 1):
+            a = math.radians(a0 + 90 * s / seg)
+            pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+    return pts
+
+
+def faceted_sphere(r, seg=10, rings=6):
+    """Esfera de baja resolucion con sombreado plano (gema)."""
+    base = sphere(r, seg, rings)
+    m = Mesh()
+    for k in range(0, len(base.i), 3):
+        a, b, c = (base.v[j] for j in base.i[k:k + 3])
+        e1 = (b[0] - a[0], b[1] - a[1], b[2] - a[2])
+        e2 = (c[0] - a[0], c[1] - a[1], c[2] - a[2])
+        n = norm((e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]))
+        if sum(n[i] * (a[i] + b[i] + c[i]) for i in range(3)) < 0:
+            n = (-n[0], -n[1], -n[2])
+        if (e1[0] ** 2 + e1[1] ** 2 + e1[2] ** 2) < 1e-12 or (e2[0] ** 2 + e2[1] ** 2 + e2[2] ** 2) < 1e-12:
+            continue
+        ids = [m.add((v[0], v[1], v[2]), n) for v in (a, b, c)]
+        m.tri(*ids)
+    return m
+
+
+def glass(out, text, shape, tint, opacity=0.78, ink=(0.03, 0.08, 0.05), ink_metal=0.35, glow=None, ring=(0.05, 0.10, 0.06),
+          ring_metal=0.6, font="black", tsize=0.62, twidth=1.25, rough=0.06, ink_rough=0.12):
+    """Logo de cristal tintado con letras dentro, como el I3DS de Rooty."""
+    s = Scene()
+    # El render por CPU mezcla en espacio de pantalla: el tinte se usa tal cual y el cristal es ligero
+    # (opacidad efectiva 55 % de la pedida) para que las letras de dentro se vean.
+    mg = s.mat("Cristal", tint, 0.0, rough, transparency=1.0 - opacity * 0.55)
+    mr = s.mat("Marco", ring, ring_metal, 0.18)
+    mi = s.mat("Letras", ink, ink_metal, ink_rough, glow or (0, 0, 0))
+    tz = 0.02
+    if shape == "sphere":
+        s.add("Cristal", sphere(1.0), mg, scale=(1, 1, 0.55))
+        s.add("Aro", torus(0.99, 0.035), mr)
+        tz = 0.2
+    elif shape == "disc":
+        s.add("Marco", disc(1.04, 0.14, 96, 0.05), mr, pos=(0, 0, -0.1))
+        s.add("Cristal", disc(1.0, 0.5, 96, 0.2), mg)
+    elif shape == "hex":
+        s.add("Marco", prism(1.12, 0.14), mr, pos=(0, 0, -0.1))
+        s.add("Cristal", prism(1.0, 0.5), mg)
+    elif shape == "roundrect":
+        s.add("Marco", extrude_shape(roundrect(1.95, 1.95, 0.42), [], 0.14, 0.04), mr, pos=(0, 0, -0.1))
+        s.add("Cristal", extrude_shape(roundrect(1.85, 1.85, 0.40), [], 0.5, 0.2), mg)
+    elif shape == "pill":
+        s.add("Marco", extrude_shape(roundrect(2.2, 1.1, 0.55), [], 0.14, 0.04), mr, pos=(0, 0, -0.1))
+        s.add("Cristal", extrude_shape(roundrect(2.1, 1.0, 0.5), [], 0.5, 0.2), mg)
+    elif shape == "gem":
+        s.add("Cristal", faceted_sphere(1.0), mg, scale=(1, 1, 0.6))
+        tz = 0.2
+    t, (w, h) = text_mesh(text, font, tsize, 0.2, 0.02)
+    k = twidth / w
+    s.add("Texto", t, mi, pos=(0, 0, tz), scale=(k, k, 1))
+    s.write(out)
+
+
+GLASS = {
+    "g01_i3ds_esfera_verde": lambda p: glass(p, "I3DS", "sphere", (0.28, 0.68, 0.16), 0.80),
+    "g02_sf_hex_ambar": lambda p: glass(p, "SF", "hex", (0.95, 0.55, 0.08), 0.78, ink=(0.10, 0.04, 0.02), ring=(0.18, 0.10, 0.04), twidth=1.1),
+    "g03_core_pastilla_cian": lambda p: glass(p, "CORE", "pill", (0.12, 0.70, 0.90), 0.78, ink=(0.02, 0.07, 0.12), ring=(0.06, 0.12, 0.18), font="bahn", tsize=0.5, twidth=1.75),
+    "g04_kc_icono_azul": lambda p: glass(p, "KC", "roundrect", (0.12, 0.35, 0.92), 0.80, ink=(0.93, 0.97, 1.0), ink_metal=0.1, ring=(0.75, 0.82, 0.95), ring_metal=0.9, twidth=1.15),
+    "g05_rck_moneda_esmeralda": lambda p: glass(p, "RCK", "disc", (0.10, 0.75, 0.50), 0.78, ink=(0.02, 0.10, 0.07), ring=(0.07, 0.16, 0.12), font="bold", twidth=1.3),
+    "g06_fos_esfera_roja_neon": lambda p: glass(p, "FOS", "sphere", (0.85, 0.12, 0.08), 0.82, ink=(1.0, 0.65, 0.2), ink_metal=0.0, glow=(0.9, 0.45, 0.08), ring=(0.2, 0.05, 0.03), font="impact", twidth=1.3),
+    "g07_xusb_pastilla_amarilla": lambda p: glass(p, "X-USB", "pill", (0.98, 0.82, 0.10), 0.78, ink=(0.12, 0.09, 0.02), ring=(0.25, 0.20, 0.05), font="impact", tsize=0.55, twidth=1.7),
+    "g08_sl_esfera_humo_cromo": lambda p: glass(p, "SL", "sphere", (0.10, 0.12, 0.16), 0.88, ink=(0.85, 0.88, 0.92), ink_metal=1.0, ink_rough=0.08, ring=(0.8, 0.82, 0.86), ring_metal=1.0, font="bold", twidth=1.1),
+    "g09_wf_hex_violeta": lambda p: glass(p, "WF", "hex", (0.55, 0.22, 0.90), 0.78, ink=(0.95, 0.85, 1.0), ink_metal=0.2, ring=(0.12, 0.06, 0.2), twidth=1.2),
+    "g10_cm_gema_carbon": lambda p: glass(p, "CM", "gem", (0.06, 0.06, 0.08), 0.86, ink=(1.0, 0.55, 0.10), ink_metal=0.0, glow=(1.0, 0.40, 0.05), ring=(0.1, 0.1, 0.12), twidth=1.2),
+}
+
 LOGOS = {
     "i3ds": lambda p: logo_i3ds(p),
     "staticforge": lambda p: badge(p, "SF", (0.10, 0.11, 0.13), (0.75, 0.40, 0.10), (1.0, 0.47, 0.08), shape="hex", glow=(0.25, 0.10, 0.0), ink_metal=0.6),
@@ -429,7 +506,11 @@ LOGOS = {
 if __name__ == "__main__":
     outdir = sys.argv[1]
     os.makedirs(outdir, exist_ok=True)
+    table = dict(LOGOS)
+    table.update(GLASS)
     names = sys.argv[2:] or list(LOGOS)
+    if names == ["glass"]:
+        names = list(GLASS)
     for n in names:
-        LOGOS[n](os.path.join(outdir, n + ".iron"))
+        table[n](os.path.join(outdir, n + ".iron"))
         print("ok", n)

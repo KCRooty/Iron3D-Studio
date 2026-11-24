@@ -36,4 +36,17 @@ Thumbnail renderCameraImage(const SceneNode& root, const std::vector<Material>& 
                             const glm::mat4& proj, int width, int height, int supersample,
                             const glm::vec3& bgTop, const glm::vec3& bgBottom);
 
+// Efectos de "estudio" del render por CPU (2026-11-24), pensados para logos de cristal y plastico brillante:
+//  - studio: reflejos de un entorno de estudio (cielo claro, suelo oscuro con horizonte nitido, dos cajas de luz)
+//    con Fresnel; y Transparencia del material (los triangulos transparentes se ordenan de lejos a cerca y se
+//    mezclan con lo que hay detras).
+//  - shadow: sombra suave en el suelo bajo la escena, en espacio de pantalla.
+struct RenderFx {
+    bool studio = false;
+    bool shadow = false;
+};
+Thumbnail renderCameraImage(const SceneNode& root, const std::vector<Material>& materials, const glm::mat4& view,
+                            const glm::mat4& proj, int width, int height, int supersample,
+                            const glm::vec3& bgTop, const glm::vec3& bgBottom, const RenderFx& fx);
+
 } // namespace iron3d

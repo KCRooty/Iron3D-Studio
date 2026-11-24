@@ -216,6 +216,8 @@ struct UiState {
         int width = 800, height = 600;  // como el preset por defecto de C4D
         int antialias = 2;              // NxN muestras por pixel (1-4)
         bool useViewportSize = false;
+        bool studio = false;  // reflejos de estudio + transparencia (RenderFx)
+        bool shadow = false;  // sombra suave en el suelo
         float bgTop[3] = {0.0f, 0.0f, 0.0f};    // C4D renderiza sobre negro
         float bgBottom[3] = {0.0f, 0.0f, 0.0f};
     } render;
@@ -7184,7 +7186,10 @@ void renderToPictureViewer(const SceneNode& root, const std::vector<Material>& m
             bgBottom = en->env.bottom;
         }
     }
-    Thumbnail img = renderCameraImage(root, materials, camera.viewMatrix(), proj, w, h, rs.antialias, bgTop, bgBottom);
+    RenderFx fx;
+    fx.studio = rs.studio;
+    fx.shadow = rs.shadow;
+    Thumbnail img = renderCameraImage(root, materials, camera.viewMatrix(), proj, w, h, rs.antialias, bgTop, bgBottom, fx);
     auto& pv = g.pv;
     pv.seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
     pv.aa = rs.antialias;
@@ -7299,6 +7304,9 @@ void drawRenderSettings() {
     const char* aaNames[] = {tr("Ninguno (1x1)"), tr("Geometría (2x2)"), "3x3", tr("Mejor (4x4)")};
     int aaIdx = std::clamp(rs.antialias, 1, 4) - 1;
     if (ImGui::Combo(tr("Antialiasing"), &aaIdx, aaNames, 4)) rs.antialias = aaIdx + 1;
+    ImGui::SeparatorText(tr("Efectos"));
+    ImGui::Checkbox(tr("Reflejos de estudio y transparencia"), &rs.studio);
+    ImGui::Checkbox(tr("Sombra suave en el suelo"), &rs.shadow);
     ImGui::SeparatorText(tr("Fondo"));
     ImGui::ColorEdit3(tr("Arriba"), rs.bgTop);
     ImGui::ColorEdit3(tr("Abajo"), rs.bgBottom);
@@ -8763,6 +8771,7 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "view-bottom") g.cmdQueue.push_back(UiCmd::ViewBottom);
     else if (cmd == "view-quad") g.cmdQueue.push_back(UiCmd::ViewQuad);
     else if (cmd == "render-pv") g.renderRequested = true;
+    else if (cmd == "render-fx") { g.render.studio = true; g.render.shadow = true; }
     else if (cmd.rfind("render-save=", 0) == 0) { g.renderSave = cmd.substr(12); g.renderSaveIn = 25; }
     else if (cmd == "key") g.recordRequested = true;
     else if (cmd == "curves") g.showCurves = true;
