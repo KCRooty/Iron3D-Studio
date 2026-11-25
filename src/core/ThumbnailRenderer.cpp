@@ -105,6 +105,11 @@ std::shared_ptr<const Image> loadChannelImage(const Material& m) {
         if (result) for (const glm::vec3& c : result->px) avg += c;
         if (result) avg /= (float)result->px.size();
         std::fprintf(stderr, "[cpu-tex] %s -> %s avg=(%.2f %.2f %.2f)\n", m.name.c_str(), result ? "ok" : "NULL", avg.x, avg.y, avg.z);
+        const ShaderNode& sn = m.channel(TexSlot::Color).shader;
+        if (sn.kind == ShaderKind::Filter)
+            std::fprintf(stderr, "[cpu-tex]   filtro h=%.2f s=%.2f l=%.2f cz=%d fb=%.2f fc=%.2f g=%.2f clip=%d lo=%.2f hi=%.2f\n",
+                         sn.hue, sn.saturation, sn.lightness, (int)sn.colorize, sn.fBrightness, sn.contrast, sn.gamma,
+                         (int)sn.clipping, sn.lowClip, sn.highClip);
     }
     std::lock_guard<std::mutex> lock(mtx);
     cache.emplace(key, result);
