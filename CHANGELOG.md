@@ -201,6 +201,13 @@ Con permiso de Rooty se añaden dos librerías, vendorizadas en `third_party/`:
 
 **Los tests que faltaban:** `iron3d_tests`, `ik_test` y `obj_test` se ejecutaron y terminan con código 0.
 
+## Splines y Gestor de Atributos: Romper Segmento, Bisel, Copiar/Pegar (2026-11-25)
+
+- **Malla > Spline > Romper Segmento:** como todavía no se seleccionan puntos del spline, rompe por la mitad: un spline cerrado se abre ahí, uno abierto se parte en dos segmentos.
+- **Malla > Spline > Bisel:** corta cada esquina (todas si es cerrado, las interiores si es abierto) a 10 unidades como mucho o al 40 % del lado, y pasa a interpolación dura. Sin parámetros ajustables todavía.
+- **Gestor de Atributos > Editar > Copiar / Pegar:** copia los atributos del objeto activo y los pega en otro del mismo tipo (posición, visibilidad, luz, cámara, spline, clonador, deformador, entorno...). No copia nombre, jerarquía ni animación. Pegar entre tipos distintos queda desactivado.
+- Los textos nuevos todavía no están traducidos a los 11 idiomas: salen en español.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

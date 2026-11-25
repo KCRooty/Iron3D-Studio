@@ -432,6 +432,8 @@ private:
 // conservan su nombre tal cual; solo el nodo de nivel superior lleva el
 // sufijo " copia", para distinguirlo del original en la lista.
 SceneNode* duplicateSubtree(SceneNode& parent, const SceneNode& src);
+// Gestor de Atributos > Editar > Pegar: copia los atributos de `src` en `dst` si son del mismo tipo.
+bool pasteAttributes(SceneNode& dst, const SceneNode& src);
 
 // Pone posicion/rotacion/escala de todo el arbol en el fotograma `frame`
 // segun sus pistas. Los nodos sin pistas no se tocan.

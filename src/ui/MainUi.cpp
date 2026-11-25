@@ -3503,7 +3503,22 @@ void splineEditMenu(SceneNode& root, SceneNode*& selected, SceneHistory& history
         sp->extra.clear();
         sp->extraClosed.clear();
     }
-    ImGui::MenuItem(tr("Romper Segmento"), nullptr, false, false);
+    // Romper Segmento: sin seleccion de puntos de spline todavia, rompe por la mitad (un spline cerrado se abre ahi).
+    if (ImGui::MenuItem(tr("Romper Segmento"), nullptr, false, pts && sp->points.size() >= 3)) {
+        history.commitBefore(root);
+        const size_t m = sp->points.size() / 2;
+        if (sp->closed) {
+            std::rotate(sp->points.begin(), sp->points.begin() + (long)m, sp->points.end());
+            sp->points.push_back(sp->points.front());
+            sp->closed = false;
+        } else {
+            std::vector<glm::vec3> second(sp->points.begin() + (long)m, sp->points.end());
+            sp->points.resize(m + 1);
+            sp->extra.insert(sp->extra.begin(), std::move(second));
+            sp->extraClosed.resize(sp->extra.size() - 1, 0);
+            sp->extraClosed.insert(sp->extraClosed.begin(), 0);
+        }
+    }
     if (ImGui::MenuItem(tr("Explotar Segmentos"), nullptr, false, ok && !sp->extra.empty() && n->parent())) {
         history.commitBefore(root);
         SceneNode* parent = n->parent();
@@ -3543,7 +3558,25 @@ void splineEditMenu(SceneNode& root, SceneNode*& selected, SceneHistory& history
         for (const PaletteItem& it : kSplines)
             if (std::string(it.name.key) == "Suavizado Spline") createPaletteItemOne(root, selected, history, it);
     }
-    ImGui::MenuItem(tr("Bisel"), nullptr, false, false);
+    // Bisel: cada esquina (todas si es cerrado, las interiores si es abierto) se corta a 20 cm como mucho, o al 40 % del lado.
+    if (ImGui::MenuItem(tr("Bisel"), nullptr, false, pts && sp->points.size() >= 3)) {
+        history.commitBefore(root);
+        const std::vector<glm::vec3> src = sp->points;
+        const size_t cnt = src.size();
+        std::vector<glm::vec3> out;
+        for (size_t i = 0; i < cnt; ++i) {
+            const bool corner = sp->closed || (i > 0 && i + 1 < cnt);
+            if (!corner) { out.push_back(src[i]); continue; }
+            const glm::vec3 pr = src[(i + cnt - 1) % cnt], nx = src[(i + 1) % cnt];
+            const float lp = glm::length(pr - src[i]), ln = glm::length(nx - src[i]);
+            if (lp < 1e-6f || ln < 1e-6f) { out.push_back(src[i]); continue; }
+            const float d = std::min({0.1f, 0.4f * lp, 0.4f * ln});
+            out.push_back(src[i] + (pr - src[i]) / lp * d);
+            out.push_back(src[i] + (nx - src[i]) / ln * d);
+        }
+        sp->points = std::move(out);
+        sp->interp = 0;
+    }
     if (ImGui::MenuItem(tr("Contornear"), nullptr, false, ok && sp->closed && sp->points.size() >= 3 && n->parent())) {
         // copia desplazada 20 cm hacia fuera (en el plano del spline)
         history.commitBefore(root);
@@ -6981,8 +7014,21 @@ void drawAttributesManager(SceneNode& root, SceneNode* selected, SceneHistory& h
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu(tr("Editar"))) {
-            disabledItems({{tr("Copiar"), ""}, {tr("Pegar"), ""}, {nullptr, nullptr}, {tr("Seleccionar Todo"), ""},
-                           {tr("Mostrar Subcanales"), ""}});
+            // Copiar guarda una copia del objeto activo; Pegar vuelca sus atributos en otro del mismo tipo.
+            static SceneNode attrClipboard("portapapeles");
+            if (ImGui::MenuItem(tr("Copiar"), nullptr, false, selected != nullptr)) {
+                while (!attrClipboard.children().empty()) attrClipboard.removeChild(attrClipboard.children().front().get());
+                duplicateSubtree(attrClipboard, *selected);
+                flashStatus(tr("Atributos copiados."));
+            }
+            const bool canPaste = selected && !attrClipboard.children().empty() &&
+                                  attrClipboard.children().front()->primitive == selected->primitive;
+            if (ImGui::MenuItem(tr("Pegar"), nullptr, false, canPaste)) {
+                history.commitBefore(root);
+                pasteAttributes(*selected, *attrClipboard.children().front());
+                flashStatus(tr("Atributos pegados."));
+            }
+            disabledItems({{nullptr, nullptr}, {tr("Seleccionar Todo"), ""}, {tr("Mostrar Subcanales"), ""}});
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu(tr("Datos de Usuario"))) {

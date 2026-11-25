@@ -525,6 +525,36 @@ SceneNode* duplicateSubtree(SceneNode& parent, const SceneNode& src) {
     return cloneInto(parent, src, src.name() + " copia");
 }
 
+bool pasteAttributes(SceneNode& dst, const SceneNode& src) {
+    if (dst.primitive != src.primitive) return false;
+    // Los atributos del objeto (no el nombre, la jerarquia ni las pistas de animacion).
+    dst.position = src.position;
+    dst.rotationDeg = src.rotationDeg;
+    dst.scale = src.scale;
+    dst.editorVis = src.editorVis;
+    dst.renderVis = src.renderVis;
+    dst.light = src.light;
+    dst.camera = src.camera;
+    dst.jointLimits = src.jointLimits;
+    dst.protection = src.protection;
+    dst.nullDisplay = src.nullDisplay;
+    dst.useColor = src.useColor;
+    dst.displayColor = src.displayColor;
+    dst.xray = src.xray;
+    dst.phongLimit = src.phongLimit;
+    dst.phongAngle = src.phongAngle;
+    dst.param = src.param;
+    dst.spline = src.spline;
+    dst.clone = src.clone;
+    dst.deform.kind = src.deform.kind;
+    dst.deform.axis = src.deform.axis;
+    dst.deform.amount = src.deform.amount;
+    dst.deform.param2 = src.deform.param2;
+    dst.deform.formula = src.deform.formula;
+    dst.env = src.env;
+    return true;
+}
+
 std::string pathSegmentFor(const std::string& name, int occurrence) {
     return occurrence >= 2 ? name + "~#" + std::to_string(occurrence) : name;
 }
