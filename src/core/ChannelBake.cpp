@@ -60,7 +60,9 @@ vec3 adjustHsl(const vec3& c, float hueDeg, float sat, float light, bool coloriz
         hsl.y = std::clamp(hsl.y * (1.0f + sat), 0.0f, 1.0f);
     }
     if (light > 0.0f) hsl.z = hsl.z + (1.0f - hsl.z) * light;
-    else hsl.z = hsl.z * (1.0f + light);
+    // Luminosidad negativa a la mitad de fuerza: medido contra R19 con la cabeza de Freddy (Filtro L=-0,67 sale
+    // marron, no negra; factor 0,665 = 1 + L/2). La rama positiva no esta contrastada.
+    else hsl.z = hsl.z * (1.0f + 0.5f * light);
     return hslToRgb(hsl);
 }
 

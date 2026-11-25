@@ -1,4 +1,5 @@
 // Pistas de parametros, Nivel de Puntos y splines: evaluacion y guardado/carga (2026-11-24).
+#include "core/Takes.h"
 #include "core/Deform.h"
 #include "core/Material.h"
 #include "core/OrbitalCamera.h"
@@ -155,6 +156,37 @@ int main() {
         if (!r2.children().empty()) {
             const SceneNode& c2 = *r2.children()[0];
             CHECK(c2.useColor == 2 && c2.xray && std::fabs(c2.displayColor.z - 0.3f) < 1e-5f && std::fabs(c2.phongAngle - 30.0f) < 1e-4f);
+        }
+    }
+    {   // Datos de Usuario y Tomas: guardar y cargar, y cambiar de toma
+        SceneNode root("Root");
+        SceneNode* a = root.addChild("A", PrimitiveType::Cube);
+        a->position = glm::vec3(1, 0, 0);
+        a->userData.push_back({"vida", 1, 7.0f, ""});
+        a->userData.push_back({"nota", 3, 0.0f, "hola mundo"});
+        takes::ensure(root);
+        const int t1 = takes::add(root, "Toma B");
+        takes::activate(root, t1);
+        CHECK(takes::addOverride(root, *a));
+        a->position = glm::vec3(5, 0, 0);
+        a->editorVis = VisMode::Off;
+        takes::activate(root, 0);
+        CHECK(std::fabs(a->position.x - 1.0f) < 1e-5f && a->editorVis == VisMode::Default);
+        takes::activate(root, t1);
+        CHECK(std::fabs(a->position.x - 5.0f) < 1e-5f && a->editorVis == VisMode::Off);
+        std::vector<Material> none;
+        const std::string txt = serializeScene(root, none);
+        SceneNode r2("Root");
+        std::vector<Material> m2;
+        std::string err;
+        CHECK(deserializeScene(txt, r2, m2, &err));
+        if (!err.empty()) std::printf("TAKES: %s\n", err.c_str());
+        CHECK(r2.takes.size() == 2 && r2.activeTake == 1 && r2.takes[1].overrides.size() == 1);
+        if (!r2.children().empty()) {
+            const SceneNode& a2 = *r2.children()[0];
+            CHECK(a2.userData.size() == 2 && a2.userData[0].name == "vida" && a2.userData[1].text == "hola mundo");
+            takes::activate(r2, 0);
+            CHECK(std::fabs(a2.position.x - 1.0f) < 1e-5f);
         }
     }
     std::printf(g_fail ? "anim_test: %d fallos\n" : "anim_test: OK\n", g_fail);

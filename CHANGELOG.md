@@ -208,6 +208,16 @@ Con permiso de Rooty se añaden dos librerías, vendorizadas en `third_party/`:
 - **Gestor de Atributos > Editar > Copiar / Pegar:** copia los atributos del objeto activo y los pega en otro del mismo tipo (posición, visibilidad, luz, cámara, spline, clonador, deformador, entorno...). No copia nombre, jerarquía ni animación. Pegar entre tipos distintos queda desactivado.
 - Los textos nuevos todavía no están traducidos a los 11 idiomas: salen en español.
 
+## Datos de Usuario, Tomas, cámara estéreo, fondo desenfocado, pose y cabeza de Freddy (2026-11-25)
+
+- **Datos de Usuario** (Gestor de Atributos > Datos de Usuario): Añadir (nombre y tipo Real, Entero, Booleano o Texto), editar el valor en la página Básico del objeto, y Gestionar (renombrar, cambiar tipo, borrar). Se guardan con la escena, se copian al duplicar y con Pegar. Probado en `anim_test` (ida y vuelta).
+- **Tomas** (Etiquetas > Gestor de Tomas, Añadir a la Toma Activa, Eliminar de Todas las Tomas): la toma Principal es la escena base; cada toma extra guarda anulaciones de visibilidad en editor y render, posición, rotación y escala de los objetos que le añades. Al cambiar de toma, la escena vuelve a la base y se aplican las de la elegida; lo que editas con una toma activa se guarda en ella. Se guardan con la escena. Probado en `anim_test`. No anulan parámetros distintos de esos cinco (materiales, luces, deformadores) ni tienen render por lotes.
+- **Cámara estéreo:** en Configuración de Render, Estéreo = anaglifo rojo-cian o lado a lado, con separación de ojos en cm (6,5 por defecto). Menú del visor > Opciones > Estereoscópico lo activa. Solo afecta al render; el visor sigue en mono. Verificado por captura con Freddy (anaglifo). Comando: `--ui-cmd=stereo=<0|1|2>,<cm>`.
+- **Fondo con imagen y desenfoque:** Configuración de Render > Imagen de fondo y Desenfoque (px). El fondo se coloca detrás del modelo por máscara de color clave y se desenfoca con tres pasadas de caja. Los bordes del modelo pueden mostrar un halo oscuro fino. Comando: `--ui-cmd=bg-image=<ruta>|<px>`.
+- **Pose por línea de comandos:** `--ui-cmd=pose=<objeto o ruta>:H,P,B` gira ese objeto antes de `render-save`.
+- **Cabeza de Freddy:** salía negra porque el Filtro con Luminosidad −0,67 oscurecía ×0,33. Contrastado con un render real de R19 (la cabeza sale marrón, factor ≈ 0,665), la Luminosidad negativa del Filtro pasa a actuar a la mitad (×(1 + L/2)). Es un único dato medido: la rama positiva no está contrastada y otras librerías con Filtro de Luminosidad negativa cambiarán de aspecto.
+- Los textos nuevos no están traducidos a los 11 idiomas: salen en español.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

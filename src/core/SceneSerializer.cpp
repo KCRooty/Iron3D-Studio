@@ -142,6 +142,20 @@ void writeNode(std::ostream& out, const SceneNode& node, int depth, MeshRefTable
             << l.minDeg.y << "," << l.minDeg.z << " max=" << l.maxDeg.x << "," << l.maxDeg.y << "," << l.maxDeg.z
             << " strength=" << l.strength << "\n";
     }
+    for (size_t ti = 0; ti < node.takes.size(); ++ti)
+        out << indent << "  TAKE name=" << quoted(node.takes[ti].name) << " active=" << (int)((int)ti == node.activeTake) << "\n";
+    for (size_t ti = 0; ti < node.takes.size(); ++ti)
+        for (const TakeOverride& o : node.takes[ti].overrides) {
+            auto st = [&](const TakeState& s) {
+                std::ostringstream o2;
+                o2 << std::setprecision(std::numeric_limits<float>::max_digits10) << s.editorVis << "," << s.renderVis << "," << s.position.x << "," << s.position.y << "," << s.position.z << ","
+                   << s.rotationDeg.x << "," << s.rotationDeg.y << "," << s.rotationDeg.z << "," << s.scale.x << "," << s.scale.y << "," << s.scale.z;
+                return o2.str();
+            };
+            out << indent << "  TOV take=" << ti << " path=" << quoted(o.path) << " b=" << st(o.base) << " v=" << st(o.value) << "\n";
+        }
+    for (const UserDatum& u : node.userData)
+        out << indent << "  UDATA name=" << quoted(u.name) << " type=" << u.type << " num=" << u.num << " text=" << quoted(u.text) << "\n";
     if (node.protection.present) {
         const ProtectionData& pr = node.protection;
         auto modes = [&](const int* m) { return std::to_string(m[0]) + std::to_string(m[1]) + std::to_string(m[2]); };
@@ -486,7 +500,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras los atributos de NODE"; return false; }
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
     while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG" ||
-                            p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "PROT" || p.peek() == "IK" || p.peek() == "NULLSHAPE" || p.peek() == "DISP" ||
+                            p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "PROT" || p.peek() == "UDATA" || p.peek() == "TAKE" || p.peek() == "TOV" || p.peek() == "IK" || p.peek() == "NULLSHAPE" || p.peek() == "DISP" ||
                             p.peek() == "SYM" || p.peek() == "DEF" || p.peek() == "INST" || p.peek() == "ENV" || p.peek() == "SPL" || p.peek() == "CLN" || p.peek() == "HIDDEN")) {
         const std::string kind = p.next();
         bool ok = true;
@@ -592,6 +606,43 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
                     pos = e + 1;
                 }
             });
+        } else if (kind == "TAKE") {
+            Take t;
+            bool act = false;
+            ok = readAttrs(p, "TAKE", err, [&](const std::string& k, const std::string& v) {
+                if (k == "name") t.name = unquote(v);
+                else if (k == "active") act = v != "0";
+            });
+            if (ok) {
+                node.takes.push_back(std::move(t));
+                if (act) node.activeTake = (int)node.takes.size() - 1;
+            }
+        } else if (kind == "TOV") {
+            TakeOverride o;
+            int ti = 0;
+            auto parseState = [](const std::string& v, TakeState& s) {
+                float f[11] = {};
+                if (std::sscanf(v.c_str(), "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", f, f + 1, f + 2, f + 3, f + 4, f + 5, f + 6, f + 7, f + 8, f + 9, f + 10) == 11) {
+                    s.editorVis = (int)f[0]; s.renderVis = (int)f[1];
+                    s.position = {f[2], f[3], f[4]}; s.rotationDeg = {f[5], f[6], f[7]}; s.scale = {f[8], f[9], f[10]};
+                }
+            };
+            ok = readAttrs(p, "TOV", err, [&](const std::string& k, const std::string& v) {
+                if (k == "take") ti = std::stoi(v);
+                else if (k == "path") o.path = unquote(v);
+                else if (k == "b") parseState(v, o.base);
+                else if (k == "v") parseState(v, o.value);
+            });
+            if (ok && ti >= 0 && ti < (int)node.takes.size()) node.takes[(size_t)ti].overrides.push_back(std::move(o));
+        } else if (kind == "UDATA") {
+            UserDatum u;
+            ok = readAttrs(p, "UDATA", err, [&](const std::string& k, const std::string& v) {
+                if (k == "name") u.name = unquote(v);
+                else if (k == "type") u.type = std::clamp(std::stoi(v), 0, 3);
+                else if (k == "num") u.num = std::stof(v);
+                else if (k == "text") u.text = unquote(v);
+            });
+            if (ok) node.userData.push_back(std::move(u));
         } else if (kind == "SYM") {
             node.symmetry.present = true;
             ok = readAttrs(p, "SYM", err, [&](const std::string& k, const std::string& v) {
@@ -1015,6 +1066,9 @@ bool deserializeScene(const std::string& text, SceneNode& root, std::vector<Mate
     root.isJoint = temp.isJoint;
     root.jointLimits = temp.jointLimits;
     root.protection = temp.protection;
+    root.userData = temp.userData;
+    root.takes = temp.takes;
+    root.activeTake = temp.activeTake;
     root.ik = temp.ik;
     root.deform.present = temp.deform.present;
     root.deform.kind = temp.deform.kind;

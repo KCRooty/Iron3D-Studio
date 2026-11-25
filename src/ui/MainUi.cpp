@@ -25,6 +25,7 @@
 #include "importers/lib4d/PresetLibrary.h"
 #include "importers/obj/ObjIO.h"
 #include "importers/smd/SmdIO.h"
+#include "core/Takes.h"
 #include "importers/abc/AbcIO.h"
 #include "importers/fbx/FbxIO.h"
 #include "importers/gltf/GltfIO.h"
@@ -170,6 +171,10 @@ struct UiState {
     } camTrip;
     // Resultado de Abrir/Fusionar un .c4d (o el error de abrir cualquier archivo).
     bool showImport = false;
+    bool showTakes = false;
+    bool showUserAdd = false, showUserManage = false;  // Datos de Usuario
+    int userAddType = 0;
+    char userAddName[64] = "";
     std::string importTitle = tr("Importar Cinema 4D"); // titulo del informe (c4d, obj...)
     C4DImportReport importReport;
     std::string importError;
@@ -232,7 +237,12 @@ struct UiState {
         bool shadow = false;  // sombra suave en el suelo
         float bgTop[3] = {0.0f, 0.0f, 0.0f};    // C4D renderiza sobre negro
         float bgBottom[3] = {0.0f, 0.0f, 0.0f};
+        int stereo = 0;           // 0 apagado, 1 anaglifo rojo-cian, 2 lado a lado
+        float eyeSepCm = 6.5f;    // separacion entre ojos (cm de escena)
+        std::string bgImage;      // imagen de fondo (detras del modelo)
+        float bgBlur = 0.0f;      // desenfoque del fondo en pixeles
     } render;
+    std::vector<std::string> poseCmds;  // --ui-cmd=pose=<objeto>:H,P,B (rotacion en grados)
     bool showRenderSettings = false;
     bool pendingWorldCoords = false, pendingAxisMode = false;  // --ui-cmd antes del primer frame
     int pendingCompMode = 0;
@@ -4376,7 +4386,12 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
         }
         if (beginMenuDbg(tr("Opciones"))) {
             beginMenuDbg(tr("Nivel de Detalle"), false);
-            disabledItems({{nullptr, nullptr}, {tr("Estereoscópico"), ""}, {tr("Sombreado de Flujo de Trabajo Lineal"), ""}});
+            if (ImGui::MenuItem(tr("Estereoscópico"), nullptr, g.render.stereo != 0)) {
+                g.render.stereo = g.render.stereo ? 0 : 1;
+                g.showRenderSettings = true;
+            }
+            setHint(tr("Estereoscópico: el render sale en anaglifo (rojo-cian) o lado a lado; se ajusta en la Configuración de Render. El visor sigue en mono."));
+            disabledItems({{nullptr, nullptr}, {tr("Sombreado de Flujo de Trabajo Lineal"), ""}});
             ImGui::Separator();
             ImGui::MenuItem(tr("OpenGL Mejorado"), nullptr, &vp.optEnhanced);
             disabledItems({{tr("Ruidos"), ""}, {tr("Post Efectos"), ""}});
@@ -5106,7 +5121,15 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
             iconMenuItem(Icon::MnuLayers, tr("Añadir a una Capa Nueva"), nullptr, false, false);
             iconMenuItem(Icon::MnuLayers, tr("Gestor de Capas..."), tr("Mayús+F4"), false, false);
             ImGui::Separator();
-            disabledItems({{tr("Eliminar de Todas las Tomas"), ""}, {tr("Gestor de Tomas..."), ""}});
+            if (ImGui::MenuItem(tr("Añadir a la Toma Activa"), nullptr, false, selected && root.activeTake > 0)) {
+                history.commitBefore(root);
+                takes::addOverride(root, *selected);
+            }
+            if (ImGui::MenuItem(tr("Eliminar de Todas las Tomas"), nullptr, false, selected && !root.takes.empty())) {
+                history.commitBefore(root);
+                takes::removeNodeFromAll(root, *selected);
+            }
+            if (ImGui::MenuItem(tr("Gestor de Tomas..."))) g.showTakes = true;
             ImGui::Separator();
             if (ImGui::MenuItem(tr("Seleccionar Hijos"), nullptr, false, !node->children().empty())) {
                 forSubtree(*node, [](SceneNode& n) { g.selIds.insert(n.id()); });
@@ -6530,6 +6553,22 @@ void drawObjectAttributes(SceneNode& node, SceneNode& root, SceneHistory& histor
         sectionHeader(tr("Página no disponible"));
         ImGui::TextDisabled(tr("  Todavía no implementado en Iron3D."));
     }
+    if (!node.userData.empty() && tabOn(mask, 0)) {
+        sectionHeader(tr("Datos de Usuario"));
+        for (size_t i = 0; i < node.userData.size(); ++i) {
+            UserDatum& u = node.userData[i];
+            ImGui::PushID((int)i);
+            propLabel(u.name.c_str(), false);
+            ImGui::SetNextItemWidth(fieldWidth(160));
+            bool changed = false;
+            if (u.type == 0) changed = ImGui::DragFloat("##ud", &u.num, 0.01f);
+            else if (u.type == 1) { int v = (int)u.num; if (ImGui::DragInt("##ud", &v)) { u.num = (float)v; changed = true; } }
+            else if (u.type == 2) { bool v = u.num != 0.0f; if (ImGui::Checkbox("##ud", &v)) { u.num = v ? 1.0f : 0.0f; changed = true; } }
+            else { char buf[256]; std::snprintf(buf, sizeof(buf), "%s", u.text.c_str()); if (ImGui::InputText("##ud", buf, sizeof(buf))) { u.text = buf; changed = true; } }
+            if (changed || ImGui::IsItemDeactivatedAfterEdit()) trackEdit(history, root);
+            ImGui::PopID();
+        }
+    }
 }
 
 // --- Ajustes de material como el editor de R19 (2026-11-11) -----------------------
@@ -7032,7 +7071,8 @@ void drawAttributesManager(SceneNode& root, SceneNode* selected, SceneHistory& h
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu(tr("Datos de Usuario"))) {
-            disabledItems({{tr("Añadir Datos de Usuario..."), ""}, {tr("Gestionar Datos de Usuario..."), ""}});
+            if (ImGui::MenuItem(tr("Añadir Datos de Usuario..."), nullptr, false, selected != nullptr)) g.showUserAdd = true;
+            if (ImGui::MenuItem(tr("Gestionar Datos de Usuario..."), nullptr, false, selected != nullptr)) g.showUserManage = true;
             ImGui::EndMenu();
         }
         attrHeaderNav();
@@ -8451,6 +8491,96 @@ void drawAboutDialog() {
     ImGui::End();
 }
 
+// Datos de Usuario: ventanas de Anadir y Gestionar sobre el objeto activo.
+void drawUserDataDialogs(SceneNode& root, SceneNode* selected, SceneHistory& history) {
+    if (g.showUserAdd) {
+        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (ImGui::Begin(tr("Añadir Datos de Usuario###udadd"), &g.showUserAdd, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
+            ImGui::InputText(tr("Nombre"), g.userAddName, sizeof(g.userAddName));
+            const char* types[] = {tr("Real"), tr("Entero"), tr("Booleano"), tr("Texto")};
+            ImGui::Combo(tr("Tipo"), &g.userAddType, types, 4);
+            if (ImGui::Button(tr("Añadir"), ImVec2(120, 0)) && selected && g.userAddName[0]) {
+                history.commitBefore(root);
+                UserDatum u;
+                u.name = g.userAddName;
+                u.type = g.userAddType;
+                selected->userData.push_back(u);
+                g.userAddName[0] = 0;
+                g.showUserAdd = false;
+            }
+        }
+        ImGui::End();
+    }
+    if (g.showUserManage) {
+        ImGui::SetNextWindowSize(ImVec2(380, 260), ImGuiCond_FirstUseEver);
+        if (ImGui::Begin(tr("Gestionar Datos de Usuario###udman"), &g.showUserManage, ImGuiWindowFlags_NoCollapse)) {
+            if (!selected || selected->userData.empty()) ImGui::TextDisabled(tr("Este objeto no tiene Datos de Usuario."));
+            else {
+                const char* types[] = {tr("Real"), tr("Entero"), tr("Booleano"), tr("Texto")};
+                int del = -1;
+                for (size_t i = 0; i < selected->userData.size(); ++i) {
+                    UserDatum& u = selected->userData[i];
+                    ImGui::PushID((int)i);
+                    char nb[64]; std::snprintf(nb, sizeof(nb), "%s", u.name.c_str());
+                    ImGui::SetNextItemWidth(160);
+                    if (ImGui::InputText("##n", nb, sizeof(nb)) && nb[0]) u.name = nb;
+                    if (ImGui::IsItemDeactivatedAfterEdit()) trackEdit(history, root);
+                    ImGui::SameLine();
+                    ImGui::SetNextItemWidth(100);
+                    if (ImGui::Combo("##t", &u.type, types, 4)) { history.commitBefore(root); }
+                    ImGui::SameLine();
+                    if (ImGui::Button(tr("Borrar"))) del = (int)i;
+                    ImGui::PopID();
+                }
+                if (del >= 0) { history.commitBefore(root); selected->userData.erase(selected->userData.begin() + del); }
+            }
+        }
+        ImGui::End();
+    }
+}
+
+// Gestor de Tomas: lista, activar, anadir, renombrar y borrar.
+void drawTakeManager(SceneNode& root, SceneNode* selected, SceneHistory& history) {
+    if (!g.showTakes) return;
+    ImGui::SetNextWindowSize(ImVec2(420, 300), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin(tr("Gestor de Tomas###takes"), &g.showTakes, ImGuiWindowFlags_NoCollapse)) {
+        takes::ensure(root);
+        if (ImGui::Button(tr("Nueva Toma"))) {
+            history.commitBefore(root);
+            takes::activate(root, takes::add(root, std::string(tr("Toma ")) + std::to_string(root.takes.size())));
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(tr("Añadir selección"), ImVec2(0, 0)) && selected && root.activeTake > 0) {
+            history.commitBefore(root);
+            takes::addOverride(root, *selected);
+        }
+        ImGui::TextDisabled(tr("La toma Principal es la escena base; las demás anulan visibilidad y transformación de los objetos añadidos."));
+        ImGui::Separator();
+        int del = -1, act = -1;
+        for (size_t i = 0; i < root.takes.size(); ++i) {
+            Take& t = root.takes[i];
+            ImGui::PushID((int)i);
+            if (ImGui::RadioButton("##act", root.activeTake == (int)i)) act = (int)i;
+            ImGui::SameLine();
+            if (i == 0) ImGui::TextUnformatted(t.name.c_str());
+            else {
+                char nb[64]; std::snprintf(nb, sizeof(nb), "%s", t.name.c_str());
+                ImGui::SetNextItemWidth(200);
+                if (ImGui::InputText("##n", nb, sizeof(nb)) && nb[0]) t.name = nb;
+                if (ImGui::IsItemDeactivatedAfterEdit()) history.commitBefore(root);
+                ImGui::SameLine();
+                ImGui::TextDisabled(tr("%zu objetos"), t.overrides.size());
+                ImGui::SameLine();
+                if (ImGui::SmallButton(tr("Borrar"))) del = (int)i;
+            }
+            ImGui::PopID();
+        }
+        if (act >= 0) { history.commitBefore(root); takes::activate(root, act); }
+        if (del >= 0) { history.commitBefore(root); takes::remove(root, del); }
+    }
+    ImGui::End();
+}
+
 void drawImportReport() {
     if (!g.showImport) return;
     // Verificacion por captura (2026-11-18): el aviso modal tapa el modelo. Solo oculta la ventana.
@@ -8873,7 +9003,81 @@ void renderToPictureViewer(const SceneNode& root, const std::vector<Material>& m
     RenderFx fx;
     fx.studio = rs.studio;
     fx.shadow = rs.shadow;
-    Thumbnail img = renderCameraImage(root, materials, camera.viewMatrix(), proj, w, h, rs.antialias, bgTop, bgBottom, fx);
+    TextureImage bgPic;
+    const bool haveBg = !rs.bgImage.empty() && loadTextureImage(rs.bgImage, bgPic) && bgPic.width > 0 && bgPic.height > 0;
+    // Un ojo: el render normal y, si hay imagen de fondo, esta (desenfocada) detras del modelo, por mascara de color clave.
+    auto renderEye = [&](const glm::mat4& view) {
+        Thumbnail im = renderCameraImage(root, materials, view, proj, w, h, rs.antialias, bgTop, bgBottom, fx);
+        if (!haveBg) return im;
+        Thumbnail key = renderCameraImage(root, materials, view, proj, w, h, rs.antialias, glm::vec3(1, 0, 1), glm::vec3(1, 0, 1), fx);
+        // imagen de fondo a "cubrir" el cuadro
+        std::vector<float> bg((size_t)w * h * 3);
+        const float sc = std::max((float)w / bgPic.width, (float)h / bgPic.height);
+        for (int y = 0; y < h; ++y)
+            for (int x = 0; x < w; ++x) {
+                const int sx = std::clamp((int)(((float)x - 0.5f * w) / sc + 0.5f * bgPic.width), 0, bgPic.width - 1);
+                const int sy = std::clamp((int)(((float)y - 0.5f * h) / sc + 0.5f * bgPic.height), 0, bgPic.height - 1);
+                const unsigned char* sp = &bgPic.rgba[((size_t)sy * bgPic.width + sx) * 4];
+                for (int k = 0; k < 3; ++k) bg[((size_t)y * w + x) * 3 + k] = sp[k];
+            }
+        const int rad = (int)std::clamp(rs.bgBlur, 0.0f, 200.0f);
+        if (rad > 0) {  // tres pasadas de caja por eje = aproximacion de gaussiana
+            std::vector<float> tmp(bg.size());
+            for (int pass = 0; pass < 3; ++pass)
+                for (int dir = 0; dir < 2; ++dir) {
+                    const int len = dir == 0 ? w : h, lines = dir == 0 ? h : w;
+                    for (int ln = 0; ln < lines; ++ln)
+                        for (int k = 0; k < 3; ++k) {
+                            auto at = [&](int i) -> float& {
+                                const size_t idx = dir == 0 ? ((size_t)ln * w + i) * 3 + k : ((size_t)i * w + ln) * 3 + k;
+                                return bg[idx];
+                            };
+                            auto out = [&](int i) -> float& {
+                                const size_t idx = dir == 0 ? ((size_t)ln * w + i) * 3 + k : ((size_t)i * w + ln) * 3 + k;
+                                return tmp[idx];
+                            };
+                            float acc = 0.0f;
+                            for (int i = -rad; i <= rad; ++i) acc += at(std::clamp(i, 0, len - 1));
+                            for (int i = 0; i < len; ++i) {
+                                out(i) = acc / (float)(2 * rad + 1);
+                                acc += at(std::clamp(i + rad + 1, 0, len - 1)) - at(std::clamp(i - rad, 0, len - 1));
+                            }
+                        }
+                    bg.swap(tmp);
+                }
+        }
+        for (int y = 0; y < h; ++y)
+            for (int x = 0; x < w; ++x) {
+                const size_t p = ((size_t)y * w + x) * 4;
+                // el pixel es fondo si el render con color clave sigue siendo magenta puro
+                if (key.rgba[p] > 250 && key.rgba[p + 1] < 5 && key.rgba[p + 2] > 250)
+                    for (int k = 0; k < 3; ++k) im.rgba[p + k] = (unsigned char)std::clamp(bg[((size_t)y * w + x) * 3 + k], 0.0f, 255.0f);
+            }
+        return im;
+    };
+    Thumbnail img;
+    if (rs.stereo == 0) {
+        img = renderEye(camera.viewMatrix());
+    } else {
+        // La camara se separa media distancia a cada lado de su eje horizontal (1 unidad de escena = 200 cm).
+        const float half = rs.eyeSepCm / 200.0f * 0.5f;
+        const glm::mat4 vl = glm::translate(glm::mat4(1.0f), glm::vec3(half, 0, 0)) * camera.viewMatrix();
+        const glm::mat4 vr = glm::translate(glm::mat4(1.0f), glm::vec3(-half, 0, 0)) * camera.viewMatrix();
+        Thumbnail L = renderEye(vl), Rr = renderEye(vr);
+        if (rs.stereo == 1) {  // anaglifo: rojo del ojo izquierdo, verde y azul del derecho
+            img = L;
+            for (size_t p = 0; p + 3 < img.rgba.size(); p += 4) { img.rgba[p + 1] = Rr.rgba[p + 1]; img.rgba[p + 2] = Rr.rgba[p + 2]; }
+        } else {  // lado a lado: izquierdo | derecho
+            img.width = L.width * 2;
+            img.height = L.height;
+            img.triangles = L.triangles;
+            img.rgba.resize((size_t)img.width * img.height * 4);
+            for (int y = 0; y < L.height; ++y) {
+                std::copy_n(&L.rgba[(size_t)y * L.width * 4], (size_t)L.width * 4, &img.rgba[(size_t)y * img.width * 4]);
+                std::copy_n(&Rr.rgba[(size_t)y * L.width * 4], (size_t)L.width * 4, &img.rgba[((size_t)y * img.width + L.width) * 4]);
+            }
+        }
+    }
     {  // objeto Primer Plano: degradado con opacidad sobre el render
         std::function<const SceneNode*(const SceneNode&)> findFg = [&](const SceneNode& n) -> const SceneNode* {
             if (n.env.present && n.env.kind == 3) return &n;
@@ -9054,6 +9258,18 @@ void drawRenderSettings() {
     ImGui::SeparatorText(tr("Fondo"));
     ImGui::ColorEdit3(tr("Arriba"), rs.bgTop);
     ImGui::ColorEdit3(tr("Abajo"), rs.bgBottom);
+    {
+        char bb[512];
+        std::snprintf(bb, sizeof(bb), "%s", rs.bgImage.c_str());
+        if (ImGui::InputText(tr("Imagen de fondo"), bb, sizeof(bb))) rs.bgImage = bb;
+        ImGui::SliderFloat(tr("Desenfoque del fondo (px)"), &rs.bgBlur, 0.0f, 100.0f, "%.0f");
+    }
+    ImGui::SeparatorText(tr("Cámara estereoscópica"));
+    const char* stNames[] = {tr("Apagado"), tr("Anaglifo (rojo-cian)"), tr("Lado a lado")};
+    ImGui::Combo(tr("Estéreo"), &rs.stereo, stNames, 3);
+    ImGui::BeginDisabled(rs.stereo == 0);
+    ImGui::SliderFloat(tr("Separación de ojos (cm)"), &rs.eyeSepCm, 0.0f, 30.0f, "%.1f");
+    ImGui::EndDisabled();
     ImGui::Spacing();
     ImGui::TextDisabled(tr("Render por CPU con el sombreado de las miniaturas:\nsin sombras ni texturas todavía."));
     if (ImGui::Button(tr("Renderizar en Visor de Imágenes"))) g.renderRequested = true;
@@ -10631,6 +10847,8 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
     drawMaterialEditor(root, history, materials);
     drawAboutDialog();
     drawObjectInfoDialog(selected);
+    drawUserDataDialogs(root, selected, history);
+    drawTakeManager(root, selected, history);
     drawImportReport();
     drawExportReport();
     drawSavePresetDialog();
@@ -10643,6 +10861,26 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
         float yaw = 0, pitch = 0, dist = 4, tx = 0, ty = 0, tz = 0;
         int used = 0;
         if (std::sscanf(g.renderSave.c_str(), "%d,%d,%f,%f,%f,%f,%f,%f,%n", &w, &h, &yaw, &pitch, &dist, &tx, &ty, &tz, &used) >= 8 && used > 0) {
+            // --ui-cmd=pose=<objeto>:H,P,B: gira ese objeto (por nombre o ruta) antes del render
+            for (const std::string& pc : g.poseCmds) {
+                const size_t colon = pc.rfind(':');
+                if (colon == std::string::npos) continue;
+                const std::string nm = pc.substr(0, colon);
+                glm::vec3 hpb(0.0f);
+                if (std::sscanf(pc.c_str() + colon + 1, "%f,%f,%f", &hpb.x, &hpb.y, &hpb.z) != 3) continue;
+                SceneNode* target = findNodeByPath(root, nm);
+                if (!target) {
+                    std::function<SceneNode*(SceneNode&)> byName = [&](SceneNode& n) -> SceneNode* {
+                        if (n.name() == nm) return &n;
+                        for (const auto& c : n.children())
+                            if (SceneNode* f = byName(*c)) return f;
+                        return nullptr;
+                    };
+                    target = byName(root);
+                }
+                if (target) target->rotationDeg = hpb;
+                else std::fprintf(stderr, "[Iron3D] pose: no existe el objeto '%s'\n", nm.c_str());
+            }
             OrbitalCamera::ViewState vs;
             vs.view = OrbitalCamera::View::Perspective;
             vs.target = glm::vec3(tx, ty, tz);
@@ -10727,6 +10965,18 @@ bool queueUiCommand(const std::string& cmd) {
     else if (cmd == "view-quad") g.cmdQueue.push_back(UiCmd::ViewQuad);
     else if (cmd == "render-pv") g.renderRequested = true;
     else if (cmd == "render-fx") { g.render.studio = true; g.render.shadow = true; }
+    else if (cmd.rfind("pose=", 0) == 0) g.poseCmds.push_back(cmd.substr(5));
+    else if (cmd.rfind("stereo=", 0) == 0) {
+        int m = 1;
+        float cm = 6.5f;
+        if (std::sscanf(cmd.c_str() + 7, "%d,%f", &m, &cm) >= 1) { g.render.stereo = std::clamp(m, 0, 2); g.render.eyeSepCm = cm; }
+    }
+    else if (cmd.rfind("bg-image=", 0) == 0) {
+        const std::string v = cmd.substr(9);
+        const size_t bar = v.rfind('|');
+        g.render.bgImage = v.substr(0, bar);
+        if (bar != std::string::npos) g.render.bgBlur = std::stof(v.substr(bar + 1));
+    }
     else if (cmd.rfind("render-save=", 0) == 0) { g.renderSave = cmd.substr(12); g.renderSaveIn = 25; }
     else if (cmd == "key") g.recordRequested = true;
     else if (cmd == "curves") g.showCurves = true;

@@ -183,6 +183,7 @@ SceneNode* cloneInto(SceneNode& parent, const SceneNode& src, std::string name) 
     copy->isJoint = src.isJoint;
     copy->jointLimits = src.jointLimits;
     copy->protection = src.protection;
+    copy->userData = src.userData;
     copy->nullDisplay = src.nullDisplay;
     copy->useColor = src.useColor;
     copy->displayColor = src.displayColor;
@@ -537,6 +538,7 @@ bool pasteAttributes(SceneNode& dst, const SceneNode& src) {
     dst.camera = src.camera;
     dst.jointLimits = src.jointLimits;
     dst.protection = src.protection;
+    dst.userData = src.userData;
     dst.nullDisplay = src.nullDisplay;
     dst.useColor = src.useColor;
     dst.displayColor = src.displayColor;

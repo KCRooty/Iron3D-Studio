@@ -157,6 +157,32 @@ struct SymmetryData {
 
 // Spline (ver Spline.h): curva de C4D. kind 0 = puntos libres; el resto son primitivas con parametros (cm).
 // `extra` = contornos adicionales (texto o booleanas hechos editables, salida de un generador).
+// Dato de Usuario (Gestor de Atributos > Datos de Usuario): type 0 Real, 1 Entero, 2 Booleano, 3 Texto.
+struct UserDatum {
+    std::string name;
+    int type = 0;
+    float num = 0.0f;
+    std::string text;
+    bool operator==(const UserDatum&) const = default;
+};
+
+// Tomas (ver Takes.h): estado de un nodo que una toma puede anular.
+struct TakeState {
+    int editorVis = 0, renderVis = 0;
+    glm::vec3 position{0.0f}, rotationDeg{0.0f}, scale{1.0f};
+    bool operator==(const TakeState&) const = default;
+};
+struct TakeOverride {
+    std::string path;  // ruta por nombres desde la raiz
+    TakeState base, value;
+    bool operator==(const TakeOverride&) const = default;
+};
+struct Take {
+    std::string name;
+    std::vector<TakeOverride> overrides;
+    bool operator==(const Take&) const = default;
+};
+
 struct SplineData {
     bool present = false;
     int kind = 0;
@@ -389,6 +415,9 @@ public:
     bool isJoint = false;
     JointLimits jointLimits;
     ProtectionData protection; // etiqueta Proteccion/Limite
+    std::vector<UserDatum> userData; // Datos de Usuario del Gestor de Atributos
+    std::vector<Take> takes;         // solo en el nodo raiz; takes[0] = Principal
+    int activeTake = 0;
     NullDisplay nullDisplay;
     // Basico (2026-11-24): Usar Color (0 Desactivado, 1 Automatico, 2 Activado) con su Color de Visualizacion, y
     // Rayos X (el visor lo dibuja semitransparente). Etiqueta Phong: angulo de suavizado de las normales.
