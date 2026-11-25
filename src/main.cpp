@@ -997,6 +997,20 @@ int main(int argc, char** argv) {
     }
     for (const std::string& c : uiCmdArgs)
         if (!iron3d::queueUiCommand(c)) std::fprintf(stderr, "[Iron3D] --ui-cmd desconocida: %s\n", c.c_str());
+    // Diagnostico: IRON3D_DROP_MAT=<nombre> quita las partes por seleccion con ese material (sirve para ver que
+    // tapa a que). No hace nada si la variable no existe.
+    if (const char* dropMat = std::getenv("IRON3D_DROP_MAT")) {
+        std::function<void(SceneNode&)> drop = [&](SceneNode& n) {
+            auto& parts = n.materialParts;
+            parts.erase(std::remove_if(parts.begin(), parts.end(),
+                                       [&](const iron3d::MaterialPart& p) {
+                                           return iron3d::materialOrDefault(materials, p.materialIndex).name == dropMat;
+                                       }),
+                        parts.end());
+            for (const auto& c : n.children()) drop(*c);
+        };
+        drop(sceneRoot);
+    }
     // "--dump-scene" (verificacion, 2026-11-10): una linea por objeto con
     // geometria -- caja en mundo, visibilidad, material y textura de Color --
     // para diagnosticar modelos importados que no se ven como en C4D.
@@ -1035,10 +1049,11 @@ int main(int argc, char** argv) {
                     // Partes por Seleccion de Poligonos: tapan al material del objeto en sus triangulos.
                     for (const iron3d::MaterialPart& p : n.materialParts) {
                         const iron3d::Material& pm = iron3d::materialOrDefault(materials, p.materialIndex);
-                        std::fprintf(stderr, "[dump] %*s  parte '%s' tris=%u mat=%d '%s' color=(%.2f %.2f %.2f) proy=%d\n",
+                        std::fprintf(stderr, "[dump] %*s  parte '%s' tris=%u mat=%d '%s' color=(%.2f %.2f %.2f) proy=%d tile=%d off=(%.2f %.2f) len=(%.2f %.2f) lado=%d\n",
                                      depth * 2, "", p.selection.c_str(), p.indexCount / 3, p.materialIndex,
                                      pm.name.c_str(), pm.baseColor.r, pm.baseColor.g, pm.baseColor.b,
-                                     p.texTag.projection);
+                                     p.texTag.projection, (int)p.texTag.tile, p.texTag.offset.x, p.texTag.offset.y,
+                                     p.texTag.length.x, p.texTag.length.y, p.texTag.side);
                     }
                 } else {
                     std::fprintf(stderr, "[dump] %*s%s (nulo) vis=%d\n", depth * 2, "", n.name().c_str(), (int)vis);

@@ -108,6 +108,9 @@ VkDescriptorSet MaterialTextures::get(const Material& m, TexSlot slot) {
         if (upload(img.rgba.data(), img.width, img.height, t)) {
             textures_.push_back(t);
             index = (int)textures_.size() - 1;
+        } else {
+            std::fprintf(stderr, "[Iron3D] No se pudo subir la textura a la GPU (%dx%d): %s\n", img.width, img.height,
+                         rawPath.c_str());
         }
     }
     cache_.emplace(key, index);
