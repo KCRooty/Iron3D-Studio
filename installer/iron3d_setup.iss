@@ -18,7 +18,7 @@
 ;   ISCC.exe iron3d_setup.iss
 
 #define MyAppName "Iron3D Studio"
-#define MyAppVersion "0.3.0-alpha"
+#define MyAppVersion "0.3.1-alpha"
 #define MyAppPublisher "Static Forge"
 #define MyAppURL "https://staticforge.me/i3ds.html"
 #define MyAppExeName "Iron3DStudio.exe"
@@ -30,8 +30,8 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 ; Propiedades > Detalles del propio instalador (version, copyright, descripcion). MyAppVersion se iguala
 ; con IRON3D_VERSION_* de CMakeLists.txt.
-VersionInfoVersion=0.3.0.0
-VersionInfoProductVersion=0.3.0.0
+VersionInfoVersion=0.3.1.0
+VersionInfoProductVersion=0.3.1.0
 VersionInfoProductTextVersion={#MyAppVersion}
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoProductName={#MyAppName}
