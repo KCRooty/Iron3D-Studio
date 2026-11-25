@@ -25,6 +25,8 @@
 #include "importers/lib4d/PresetLibrary.h"
 #include "importers/obj/ObjIO.h"
 #include "importers/smd/SmdIO.h"
+#include "importers/abc/AbcIO.h"
+#include "importers/fbx/FbxIO.h"
 #include "importers/gltf/GltfIO.h"
 #include "core/IkSolver.h"
 #include "core/Skin.h"
@@ -1148,6 +1150,48 @@ bool importGltfInto(const std::filesystem::path& path, SceneNode& dest, std::vec
     return true;
 }
 
+bool importFbxInto(const std::filesystem::path& path, SceneNode& dest, std::vector<Material>& mats) {
+    FbxReport frep;
+    std::string err;
+    if (!importFbx(path, dest, mats, frep, &err)) {
+        reportFileError(path, err);
+        return false;
+    }
+    g.importReport = C4DImportReport{};
+    g.importReport.fileName = pathUtf8(path.filename());
+    g.importReport.objects = frep.nodes;
+    g.importReport.meshes = frep.meshes;
+    g.importReport.points = frep.points;
+    g.importReport.polygons = frep.polygons;
+    g.importReport.materials = frep.materials;
+    g.importReport.warnings = frep.warnings;
+    g.importError.clear();
+    g.importTitle = tr("Importar FBX");
+    g.showImport = true;
+    return true;
+}
+
+bool importAbcInto(const std::filesystem::path& path, SceneNode& dest, std::vector<Material>& mats) {
+    AbcReport arep;
+    std::string err;
+    if (!importAbc(path, dest, mats, arep, &err)) {
+        reportFileError(path, err);
+        return false;
+    }
+    g.importReport = C4DImportReport{};
+    g.importReport.fileName = pathUtf8(path.filename());
+    g.importReport.objects = arep.nodes;
+    g.importReport.meshes = arep.meshes;
+    g.importReport.points = arep.points;
+    g.importReport.polygons = arep.polygons;
+    g.importReport.materials = arep.materials;
+    g.importReport.warnings = arep.warnings;
+    g.importError.clear();
+    g.importTitle = tr("Importar Alembic");
+    g.showImport = true;
+    return true;
+}
+
 // Archivo > Abrir (Ctrl+O): .iron o .c4d con el dialogo del sistema. Sin
 // dialogo nativo (Linux por ahora) se usa el propio de la carpeta scenes/.
 // Guardar (Ctrl+S) / Guardar como (Ctrl+Mayus+S) con el dialogo del sistema, como C4D. Sin ruta todavia
@@ -1275,19 +1319,23 @@ void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history,
         g.sceneLoadMode = true;
         return;
     }
-    const auto path = openFileDialog(tr("Abrir"), {{tr("Escenas y librerías (iron, c4d, obj, glb, lib4d)"), "*.iron;*.c4d;*.obj;*.glb;*.gltf;*.lib4d"},
+    const auto path = openFileDialog(tr("Abrir"), {{tr("Escenas y librerías (iron, c4d, obj, glb, fbx, abc, lib4d)"), "*.iron;*.c4d;*.obj;*.glb;*.gltf;*.fbx;*.abc;*.lib4d"},
                                                {"Iron3D", "*.iron"}, {tr("Cinema 4D"), "*.c4d"}, {tr("Wavefront"), "*.obj"},
-                                               {"glTF", "*.glb;*.gltf"},
+                                               {"glTF", "*.glb;*.gltf"}, {"FBX", "*.fbx"}, {"Alembic", "*.abc"},
                                                {tr("Librería de preestablecidos de Cinema 4D"), "*.lib4d"}});
     if (!path) return;
     // Una .lib4d no sustituye la escena: se monta en el Navegador de Contenido
     // (Preestablecidos, solo esta sesion) y se abre su ventana, como en C4D.
     if (isLib4dPath(*path)) return openPresetLibrary(*path);
     std::string err;
-    if (isObjPath(*path) || isGltfPath(*path)) {
+    if (isObjPath(*path) || isGltfPath(*path) || isFbxPath(*path) || isAbcPath(*path)) {
         SceneNode temp("tmp");
         std::vector<Material> mats;
-        if (isGltfPath(*path) ? !importGltfInto(*path, temp, mats) : !importObjInto(*path, temp, mats)) return;
+        const bool okImp = isGltfPath(*path) ? importGltfInto(*path, temp, mats)
+                           : isFbxPath(*path) ? importFbxInto(*path, temp, mats)
+                           : isAbcPath(*path) ? importAbcInto(*path, temp, mats)
+                                              : importObjInto(*path, temp, mats);
+        if (!okImp) return;
         root.clearChildren();
         root.adoptChildrenFrom(temp);
         materials = std::move(mats);
@@ -1309,7 +1357,7 @@ void openSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history,
     selected = nullptr;
     history.reset();
     g.selectedMat = -1;
-    g.docPath = isC4DPath(*path) || isObjPath(*path) || isGltfPath(*path) ? std::filesystem::path() : *path;
+    g.docPath = isC4DPath(*path) || isObjPath(*path) || isGltfPath(*path) || isFbxPath(*path) || isAbcPath(*path) ? std::filesystem::path() : *path;
     g.cleanInit = false;
     frameNodes(camera, root, false);
 }
@@ -1322,9 +1370,9 @@ void mergeSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history
                                     "plataforma todavía no existe."));
         return;
     }
-    const auto path = openFileDialog(tr("Fusionar"), {{tr("Escenas de Cinema 4D, OBJ, glTF e Iron3D"), "*.c4d;*.obj;*.glb;*.gltf;*.iron"},
+    const auto path = openFileDialog(tr("Fusionar"), {{tr("Escenas de Cinema 4D, OBJ, glTF, FBX e Iron3D"), "*.c4d;*.obj;*.glb;*.gltf;*.fbx;*.abc;*.iron"},
                                                   {tr("Cinema 4D"), "*.c4d"}, {tr("Wavefront"), "*.obj"},
-                                                  {"glTF", "*.glb;*.gltf"}, {tr("Iron3D"), "*.iron"}});
+                                                  {"glTF", "*.glb;*.gltf"}, {"FBX", "*.fbx"}, {"Alembic", "*.abc"}, {tr("Iron3D"), "*.iron"}});
     if (!path) return;
     const std::string before = history.snapshot(root);
     std::string err;
@@ -1332,6 +1380,10 @@ void mergeSceneFile(SceneNode& root, SceneNode*& selected, SceneHistory& history
         if (!importObjInto(*path, root, materials)) return;
     } else if (isGltfPath(*path)) {
         if (!importGltfInto(*path, root, materials)) return;
+    } else if (isFbxPath(*path)) {
+        if (!importFbxInto(*path, root, materials)) return;
+    } else if (isAbcPath(*path)) {
+        if (!importAbcInto(*path, root, materials)) return;
     } else if (isC4DPath(*path)) {
         C4DImportReport rep;
         if (!importC4D(*path, root, materials, rep, &err)) return reportFileError(*path, err);
@@ -1463,6 +1515,56 @@ void exportSceneGlb(SceneNode& root, const std::vector<Material>& materials) {
     g.importReport.warnings = grep.warnings;
     g.importError.clear();
     g.importTitle = tr("Exportar glTF");
+    g.showImport = true;
+}
+
+// Archivo > Exportar > FBX ASCII (*.fbx): toda la escena.
+void exportSceneFbx(SceneNode& root, const std::vector<Material>& materials) {
+    std::vector<const SceneNode*> roots;
+    for (const auto& c : root.children()) roots.push_back(c.get());
+    if (roots.empty()) return reportNamedError(tr("Exportar"), tr("La escena está vacía."));
+    if (!nativeFileDialogAvailable())
+        return reportNamedError(tr("Exportar"), tr("Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe."));
+    const auto path = saveFileDialog(tr("Exportar a FBX"), {{"FBX", "*.fbx"}}, tr("Escena.fbx"), "fbx");
+    if (!path) return;
+    FbxReport frep;
+    std::string err;
+    if (!exportFbx(*path, roots, materials, frep, &err)) return reportFileError(*path, err);
+    g.importReport = C4DImportReport{};
+    g.importReport.fileName = pathUtf8(path->filename());
+    g.importReport.objects = frep.nodes;
+    g.importReport.meshes = frep.meshes;
+    g.importReport.points = frep.points;
+    g.importReport.polygons = frep.polygons;
+    g.importReport.materials = frep.materials;
+    g.importReport.warnings = frep.warnings;
+    g.importError.clear();
+    g.importTitle = tr("Exportar FBX");
+    g.showImport = true;
+}
+
+// Archivo > Exportar > Alembic (*.abc): toda la escena, un fotograma.
+void exportSceneAbc(SceneNode& root, const std::vector<Material>& materials) {
+    std::vector<const SceneNode*> roots;
+    for (const auto& c : root.children()) roots.push_back(c.get());
+    if (roots.empty()) return reportNamedError(tr("Exportar"), tr("La escena está vacía."));
+    if (!nativeFileDialogAvailable())
+        return reportNamedError(tr("Exportar"), tr("Exportar necesita el diálogo de archivos del sistema, que en esta plataforma todavía no existe."));
+    const auto path = saveFileDialog(tr("Exportar a Alembic"), {{"Alembic", "*.abc"}}, tr("Escena.abc"), "abc");
+    if (!path) return;
+    AbcReport arep;
+    std::string err;
+    if (!exportAbc(*path, roots, materials, arep, &err)) return reportFileError(*path, err);
+    g.importReport = C4DImportReport{};
+    g.importReport.fileName = pathUtf8(path->filename());
+    g.importReport.objects = arep.nodes;
+    g.importReport.meshes = arep.meshes;
+    g.importReport.points = arep.points;
+    g.importReport.polygons = arep.polygons;
+    g.importReport.materials = arep.materials;
+    g.importReport.warnings = arep.warnings;
+    g.importError.clear();
+    g.importTitle = tr("Exportar Alembic");
     g.showImport = true;
 }
 
@@ -3584,7 +3686,9 @@ void drawMainMenu(SceneNode& root, SceneNode*& selected, GizmoMode& mode, SceneH
             if (ImGui::MenuItem(tr("Wavefront (*.obj)..."))) exportSceneObj(root, materials);
             if (ImGui::MenuItem(tr("Valve SMD (Source) (*.smd)..."))) exportSceneSmd(root, materials);
             if (ImGui::MenuItem(tr("glTF binario (*.glb)..."))) exportSceneGlb(root, materials);
-            disabledItems({{tr("FBX (*.fbx)"), ""}, {tr("Alembic (*.abc)"), ""},
+            if (ImGui::MenuItem(tr("FBX ASCII (*.fbx)..."))) exportSceneFbx(root, materials);
+            if (ImGui::MenuItem(tr("Alembic (*.abc)..."))) exportSceneAbc(root, materials);
+            disabledItems({
                            {"STL (*.stl)", ""}, {tr("Collada 1.4 (*.dae)"), ""}});
             ImGui::EndMenu();
         }

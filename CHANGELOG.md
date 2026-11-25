@@ -180,6 +180,27 @@ Reto de Freddy: se renderizó Freddy_Fazbear [VF_2.0] de `fnaf 1 tcg final updat
 
 **Límites conocidos:** el visor sigue dibujando las proyecciones que no son UVW en color plano; sin posado desde la línea de comandos; luz Ambiente sin modelar.
 
+## FBX y Alembic: importar y exportar (2026-11-25)
+
+Con permiso de Rooty se añaden dos librerías, vendorizadas en `third_party/`:
+- **ufbx** (MIT/dominio público, un solo `.c`) para leer FBX.
+- **Alembic 1.8.9** (BSD-3, solo el núcleo Ogawa, sin HDF5 ni Boost) con **Imath 3.1.9** (se descarga con CMake).
+
+**FBX (Archivo > Abrir/Fusionar/Exportar):**
+- Importa FBX binario y ASCII: jerarquía, mallas triangulizadas, normales, UV, materiales (color base, metal, rugosidad, emisión) y textura de color por ruta.
+- Exporta FBX ASCII 7.4 con jerarquía, mallas, normales, UV, materiales por polígono y transformaciones locales.
+- Probado en `fbx_test`: ida y vuelta con posición, rotación, color de material y número de triángulos.
+- Sin probar con FBX de otros programas (no hay ninguno en el disco). Sin animación ni esqueleto: se avisa en el informe.
+
+**Alembic (Archivo > Abrir/Fusionar/Exportar):**
+- Importa `.abc` Ogawa: Xform, PolyMesh y SubD (primer fotograma, con normales y UV si las trae).
+- Exporta la escena como Xform + PolyMesh estáticos.
+- Probado en `abc_test`: ida y vuelta de jerarquía, matriz, triángulos y UV.
+- Alembic guarda las caras en sentido horario: se invierte al leer y al escribir. Esa convención sale de la documentación, no se ha contrastado con un `.abc` de Maya o Houdini.
+- Sin HDF5 (los `.abc` antiguos no abren), sin animación de vértices, cámaras, curvas ni puntos.
+
+**Los tests que faltaban:** `iron3d_tests`, `ik_test` y `obj_test` se ejecutaron y terminan con código 0.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

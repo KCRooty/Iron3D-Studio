@@ -53,6 +53,43 @@ FetchContent_Declare(stb
 
 FetchContent_MakeAvailable(glfw glm vma imgui stb)
 
+# ufbx (MIT/dominio publico, un solo .c): lector de FBX. Vendorizado en third_party/ufbx.
+enable_language(C)
+add_library(iron3d_ufbx STATIC third_party/ufbx/ufbx.c)
+target_include_directories(iron3d_ufbx PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ufbx)
+if(MSVC)
+    target_compile_options(iron3d_ufbx PRIVATE /W0)
+endif()
+
+# Alembic 1.8.9 (BSD-3, solo el nucleo Ogawa, sin HDF5 ni Boost): fuentes vendorizadas en
+# third_party/alembic; Imath 3.1.9 (BSD-3) se descarga con FetchContent.
+set(IMATH_INSTALL OFF CACHE BOOL "" FORCE)
+set(IMATH_INSTALL_PKG_CONFIG OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(PYTHON OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(Imath
+    GIT_REPOSITORY https://github.com/AcademySoftwareFoundation/Imath.git
+    GIT_TAG        v3.1.9
+    GIT_SHALLOW    TRUE)
+FetchContent_MakeAvailable(Imath)
+file(GLOB IRON3D_ALEMBIC_SRC
+    third_party/alembic/Alembic/Util/*.cpp
+    third_party/alembic/Alembic/Abc/*.cpp
+    third_party/alembic/Alembic/AbcGeom/*.cpp
+    third_party/alembic/Alembic/AbcCoreAbstract/*.cpp
+    third_party/alembic/Alembic/AbcCoreOgawa/*.cpp
+    third_party/alembic/Alembic/Ogawa/*.cpp
+    third_party/alembic/Alembic/AbcCollection/*.cpp)
+add_library(iron3d_alembic STATIC ${IRON3D_ALEMBIC_SRC})
+target_include_directories(iron3d_alembic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/alembic)
+find_package(Threads REQUIRED)
+target_link_libraries(iron3d_alembic PUBLIC Imath::Imath Threads::Threads)
+target_include_directories(iron3d_alembic PUBLIC ${imath_SOURCE_DIR}/src ${imath_BINARY_DIR}/config)
+if(MSVC)
+    target_compile_options(iron3d_alembic PRIVATE /W0 /EHsc /bigobj /wd4244 /wd4267)
+    target_compile_definitions(iron3d_alembic PUBLIC _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
+endif()
+
 # Lector y escritor de .lib4d (importers/lib4d): lo comparten Iron3D y las pruebas.
 add_library(iron3d_lib4d STATIC
     src/importers/lib4d/PresetLibrary.cpp
@@ -112,6 +149,8 @@ add_executable(Iron3DStudio
     src/importers/obj/ObjIO.cpp
     src/importers/smd/SmdIO.cpp
     src/importers/gltf/GltfIO.cpp
+    src/importers/fbx/FbxIO.cpp
+    src/importers/abc/AbcIO.cpp
     src/gfx/VulkanContext.cpp
     src/gfx/SwapchainWindow.cpp
     src/gfx/BasicPipeline.cpp
@@ -189,6 +228,8 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         COMPILE_OPTIONS "/permissive;/Zc:twoPhase-")
     # Librerias de VS2019 (/MD), compatibles con el MSVC actual.
     target_link_libraries(Iron3DStudio PRIVATE
+    iron3d_ufbx
+    iron3d_alembic
         "$<IF:$<CONFIG:Debug>,${_cwlib}/cinewarelib_2019/cinewarelib_debug.lib,${_cwlib}/cinewarelib_2019/cinewarelib_release.lib>"
         "$<IF:$<CONFIG:Debug>,${_cwlib}/jpeglib_2019/jpeglib_debug.lib,${_cwlib}/jpeglib_2019/jpeglib_release.lib>"
         ws2_32 winmm rpcrt4 iphlpapi)
@@ -596,6 +637,60 @@ else()
     target_compile_options(gltf_test PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME gltf COMMAND gltf_test)
+
+# FBX (importers/fbx): exportar ASCII y volver a leerlo con ufbx.
+add_executable(fbx_test
+    tests/fbx_test.cpp
+    src/importers/fbx/FbxIO.cpp
+    src/core/MeshData.cpp
+    src/core/PrimitiveShapes.cpp
+    src/core/MeshTopology.cpp
+    src/core/MeshEdit.cpp
+    src/core/SceneNode.cpp
+    src/core/Material.cpp
+    src/core/ShaderTree.cpp
+    src/core/SceneSerializer.cpp
+    src/core/ThumbnailRenderer.cpp
+    src/core/ChannelBake.cpp
+    src/core/TextureImage.cpp
+    src/core/SceneLighting.cpp
+    src/core/TransformGizmo.cpp)
+target_include_directories(fbx_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+target_link_libraries(fbx_test PRIVATE iron3d_lib4d iron3d_ufbx)
+target_compile_definitions(fbx_test PRIVATE GLM_FORCE_RADIANS)
+if(MSVC)
+    target_compile_options(fbx_test PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(fbx_test PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME fbx COMMAND fbx_test)
+
+# Alembic (importers/abc): exportar .abc Ogawa y reimportarlo.
+add_executable(abc_test
+    tests/abc_test.cpp
+    src/importers/abc/AbcIO.cpp
+    src/core/MeshData.cpp
+    src/core/PrimitiveShapes.cpp
+    src/core/MeshTopology.cpp
+    src/core/MeshEdit.cpp
+    src/core/SceneNode.cpp
+    src/core/Material.cpp
+    src/core/ShaderTree.cpp
+    src/core/SceneSerializer.cpp
+    src/core/ThumbnailRenderer.cpp
+    src/core/ChannelBake.cpp
+    src/core/TextureImage.cpp
+    src/core/SceneLighting.cpp
+    src/core/TransformGizmo.cpp)
+target_include_directories(abc_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
+target_link_libraries(abc_test PRIVATE iron3d_lib4d iron3d_alembic)
+target_compile_definitions(abc_test PRIVATE GLM_FORCE_RADIANS)
+if(MSVC)
+    target_compile_options(abc_test PRIVATE /W4 /utf-8 /EHsc)
+else()
+    target_compile_options(abc_test PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME abc COMMAND abc_test)
 
 
 # Shader Fresnel de C4D: horneado de la tira 256x1, modo fisico y ida y vuelta (sin GPU).
