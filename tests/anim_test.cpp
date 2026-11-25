@@ -1,6 +1,8 @@
 // Pistas de parametros, Nivel de Puntos y splines: evaluacion y guardado/carga (2026-11-24).
 #include "core/Deform.h"
 #include "core/Material.h"
+#include "core/OrbitalCamera.h"
+#include <filesystem>
 #include "core/MeshData.h"
 #include "core/SceneNode.h"
 #include "core/SceneSerializer.h"
@@ -90,6 +92,70 @@ int main() {
         CHECK(f2.spline.text == f->spline.text);
     } else {
         CHECK(false);
+    }
+    {
+        // Vistas axonometricas y paralela (2026-11-24)
+        using V = OrbitalCamera::View;
+        OrbitalCamera c;
+        c.setView(V::Isometric);
+        const glm::mat4 vp = c.projectionMatrix(1.0f, false) * c.viewMatrix();
+        // isometrica: los tres ejes unidad salen con la misma longitud en pantalla
+        float len[3];
+        for (int k = 0; k < 3; ++k) {
+            const glm::vec4 a = vp * glm::vec4(0, 0, 0, 1), b = vp * glm::vec4(k == 0, k == 1, k == 2, 1);
+            len[k] = glm::length(glm::vec2(b) - glm::vec2(a));
+        }
+        CHECK(std::fabs(len[0] - len[1]) < 1e-4f && std::fabs(len[1] - len[2]) < 1e-4f);
+        c.setView(V::Gentleman);
+        const glm::mat4 vg = c.projectionMatrix(1.0f, false) * c.viewMatrix();
+        const glm::vec4 o = vg * glm::vec4(0, 0, 0, 1), back = vg * glm::vec4(0, 0, -1, 1);
+        CHECK(back.x > o.x + 1e-4f && back.y > o.y + 1e-4f);   // caballera: el fondo va arriba a la derecha
+        const glm::mat4 vgv = c.projectionMatrix(1.0f, true) * c.viewMatrix();   // Vulkan: Y invertida
+        const glm::vec4 o2 = vgv * glm::vec4(0, 0, 0, 1), b2 = vgv * glm::vec4(0, 0, -1, 1);
+        CHECK(b2.x > o2.x + 1e-4f && b2.y < o2.y - 1e-4f);
+        CHECK(!c.canOrbit());
+        c.setView(V::Parallel);
+        CHECK(c.canOrbit() && c.isOrtho());
+    }
+    {
+        // Archivo de materiales (.imat = escena sin objetos): ida y vuelta
+        std::vector<Material> mats(2);
+        mats[0].name = "Rojo";
+        mats[0].baseColor = glm::vec3(1, 0, 0);
+        mats[1].name = "PBR";
+        mats[1].roughness = 0.25f;
+        mats[1].useColor = false;
+        const std::filesystem::path p = std::filesystem::temp_directory_path() / "iron3d_anim_test.imat";
+        SceneNode empty("Root");
+        CHECK(saveScene(p, empty, mats));
+        SceneNode back("Root");
+        std::vector<Material> got;
+        CHECK(loadScene(p, back, got));
+        CHECK(got.size() == 2 && got[0].name == "Rojo" && got[0].baseColor.x == 1.0f && got[1].roughness == 0.25f && !got[1].useColor);
+        CHECK(back.children().empty());
+        std::error_code ec;
+        std::filesystem::remove(p, ec);
+    }
+    {
+        // Basico/Phong se guardan (linea DISP)
+        SceneNode root("Root");
+        SceneNode* n = root.addChild("C", PrimitiveType::Cube);
+        n->useColor = 2;
+        n->displayColor = glm::vec3(0.1f, 0.2f, 0.3f);
+        n->xray = true;
+        n->phongAngle = 30.0f;
+        std::vector<Material> none;
+        const std::string txt = serializeScene(root, none);
+        SceneNode r2("Root");
+        std::vector<Material> m2;
+        std::string err;
+        CHECK(deserializeScene(txt, r2, m2, &err));
+        if (!err.empty()) std::printf("DISP: %s\n%s\n", err.c_str(), txt.c_str());
+        CHECK(!r2.children().empty());
+        if (!r2.children().empty()) {
+            const SceneNode& c2 = *r2.children()[0];
+            CHECK(c2.useColor == 2 && c2.xray && std::fabs(c2.displayColor.z - 0.3f) < 1e-5f && std::fabs(c2.phongAngle - 30.0f) < 1e-4f);
+        }
     }
     std::printf(g_fail ? "anim_test: %d fallos\n" : "anim_test: OK\n", g_fail);
     return g_fail ? 1 : 0;

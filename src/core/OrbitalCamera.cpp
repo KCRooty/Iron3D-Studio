@@ -51,11 +51,18 @@ void OrbitalCamera::setView(View v) {
         case View::Back: yaw_ = glm::radians(180.0f); pitch_ = 0.0f; break; // desde -Z
         case View::Bottom: yaw_ = 0.0f; pitch_ = glm::radians(-90.0f); break; // desde -Y
         case View::Perspective: yaw_ = glm::radians(45.0f); pitch_ = glm::radians(30.0f); break;
+        case View::Parallel: break;  // conserva el angulo actual
+        case View::Isometric: yaw_ = glm::radians(45.0f); pitch_ = glm::radians(35.264f); break;
+        case View::Dimetric: yaw_ = glm::radians(20.705f); pitch_ = glm::radians(19.471f); break;
+        case View::Military: yaw_ = glm::radians(45.0f); pitch_ = glm::radians(90.0f); break;
+        case View::Gentleman:
+        case View::Bird:
+        case View::Frog: yaw_ = 0.0f; pitch_ = 0.0f; break;
     }
 }
 
 void OrbitalCamera::orbit(float dxPixels, float dyPixels) {
-    if (isOrtho()) return;  // en C4D las vistas ortograficas no orbitan
+    if (!canOrbit()) return;  // en C4D las vistas ortograficas y axonometricas no orbitan
     // Como en C4D, la escena "sigue" al raton (como si la agarraras): arrastrar
     // a la derecha gira el objeto hacia la derecha, es decir, la camara se
     // va hacia la izquierda; arrastrar hacia abajo la sube. Antes era al
@@ -114,9 +121,13 @@ glm::vec3 OrbitalCamera::eyePosition() const {
 glm::mat4 OrbitalCamera::viewMatrix() const {
     // Mirando en vertical, "arriba" en pantalla es -Z en la Superior (como en
     // C4D) y +Z en la Inferior (su espejo).
-    const glm::vec3 up = view_ == View::Top      ? glm::vec3(0.0f, 0.0f, -1.0f)
-                         : view_ == View::Bottom ? glm::vec3(0.0f, 0.0f, 1.0f)
-                                                 : glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 up = view_ == View::Top      ? glm::vec3(0.0f, 0.0f, -1.0f)
+                   : view_ == View::Bottom ? glm::vec3(0.0f, 0.0f, 1.0f)
+                                           : glm::vec3(0.0f, 1.0f, 0.0f);
+    // Militar: planta girada 45 grados
+    if (view_ == View::Military) up = glm::vec3(-std::sin(yaw_), 0.0f, -std::cos(yaw_));
+    // Paralela orbitando hasta la vertical: el "arriba" sale del angulo para no degenerar
+    if (view_ == View::Parallel && std::fabs(std::cos(pitch_)) < 1e-3f) up = glm::vec3(-std::sin(yaw_), 0.0f, -std::cos(yaw_));
     return glm::lookAt(eyePosition(), target_, up);
 }
 
@@ -142,6 +153,21 @@ glm::mat4 OrbitalCamera::projectionMatrix(float aspectRatio, bool flipY) const {
     }
     // Vulkan: +Y apunta hacia abajo en el espacio de recorte (al reves que GL).
     if (flipY) proj[1][1] *= -1.0f;
+    // Oblicuas (despues del volteo de Y, para que valga igual en Vulkan y OpenGL): la profundidad de vista,
+    // relativa al objetivo (z + distancia; positiva = hacia la camara), desplaza x/y en pantalla.
+    float a = 0.0f, b = 0.0f;
+    if (view_ == View::Military) b = 1.0f;                          // planta: lo alto sube a escala real
+    else if (view_ == View::Gentleman) a = b = -0.70710678f;        // fondo a 45 grados, longitud completa
+    else if (view_ == View::Bird) b = -0.5f;                        // el fondo sube: visto desde arriba
+    else if (view_ == View::Frog) b = 0.5f;                         // el fondo baja: visto desde abajo
+    if (a != 0.0f || b != 0.0f) {
+        glm::mat4 sh(1.0f);
+        sh[2][0] = a;
+        sh[2][1] = b;
+        sh[3][0] = a * distance_;
+        sh[3][1] = b * distance_;
+        proj = proj * sh;
+    }
     return proj;
 }
 

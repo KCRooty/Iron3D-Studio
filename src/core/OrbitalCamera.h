@@ -50,10 +50,14 @@ public:
     // y Frontal; Izquierda, Trasera e Inferior desde el menu Camaras. En las
     // ortograficas no se orbita (como en C4D): Alt+clic izquierdo no hace
     // nada, el paneo y el zoom si.
-    enum class View { Perspective, Top, Right, Front, Left, Back, Bottom };
+    // Paralela: proyeccion paralela que si se orbita. Axonometricas (2026-11-24): Isometrica y Dimetrica son
+    // paralelas con angulos fijos; Militar, Caballera, Pajaro y Rana son oblicuas (la profundidad se dibuja
+    // desplazada en pantalla).
+    enum class View { Perspective, Top, Right, Front, Left, Back, Bottom, Parallel, Isometric, Dimetric, Military, Gentleman, Bird, Frog };
     void setView(View v);
     View view() const { return view_; }
     bool isOrtho() const { return view_ != View::Perspective; }
+    bool canOrbit() const { return view_ == View::Perspective || view_ == View::Parallel; }
 
     // Preferencias > Navegacion: multiplicadores de velocidad (1 = 100 %) e inversion de la orbita.
     struct NavSettings {

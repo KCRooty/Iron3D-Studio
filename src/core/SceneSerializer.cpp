@@ -486,7 +486,7 @@ bool parseNode(Parser& p, SceneNode& node, std::string& err, const MeshRefTable*
     if (p.atEnd() || p.next() != "{") { err = "se esperaba '{' tras los atributos de NODE"; return false; }
     if (!p.atEnd() && p.peek() == "MESH" && !parseMesh(p, mesh, err)) return false;
     while (!p.atEnd() && (p.peek() == "LIGHT" || p.peek() == "CAMERA" || p.peek() == "TEXTAG" ||
-                            p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "PROT" || p.peek() == "IK" || p.peek() == "NULLSHAPE" ||
+                            p.peek() == "PART" || p.peek() == "JOINT" || p.peek() == "JLIMIT" || p.peek() == "PROT" || p.peek() == "IK" || p.peek() == "NULLSHAPE" || p.peek() == "DISP" ||
                             p.peek() == "SYM" || p.peek() == "DEF" || p.peek() == "INST" || p.peek() == "ENV" || p.peek() == "SPL" || p.peek() == "CLN" || p.peek() == "HIDDEN")) {
         const std::string kind = p.next();
         bool ok = true;

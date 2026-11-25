@@ -153,6 +153,18 @@ Las entradas de Deformadores, Modelado y MoGraph que no hacían nada ahora crean
 - En mallas muy densas cada paso recalcula todas las normales, así que puede ir lento.
 - Sin comprobar a mano en la interfaz; solo compilación, tests (spline_test cubre Estirar, invertir, Achatar, Suavizar, Borrar y Agarrar) y arranque.
 
+## Gestor de objetos, materiales y visor (2026-11-24)
+
+**Gestor de objetos:** Modo Lista y Modo Árbol, Mostrar Etiquetas, Establecer como Raíz (con barra "< Escena" y Mostrar Todo), Fusionar Objetos desde Archivo, etiquetas Fong, Protección, Mostrar y Objetivo (el Objetivo crea un Nulo y lo asigna a la cámara o luz).
+
+**Materiales:** Nuevo Material PBR, Cargar/Guardar Materiales (.imat), Guardar Todos, Cargar/Guardar Material Preestablecido, Deshacer, Cargar y Editar Textura.
+
+**Visor:** Paralela orbitable y vistas axonométricas (Isométrica, Dimétrica, Militar, Caballera, Pájaro, Rana); modos Rápido, Constante, Líneas Ocultas y Esqueleto; Opciones (OpenGL Mejorado, Sombras, Transparencia, SSAO, Normales de polígonos y vértices, Texturas, Rayos X); Filtrar por tipo de objeto; Redibujar.
+
+**Arreglos:** la línea DISP (Usar Color, Rayos X, Phong) se guardaba pero no se podía volver a cargar; Rayos X no hacía transparente el objeto.
+
+**Límites conocidos:** etiquetas Compositing y Restricción, Reflexiones, Teselación, Profundidad de Campo, Ocultar Caras Posteriores, Isoparms, Estereoscópico y Configurar siguen desactivados; el Modo Lista no pliega; las vistas oblicuas no tienen rejilla corregida.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

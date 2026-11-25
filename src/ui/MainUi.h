@@ -53,6 +53,14 @@ struct ViewportState {
     // Mostrar (2026-11-24): 0 Gouraud, 1 Gouraud (Lineas), 7 Lineas, 8 Alambre, 10 Caja. Las lineas de los modos
     // con sombreado solo se dibujan en las caras que miran a la camara.
     int displayMode = 0;
+    // 2 Rapido, 3 Rapido (Lineas), 4 Constante, 5 Constante (Lineas), 6 Lineas Ocultas, 11 Esqueleto (2026-11-24).
+    // Opciones del visor: OpenGL Mejorado manda sobre Sombras, Transparencia y SSAO.
+    bool optEnhanced = true, optShadows = true, optTransparency = true, optSsao = true;
+    bool optTextures = true, optXray = false, optPolyNormals = false, optVertNormals = false;
+    // Filtrar: bit = tipo oculto (0 Nulo, 1 Poligono, 2 Spline, 3 Generador, 4 Subdivision Superficie,
+    // 5 Deformador, 6 Camara, 7 Luz, 8 Entorno).
+    unsigned filterOff = 0;
+    bool filterShows(int cat) const { return cat < 0 || !(filterOff & (1u << cat)); }
     // W: ejes del gizmo en el mundo (si no, los del objeto, como C4D por defecto).
     bool worldCoords = false;
     // L "Activar Eje": mover/rotar/escalar cambia solo el eje del objeto; la

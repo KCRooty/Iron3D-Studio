@@ -187,6 +187,9 @@ struct UiState {
     // Buscar y Filtrar del Gestor de Objetos: texto (sin distinguir mayusculas) y tipos que se muestran.
     char omSearch[64] = {};
     bool omShowGeom = true, omShowLight = true, omShowCamera = true, omShowOther = true;
+    // Gestor de Objetos (2026-11-24): Modo Lista (todos al mismo nivel), Mostrar Etiquetas y Establecer como Raiz.
+    bool omListMode = false, omShowTags = true;
+    int omRootId = -1;
     bool renameFocus = false;
 
     std::unordered_set<int> collapsed;
@@ -487,6 +490,13 @@ const char* viewLabel(CamView v, const char* perspName) {
         case CamView::Left: return tr("Izquierda");
         case CamView::Back: return tr("Trasera");
         case CamView::Bottom: return tr("Inferior");
+        case CamView::Parallel: return tr("Paralela");
+        case CamView::Isometric: return tr("Isométrica");
+        case CamView::Dimetric: return tr("Dimétrica");
+        case CamView::Military: return tr("Militar");
+        case CamView::Gentleman: return tr("Caballera");
+        case CamView::Bird: return tr("Pájaro");
+        case CamView::Frog: return tr("Rana");
         default: return perspName;
     }
 }
@@ -2009,6 +2019,35 @@ void handleMarqueeSelection(SceneNode& root, SceneNode*& selected, const Orbital
         if (hits.empty() && !io.KeyShift) selected = nullptr;
     }
     g.lastSelectedId = selected ? selected->id() : -1;
+}
+
+std::filesystem::path g_matPresetDir;  // carpeta de Materiales Preestablecidos (junto a las preferencias)
+
+// Archivo de materiales (.imat): el mismo texto que una escena .iron, pero sin objetos.
+bool saveMaterialsFile(const std::filesystem::path& path, const std::vector<Material>& mats) {
+    SceneNode empty("Root");
+    std::string err;
+    if (!saveScene(path, empty, mats, &err)) {
+        flashStatus(tr("No se pudieron guardar los materiales: ") + err);
+        return false;
+    }
+    return true;
+}
+
+int loadMaterialsFile(const std::filesystem::path& path, std::vector<Material>& materials) {
+    SceneNode tmp("Root");
+    std::vector<Material> mats;
+    std::string err;
+    if (!loadScene(path, tmp, mats, &err)) {
+        flashStatus(tr("No se pudieron cargar los materiales: ") + err);
+        return 0;
+    }
+    for (Material& m : mats) {
+        // rutas relativas de textura: desde la carpeta del archivo si no traen la suya
+        if (m.texBaseDir.empty()) m.texBaseDir = path.parent_path().string();
+        materials.push_back(std::move(m));
+    }
+    return (int)mats.size();
 }
 
 void newMaterial(std::vector<Material>& materials) {
@@ -4148,7 +4187,7 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
                 frameNodes(camera, *selected, true);
             if (ImGui::MenuItem(tr("Encuadre por Defecto"), tr("Mayús+H"))) camera.resetView();
             ImGui::Separator();
-            ImGui::MenuItem(tr("Redibujar"), "A", false, false);
+            if (ImGui::MenuItem(tr("Redibujar"), "A")) g.lastEvalFrame = -1e9f;
             ImGui::EndMenu();
         }
         if (beginMenuDbg(tr("Cámaras"))) {
@@ -4161,14 +4200,22 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
             using CV = OrbitalCamera::View;
             const CV cv = camera.view();
             if (ImGui::MenuItem(tr("Perspectiva"), nullptr, cv == CV::Perspective)) selectView(camera, CV::Perspective);
-            ImGui::MenuItem(tr("Paralela"), nullptr, false, false);
+            if (ImGui::MenuItem(tr("Paralela"), nullptr, cv == CV::Parallel)) selectView(camera, CV::Parallel);
             if (ImGui::MenuItem(tr("Izquierda"), nullptr, cv == CV::Left)) selectView(camera, CV::Left);
             if (ImGui::MenuItem(tr("Derecha"), nullptr, cv == CV::Right)) selectView(camera, CV::Right);
             if (ImGui::MenuItem(tr("Frontal"), nullptr, cv == CV::Front)) selectView(camera, CV::Front);
             if (ImGui::MenuItem(tr("Trasera"), nullptr, cv == CV::Back)) selectView(camera, CV::Back);
             if (ImGui::MenuItem(tr("Superior"), nullptr, cv == CV::Top)) selectView(camera, CV::Top);
             if (ImGui::MenuItem(tr("Inferior"), nullptr, cv == CV::Bottom)) selectView(camera, CV::Bottom);
-            disabledItems({{nullptr, nullptr}, {tr("Axonométrica"), ""}});
+            ImGui::Separator();
+            if (beginMenuDbg(tr("Axonométrica"))) {
+                const std::pair<const char*, CV> ax[] = {{tr("Isométrica"), CV::Isometric}, {tr("Dimétrica"), CV::Dimetric},
+                                                         {tr("Militar"), CV::Military}, {tr("Caballera"), CV::Gentleman},
+                                                         {tr("Pájaro"), CV::Bird}, {tr("Rana"), CV::Frog}};
+                for (const auto& [nm, v] : ax)
+                    if (ImGui::MenuItem(nm, nullptr, cv == v)) selectView(camera, v);
+                ImGui::EndMenu();
+            }
             ImGui::EndMenu();
         }
         if (beginMenuDbg(tr("Mostrar"))) {
@@ -4177,37 +4224,57 @@ void drawViewportHeader(SceneNode& root, SceneNode*& selected, OrbitalCamera& ca
             };
             dm(tr("Sombreado Gouraud"), "N~A", 0);
             dm(tr("Sombreado Gouraud (Líneas)"), "N~B", 1);
-            disabledItems({{tr("Sombreado Rápido"), "N~C"}, {tr("Sombreado Rápido (Líneas)"), "N~D"}, {tr("Sombreado Constante"), "N~E"},
-                           {tr("Sombreado Constante (Líneas)"), "N~F"}, {tr("Líneas Ocultas"), "N~G"}});
+            dm(tr("Sombreado Rápido"), "N~C", 2);
+            dm(tr("Sombreado Rápido (Líneas)"), "N~D", 3);
+            dm(tr("Sombreado Constante"), "N~E", 4);
+            dm(tr("Sombreado Constante (Líneas)"), "N~F", 5);
+            dm(tr("Líneas Ocultas"), "N~G", 6);
             dm(tr("Líneas"), "N~H", 7);
             ImGui::Separator();
             dm(tr("Alambre"), "N~I", 8);
             ImGui::MenuItem(tr("Isoparms"), "N~J", false, false);
             dm(tr("Caja"), "N~K", 10);
-            ImGui::MenuItem(tr("Esqueleto"), "N~L", false, false);
+            dm(tr("Esqueleto"), "N~L", 11);
             ImGui::EndMenu();
         }
         if (beginMenuDbg(tr("Opciones"))) {
             beginMenuDbg(tr("Nivel de Detalle"), false);
-            disabledItems({{nullptr, nullptr}, {tr("Estereoscópico"), ""}, {tr("Sombreado de Flujo de Trabajo Lineal"), ""},
-                           {nullptr, nullptr}, {tr("OpenGL Mejorado"), ""}, {tr("Ruidos"), ""}, {tr("Post Efectos"), ""},
-                           {tr("Sombras"), ""}, {tr("Transparencia"), ""}, {tr("Reflexiones"), ""}, {tr("SSAO"), ""},
-                           {tr("Teselación"), ""}, {tr("Profundidad de Campo"), ""}, {nullptr, nullptr},
+            disabledItems({{nullptr, nullptr}, {tr("Estereoscópico"), ""}, {tr("Sombreado de Flujo de Trabajo Lineal"), ""}});
+            ImGui::Separator();
+            ImGui::MenuItem(tr("OpenGL Mejorado"), nullptr, &vp.optEnhanced);
+            disabledItems({{tr("Ruidos"), ""}, {tr("Post Efectos"), ""}});
+            ImGui::MenuItem(tr("Sombras"), nullptr, &vp.optShadows, vp.optEnhanced);
+            ImGui::MenuItem(tr("Transparencia"), nullptr, &vp.optTransparency, vp.optEnhanced);
+            ImGui::MenuItem(tr("Reflexiones"), nullptr, false, false);
+            ImGui::MenuItem(tr("SSAO"), nullptr, &vp.optSsao, vp.optEnhanced);
+            disabledItems({{tr("Teselación"), ""}, {tr("Profundidad de Campo"), ""}, {nullptr, nullptr},
                            {tr("Ocultar Caras Posteriores"), "N~P"}, {tr("Usar Edición de Isolíneas"), tr("Alt+A")},
-                           {tr("Color de Capa"), ""}, {tr("Normales de Polígonos"), ""}, {tr("Normales de Vértices"), ""},
-                           {nullptr, nullptr}, {tr("Etiquetas"), "N~O"}, {tr("Texturas"), "N~Q"}, {tr("Rayos X"), "N~R"},
-                           {nullptr, nullptr}, {tr("Luz por Defecto..."), ""}, {tr("Configurar..."), tr("Mayús+V")},
+                           {tr("Color de Capa"), ""}});
+            ImGui::MenuItem(tr("Normales de Polígonos"), nullptr, &vp.optPolyNormals);
+            ImGui::MenuItem(tr("Normales de Vértices"), nullptr, &vp.optVertNormals);
+            ImGui::Separator();
+            ImGui::MenuItem(tr("Etiquetas"), "N~O", false, false);
+            ImGui::MenuItem(tr("Texturas"), "N~Q", &vp.optTextures);
+            ImGui::MenuItem(tr("Rayos X"), "N~R", &vp.optXray);
+            disabledItems({{nullptr, nullptr}, {tr("Luz por Defecto..."), ""}, {tr("Configurar..."), tr("Mayús+V")},
                            {tr("Configurar Todo..."), tr("Alt+V")}});
             ImGui::EndMenu();
         }
         if (beginMenuDbg(tr("Filtrar"))) {
             ImGui::MenuItem(tr("Cuadrícula"), nullptr, &vp.showGrid);
             ImGui::Separator();
-            // El resto de filtros todavia no tienen efecto: se ven activos
-            // (como en C4D por defecto) pero no se pueden cambiar.
-            for (const char* f : {tr("Nulo"), tr("Polígono"), tr("Spline"), tr("Generador"), tr("Subdivisión Superficie"), tr("Deformador"),
-                                  tr("Cámara"), tr("Luz"), tr("Entorno"), tr("Partícula"), tr("Otro")})
-                ImGui::MenuItem(f, nullptr, true, false);
+            // Filtros por tipo de objeto: apagados, ese tipo no se dibuja en el visor (sigue en el Gestor de Objetos).
+            {
+                const char* fl[] = {tr("Nulo"), tr("Polígono"), tr("Spline"), tr("Generador"), tr("Subdivisión Superficie"), tr("Deformador"),
+                                    tr("Cámara"), tr("Luz"), tr("Entorno")};
+                for (int i = 0; i < 9; ++i) {
+                    bool on = vp.filterShows(i);
+                    if (ImGui::MenuItem(fl[i], nullptr, &on)) vp.filterOff = on ? (vp.filterOff & ~(1u << i)) : (vp.filterOff | (1u << i));
+                }
+                if (ImGui::MenuItem(tr("Mostrar Todo"), nullptr, false, vp.filterOff != 0)) vp.filterOff = 0;
+                ImGui::MenuItem(tr("Partícula"), nullptr, true, false);
+                ImGui::MenuItem(tr("Otro"), nullptr, true, false);
+            }
             ImGui::Separator();
             for (const char* f : {tr("Horizonte"), tr("Ejes Globales"), tr("Cajas Delimitadoras"), tr("HUD"), tr("Resaltar Componente"),
                                   tr("Ejes"), tr("Guías"), tr("Resaltar Objeto"), tr("Cruz Navegación")})
@@ -4612,10 +4679,23 @@ bool omSubtreeMatches(const SceneNode& n) {
 void collectRows(SceneNode& node, int depth, std::vector<TreeRow>& out) {
     const bool filtering = omFilterActive();
     for (const auto& c : node.children()) {
+        if (g.omListMode) {
+            // Modo Lista: todos los objetos en una columna, sin sangria ni plegado
+            if (!filtering || omNodeMatches(*c)) out.push_back({c.get(), 0});
+            collectRows(*c, 0, out);
+            continue;
+        }
         if (filtering && !omSubtreeMatches(*c)) continue;
         out.push_back({c.get(), depth});
         if (!c->children().empty() && (filtering || !g.collapsed.count(c->id()))) collectRows(*c, depth + 1, out);
     }
+}
+
+SceneNode* findNodeById(SceneNode& n, int id) {
+    if (n.id() == id) return &n;
+    for (const auto& c : n.children())
+        if (SceneNode* f = findNodeById(*c, id)) return f;
+    return nullptr;
 }
 
 void addChildMenu(SceneNode& root, SceneNode* parent, SceneNode*& selected, SceneHistory& history) {
@@ -4648,7 +4728,7 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
     if (ImGui::BeginMenuBar()) {
         panelGrip(tr(names().objects));
         if (ImGui::BeginMenu(tr("Archivo"))) {
-            disabledItems({{tr("Fusionar Objetos..."), ""}});
+            if (ImGui::MenuItem(tr("Fusionar Objetos..."))) mergeSceneFile(root, selected, history, materials);
             if (ImGui::MenuItem(tr("Guardar Objetos Seleccionados como..."), nullptr, false,
                                 selected != nullptr && cinewareAvailable()))
                 exportSelectedC4D(root, selected, materials);
@@ -4663,7 +4743,11 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu(tr("Ver"))) {
-            disabledItems({{tr("Modo Árbol"), ""}, {tr("Modo Lista"), ""}, {nullptr, nullptr}, {tr("Mostrar Etiquetas"), ""}});
+            if (ImGui::MenuItem(tr("Modo Árbol"), nullptr, !g.omListMode)) g.omListMode = false;
+            if (ImGui::MenuItem(tr("Modo Lista"), nullptr, g.omListMode)) g.omListMode = true;
+            ImGui::Separator();
+            ImGui::MenuItem(tr("Mostrar Etiquetas"), nullptr, &g.omShowTags);
+            if (ImGui::MenuItem(tr("Mostrar Todo (quitar raíz)"), nullptr, false, g.omRootId >= 0)) g.omRootId = -1;
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu(tr("Objetos"))) {
@@ -4718,12 +4802,29 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
     ImGui::BeginChild("##omtree", ImVec2(0, 0), ImGuiChildFlags_None);
     std::vector<TreeRow> rows;
-    collectRows(root, 0, rows);
+    SceneNode* omRoot = g.omRootId >= 0 ? findNodeById(root, g.omRootId) : nullptr;
+    if (!omRoot) g.omRootId = -1;
+    if (omRoot) {
+        // Establecer como Raiz: solo se ve esa rama; una barra arriba vuelve a la escena entera
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
+        if (ImGui::SmallButton(tr("< Escena"))) g.omRootId = -1;
+        ImGui::SameLine();
+        ImGui::TextDisabled(tr("Raíz: %s"), omRoot->name().c_str());
+        ImGui::PopStyleVar();
+        if (g.omRootId >= 0) {
+            rows.push_back({omRoot, 0});
+            if (!g.collapsed.count(omRoot->id()) || omFilterActive()) collectRows(*omRoot, 1, rows);
+        } else {
+            collectRows(root, 0, rows);
+        }
+    } else {
+        collectRows(root, 0, rows);
+    }
 
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const float rowH = 20.0f;
     const float fullW = ImGui::GetContentRegionAvail().x;
-    const float tagsW = 46.0f;
+    const float tagsW = g.omShowTags ? 46.0f : 0.0f;
     const float flagsW = 34.0f;
     SceneNode* pendingDelete = nullptr;
     SceneNode* pendingDuplicate = nullptr;
@@ -4826,8 +4927,35 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
                     node->materialIndex = -1;
                 }
                 ImGui::Separator();
-                disabledItems({{tr("Fong"), ""}, {tr("Compositing"), ""}, {tr("Protección"), ""}, {tr("Mostrar"), ""},
-                               {tr("Objetivo"), ""}, {tr("Restricción"), ""}});
+                if (ImGui::MenuItem(tr("Fong"), nullptr, false, hasGeometry(node->primitive))) {
+                    selectOnly(selected, node);
+                    g.focus = AttrFocus::Object;
+                    flashStatus(tr("Fong: el ángulo está en la pestaña Phong del objeto."));
+                }
+                ImGui::MenuItem(tr("Compositing"), nullptr, false, false);
+                if (ImGui::MenuItem(tr("Protección"), nullptr, node->protection.present)) {
+                    history.commitBefore(root);
+                    node->protection.present = !node->protection.present;
+                }
+                if (ImGui::MenuItem(tr("Mostrar"), nullptr, node->xray || node->useColor != 0)) {
+                    selectOnly(selected, node);
+                    g.focus = AttrFocus::Object;
+                    flashStatus(tr("Mostrar: Usar Color y Rayos X están en la pestaña Básico del objeto."));
+                }
+                const bool canTarget = node->primitive == PrimitiveType::Camera || node->primitive == PrimitiveType::Light;
+                if (ImGui::MenuItem(tr("Objetivo"), nullptr, false, canTarget)) {
+                    // Etiqueta Objetivo: un Nulo delante del objeto al que apunta siempre
+                    history.commitBefore(root);
+                    SceneNode* par = node->parent() ? node->parent() : &root;
+                    SceneNode* tg = par->addChild(node->name() + tr(".Objetivo"));
+                    tg->nullDisplay.shape = 1;  // Punto (NullShapes.h)
+                    const glm::mat4 w = node->localMatrix();
+                    tg->position = glm::vec3(w[3]) - glm::normalize(glm::vec3(w[2]) + glm::vec3(1e-9f)) * 2.0f;
+                    const std::string path = nodePathFromRoot(root, *tg);
+                    if (node->primitive == PrimitiveType::Camera) node->camera.target = path;
+                    else node->light.target = path;
+                }
+                ImGui::MenuItem(tr("Restricción"), nullptr, false, false);
                 ImGui::EndMenu();
             }
             for (const char* fam : {tr("Character Etiquetas"), tr("Cineman Etiquetas"), tr("Etiqueta UVW"), tr("Hair Etiquetas"),
@@ -4849,7 +4977,7 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
                 g.lastSelectedId = node->id();
                 g.focus = AttrFocus::Object;
             }
-            ImGui::MenuItem(tr("Establecer como Raíz"), nullptr, false, false);
+            if (ImGui::MenuItem(tr("Establecer como Raíz"))) g.omRootId = node->id();
             ImGui::Separator();
             if (ImGui::MenuItem(tr("Expandir Todo"), nullptr, false, !node->children().empty()))
                 forSubtree(*node, [](SceneNode& n) { g.collapsed.erase(n.id()); });
@@ -4975,11 +5103,12 @@ void drawObjectManager(SceneNode& root, SceneNode*& selected, SceneHistory& hist
 
         // Etiquetas: Phong (todas las primitivas con geometria) + Textura.
         float tx = tagsX + 3;
-        if (hasGeometry(node->primitive)) {
+        if (!g.omShowTags) tx = 1e9f;
+        if (g.omShowTags && hasGeometry(node->primitive)) {
             icons::draw(dl, Icon::PhongTag, ImVec2(tx, p.y + 2), 16, true);
             tx += 18;
         }
-        if (node->materialIndex >= 0 && (size_t)node->materialIndex < materials.size()) {
+        if (g.omShowTags && node->materialIndex >= 0 && (size_t)node->materialIndex < materials.size()) {
             const Material& m = materials[(size_t)node->materialIndex];
             ImGui::SetCursorScreenPos(ImVec2(tx, p.y));
             ImGui::SetNextItemAllowOverlap();
@@ -7270,21 +7399,70 @@ void drawMaterialManager(SceneNode& root, SceneNode*& selected, SceneHistory& hi
     if (ImGui::BeginMenuBar()) {
         panelGrip(tr(names().materials));
         if (ImGui::BeginMenu(tr("Crear"))) {
-            ImGui::MenuItem(tr("Nuevo Material PBR"), tr("Ctrl+Mayús+N"), false, false);
+            if (ImGui::MenuItem(tr("Nuevo Material PBR"), tr("Ctrl+Mayús+N"))) {
+                // Material PBR de C4D: sin canal Color (todo va en la Reflectancia), rugosidad media
+                history.commitBefore(root);
+                newMaterial(materials);
+                Material& pm = materials.back();
+                pm.name = tr("Material PBR");
+                pm.baseColor = glm::vec3(0.8f);
+                pm.roughness = 0.4f;
+                pm.useColor = false;
+                pm.useReflectance = true;
+            }
             if (ImGui::MenuItem(tr("Nuevo Material"), tr("Ctrl+N"))) {
                 history.commitBefore(root);
                 newMaterial(materials);
             }
             ImGui::BeginMenu(tr("Shader"), false);
             ImGui::Separator();
-            disabledItems({{tr("Cargar Materiales..."), tr("Ctrl+Mayús+O")}, {tr("Guardar Materiales como..."), ""},
-                           {tr("Guardar Todos los Materiales como..."), ""}, {nullptr, nullptr},
-                           {tr("Cargar Material Preestablecido"), ""}, {tr("Guardar Material Preestablecido..."), ""}});
+            const bool fd = nativeFileDialogAvailable();
+            const std::vector<std::pair<std::string, std::string>> mf = {{tr("Materiales de Iron3D"), "*.imat;*.iron"}};
+            if (ImGui::MenuItem(tr("Cargar Materiales..."), tr("Ctrl+Mayús+O"), false, fd))
+                if (auto pth = openFileDialog(tr("Cargar Materiales"), mf)) {
+                    history.commitBefore(root);
+                    const int n = loadMaterialsFile(*pth, materials);
+                    if (n > 0) flashStatus(tr("Materiales cargados: ") + std::to_string(n));
+                }
+            const bool hasSelM = g.selectedMat >= 0 && (size_t)g.selectedMat < materials.size();
+            if (ImGui::MenuItem(tr("Guardar Materiales como..."), nullptr, false, fd && hasSelM))
+                if (auto pth = saveFileDialog(tr("Guardar Materiales como"), mf, materials[(size_t)g.selectedMat].name, "imat"))
+                    if (saveMaterialsFile(*pth, {materials[(size_t)g.selectedMat]})) flashStatus(tr("Material guardado."));
+            if (ImGui::MenuItem(tr("Guardar Todos los Materiales como..."), nullptr, false, fd && !materials.empty()))
+                if (auto pth = saveFileDialog(tr("Guardar Todos los Materiales como"), mf, tr("Materiales"), "imat"))
+                    if (saveMaterialsFile(*pth, materials)) flashStatus(tr("Materiales guardados: ") + std::to_string(materials.size()));
+            ImGui::Separator();
+            if (ImGui::BeginMenu(tr("Cargar Material Preestablecido"))) {
+                std::error_code ec;
+                std::vector<std::filesystem::path> files;
+                if (std::filesystem::is_directory(g_matPresetDir, ec))
+                    for (const auto& e : std::filesystem::directory_iterator(g_matPresetDir, ec))
+                        if (e.path().extension() == ".imat") files.push_back(e.path());
+                std::sort(files.begin(), files.end());
+                if (files.empty()) ImGui::TextDisabled("%s", tr("(ninguno guardado)"));
+                for (const auto& f : files)
+                    if (ImGui::MenuItem(f.stem().string().c_str())) {
+                        history.commitBefore(root);
+                        loadMaterialsFile(f, materials);
+                        g.selectedMat = (int)materials.size() - 1;
+                    }
+                ImGui::EndMenu();
+            }
+            if (ImGui::MenuItem(tr("Guardar Material Preestablecido..."), nullptr, false, hasSelM)) {
+                std::error_code ec;
+                std::filesystem::create_directories(g_matPresetDir, ec);
+                std::string nm = materials[(size_t)g.selectedMat].name;
+                for (char& ch : nm)
+                    if (std::strchr("<>:\"/|?*", ch) || (unsigned char)ch < 32) ch = '_';
+                if (saveMaterialsFile(g_matPresetDir / (nm + ".imat"), {materials[(size_t)g.selectedMat]}))
+                    flashStatus(tr("Material preestablecido guardado: ") + nm);
+            }
             ImGui::EndMenu();
         }
         const bool hasSel = g.selectedMat >= 0 && (size_t)g.selectedMat < materials.size();
         if (ImGui::BeginMenu(tr("Edición"))) {
-            ImGui::MenuItem(tr("Deshacer"), tr("Ctrl+Z"), false, false);
+            if (ImGui::MenuItem(tr("Deshacer"), tr("Ctrl+Z"), false, history.canUndo()))
+                if (history.undo(root)) selected = nullptr;
             ImGui::Separator();
             if (ImGui::MenuItem(tr("Eliminar"), tr("Supr"), false, hasSel)) {
                 history.commitBefore(root);
@@ -7318,7 +7496,24 @@ void drawMaterialManager(SceneNode& root, SceneNode*& selected, SceneHistory& hi
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu(tr("Textura"))) {
-            disabledItems({{tr("Cargar Textura..."), ""}, {tr("Editar Textura..."), ""}});
+            const bool hasTexSel = g.selectedMat >= 0 && (size_t)g.selectedMat < materials.size();
+            if (ImGui::MenuItem(tr("Cargar Textura..."), nullptr, false, hasTexSel && nativeFileDialogAvailable()))
+                if (auto pth = openFileDialog(tr("Cargar Textura"), {{tr("Imágenes"), "*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.tif;*.tiff;*.hdr"}})) {
+                    history.commitBefore(root);
+                    Material& tm = materials[(size_t)g.selectedMat];
+                    tm.texture(TexSlot::Color) = pth->string();
+                    tm.useColor = true;
+                    flashStatus(tr("Textura cargada en el canal Color."));
+                }
+            {
+                std::string texPath;
+                if (hasTexSel) {
+                    const Material& tm = materials[(size_t)g.selectedMat];
+                    if (!tm.texture(TexSlot::Color).empty()) texPath = resolveTexturePath(tm.texture(TexSlot::Color), tm.texBaseDir);
+                }
+                if (ImGui::MenuItem(tr("Editar Textura..."), nullptr, false, !texPath.empty()))
+                    if (!openFolderInExplorer(texPath)) flashStatus(tr("No se pudo abrir la textura con el programa del sistema."));
+            }
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
@@ -10065,6 +10260,7 @@ void drawMainUi(SceneNode& root, SceneNode*& selected, GizmoMode& gizmoMode,
                  std::vector<Material>& materials, OrbitalCamera& camera, ViewportState& viewport) {
     g_vp = &viewport;
     g_cam = &camera;
+    g_matPresetDir = prefsPath.parent_path() / "material_presets";
     camera.nav.pan = (float)prefs.navPan / 100.0f;
     camera.nav.zoom = (float)prefs.navZoom / 100.0f;
     camera.nav.orbit = (float)prefs.navOrbit / 100.0f;

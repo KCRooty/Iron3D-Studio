@@ -60,6 +60,7 @@ extern "C" __declspec(dllimport) int __stdcall MultiByteToWideChar(unsigned int 
 #include "core/NullShapes.h"
 #include "core/Spline.h"
 #include "core/LightGizmo.h"
+#include "core/DeformMore.h"
 
 namespace {
 
@@ -260,6 +261,36 @@ void drawSceneGBuffer(iron3d::IRenderer& renderer, SceneMeshes& meshes, iron3d::
 // uno asignado). La visibilidad del visor es el punto de ARRIBA del Gestor de
 // Objetos (editorVis): Apagado oculta el nodo y a los hijos en Por Defecto,
 // pero un hijo en Activado sigue viendose, igual que en C4D.
+// Sombreado y opciones del visor para este panel (los fija el bucle principal antes de dibujar).
+struct ViewDrawOpts {
+    int shade = 0;           // 0 normal, 1 Constante, 2 relleno con el color de fondo (Lineas Ocultas)
+    glm::vec3 bg{0.3f};
+    bool textures = true, xray = false, transparency = true;
+    unsigned filterOff = 0;
+};
+ViewDrawOpts g_vdo;
+
+// Tipo de objeto para Filtrar (mismos bits que ViewportState::filterOff); -1 = sin tipo.
+int nodeFilterCategory(const iron3d::SceneNode& n) {
+    using iron3d::PrimitiveType;
+    if (n.primitive == PrimitiveType::Camera) return 6;
+    if (n.primitive == PrimitiveType::Light) return 7;
+    if (n.env.present) return 8;
+    if (n.deform.present) {
+        const int k = n.deform.kind;
+        if (std::string(iron3d::deformKindName(k)) == "Subdivisión Superficie") return 4;
+        return (k <= 27 || k == 49 || k == 50) ? 5 : 3;
+    }
+    if (n.clone.present || n.symmetry.present || n.instance.present) return 3;
+    if (n.spline.present) return 2;
+    if (n.primitive == PrimitiveType::None) return 0;
+    return 1;
+}
+bool filterHides(const iron3d::SceneNode& n) {
+    const int c = nodeFilterCategory(n);
+    return c >= 0 && (g_vdo.filterOff & (1u << c));
+}
+
 // Lineas de los modos de Mostrar (Gouraud Lineas, Lineas, Alambre, Caja). Aristas de poligono (sin las diagonales
 // de triangulacion), cacheadas por malla; en Gouraud (Lineas) solo las caras que miran a la camara.
 struct WirePoly { glm::vec3 center, normal; std::vector<std::pair<uint32_t, uint32_t>> edges; };
@@ -310,8 +341,27 @@ void buildDisplayLines(iron3d::SceneNode& node, const glm::mat4& parentWorld, bo
                        const iron3d::SceneNode* selected, std::vector<iron3d::Vertex>& out) {
     const bool vis = iron3d::resolveVisibility(node.editorVis, parentVisible);
     const glm::mat4 world = parentWorld * node.localMatrix();
-    if (vis && soloShows(node) && node.mesh && !node.mesh->indices.empty() && node.primitive == iron3d::PrimitiveType::Mesh) {
-        const glm::vec3 col = &node == selected ? glm::vec3(1.0f, 0.65f, 0.2f) : mode == 1 ? glm::vec3(0.1f, 0.1f, 0.1f) : glm::vec3(0.75f, 0.8f, 0.9f);
+    const bool frontOnly = mode == 1 || mode == 3 || mode == 5 || mode == 6;
+    if (mode == 11) {
+        // Esqueleto: una linea de cada objeto a cada hijo (la jerarquia), sin mallas
+        const glm::vec3 me = glm::vec3(world[3]);
+        if (vis && soloShows(node))
+            for (const auto& c : node.children()) {
+                if (!iron3d::resolveVisibility(c->editorVis, vis)) continue;
+                const glm::vec3 cp = glm::vec3((world * c->localMatrix())[3]);
+                iron3d::Vertex v{};
+                v.normal = glm::vec3(0, 0, 1);
+                v.color = (c.get() == selected || &node == selected) ? glm::vec3(1.0f, 0.65f, 0.2f) : glm::vec3(0.9f, 0.85f, 0.5f);
+                v.position = me;
+                out.push_back(v);
+                v.position = cp;
+                out.push_back(v);
+            }
+        for (const auto& c : node.children()) buildDisplayLines(*c, world, vis, eye, mode, selected, out);
+        return;
+    }
+    if (vis && soloShows(node) && !filterHides(node) && node.mesh && !node.mesh->indices.empty() && node.primitive == iron3d::PrimitiveType::Mesh) {
+        const glm::vec3 col = &node == selected ? glm::vec3(1.0f, 0.65f, 0.2f) : frontOnly ? glm::vec3(0.1f, 0.1f, 0.1f) : glm::vec3(0.75f, 0.8f, 0.9f);
         auto line = [&](const glm::vec3& a, const glm::vec3& b) {
             iron3d::Vertex v{};
             v.position = a;
@@ -331,7 +381,7 @@ void buildDisplayLines(iron3d::SceneNode& node, const glm::mat4& parentWorld, bo
         } else {
             const glm::mat3 nm = glm::transpose(glm::inverse(glm::mat3(world)));
             for (const WirePoly& wp : wirePolysOf(node.mesh)) {
-                if (mode == 1) {
+                if (frontOnly) {
                     const glm::vec3 cw = glm::vec3(world * glm::vec4(wp.center, 1.0f));
                     if (glm::dot(nm * wp.normal, eye - cw) <= 0.0f) continue;  // cara de espaldas
                 }
@@ -342,6 +392,28 @@ void buildDisplayLines(iron3d::SceneNode& node, const glm::mat4& parentWorld, bo
         }
     }
     for (const auto& c : node.children()) buildDisplayLines(*c, world, vis, eye, mode, selected, out);
+}
+
+// Opciones > Normales de Poligonos / de Vertices: del objeto seleccionado (si es poligonal).
+void buildNormalLines(const iron3d::SceneNode* sel, bool poly, bool vert, std::vector<iron3d::Vertex>& out) {
+    if (!sel || !sel->mesh || sel->mesh->indices.empty()) return;
+    const iron3d::MeshData& m = *sel->mesh;
+    const glm::mat4 w = sel->worldMatrix();
+    const glm::mat3 nm = glm::transpose(glm::inverse(glm::mat3(w)));
+    const float len = 0.06f * glm::length(glm::vec3(w * glm::vec4(m.boundsMax, 1.0f)) - glm::vec3(w * glm::vec4(m.boundsMin, 1.0f)));
+    auto add = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec3& c) {
+        iron3d::Vertex v{};
+        v.normal = glm::vec3(0, 0, 1);
+        v.color = c;
+        v.position = glm::vec3(w * glm::vec4(p, 1.0f));
+        out.push_back(v);
+        v.position += glm::normalize(nm * n + glm::vec3(1e-9f)) * len;
+        out.push_back(v);
+    };
+    if (vert)
+        for (const iron3d::Vertex& v : m.vertices) add(v.position, v.normal, glm::vec3(0.3f, 0.6f, 1.0f));
+    if (poly)
+        for (const WirePoly& wp : wirePolysOf(sel->mesh)) add(wp.center, wp.normal, glm::vec3(1.0f, 0.9f, 0.2f));
 }
 
 void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vector<iron3d::Material>& materials,
@@ -357,21 +429,40 @@ void drawScene(iron3d::IRenderer& renderer, SceneMeshes& meshes, const std::vect
         // Usar Color (sin material propio) y Rayos X del panel Basico
         iron3d::Material over;
         const iron3d::Material* mp2 = &mat;
-        if ((node.useColor != 0 && node.materialIndex < 0) || node.xray) {
+        const bool xr = node.xray || g_vdo.xray;
+        if ((node.useColor != 0 && node.materialIndex < 0) || xr || g_vdo.shade != 0 || !g_vdo.transparency) {
             over = mat;
             if (node.useColor != 0 && node.materialIndex < 0) over.baseColor = node.displayColor;
-            if (node.xray) over.transparency = glm::max(over.transparency, glm::vec3(0.5f));
+            if (!g_vdo.transparency) {
+                over.useTransparency = false;
+                over.transparency = glm::vec3(0.0f);
+            }
+            if (xr) {
+                over.useTransparency = true;
+                over.transparency = glm::max(over.transparency, glm::vec3(0.5f));
+            }
+            if (g_vdo.shade != 0) {
+                // Constante: el color sin luz (como luminancia); Lineas Ocultas: el color de fondo
+                over.emission = g_vdo.shade == 1 ? over.baseColor : g_vdo.bg;
+                over.useLuminance = true;
+                over.baseColor = glm::vec3(0.0f);
+                over.useReflectance = false;
+                over.specularBrightness = 0.0f;
+                over.reflectionBrightness = 0.0f;
+                over.layers.clear();
+            }
             mp2 = &over;
         }
         if (iron3d::materialIsBlended(*mp2) != (pass == 1)) return;
         // El Fresnel se muestrea por angulo de vision, no por UV: vale con cualquier proyeccion de la etiqueta.
         iron3d::TexMapping tm = tx;
         if (iron3d::channelIsFresnel(mat, iron3d::TexSlot::Color)) tm.enabled = true;
+        if (!g_vdo.textures || g_vdo.shade == 2) tm.enabled = false;
         renderer.drawMesh(mh, mdl, mp, *mp2, tm, first, count);
     };
 
     using iron3d::PrimitiveType;
-    switch (vis && soloShows(node) ? node.primitive : PrimitiveType::None) {
+    switch (vis && soloShows(node) && !filterHides(node) ? node.primitive : PrimitiveType::None) {
         case PrimitiveType::Cube:
         case PrimitiveType::Sphere:
         case PrimitiveType::Plane:
@@ -1323,7 +1414,11 @@ int main(int argc, char** argv) {
             // color, intensidad y caida. Sin ninguna, luz por defecto desde la
             // camara (como C4D). El mapa de sombras es de la primera luz que
             // tenga sombra activada.
-            const iron3d::SceneLighting sceneLighting = iron3d::collectSceneLights(sceneRoot);
+            iron3d::SceneLighting sceneLighting = iron3d::collectSceneLights(sceneRoot);
+            const int dmodeAll = viewport.renderView ? 0 : viewport.displayMode;
+            if (dmodeAll == 2 || dmodeAll == 3) sceneLighting.lights.clear();  // Rapido: solo la luz por defecto
+            const bool enhanced = viewport.optEnhanced || viewport.renderView;
+            if (!enhanced || !viewport.optShadows || sceneLighting.lights.empty()) sceneLighting.shadowLight = -1;
             glm::vec3 shadowPos = eye;
             if (sceneLighting.shadowLight >= 0) {
                 const iron3d::ViewportLight& sl = sceneLighting.lights[sceneLighting.shadowLight];
@@ -1355,16 +1450,23 @@ int main(int argc, char** argv) {
             // no vale para los cuatro: se deja vacio y el SSAO queda en 1
             // (sin oclusion), ver ssao.frag.
             renderer->beginGBufferPass(view, proj);
-            if (!viewport.quad) drawSceneGBuffer(*renderer, meshes, sceneRoot, glm::mat4(1.0f));
+            if (!viewport.quad && enhanced && viewport.optSsao) drawSceneGBuffer(*renderer, meshes, sceneRoot, glm::mat4(1.0f));
             renderer->endGBufferPass();
 
             renderer->beginMainPass();
 
             // Formas de los Nulos (controladores de rig): lineas en mundo, una vez por fotograma.
             std::vector<Vertex> nullLines;
-            if (!viewport.renderView) iron3d::buildNullShapes(sceneRoot, selected, nullLines);
-            if (!viewport.renderView) iron3d::buildLightGizmos(sceneRoot, selected, nullLines);
-            if (!viewport.renderView) iron3d::buildSplineLines(sceneRoot, selected, nullLines);
+            if (!viewport.renderView && viewport.filterShows(0)) iron3d::buildNullShapes(sceneRoot, selected, nullLines);
+            if (!viewport.renderView && viewport.filterShows(7)) iron3d::buildLightGizmos(sceneRoot, selected, nullLines);
+            if (!viewport.renderView && viewport.filterShows(2)) iron3d::buildSplineLines(sceneRoot, selected, nullLines);
+            if (!viewport.renderView && (viewport.optPolyNormals || viewport.optVertNormals))
+                buildNormalLines(selected, viewport.optPolyNormals, viewport.optVertNormals, nullLines);
+            g_vdo.filterOff = viewport.renderView ? 0u : viewport.filterOff;
+            g_vdo.textures = viewport.optTextures || viewport.renderView;
+            g_vdo.xray = viewport.optXray && !viewport.renderView;
+            g_vdo.transparency = !enhanced || viewport.optTransparency;
+            g_vdo.bg = prefs.uiPreset.theme.viewportBg;
             const std::vector<Vertex> noTris;
 
             for (const Panel& pn : panels) {
@@ -1388,12 +1490,14 @@ int main(int argc, char** argv) {
                     const bool useWp = viewport.workplane && pn.kind == iron3d::OrbitalCamera::View::Perspective;
                     renderer->drawGrid(gridVerts, pvp * (useWp ? workplaneMat : glm::mat4(1.0f)) * gridModelFor(pn.kind));
                 }
-                const int dmode = viewport.renderView ? 0 : viewport.displayMode;
-                if (dmode == 0 || dmode == 1) {
+                const int dmode = dmodeAll;
+                if (dmode <= 6) {
+                    g_vdo.shade = (dmode == 4 || dmode == 5) ? 1 : dmode == 6 ? 2 : 0;
                     drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), pvp, true, 0);
                     drawScene(*renderer, meshes, materials, sceneRoot, glm::mat4(1.0f), pvp, true, 1);
+                    g_vdo.shade = 0;
                 }
-                if (dmode != 0) {
+                if (dmode != 0 && dmode != 2 && dmode != 4) {
                     std::vector<Vertex> wire;
                     buildDisplayLines(sceneRoot, glm::mat4(1.0f), true, pn.eye, dmode, selected, wire);
                     if (!wire.empty()) renderer->drawGizmo(wire, noTris, pvp);

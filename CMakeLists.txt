@@ -511,9 +511,10 @@ add_executable(anim_test
     src/core/ShaderTree.cpp
     src/core/SceneSerializer.cpp
     src/core/ThumbnailRenderer.cpp
-    src/core/TransformGizmo.cpp)
+    src/core/TransformGizmo.cpp
+    src/core/OrbitalCamera.cpp)
 target_include_directories(anim_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
-target_link_libraries(anim_test PRIVATE iron3d_lib4d)
+target_link_libraries(anim_test PRIVATE iron3d_lib4d glfw)
 target_compile_definitions(anim_test PRIVATE GLM_FORCE_RADIANS)
 if(MSVC)
     target_compile_options(anim_test PRIVATE /W4 /utf-8)
