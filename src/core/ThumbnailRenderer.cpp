@@ -1,4 +1,7 @@
 #include "ThumbnailRenderer.h"
+#include "ChannelBake.h"
+#include "TextureImage.h"
+#include "SceneLighting.h"
 
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -7,6 +10,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -71,6 +76,41 @@ std::shared_ptr<const Image> loadImage(const std::string& path) {
     return result;
 }
 
+// Imagen final del canal Color (con su arbol de shaders horneado: Filtro, Capa, Colorizador...), la misma
+// que ve el visor. Cache por clave del canal (2026-11-25): sin esto los trajes de .lib4d salian en blanco.
+std::shared_ptr<const Image> loadChannelImage(const Material& m) {
+    static std::mutex mtx;
+    static std::map<std::string, std::shared_ptr<const Image>> cache;
+    const std::string key = channelTextureKey(m, TexSlot::Color);
+    if (key.empty()) return nullptr;
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        auto it = cache.find(key);
+        if (it != cache.end()) return it->second;
+    }
+    std::shared_ptr<const Image> result;
+    TextureImage ti;
+    if (loadChannelTexture(m, TexSlot::Color, ti) && ti.width > 0 && ti.height > 0) {
+        auto img = std::make_shared<Image>();
+        img->w = ti.width;
+        img->h = ti.height;
+        img->px.resize((size_t)ti.width * (size_t)ti.height);
+        for (size_t i = 0; i < img->px.size(); ++i)
+            img->px[i] = glm::vec3(srgbToLinear(ti.rgba[i * 4] / 255.0f), srgbToLinear(ti.rgba[i * 4 + 1] / 255.0f),
+                                   srgbToLinear(ti.rgba[i * 4 + 2] / 255.0f));
+        result = img;
+    }
+    if (std::getenv("IRON3D_DBG_TEX")) {
+        glm::vec3 avg(0.0f);
+        if (result) for (const glm::vec3& c : result->px) avg += c;
+        if (result) avg /= (float)result->px.size();
+        std::fprintf(stderr, "[cpu-tex] %s -> %s avg=(%.2f %.2f %.2f)\n", m.name.c_str(), result ? "ok" : "NULL", avg.x, avg.y, avg.z);
+    }
+    std::lock_guard<std::mutex> lock(mtx);
+    cache.emplace(key, result);
+    return result;
+}
+
 struct Tri {
     glm::vec3 p[3]; // mundo
     glm::vec3 n[3]; // normales en mundo
@@ -106,16 +146,63 @@ void collect(const SceneNode& node, const glm::mat4& parentWorld, bool parentVis
         if (node.primitive == PrimitiveType::Mesh) mesh = node.mesh.get();
         else mesh = &primitiveMesh(node.primitive);
         if (mesh && !mesh->indices.empty()) {
-            const Material& m = materialOrDefault(materials, node.materialIndex);
             const glm::mat3 nm = glm::inverseTranspose(glm::mat3(world));
-            const Image* tex = nullptr;
-            if (!m.texture(TexSlot::Color).empty() && node.texTag.projection == 6) {
-                const std::string path = resolveTexturePath(m.texture(TexSlot::Color), m.texBaseDir);
-                if (!path.empty())
-                    if (auto img = loadImage(path)) tex = img.get();
-            }
+            // Material y textura de un rango de la malla (las Selecciones de Poligonos de C4D traen el suyo).
+            auto resolve = [&](int matIndex, const TextureTagData& tag, const Material*& mOut, const Image*& texOut) {
+                mOut = &materialOrDefault(materials, matIndex);
+                texOut = nullptr;
+                if (tag.projection != 6 && !(tag.projection >= 0 && tag.projection <= 4)) return;
+                if (auto img = loadChannelImage(*mOut)) texOut = img.get();
+                else if (!mOut->texture(TexSlot::Color).empty()) {
+                    const std::string path = resolveTexturePath(mOut->texture(TexSlot::Color), mOut->texBaseDir);
+                    if (!path.empty())
+                        if (auto img2 = loadImage(path)) texOut = img2.get();
+                }
+            };
+            const Material* nodeM = nullptr;
+            const Image* nodeTex = nullptr;
+            resolve(node.materialIndex, node.texTag, nodeM, nodeTex);
+            std::vector<const Material*> partM(node.materialParts.size());
+            std::vector<const Image*> partTex(node.materialParts.size());
+            for (size_t k = 0; k < node.materialParts.size(); ++k)
+                resolve(node.materialParts[k].materialIndex, node.materialParts[k].texTag, partM[k], partTex[k]);
             const size_t nv = mesh->vertices.size();
+            // Caja local de la malla: las proyecciones de C4D (Esferica, Cilindrica, Plana, Cubica, Frontal) se
+            // ajustan al objeto. Aproximacion (2026-11-25): la etiqueta no trae su propia matriz.
+            glm::vec3 blo(1e30f), bhi(-1e30f);
+            for (const Vertex& vx : mesh->vertices) { blo = glm::min(blo, vx.position); bhi = glm::max(bhi, vx.position); }
+            const glm::vec3 bc = (blo + bhi) * 0.5f, bh = glm::max((bhi - blo) * 0.5f, glm::vec3(1e-6f));
+            auto project = [&](int proj, const glm::vec3& pos, const glm::vec3& nrm) {
+                const glm::vec3 q = (pos - bc) / bh;  // -1..1 en la caja
+                constexpr float kPi = 3.14159265f;
+                switch (proj) {
+                    case 0: return glm::vec2(std::atan2(q.z, q.x) / (2.0f * kPi) + 0.5f, std::acos(std::clamp(-q.y / std::max(1e-6f, glm::length(q)), -1.0f, 1.0f)) / kPi);
+                    case 1: return glm::vec2(std::atan2(q.z, q.x) / (2.0f * kPi) + 0.5f, 0.5f - q.y * 0.5f);
+                    case 2: return glm::vec2(q.x * 0.5f + 0.5f, 0.5f - q.y * 0.5f);
+                    case 4: return glm::vec2(q.x * 0.5f + 0.5f, 0.5f - q.y * 0.5f);
+                    default: {  // Cubica: el eje dominante de la normal
+                        const glm::vec3 a = glm::abs(nrm);
+                        if (a.z >= a.x && a.z >= a.y) return glm::vec2(q.x * 0.5f + 0.5f, 0.5f - q.y * 0.5f);
+                        if (a.x >= a.y) return glm::vec2(q.z * 0.5f + 0.5f, 0.5f - q.y * 0.5f);
+                        return glm::vec2(q.x * 0.5f + 0.5f, q.z * 0.5f + 0.5f);
+                    }
+                }
+            };
             for (size_t i = 0; i + 2 < mesh->indices.size(); i += 3) {
+                const Material* mp = nodeM;
+                const Image* tex = nodeTex;
+                const TextureTagData* tag = &node.texTag;
+                if (node.primitive == PrimitiveType::Mesh)
+                    for (size_t k = 0; k < node.materialParts.size(); ++k) {
+                        const MaterialPart& pt = node.materialParts[k];
+                        if (i >= pt.firstIndex && i < (size_t)pt.firstIndex + pt.indexCount) {
+                            mp = partM[k];
+                            tex = partTex[k];
+                            tag = &pt.texTag;
+                            break;
+                        }
+                    }
+                const Material& m = *mp;
                 Tri t{};
                 bool ok = true;
                 for (int k = 0; k < 3; ++k) {
@@ -126,12 +213,24 @@ void collect(const SceneNode& node, const glm::mat4& parentWorld, bool parentVis
                     t.uv[k] = mesh->vertices[idx].uv;
                 }
                 if (!ok) continue;
+                if (tex && tag->projection != 6) {
+                    for (int k = 0; k < 3; ++k) {
+                        const uint32_t idx = mesh->indices[i + (size_t)k];
+                        t.uv[k] = project(tag->projection, mesh->vertices[idx].position, mesh->vertices[idx].normal);
+                    }
+                    if (tag->projection <= 1) {  // costura del giro: sube a 1 los que quedan al otro lado
+                        const float lo = std::min({t.uv[0].x, t.uv[1].x, t.uv[2].x}), hi = std::max({t.uv[0].x, t.uv[1].x, t.uv[2].x});
+                        if (hi - lo > 0.5f)
+                            for (int k = 0; k < 3; ++k)
+                                if (t.uv[k].x < 0.5f) t.uv[k].x += 1.0f;
+                    }
+                }
                 t.color = m.baseColor;
                 t.emission = m.emission;
                 t.tex = tex;
-                t.texOffset = node.texTag.offset;
-                t.texLength = node.texTag.length;
-                t.texTile = node.texTag.tile;
+                t.texOffset = tag->offset;
+                t.texLength = tag->length;
+                t.texTile = tag->tile;
                 t.metallic = m.metallic;
                 t.roughness = m.roughness;
                 t.opacity = 1.0f - std::clamp((m.transparency.r + m.transparency.g + m.transparency.b) / 3.0f, 0.0f, 1.0f);
@@ -169,6 +268,7 @@ struct Shading {
     glm::vec3 key, fill;  // luces direccionales (hacia la luz)
     bool studio = false;  // reflejos de estudio + transparencia (RenderFx)
     glm::vec3 camRight{1, 0, 0}, camUp{0, 1, 0}, toEye{0, 0, 1};
+    std::vector<ViewportLight> lights;  // luces de la escena (2026-11-25); vacio = las dos luces de camara
 };
 
 // Entorno de estudio procedural, en el sistema de la camara (x derecha, y arriba, z hacia el ojo): cielo claro
@@ -251,6 +351,30 @@ void shadeTriangle(Canvas& cv, const ClipVert (&v)[3], const Tri& t, const Shadi
             const glm::vec3 specColor = glm::mix(glm::vec3(0.06f), base, t.metallic);
             glm::vec3 lit = diffuse * (0.16f + 0.86f * dk + 0.28f * df) +
                             specColor * (spec * 1.6f + 0.25f * t.metallic) + glm::vec3(rim) + t.emission;
+            if (!sh.lights.empty()) {
+                // Luces de la escena, como el visor: difusa + especular de Blinn, con la caida de C4D.
+                glm::vec3 dsum(0.0f), ssum(0.0f);
+                for (const ViewportLight& L : sh.lights) {
+                    glm::vec3 ld;
+                    float att = 1.0f;
+                    if (L.type == ViewportLight::Type::Directional) ld = -L.direction;
+                    else {
+                        const glm::vec3 d = L.position - p;
+                        const float dist = glm::length(d);
+                        ld = dist > 1e-6f ? d / dist : glm::vec3(0, 1, 0);
+                        att = falloffFactor(L.falloff, dist, L.radius, L.innerRadius);
+                        if (L.type == ViewportLight::Type::Spot) {
+                            const float c = glm::dot(-ld, L.direction);
+                            att *= std::clamp((c - L.cosOuter) / std::max(1e-4f, L.cosInner - L.cosOuter), 0.0f, 1.0f);
+                        }
+                    }
+                    const float nd = std::max(0.0f, glm::dot(n, ld));
+                    if (L.diffuse) dsum += L.color * (nd * att);
+                    if (L.specular)
+                        ssum += L.color * (std::pow(std::max(0.0f, glm::dot(n, glm::normalize(ld + vd))), shin) * att * (nd > 0.0f ? 1.0f : 0.0f));
+                }
+                lit = diffuse * (0.10f + dsum) + specColor * (ssum * (1.0f - t.roughness * 0.8f) * 0.8f + 0.25f * t.metallic) + t.emission;
+            }
             if (!sh.studio) {
                 cv.color[i] = lit;
                 continue;
@@ -458,6 +582,7 @@ Thumbnail renderCameraImage(const SceneNode& root, const std::vector<Material>& 
     sh.ortho = std::fabs(proj[3][3] - 1.0f) < 1e-6f;
     sh.viewDir = glm::normalize(glm::vec3(inv[2]));  // +Z de la camara = hacia el ojo
     cameraLights(sh.viewDir, glm::vec3(inv[0]), sh);
+    sh.lights = collectSceneLights(root).lights;
     sh.studio = fx.studio;
     sh.camRight = glm::normalize(glm::vec3(inv[0]));
     sh.camUp = glm::normalize(glm::vec3(inv[1]));

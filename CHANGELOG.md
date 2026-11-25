@@ -165,6 +165,21 @@ Las entradas de Deformadores, Modelado y MoGraph que no hacían nada ahora crean
 
 **Límites conocidos:** etiquetas Compositing y Restricción, Reflexiones, Teselación, Profundidad de Campo, Ocultar Caras Posteriores, Isoparms, Estereoscópico y Configurar siguen desactivados; el Modo Lista no pliega; las vistas oblicuas no tienen rejilla corregida.
 
+## Render por CPU: luces de la escena, texturas horneadas y partes con material (2026-11-25)
+
+Reto de Freddy: se renderizó Freddy_Fazbear [VF_2.0] de `fnaf 1 tcg final update.lib4d` con las luces "Freddy Thank you lights" del pack de FazbearRenders.
+
+**Cambios en el render (Mayús+R y `--ui-cmd=render-save=`):**
+- Usa las luces de la escena (difusa y especular, caída de C4D, focos) en vez de dos luces fijas de cámara.
+- El color de los materiales con árbol de shaders (Filtro, Capa, Colorizador, Degradado) sale horneado, igual que en el visor. Antes los trajes salían blancos.
+- Respeta las partes con otro material (Selecciones de Polígonos de C4D); antes se ignoraban.
+- Proyecciones de textura Esférica, Cilíndrica, Plana, Cúbica y Frontal, ajustadas a la caja del objeto (aproximación: la etiqueta no trae su propia matriz).
+- Variable `IRON3D_DBG_TEX=1` para ver qué texturas hornea.
+
+**Resultado honesto:** el render sale lejos de la referencia. Freddy queda en T-pose (sin posar), la cabeza sale negra (la máscara `freddymaskara dos.png` de Suit_1_Head, el pelaje de la cabeza no se resuelve) y no hay desenfoque, fondo ni acabado de Cinema 4D.
+
+**Límites conocidos:** el visor sigue dibujando las proyecciones que no son UVW en color plano; sin posado desde la línea de comandos; luz Ambiente sin modelar.
+
 ### 2026-11-24 (49): Atajos de Vista y Fijación al girar/escalar
 
 **Añadido**

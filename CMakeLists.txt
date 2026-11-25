@@ -210,7 +210,10 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         src/core/SceneSerializer.cpp
         src/core/Material.cpp
         src/core/ShaderTree.cpp
-        src/core/ThumbnailRenderer.cpp)
+        src/core/ThumbnailRenderer.cpp
+        src/core/ChannelBake.cpp
+        src/core/TextureImage.cpp
+        src/core/SceneLighting.cpp)
     target_include_directories(c4d_probe PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
     target_include_directories(c4d_probe SYSTEM PRIVATE "${IRON3D_CINEWARE_SDK}/includes")
     target_compile_definitions(c4d_probe PRIVATE GLM_FORCE_RADIANS)
@@ -241,7 +244,10 @@ if(IRON3D_CINEWARE_SDK AND WIN32)
         src/core/SceneSerializer.cpp
         src/core/Material.cpp
         src/core/ShaderTree.cpp
-        src/core/ThumbnailRenderer.cpp)
+        src/core/ThumbnailRenderer.cpp
+        src/core/ChannelBake.cpp
+        src/core/TextureImage.cpp
+        src/core/SceneLighting.cpp)
     target_include_directories(c4d_roundtrip_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
     target_include_directories(c4d_roundtrip_test SYSTEM PRIVATE "${IRON3D_CINEWARE_SDK}/includes")
     target_compile_definitions(c4d_roundtrip_test PRIVATE GLM_FORCE_RADIANS)
@@ -371,6 +377,9 @@ add_executable(iron3d_tests
     src/core/SceneSerializer.cpp
     src/core/SceneHistory.cpp
     src/core/ThumbnailRenderer.cpp
+    src/core/ChannelBake.cpp
+    src/core/TextureImage.cpp
+    src/core/SceneLighting.cpp
     src/core/TransformGizmo.cpp)
 target_include_directories(iron3d_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
 target_link_libraries(iron3d_tests PRIVATE iron3d_lib4d) # stb_image: texturas del render por CPU
@@ -403,6 +412,9 @@ add_executable(obj_test
     src/core/ShaderTree.cpp
     src/core/SceneSerializer.cpp
     src/core/ThumbnailRenderer.cpp
+    src/core/ChannelBake.cpp
+    src/core/TextureImage.cpp
+    src/core/SceneLighting.cpp
     src/core/TransformGizmo.cpp)
 target_include_directories(obj_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
 target_link_libraries(obj_test PRIVATE iron3d_lib4d)
@@ -445,6 +457,9 @@ add_executable(ik_test
     src/core/ShaderTree.cpp
     src/core/SceneSerializer.cpp
     src/core/ThumbnailRenderer.cpp
+    src/core/ChannelBake.cpp
+    src/core/TextureImage.cpp
+    src/core/SceneLighting.cpp
     src/core/TransformGizmo.cpp)
 target_include_directories(ik_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
 target_link_libraries(ik_test PRIVATE iron3d_lib4d)
@@ -511,6 +526,9 @@ add_executable(anim_test
     src/core/ShaderTree.cpp
     src/core/SceneSerializer.cpp
     src/core/ThumbnailRenderer.cpp
+    src/core/ChannelBake.cpp
+    src/core/TextureImage.cpp
+    src/core/SceneLighting.cpp
     src/core/TransformGizmo.cpp
     src/core/OrbitalCamera.cpp)
 target_include_directories(anim_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
@@ -540,6 +558,9 @@ add_executable(skin_test
     src/core/ShaderTree.cpp
     src/core/SceneSerializer.cpp
     src/core/ThumbnailRenderer.cpp
+    src/core/ChannelBake.cpp
+    src/core/TextureImage.cpp
+    src/core/SceneLighting.cpp
     src/core/TransformGizmo.cpp)
 target_include_directories(skin_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
 target_link_libraries(skin_test PRIVATE iron3d_lib4d)
@@ -562,6 +583,9 @@ add_executable(gltf_test
     src/core/ShaderTree.cpp
     src/core/SceneSerializer.cpp
     src/core/ThumbnailRenderer.cpp
+    src/core/ChannelBake.cpp
+    src/core/TextureImage.cpp
+    src/core/SceneLighting.cpp
     src/core/TransformGizmo.cpp)
 target_include_directories(gltf_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${glm_SOURCE_DIR})
 target_link_libraries(gltf_test PRIVATE iron3d_lib4d)
